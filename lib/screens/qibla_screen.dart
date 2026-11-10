@@ -8,6 +8,8 @@ import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../utils/compass_utils.dart';
+import '../widgets/islamic_theme_effects_canvas.dart';
+import '../widgets/real_mosque_background.dart';
 
 enum CompassSkinStyle {
   whiteSmartDial, // الأبيض الناصع الذكي
@@ -57,7 +59,8 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
     final isNight = settings.isNightEffective;
-    final palette = IslamicTheme.resolvePalette(settings.selectedTheme, isNight: isNight);
+    final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
+    final palette = themeOption.resolve(isNight: isNight);
     final accentColor = palette.accentColor;
 
     final myLocation = Coordinates(settings.latitude, settings.longitude);
@@ -65,8 +68,9 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
 
     return Scaffold(
       backgroundColor: palette.scaffoldColor,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: isNight ? palette.primaryColor : palette.cardColor,
+        backgroundColor: palette.cardColor.withOpacity(isNight ? 0.78 : 0.88),
         elevation: 0,
         centerTitle: true,
         title: const Text(
@@ -87,67 +91,95 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
             ),
         ],
       ),
-      body: _useManualSimulation
-          ? _buildCompassView(
-              heading: _manualHeading,
-              qiblaDirection: qiblaDirection,
-              palette: palette,
-              fontFamily: settings.selectedFont,
-              isSimulated: true,
-            )
-          : StreamBuilder<CompassEvent>(
-              stream: FlutterCompass.events,
-              builder: (context, snapshot) {
-                if (!snapshot.hasData || snapshot.data?.heading == null) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(color: accentColor),
-                          const SizedBox(height: 18),
-                          Text(
-                            "جاري معايرة مستشعر البوصلة المغناطيسية...",
-                            style: TextStyle(color: palette.textSecondary, fontSize: 16),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton.icon(
-                            icon: const Icon(Icons.touch_app_rounded),
-                            label: const Text(
-                              "تشغيل التدوير التفاعلي باليد",
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: accentColor,
-                              foregroundColor: palette.onAccentColor,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: RealMosqueBackground(
+              currentPrayer: isNight ? Prayer.isha : Prayer.dhuhr,
+              themeOption: themeOption,
+              isNightMode: isNight,
+            ),
+          ),
+          Positioned.fill(
+            child: IslamicThemeEffectsCanvas(
+              themeOption: themeOption,
+              isNightMode: isNight,
+            ),
+          ),
+          SafeArea(
+            child: _useManualSimulation
+                ? _buildCompassView(
+                    heading: _manualHeading,
+                    qiblaDirection: qiblaDirection,
+                    palette: palette,
+                    fontFamily: settings.selectedFont,
+                    isSimulated: true,
+                  )
+                : StreamBuilder<CompassEvent>(
+                    stream: FlutterCompass.events,
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData || snapshot.data?.heading == null) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Container(
+                              padding: const EdgeInsets.all(22),
+                              decoration: BoxDecoration(
+                                color: palette.cardColor.withOpacity(isNight ? 0.84 : 0.92),
+                                borderRadius: BorderRadius.circular(22),
+                                border: Border.all(color: accentColor.withOpacity(0.4)),
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  CircularProgressIndicator(color: accentColor),
+                                  const SizedBox(height: 18),
+                                  Text(
+                                    "جاري معايرة مستشعر البوصلة المغناطيسية...",
+                                    style: TextStyle(color: palette.textSecondary, fontSize: 16),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton.icon(
+                                    icon: const Icon(Icons.touch_app_rounded),
+                                    label: const Text(
+                                      "تشغيل التدوير التفاعلي باليد",
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: accentColor,
+                                      foregroundColor: palette.onAccentColor,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                    ),
+                                    onPressed: () {
+                                      setState(() => _useManualSimulation = true);
+                                    },
+                                  ),
+                                ],
                               ),
                             ),
-                            onPressed: () {
-                              setState(() => _useManualSimulation = true);
-                            },
                           ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
+                        );
+                      }
 
-                final rawHeading = snapshot.data!.heading!;
-                _filteredHeading = smoothHeading(_filteredHeading, rawHeading, 0.22);
+                      final rawHeading = snapshot.data!.heading!;
+                      _filteredHeading = smoothHeading(_filteredHeading, rawHeading, 0.22);
 
-                return _buildCompassView(
-                  heading: _filteredHeading,
-                  qiblaDirection: qiblaDirection,
-                  palette: palette,
-                  fontFamily: settings.selectedFont,
-                  isSimulated: false,
-                );
-              },
-            ),
+                      return _buildCompassView(
+                        heading: _filteredHeading,
+                        qiblaDirection: qiblaDirection,
+                        palette: palette,
+                        fontFamily: settings.selectedFont,
+                        isSimulated: false,
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -309,7 +341,7 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: palette.cardColor,
+              color: palette.cardColor.withOpacity(palette.isDark ? 0.84 : 0.90),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(color: palette.dividerColor),
               boxShadow: [
@@ -364,7 +396,7 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: palette.cardColor,
+                color: palette.cardColor.withOpacity(palette.isDark ? 0.84 : 0.90),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: accentColor.withOpacity(0.4)),
               ),
@@ -418,7 +450,7 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: palette.cardColor,
+        color: palette.cardColor.withOpacity(palette.isDark ? 0.84 : 0.90),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: (isFacingMecca ? const Color(0xFF10B981) : palette.accentColor)

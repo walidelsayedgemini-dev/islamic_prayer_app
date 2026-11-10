@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:adhan/adhan.dart';
 import 'package:provider/provider.dart';
 import '../models/help_me_model.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
+import '../widgets/islamic_theme_effects_canvas.dart';
+import '../widgets/real_mosque_background.dart';
 
 class HelpMeScreen extends StatefulWidget {
   const HelpMeScreen({super.key});
@@ -393,124 +396,150 @@ class _HelpMeScreenState extends State<HelpMeScreen>
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
     final isNight = settings.isNightEffective;
-    final palette = IslamicTheme.resolvePalette(settings.selectedTheme, isNight: isNight);
+    final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
+    final palette = themeOption.resolve(isNight: isNight);
     final accentColor = palette.accentColor;
 
     return Scaffold(
       backgroundColor: palette.scaffoldColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: RealMosqueBackground(
+              currentPrayer: isNight ? Prayer.isha : Prayer.dhuhr,
+              themeOption: themeOption,
+              isNightMode: isNight,
+            ),
+          ),
+          Positioned.fill(
+            child: IslamicThemeEffectsCanvas(
+              themeOption: themeOption,
+              isNightMode: isNight,
+            ),
+          ),
+          SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: accentColor.withOpacity(0.18),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: accentColor, width: 1.2),
+                      color: palette.cardColor.withOpacity(isNight ? 0.80 : 0.90),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: accentColor.withOpacity(0.4)),
                     ),
-                    child: Icon(Icons.favorite_rounded, color: accentColor, size: 22),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(
-                          "سَاعِدْنِي • صيدلية الروح والسكينة",
-                          style: TextStyle(
-                            color: accentColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 17,
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: accentColor.withOpacity(0.18),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: accentColor, width: 1.2),
                           ),
+                          child: Icon(Icons.favorite_rounded, color: accentColor, size: 22),
                         ),
-                        Text(
-                          "علاج القلوب بالهدي النبوي والقرآن الكريم لكل أحوال الإنسان",
-                          style: TextStyle(color: palette.textSecondary, fontSize: 12),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "سَاعِدْنِي • صيدلية الروح والسكينة",
+                                style: TextStyle(
+                                  color: accentColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16.5,
+                                ),
+                              ),
+                              Text(
+                                "علاج القلوب بالهدي النبوي والقرآن الكريم لكل أحوال الإنسان",
+                                style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: GridView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 95),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.88,
                 ),
-                itemCount: HelpMeCategory.categories.length,
-                itemBuilder: (context, index) {
-                  final cat = HelpMeCategory.categories[index];
-                  final catAccent = _resolveCatAccent(cat, palette.isDark);
-                  return GestureDetector(
-                    onTap: () => _showCategoryDetails(context, cat, palette),
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: palette.cardColor,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: catAccent.withOpacity(0.45), width: 1.2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: cat.primaryColor.withOpacity(palette.isDark ? 0.16 : 0.10),
-                            blurRadius: 12,
-                            offset: const Offset(0, 3),
-                          )
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: cat.primaryColor.withOpacity(0.18),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: catAccent.withOpacity(0.7)),
-                            ),
-                            child: Icon(cat.icon, color: catAccent, size: 30),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            cat.title,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: catAccent,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            cat.subtitle,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: palette.textSecondary,
-                              fontSize: 10,
-                              height: 1.3,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
+                Expanded(
+                  child: GridView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 95),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.88,
                     ),
-                  );
-                },
-              ),
+                    itemCount: HelpMeCategory.categories.length,
+                    itemBuilder: (context, index) {
+                      final cat = HelpMeCategory.categories[index];
+                      final catAccent = _resolveCatAccent(cat, palette.isDark);
+                      return GestureDetector(
+                        onTap: () => _showCategoryDetails(context, cat, palette),
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: palette.cardColor.withOpacity(isNight ? 0.85 : 0.90),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: catAccent.withOpacity(0.45), width: 1.2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: cat.primaryColor.withOpacity(palette.isDark ? 0.16 : 0.10),
+                                blurRadius: 12,
+                                offset: const Offset(0, 3),
+                              )
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: cat.primaryColor.withOpacity(0.18),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: catAccent.withOpacity(0.7)),
+                                ),
+                                child: Icon(cat.icon, color: catAccent, size: 30),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                cat.title,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: catAccent,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                cat.subtitle,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: palette.textSecondary,
+                                  fontSize: 10,
+                                  height: 1.3,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

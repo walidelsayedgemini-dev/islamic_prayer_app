@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:adhan/adhan.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/tasbih_challenge.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
-import '../widgets/islamic_pattern_painter.dart';
+import '../widgets/islamic_theme_effects_canvas.dart';
+import '../widgets/real_mosque_background.dart';
 import '../widgets/tasbih_goal_effects.dart';
 
 class TasbihScreen extends StatefulWidget {
@@ -830,7 +832,10 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
 
     return Scaffold(
       backgroundColor: palette.scaffoldColor,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        backgroundColor: palette.cardColor.withOpacity(isNight ? 0.78 : 0.88),
+        elevation: 0,
         title: const Text("مسبحة وتحديات الفردوس"),
         actions: [
           TextButton.icon(
@@ -848,134 +853,144 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
       ),
       body: Stack(
         children: [
-          AnimatedIslamicBackground(
-            accentColor: accentColor,
-            backgroundColor: palette.scaffoldColor,
-            child: SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 95),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(minHeight: constraints.maxHeight - 101),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // 1. شريط التحديات الـ +20 تأثير في الأعلى
-                          Row(
-                            children: [
-                              Expanded(
-                                child: InkWell(
-                                  onTap: () => _showChallengesSheet(palette),
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                                    decoration: BoxDecoration(
+          Positioned.fill(
+            child: RealMosqueBackground(
+              currentPrayer: isNight ? Prayer.isha : Prayer.dhuhr,
+              themeOption: themeOption,
+              isNightMode: isNight,
+            ),
+          ),
+          Positioned.fill(
+            child: IslamicThemeEffectsCanvas(
+              themeOption: themeOption,
+              isNightMode: isNight,
+            ),
+          ),
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 95),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight - 101),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // 1. شريط التحديات الـ +20 تأثير في الأعلى
+                        Row(
+                          children: [
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => _showChallengesSheet(palette),
+                                borderRadius: BorderRadius.circular(16),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                                  decoration: BoxDecoration(
+                                    color: activeChallenge != null
+                                        ? accentColor.withOpacity(0.20)
+                                        : palette.cardColor.withOpacity(isNight ? 0.84 : 0.90),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
                                       color: activeChallenge != null
-                                          ? accentColor.withOpacity(0.16)
-                                          : palette.cardColor,
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: activeChallenge != null
-                                            ? accentColor
-                                            : palette.dividerColor,
+                                          ? accentColor
+                                          : palette.dividerColor,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.emoji_events_rounded,
+                                        color: accentColor,
+                                        size: 20,
                                       ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.emoji_events_rounded,
-                                          color: accentColor,
-                                          size: 20,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                activeChallenge?.title ?? "التحديات الإيمانية",
-                                                style: TextStyle(
-                                                  color: palette.textPrimary,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 12,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              activeChallenge?.title ?? "التحديات الإيمانية",
+                                              style: TextStyle(
+                                                color: palette.textPrimary,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
                                               ),
-                                              Text(
-                                                activeChallenge != null
-                                                    ? "$_counter / ${activeChallenge.targetCount}"
-                                                    : "12 تحدياً + تحدٍ مخصص",
-                                                style: TextStyle(
-                                                  color: accentColor,
-                                                  fontSize: 10.5,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            Text(
+                                              activeChallenge != null
+                                                  ? "$_counter / ${activeChallenge.targetCount}"
+                                                  : "12 تحدياً + تحدٍ مخصص",
+                                              style: TextStyle(
+                                                color: accentColor,
+                                                fontSize: 10.5,
+                                                fontWeight: FontWeight.w600,
                                               ),
-                                            ],
-                                          ),
+                                            ),
+                                          ],
                                         ),
-                                        Icon(Icons.chevron_left_rounded, color: palette.textMuted, size: 18),
-                                      ],
-                                    ),
+                                      ),
+                                      Icon(Icons.chevron_left_rounded, color: palette.textMuted, size: 18),
+                                    ],
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: InkWell(
-                                  onTap: () => _showGoalEffectsSheet(palette),
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                                    decoration: BoxDecoration(
-                                      color: palette.cardColor,
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(color: palette.dividerColor),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(currentEffect.icon, color: accentColor, size: 20),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                "تأثيرات الهدف (20)",
-                                                style: TextStyle(
-                                                  color: palette.textPrimary,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 12,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => _showGoalEffectsSheet(palette),
+                                borderRadius: BorderRadius.circular(16),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                                  decoration: BoxDecoration(
+                                    color: palette.cardColor.withOpacity(isNight ? 0.84 : 0.90),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: palette.dividerColor),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(currentEffect.icon, color: accentColor, size: 20),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              "تأثيرات الهدف (20)",
+                                              style: TextStyle(
+                                                color: palette.textPrimary,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
                                               ),
-                                              Text(
-                                                _autoCycleEffects
-                                                    ? "تلقائي: #${currentEffect.number}"
-                                                    : "#${currentEffect.number}: ${currentEffect.name}",
-                                                style: TextStyle(
-                                                  color: accentColor,
-                                                  fontSize: 10.5,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            Text(
+                                              _autoCycleEffects
+                                                  ? "تلقائي: #${currentEffect.number}"
+                                                  : "#${currentEffect.number}: ${currentEffect.name}",
+                                              style: TextStyle(
+                                                color: accentColor,
+                                                fontSize: 10.5,
+                                                fontWeight: FontWeight.w600,
                                               ),
-                                            ],
-                                          ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
                                         ),
-                                        Icon(Icons.chevron_left_rounded, color: palette.textMuted, size: 18),
-                                      ],
-                                    ),
+                                      ),
+                                      Icon(Icons.chevron_left_rounded, color: palette.textMuted, size: 18),
+                                    ],
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
+                        ),
 
                           const SizedBox(height: 10),
 
@@ -1288,7 +1303,6 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                   );
                 },
               ),
-            ),
           ),
 
           // طبقة تأثيرات الوصول للهدف الـ 20

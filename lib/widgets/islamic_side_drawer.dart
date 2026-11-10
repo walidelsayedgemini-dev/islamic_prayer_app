@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/islamic_audio_data.dart';
 import '../providers/audio_player_provider.dart';
+import '../screens/quran_reader_screen.dart';
 import '../theme/islamic_theme.dart';
 
 class IslamicSideDrawer extends StatefulWidget {
@@ -65,13 +66,30 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    width: 46,
+                    height: 46,
                     decoration: BoxDecoration(
-                      color: accent.withOpacity(0.18),
                       shape: BoxShape.circle,
-                      border: Border.all(color: accent.withOpacity(0.65)),
+                      border: Border.all(color: accent, width: 1.6),
+                      boxShadow: [
+                        BoxShadow(
+                          color: accent.withOpacity(0.32),
+                          blurRadius: 10,
+                        ),
+                      ],
                     ),
-                    child: Icon(Icons.menu_book_rounded, color: accent, size: 20),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/images/palace_jannah_logo.png',
+                        width: 46,
+                        height: 46,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: accent.withOpacity(0.18),
+                          child: Icon(Icons.menu_book_rounded, color: accent, size: 22),
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -79,15 +97,15 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "الفردوس • المكتبة الصوتية",
+                          "الفردوس • المكتبة الشاملة",
                           style: TextStyle(
                             color: palette.textPrimary,
-                            fontSize: 17,
+                            fontSize: 16.5,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         Text(
-                          "قرآن كريم • رقية شرعية • إبتهالات وتفاسير",
+                          "المصحف الكامل • رقية شرعية • إبتهالات",
                           style: TextStyle(
                             color: palette.textSecondary,
                             fontSize: 11,
@@ -270,6 +288,33 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
               ),
             ],
 
+            if (player.errorMessage != null)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.redAccent.withOpacity(0.45)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 16),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        player.errorMessage!,
+                        style: TextStyle(color: palette.textPrimary, fontSize: 11),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: player.clearError,
+                      child: Icon(Icons.close_rounded, color: palette.textSecondary, size: 16),
+                    ),
+                  ],
+                ),
+              ),
+
             // 4. المحتوى المتغير حسب التصنيف المختار
             Expanded(
               child: _buildCategoryContent(player, palette),
@@ -294,6 +339,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
 
   Widget _buildQuranSurahsList(AudioPlayerProvider player, ThemePalette palette) {
     final accent = palette.accentColor;
+    final offlineBadgeColor = palette.isDark ? const Color(0xFF34D399) : const Color(0xFF047857);
     final surahs = IslamicAudioLibrary.allSurahs.where((s) {
       if (_searchQuery.isEmpty) return true;
       return s.nameArabic.contains(_searchQuery) ||
@@ -304,11 +350,79 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
     return ListView.builder(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      itemCount: surahs.length,
-      itemBuilder: (context, idx) {
-        final surah = surahs[idx];
+      itemCount: surahs.length + 1,
+      itemBuilder: (context, rawIdx) {
+        if (rawIdx == 0) {
+          return GestureDetector(
+            onTap: () {
+              final nav = Navigator.of(context);
+              nav.pop();
+              nav.push(MaterialPageRoute(builder: (_) => const QuranReaderScreen()));
+            },
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    accent.withOpacity(palette.isDark ? 0.28 : 0.18),
+                    palette.cardColor,
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: accent, width: 1.4),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: accent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.auto_stories_rounded, color: palette.onAccentColor, size: 18),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "قراءة المصحف الشريف كاملاً (١١٤ سورة)",
+                          style: TextStyle(
+                            color: palette.textPrimary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        Text(
+                          "بحث في الآيات • علامة القراءة • تلاوة القراء",
+                          style: TextStyle(color: palette.textSecondary, fontSize: 10.5),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward_ios_rounded, color: accent, size: 15),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final surah = surahs[rawIdx - 1];
         final isCurrent = player.currentAudioId == "surah_${surah.number}";
         final isPlayingThis = isCurrent && player.isPlaying;
+        final isLoadingThis = isCurrent && player.isLoading;
+        final cacheKey = IslamicAudioLibrary.surahCacheKey(
+          player.selectedReciter.id,
+          surah.number,
+        );
+        final streamUrl = IslamicAudioLibrary.getSurahUrl(
+          player.selectedReciter.id,
+          surah.number,
+        );
+        final isOfflineReady = player.isSurahOfflineReady(surah.number);
+        final downloadProg = player.downloadProgressFor(cacheKey);
 
         return Container(
           margin: const EdgeInsets.only(bottom: 6),
@@ -324,9 +438,10 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
           ),
           child: ListTile(
             dense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
             leading: Container(
-              width: 36,
-              height: 36,
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(color: isCurrent ? accent : palette.dividerColor),
@@ -338,7 +453,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                   style: TextStyle(
                     color: isCurrent ? accent : palette.textSecondary,
                     fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                    fontSize: 11.5,
                   ),
                 ),
               ),
@@ -348,38 +463,119 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
               style: TextStyle(
                 color: isCurrent ? accent : palette.textPrimary,
                 fontWeight: FontWeight.bold,
-                fontSize: 15,
+                fontSize: 14.5,
               ),
             ),
-            subtitle: Text(
-              "${surah.isMakki ? 'مكية' : 'مدنية'} • ${surah.versesCount} آيات • ${surah.defaultDuration}",
-              style: TextStyle(
-                color: palette.textSecondary,
-                fontSize: 11,
-              ),
+            subtitle: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 6,
+              runSpacing: 2,
+              children: [
+                Text(
+                  "${surah.isMakki ? 'مكية' : 'مدنية'} • ${surah.versesCount} آية • ${surah.defaultDuration}",
+                  style: TextStyle(
+                    color: palette.textSecondary,
+                    fontSize: 10.5,
+                  ),
+                ),
+                if (isOfflineReady)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: offlineBadgeColor.withOpacity(0.16),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: offlineBadgeColor.withOpacity(0.5), width: 0.7),
+                    ),
+                    child: Text(
+                      "بدون نت ✓",
+                      style: TextStyle(
+                        color: offlineBadgeColor,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-            trailing: GestureDetector(
-              onTap: () {
-                if (isCurrent) {
-                  player.togglePlay();
-                } else {
-                  player.playSurah(surah);
-                }
-              },
-              child: Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: isPlayingThis ? accent : accent.withOpacity(0.15),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: accent.withOpacity(0.8)),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  constraints: const BoxConstraints(),
+                  padding: const EdgeInsets.all(5),
+                  icon: Icon(Icons.auto_stories_rounded, color: accent.withOpacity(0.9), size: 19),
+                  tooltip: "قراءة السورة",
+                  onPressed: () {
+                    final nav = Navigator.of(context);
+                    nav.pop();
+                    nav.push(
+                      MaterialPageRoute(
+                        builder: (_) => QuranReaderScreen(initialSurahNumber: surah.number),
+                      ),
+                    );
+                  },
                 ),
-                child: Icon(
-                  isPlayingThis ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                  color: isPlayingThis ? palette.onAccentColor : accent,
-                  size: 22,
+                if (player.supportsOfflineDownload && !isOfflineReady)
+                  downloadProg != null
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              value: downloadProg,
+                              strokeWidth: 2.2,
+                              color: accent,
+                            ),
+                          ),
+                        )
+                      : IconButton(
+                          constraints: const BoxConstraints(),
+                          padding: const EdgeInsets.all(5),
+                          icon: Icon(
+                            Icons.download_for_offline_rounded,
+                            color: palette.textSecondary,
+                            size: 19,
+                          ),
+                          tooltip: "حفظ للاستماع بدون نت",
+                          onPressed: () => player.downloadTrackForOffline(cacheKey, streamUrl),
+                        ),
+                const SizedBox(width: 2),
+                GestureDetector(
+                  onTap: () {
+                    if (isCurrent) {
+                      player.togglePlay();
+                    } else {
+                      player.playSurah(surah);
+                    }
+                  },
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: isPlayingThis ? accent : accent.withOpacity(0.15),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: accent.withOpacity(0.8)),
+                    ),
+                    child: Center(
+                      child: isLoadingThis
+                          ? SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: accent,
+                              ),
+                            )
+                          : Icon(
+                              isPlayingThis ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                              color: isPlayingThis ? palette.onAccentColor : accent,
+                              size: 21,
+                            ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         );
@@ -389,6 +585,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
 
   Widget _buildRuqyahList(AudioPlayerProvider player, ThemePalette palette) {
     final accent = palette.accentColor;
+    final offlineBadgeColor = palette.isDark ? const Color(0xFF34D399) : const Color(0xFF047857);
     const ruqyahItems = IslamicAudioLibrary.allRuqyah;
 
     return ListView.builder(
@@ -399,6 +596,9 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
         final item = ruqyahItems[idx];
         final isCurrent = player.currentAudioId == item.id;
         final isPlayingThis = isCurrent && player.isPlaying;
+        final isLoadingThis = isCurrent && player.isLoading;
+        final isOfflineReady = player.isItemOfflineReady(item.id, item.localAsset);
+        final downloadProg = player.downloadProgressFor(item.id);
 
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
@@ -436,17 +636,69 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                           item.title,
                           style: TextStyle(
                             color: isCurrent ? accent : palette.textPrimary,
-                            fontSize: 15,
+                            fontSize: 14.5,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        Text(
-                          "${item.reciter} • ${item.duration}",
-                          style: TextStyle(color: palette.textSecondary, fontSize: 11),
+                        Wrap(
+                          spacing: 6,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(
+                              "${item.reciter} • ${item.duration}",
+                              style: TextStyle(color: palette.textSecondary, fontSize: 11),
+                            ),
+                            if (isOfflineReady)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: offlineBadgeColor.withOpacity(0.16),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: offlineBadgeColor.withOpacity(0.5),
+                                    width: 0.7,
+                                  ),
+                                ),
+                                child: Text(
+                                  "بدون نت ✓",
+                                  style: TextStyle(
+                                    color: offlineBadgeColor,
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ],
                     ),
                   ),
+                  if (player.supportsOfflineDownload && !isOfflineReady)
+                    downloadProg != null
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            child: SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                value: downloadProg,
+                                strokeWidth: 2.2,
+                                color: accent,
+                              ),
+                            ),
+                          )
+                        : IconButton(
+                            constraints: const BoxConstraints(),
+                            padding: const EdgeInsets.all(6),
+                            icon: Icon(
+                              Icons.download_for_offline_rounded,
+                              color: palette.textSecondary,
+                              size: 20,
+                            ),
+                            tooltip: "تحميل للاستماع بدون نت",
+                            onPressed: () =>
+                                player.downloadTrackForOffline(item.id, item.streamUrl),
+                          ),
                   GestureDetector(
                     onTap: () {
                       if (isCurrent) {
@@ -456,17 +708,28 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                       }
                     },
                     child: Container(
-                      width: 40,
-                      height: 40,
+                      width: 38,
+                      height: 38,
                       decoration: BoxDecoration(
                         color: isPlayingThis ? accent : accent.withOpacity(0.18),
                         shape: BoxShape.circle,
                         border: Border.all(color: accent),
                       ),
-                      child: Icon(
-                        isPlayingThis ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                        color: isPlayingThis ? palette.onAccentColor : accent,
-                        size: 22,
+                      child: Center(
+                        child: isLoadingThis
+                            ? SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: accent,
+                                ),
+                              )
+                            : Icon(
+                                isPlayingThis ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                                color: isPlayingThis ? palette.onAccentColor : accent,
+                                size: 22,
+                              ),
                       ),
                     ),
                   ),
@@ -497,6 +760,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
 
   Widget _buildIbtihalatList(AudioPlayerProvider player, ThemePalette palette) {
     final accent = palette.accentColor;
+    final offlineBadgeColor = palette.isDark ? const Color(0xFF34D399) : const Color(0xFF047857);
     const ibtihalat = IslamicAudioLibrary.allIbtihalat;
 
     return ListView.builder(
@@ -507,6 +771,9 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
         final item = ibtihalat[idx];
         final isCurrent = player.currentAudioId == item.id;
         final isPlayingThis = isCurrent && player.isPlaying;
+        final isLoadingThis = isCurrent && player.isLoading;
+        final isOfflineReady = player.isItemOfflineReady(item.id, item.localAsset);
+        final downloadProg = player.downloadProgressFor(item.id);
 
         return Container(
           margin: const EdgeInsets.only(bottom: 8),
@@ -528,35 +795,100 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
               style: TextStyle(
                 color: isCurrent ? accent : palette.textPrimary,
                 fontWeight: FontWeight.bold,
-                fontSize: 14,
+                fontSize: 13.5,
               ),
             ),
-            subtitle: Text(
-              "${item.reciter} • ${item.maqam} • ${item.duration}",
-              style: TextStyle(color: palette.textSecondary, fontSize: 11),
+            subtitle: Wrap(
+              spacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  "${item.reciter} • ${item.maqam} • ${item.duration}",
+                  style: TextStyle(color: palette.textSecondary, fontSize: 10.5),
+                ),
+                if (isOfflineReady)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: offlineBadgeColor.withOpacity(0.16),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: offlineBadgeColor.withOpacity(0.5), width: 0.7),
+                    ),
+                    child: Text(
+                      "بدون نت ✓",
+                      style: TextStyle(
+                        color: offlineBadgeColor,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-            trailing: GestureDetector(
-              onTap: () {
-                if (isCurrent) {
-                  player.togglePlay();
-                } else {
-                  player.playIbtihal(item);
-                }
-              },
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: isPlayingThis ? accent : accent.withOpacity(0.15),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: accent),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (player.supportsOfflineDownload && !isOfflineReady)
+                  downloadProg != null
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              value: downloadProg,
+                              strokeWidth: 2.2,
+                              color: accent,
+                            ),
+                          ),
+                        )
+                      : IconButton(
+                          constraints: const BoxConstraints(),
+                          padding: const EdgeInsets.all(5),
+                          icon: Icon(
+                            Icons.download_for_offline_rounded,
+                            color: palette.textSecondary,
+                            size: 19,
+                          ),
+                          tooltip: "تحميل للاستماع بدون نت",
+                          onPressed: () =>
+                              player.downloadTrackForOffline(item.id, item.streamUrl),
+                        ),
+                GestureDetector(
+                  onTap: () {
+                    if (isCurrent) {
+                      player.togglePlay();
+                    } else {
+                      player.playIbtihal(item);
+                    }
+                  },
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: isPlayingThis ? accent : accent.withOpacity(0.15),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: accent),
+                    ),
+                    child: Center(
+                      child: isLoadingThis
+                          ? SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: accent,
+                              ),
+                            )
+                          : Icon(
+                              isPlayingThis ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                              color: isPlayingThis ? palette.onAccentColor : accent,
+                              size: 20,
+                            ),
+                    ),
+                  ),
                 ),
-                child: Icon(
-                  isPlayingThis ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                  color: isPlayingThis ? palette.onAccentColor : accent,
-                  size: 20,
-                ),
-              ),
+              ],
             ),
           ),
         );
@@ -568,6 +900,17 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        _buildShortcutTile(
+          icon: Icons.auto_stories_rounded,
+          title: "المصحف الشريف الكامل (١١٤ سورة)",
+          subtitle: "تلاوة وقراءة بالبحث وتحديد الآيات",
+          palette: palette,
+          onTap: () {
+            final nav = Navigator.of(context);
+            nav.pop();
+            nav.push(MaterialPageRoute(builder: (_) => const QuranReaderScreen()));
+          },
+        ),
         _buildShortcutTile(
           icon: Icons.wb_sunny_rounded,
           title: "أذكار الصباح والمساء المصورة",

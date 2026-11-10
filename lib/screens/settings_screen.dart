@@ -5,7 +5,8 @@ import '../models/font_catalog.dart';
 import '../providers/settings_provider.dart';
 import '../services/location_service.dart';
 import '../theme/islamic_theme.dart';
-import '../widgets/islamic_pattern_painter.dart';
+import '../widgets/islamic_theme_effects_canvas.dart';
+import '../widgets/real_mosque_background.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -572,23 +573,99 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
     final isNight = settings.isNightEffective;
-    final palette = IslamicTheme.resolvePalette(settings.selectedTheme, isNight: isNight);
+    final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
+    final palette = themeOption.resolve(isNight: isNight);
     final accentColor = palette.accentColor;
     final currentFont = FontCatalog.getByFamily(settings.selectedFont);
 
     return Scaffold(
       backgroundColor: palette.scaffoldColor,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        backgroundColor: palette.cardColor.withOpacity(isNight ? 0.78 : 0.88),
+        elevation: 0,
         title: const Text("إعدادات الفردوس والتخصيص"),
       ),
-      body: AnimatedIslamicBackground(
-        accentColor: accentColor,
-        backgroundColor: palette.scaffoldColor,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 100),
-          physics: const BouncingScrollPhysics(),
-          children: [
-            // 0. الوضع الليلي والنهاري لجميع الثيمات الـ 12
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: RealMosqueBackground(
+              currentPrayer: isNight ? Prayer.isha : Prayer.dhuhr,
+              themeOption: themeOption,
+              isNightMode: isNight,
+            ),
+          ),
+          Positioned.fill(
+            child: IslamicThemeEffectsCanvas(
+              themeOption: themeOption,
+              isNightMode: isNight,
+            ),
+          ),
+          SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 100),
+              physics: const BouncingScrollPhysics(),
+              children: [
+                // بطاقة هوية الفردوس وشعار القصر
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: palette.cardColor.withOpacity(isNight ? 0.85 : 0.90),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: accentColor.withOpacity(0.5), width: 1.4),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: accentColor, width: 2.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: accentColor.withOpacity(0.35),
+                              blurRadius: 12,
+                            ),
+                          ],
+                        ),
+                        child: ClipOval(
+                          child: Image.asset(
+                            'assets/images/palace_jannah_logo.png',
+                            width: 52,
+                            height: 52,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                Icon(Icons.castle_rounded, color: accentColor, size: 26),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "تطبيق الفردوس الإسلامي الشامل",
+                              style: TextStyle(
+                                color: accentColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15.5,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              "الثيم النشط: ${themeOption.name} • الوضع ${isNight ? 'الليلي' : 'النهاري'}",
+                              style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // 0. الوضع الليلي والنهاري لجميع الثيمات الـ 12
             _buildSectionHeader("الإضاءة والمظهر (ليلي / نهاري لكل الثيمات)", accentColor),
             _buildCard(palette, [
               Padding(
@@ -1101,7 +1178,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
       ),
-    );
+    ],
+  ),
+);
   }
 
   Widget _buildBrightnessOption({
@@ -1173,7 +1252,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildCard(ThemePalette palette, List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
-        color: palette.cardColor.withOpacity(0.92),
+        color: palette.cardColor.withOpacity(palette.isDark ? 0.85 : 0.90),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: palette.dividerColor),
         boxShadow: [

@@ -2,122 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
+import 'quran_reader_screen.dart';
 
 class QuranAzkarSheet {
-  static void showQuranReader(BuildContext context, Color accentColor) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        final settings = Provider.of<SettingsProvider>(context, listen: false);
-        final palette = IslamicTheme.resolvePalette(
-          settings.selectedTheme,
-          isNight: settings.isNightEffective,
-        );
-        final accent = palette.accentColor;
-
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.85,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: palette.scaffoldColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border.all(color: accent.withOpacity(0.45), width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: (palette.isDark ? Colors.black : palette.primaryColor)
-                    .withOpacity(palette.isDark ? 0.85 : 0.22),
-                blurRadius: 30,
-              )
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 4.5,
-                  decoration: BoxDecoration(
-                    color: palette.dividerColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: accent.withOpacity(0.20),
-                      border: Border.all(color: accent, width: 1.2),
-                    ),
-                    child: Icon(Icons.menu_book_rounded, color: accent, size: 22),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "القرآن الكريم • آيات مباركة وسور الحفظ",
-                          style: TextStyle(
-                            color: accent,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        Text(
-                          "«خيركم من تعلم القرآن وعلمه» (صحيح البخاري)",
-                          style: TextStyle(color: palette.textSecondary, fontSize: 11),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              Divider(color: palette.dividerColor, height: 24),
-              Expanded(
-                child: ListView(
-                  physics: const BouncingScrollPhysics(),
-                  children: [
-                    _buildSurahCard(
-                      "سورة الفاتحة (أم الكتاب والسبع المثاني)",
-                      "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ ۝ الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ ۝ الرَّحْمَٰنِ الرَّحِيمِ ۝ مَالِكِ يَوْمِ الدِّينِ ۝ إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ ۝ اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ ۝ صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ ۝",
-                      "فضلها: أعظم سورة في كتاب الله، لا تصح الصلاة إلا بها، وهي الشافية الكافية.",
-                      palette,
-                    ),
-                    const SizedBox(height: 14),
-                    _buildSurahCard(
-                      "آية الكرسي (أعظم آية في كتاب الله)",
-                      "اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَن ذَا الَّذِي يَشْفَعُ عِندَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ",
-                      "فضلها: من قرأها دبر كل صلاة مكتوبة لم يمنعه من دخول الجنة إلا أن يموت.",
-                      palette,
-                    ),
-                    const SizedBox(height: 14),
-                    _buildSurahCard(
-                      "سورة الإخلاص (تعدل ثلث القرآن)",
-                      "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\nقُلْ هُوَ اللَّهُ أَحَدٌ ۝ اللَّهُ الصَّمَدُ ۝ لَمْ يَلِدْ وَلَمْ يُولَدْ ۝ وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ ۝",
-                      "فضلها: صفة الرحمن، وحبها يوجب محبة الله ودخول الجنة، وتعدل قراءتها ثلث القرآن.",
-                      palette,
-                    ),
-                    const SizedBox(height: 14),
-                    _buildSurahCard(
-                      "المعوذتان (الفلق والناس)",
-                      "قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ ۝ مِن شَرِّ مَا خَلَقَ ۝ وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ ۝ وَمِن شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ ۝ وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ ۝\n\nقُلْ أَعُوذُ بِرَبِّ النَّاسِ ۝ مَلِكِ النَّاسِ ۝ إِلَٰهِ النَّاسِ ۝ مِن شَرِّ الْوَسْوَاسِ الْخَنَّاسِ ۝ الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ ۝ مِنَ الْجِنَّةِ وَالنَّاسِ ۝",
-                      "فضلها: ما تعوذ متعوذ بمثلهما قط، حصن للمسلم من العين والسحر والوساوس.",
-                      palette,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+  static void showQuranReader(
+    BuildContext context,
+    Color accentColor, {
+    int? initialSurahNumber,
+  }) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => QuranReaderScreen(initialSurahNumber: initialSurahNumber),
+      ),
     );
   }
 
@@ -235,72 +131,6 @@ class QuranAzkarSheet {
           ),
         );
       },
-    );
-  }
-
-  static Widget _buildSurahCard(
-    String title,
-    String text,
-    String virtue,
-    ThemePalette palette,
-  ) {
-    final accentColor = palette.accentColor;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: palette.cardColor,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: accentColor.withOpacity(0.35)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.stars_rounded, color: accentColor, size: 18),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    color: accentColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: palette.elevatedCardColor,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Text(
-              text,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: palette.isDark ? const Color(0xFFFDE68A) : palette.primaryColor,
-                fontSize: 18,
-                height: 1.8,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            virtue,
-            style: TextStyle(
-              color: palette.textSecondary,
-              fontSize: 11.5,
-              height: 1.4,
-            ),
-          ),
-        ],
-      ),
     );
   }
 

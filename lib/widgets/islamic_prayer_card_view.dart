@@ -163,6 +163,7 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
                   prayer: prevPrayer,
                   time: prevTime,
                   palette: palette,
+                  statusLabel: prevPrayer == widget.currentPrayer ? "حالية • تفاصيل" : "فاتت • تفاصيل",
                 ),
               ),
 
@@ -188,6 +189,7 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
                   prayer: nextNextPrayer,
                   time: nextNextTime,
                   palette: palette,
+                  statusLabel: "التالية • تفاصيل",
                 ),
               ),
             ],
@@ -425,6 +427,16 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
                     ),
                   ),
                 ),
+                const SizedBox(height: 5),
+                Text(
+                  "اضغط لتفاصيلها وسننها",
+                  style: TextStyle(
+                    color: palette.textSecondary,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
           ),
@@ -437,6 +449,7 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
     required Prayer prayer,
     required DateTime time,
     required ThemePalette palette,
+    required String statusLabel,
   }) {
     final accent = palette.accentColor;
     final cardBg = palette.cardColor;
@@ -494,6 +507,18 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              statusLabel,
+              style: TextStyle(
+                color: palette.textSecondary,
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

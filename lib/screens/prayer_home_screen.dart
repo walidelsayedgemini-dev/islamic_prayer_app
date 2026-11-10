@@ -55,14 +55,88 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     return "${twoDigits(duration.inHours)}:${twoDigits(duration.inMinutes.remainder(60))}:${twoDigits(duration.inSeconds.remainder(60))}";
   }
 
+  Prayer? _resolvePrayerEnum(String rawKey) {
+    final norm = rawKey.trim().toLowerCase();
+    switch (norm) {
+      case 'fajr':
+      case 'الفجر':
+      case 'صلاة الفجر':
+        return Prayer.fajr;
+      case 'sunrise':
+      case 'الشروق':
+      case 'وقت الشروق':
+        return Prayer.sunrise;
+      case 'dhuhr':
+      case 'الظهر':
+      case 'صلاة الظهر':
+        return Prayer.dhuhr;
+      case 'asr':
+      case 'العصر':
+      case 'صلاة العصر':
+        return Prayer.asr;
+      case 'maghrib':
+      case 'المغرب':
+      case 'صلاة المغرب':
+        return Prayer.maghrib;
+      case 'isha':
+      case 'العشاء':
+      case 'صلاة العشاء':
+        return Prayer.isha;
+      default:
+        return null;
+    }
+  }
+
+  String _resolveSpecialInfoKey(String rawKey) {
+    final trimmed = rawKey.trim();
+    if (PrayerInfo.data.containsKey(trimmed)) return trimmed;
+    if (trimmed.contains('الضحى')) return 'صلاة الضحى';
+    if (trimmed.contains('منتصف الليل')) return 'منتصف الليل الشرعي';
+    if (trimmed.contains('ثلث الليل') || trimmed.contains('قيام الليل')) {
+      return 'ثلث الليل الأخير';
+    }
+    return trimmed;
+  }
+
+  void _openPrayerSheet(
+    BuildContext context,
+    String rawKey,
+    ThemePalette palette,
+    AdvancedPrayerTimes prayerData, {
+    DateTime? customTime,
+  }) {
+    final prayer = _resolvePrayerEnum(rawKey);
+    if (prayer != null) {
+      final pTime = prayerData.prayerTimes.timeForPrayer(prayer);
+      final current = prayerData.prayerTimes.currentPrayer();
+      final isCurrent = current == prayer;
+      final now = DateTime.now();
+      final isPassed = !isCurrent && (pTime != null && pTime.isBefore(now));
+      Prayer22DetailsSheet.show(
+        context,
+        prayer,
+        palette.accentColor,
+        prayerTime: pTime,
+        isPassed: isPassed,
+        isCurrent: isCurrent,
+      );
+      return;
+    }
+
+    final resolvedKey = _resolveSpecialInfoKey(rawKey);
+    _showPrayerDetails(context, resolvedKey, palette, time: customTime);
+  }
+
   void _showPrayerDetails(
     BuildContext context,
     String prayerKey,
-    ThemePalette palette,
-  ) {
-    final info = PrayerInfo.data[prayerKey];
+    ThemePalette palette, {
+    DateTime? time,
+  }) {
+    final info = PrayerInfo.data[_resolveSpecialInfoKey(prayerKey)];
     if (info == null) return;
     final accentColor = palette.accentColor;
+    final bool isPassed = time != null && time.isBefore(DateTime.now());
 
     showModalBottomSheet(
       context: context,
@@ -126,6 +200,43 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 ],
               ),
               const SizedBox(height: 18),
+              if (time != null) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: (isPassed ? const Color(0xFFFBBF24) : accentColor)
+                        .withOpacity(palette.isDark ? 0.14 : 0.10),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: (isPassed ? const Color(0xFFFBBF24) : accentColor).withOpacity(0.45),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isPassed ? Icons.history_rounded : Icons.schedule_rounded,
+                        color: isPassed ? const Color(0xFFFBBF24) : accentColor,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          isPassed
+                              ? "فات وقته اليوم (${DateFormat('hh:mm a').format(time)}) • تصفح فضله وأدعيته"
+                              : "موعده اليوم: ${DateFormat('hh:mm a').format(time)}",
+                          style: TextStyle(
+                            color: palette.textPrimary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               Divider(color: palette.dividerColor),
               const SizedBox(height: 10),
               _buildDetailRow(
@@ -357,7 +468,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                       ),
                       child: Row(
                         children: [
-                          // زر فتح القائمة الجانبية
+                          // زر فتح القائمة الجانبية الوحيد
                           GestureDetector(
                             onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
                             child: Container(
@@ -368,6 +479,33 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                                 border: Border.all(color: accentColor, width: 1.4),
                               ),
                               child: Icon(Icons.menu_rounded, color: accentColor, size: 20),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+
+                          // شعار قصر في الجنة بجانب هوية الفردوس
+                          Container(
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: accentColor, width: 1.4),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: accentColor.withOpacity(0.28),
+                                  blurRadius: 6,
+                                ),
+                              ],
+                            ),
+                            child: ClipOval(
+                              child: Image.asset(
+                                'assets/images/palace_jannah_logo.png',
+                                width: 30,
+                                height: 30,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) =>
+                                    Icon(Icons.castle_rounded, color: accentColor, size: 16),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -566,7 +704,8 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                                 ),
                               );
                             },
-                            onPrayerTap: (prayerKey) => _showPrayerDetails(context, prayerKey, palette),
+                            onPrayerTap: (prayerKey) =>
+                                _openPrayerSheet(context, prayerKey, palette, prayerData),
                           ),
                           const SizedBox(height: 120),
                         ],
@@ -668,7 +807,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                           ),
                         ),
 
-                        // شريط المعاينة الأفقية السريعة
+                        // شريط المعاينة الأفقية السريعة (كل صلاة قابلة للضغط حتى الفائتة)
                         Container(
                           height: 48,
                           margin: const EdgeInsets.symmetric(vertical: 8),
@@ -676,12 +815,12 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                             scrollDirection: Axis.horizontal,
                             physics: const BouncingScrollPhysics(),
                             children: [
-                              _buildQuickPrayerChip("الفجر", prayerData.prayerTimes.fajr, currentPrayer == Prayer.fajr, palette),
-                              _buildQuickPrayerChip("الشروق", prayerData.prayerTimes.sunrise, currentPrayer == Prayer.sunrise, palette),
-                              _buildQuickPrayerChip("الظهر", prayerData.prayerTimes.dhuhr, currentPrayer == Prayer.dhuhr, palette),
-                              _buildQuickPrayerChip("العصر", prayerData.prayerTimes.asr, currentPrayer == Prayer.asr, palette),
-                              _buildQuickPrayerChip("المغرب", prayerData.prayerTimes.maghrib, currentPrayer == Prayer.maghrib, palette),
-                              _buildQuickPrayerChip("العشاء", prayerData.prayerTimes.isha, currentPrayer == Prayer.isha, palette),
+                              _buildQuickPrayerChip("الفجر", prayerData.prayerTimes.fajr, currentPrayer == Prayer.fajr, palette, prayerData),
+                              _buildQuickPrayerChip("الشروق", prayerData.prayerTimes.sunrise, currentPrayer == Prayer.sunrise, palette, prayerData),
+                              _buildQuickPrayerChip("الظهر", prayerData.prayerTimes.dhuhr, currentPrayer == Prayer.dhuhr, palette, prayerData),
+                              _buildQuickPrayerChip("العصر", prayerData.prayerTimes.asr, currentPrayer == Prayer.asr, palette, prayerData),
+                              _buildQuickPrayerChip("المغرب", prayerData.prayerTimes.maghrib, currentPrayer == Prayer.maghrib, palette, prayerData),
+                              _buildQuickPrayerChip("العشاء", prayerData.prayerTimes.isha, currentPrayer == Prayer.isha, palette, prayerData),
                             ],
                           ),
                         ),
@@ -748,40 +887,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
               },
             ),
 
-            // 4. زر القائمة الجانبية الدائري العائم
-            Positioned(
-              top: MediaQuery.of(context).size.height * 0.16,
-              left: 10,
-              child: GestureDetector(
-                onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: palette.cardColor.withOpacity(0.95),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: accentColor, width: 1.8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (isNight ? Colors.black : palette.primaryColor)
-                            .withOpacity(isNight ? 0.55 : 0.2),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                      BoxShadow(
-                        color: accentColor.withOpacity(0.28),
-                        blurRadius: 8,
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Icon(Icons.menu_rounded, color: accentColor, size: 22),
-                  ),
-                ),
-              ),
-            ),
-
-            // 5. شريط المشغل الصوتي العائم
+            // 4. شريط المشغل الصوتي العائم
             Positioned(
               left: 0,
               right: 0,
@@ -807,13 +913,21 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     bool isSunnah = false,
   }) {
     final isCurrent = currentPrayer == prayerType;
+    final isPassed = !isCurrent && time.isBefore(DateTime.now());
     final accentColor = palette.accentColor;
     final info = PrayerInfo.data[name];
 
     Widget cardContent = Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => Prayer22DetailsSheet.show(context, prayerType, accentColor),
+        onTap: () => Prayer22DetailsSheet.show(
+          context,
+          prayerType,
+          accentColor,
+          prayerTime: time,
+          isPassed: isPassed,
+          isCurrent: isCurrent,
+        ),
         borderRadius: BorderRadius.circular(16),
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 4),
@@ -821,7 +935,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
           decoration: BoxDecoration(
             color: isCurrent
                 ? accentColor.withOpacity(palette.isDark ? 0.24 : 0.16)
-                : palette.cardColor,
+                : palette.cardColor.withOpacity(palette.isDark ? 0.88 : 0.94),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isCurrent ? accentColor : palette.dividerColor,
@@ -836,8 +950,14 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 child: Icon(
                   isCurrent
                       ? Icons.volume_up_rounded
-                      : (isSunnah ? Icons.wb_sunny_rounded : Icons.access_time_rounded),
-                  color: isCurrent ? accentColor : palette.textMuted,
+                      : (isPassed
+                          ? Icons.history_rounded
+                          : (isSunnah ? Icons.wb_sunny_rounded : Icons.access_time_rounded)),
+                  color: isCurrent
+                      ? accentColor
+                      : (isPassed
+                          ? (palette.isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309))
+                          : palette.textMuted),
                   size: 22,
                 ),
               ),
@@ -912,21 +1032,44 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: accentColor.withOpacity(0.16),
+                      color: (isPassed && !isCurrent
+                              ? (palette.isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309))
+                              : accentColor)
+                          .withOpacity(0.16),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: accentColor.withOpacity(0.45), width: 0.8),
+                      border: Border.all(
+                        color: (isPassed && !isCurrent
+                                ? (palette.isDark
+                                    ? const Color(0xFFFBBF24)
+                                    : const Color(0xFFB45309))
+                                : accentColor)
+                            .withOpacity(0.45),
+                        width: 0.8,
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.auto_awesome_rounded, size: 11, color: accentColor),
+                        Icon(
+                          isPassed ? Icons.info_outline_rounded : Icons.auto_awesome_rounded,
+                          size: 11,
+                          color: isPassed && !isCurrent
+                              ? (palette.isDark
+                                  ? const Color(0xFFFBBF24)
+                                  : const Color(0xFFB45309))
+                              : accentColor,
+                        ),
                         const SizedBox(width: 4),
                         Text(
-                          "فضل الصلاة وسننها 📜",
+                          isPassed ? "فات موعدها • التفاصيل 📜" : "فضل الصلاة وسننها 📜",
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: accentColor,
+                            color: isPassed && !isCurrent
+                                ? (palette.isDark
+                                    ? const Color(0xFFFBBF24)
+                                    : const Color(0xFFB45309))
+                                : accentColor,
                           ),
                         ),
                       ],
@@ -956,48 +1099,78 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     DateTime time,
     bool isCurrent,
     ThemePalette palette,
+    AdvancedPrayerTimes prayerData,
   ) {
     final accentColor = palette.accentColor;
+    final isPassed = !isCurrent && time.isBefore(DateTime.now());
+    final chipBorderColor = isCurrent
+        ? accentColor
+        : (isPassed ? accentColor.withOpacity(0.32) : palette.dividerColor);
+
     return Container(
       margin: const EdgeInsets.only(left: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
+      child: Material(
         color: isCurrent
             ? accentColor.withOpacity(palette.isDark ? 0.25 : 0.16)
             : palette.cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isCurrent ? accentColor : palette.dividerColor,
-          width: isCurrent ? 1.5 : 1.0,
+        child: InkWell(
+          onTap: () => _openPrayerSheet(context, name, palette, prayerData),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: chipBorderColor,
+                width: isCurrent ? 1.5 : 1.0,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isCurrent
+                      ? Icons.access_time_filled_rounded
+                      : (isPassed ? Icons.history_rounded : Icons.access_time_rounded),
+                  color: isCurrent
+                      ? accentColor
+                      : (isPassed ? accentColor.withOpacity(0.85) : palette.textMuted),
+                  size: 14,
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  name,
+                  style: TextStyle(
+                    color: isCurrent ? accentColor : palette.textSecondary,
+                    fontSize: 11,
+                    fontWeight: isCurrent ? FontWeight.bold : FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  DateFormat('hh:mm a').format(time),
+                  style: TextStyle(
+                    color: isCurrent ? palette.textPrimary : palette.textMuted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (isPassed) ...[
+                  const SizedBox(width: 4),
+                  Text(
+                    "• تفاصيل",
+                    style: TextStyle(
+                      color: accentColor.withOpacity(0.85),
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            isCurrent ? Icons.access_time_filled_rounded : Icons.access_time_rounded,
-            color: isCurrent ? accentColor : palette.textMuted,
-            size: 14,
-          ),
-          const SizedBox(width: 5),
-          Text(
-            name,
-            style: TextStyle(
-              color: isCurrent ? accentColor : palette.textSecondary,
-              fontSize: 11,
-              fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            DateFormat('hh:mm a').format(time),
-            style: TextStyle(
-              color: isCurrent ? palette.textPrimary : palette.textMuted,
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -1009,12 +1182,14 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     ThemePalette palette,
   ) {
     final accentColor = palette.accentColor;
-    final info = PrayerInfo.data[name];
+    final resolvedKey = _resolveSpecialInfoKey(name);
+    final info = PrayerInfo.data[resolvedKey];
+    final isPassed = time.isBefore(DateTime.now());
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => _showPrayerDetails(context, name, palette),
+        onTap: () => _showPrayerDetails(context, resolvedKey, palette, time: time),
         borderRadius: BorderRadius.circular(12),
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 3),
@@ -1044,7 +1219,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                     ),
                     if (info != null)
                       Text(
-                        info.summary,
+                        isPassed ? "فات وقته اليوم • ${info.summary}" : info.summary,
                         style: TextStyle(color: palette.textMuted, fontSize: 10),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

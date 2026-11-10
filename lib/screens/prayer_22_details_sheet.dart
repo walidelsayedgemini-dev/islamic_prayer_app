@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:adhan/adhan.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import 'package:provider/provider.dart';
 import '../models/prayer_identity_model.dart';
 import '../providers/settings_provider.dart';
@@ -9,19 +10,38 @@ import '../theme/islamic_theme.dart';
 class Prayer22DetailsSheet extends StatefulWidget {
   final Prayer prayer;
   final Color accentColor;
+  final DateTime? prayerTime;
+  final bool isPassed;
+  final bool isCurrent;
 
   const Prayer22DetailsSheet({
     super.key,
     required this.prayer,
     required this.accentColor,
+    this.prayerTime,
+    this.isPassed = false,
+    this.isCurrent = false,
   });
 
-  static void show(BuildContext context, Prayer prayer, Color accentColor) {
+  static void show(
+    BuildContext context,
+    Prayer prayer,
+    Color accentColor, {
+    DateTime? prayerTime,
+    bool isPassed = false,
+    bool isCurrent = false,
+  }) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) => Prayer22DetailsSheet(prayer: prayer, accentColor: accentColor),
+      builder: (_) => Prayer22DetailsSheet(
+        prayer: prayer,
+        accentColor: accentColor,
+        prayerTime: prayerTime,
+        isPassed: isPassed,
+        isCurrent: isCurrent,
+      ),
     );
   }
 
@@ -153,6 +173,10 @@ class _Prayer22DetailsSheetState extends State<Prayer22DetailsSheet> {
                 info.subtitle,
                 style: TextStyle(color: palette.textSecondary, fontSize: 13, height: 1.4),
               ),
+              if (widget.prayerTime != null || widget.isPassed || widget.isCurrent) ...[
+                const SizedBox(height: 12),
+                _buildTimingStatusBanner(palette),
+              ],
               const SizedBox(height: 16),
               Divider(color: palette.dividerColor),
               const SizedBox(height: 8),
@@ -232,6 +256,70 @@ class _Prayer22DetailsSheetState extends State<Prayer22DetailsSheet> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildTimingStatusBanner(ThemePalette palette) {
+    final accent = palette.accentColor;
+    final formattedTime =
+        widget.prayerTime != null ? DateFormat('hh:mm a').format(widget.prayerTime!) : null;
+    final Color statusColor = widget.isCurrent
+        ? (palette.isDark ? const Color(0xFF34D399) : const Color(0xFF047857))
+        : (widget.isPassed
+            ? (palette.isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309))
+            : accent);
+    final IconData statusIcon = widget.isCurrent
+        ? Icons.volume_up_rounded
+        : (widget.isPassed ? Icons.history_rounded : Icons.schedule_rounded);
+    final String statusTitle = widget.isCurrent
+        ? "الوقت الحالي الآن${formattedTime != null ? ' • أذّن في $formattedTime' : ''}"
+        : (widget.isPassed
+            ? "فات موعدها اليوم${formattedTime != null ? ' ($formattedTime)' : ''}"
+            : "موعدها اليوم: ${formattedTime ?? ''}");
+    final String statusSub = widget.isCurrent
+        ? "بادر إلى أداء الصلاة والسنن في أول وقتها تنل أعظم الأجر."
+        : (widget.isPassed
+            ? "من نام عن صلاة أو نسيها فليصلها إذا ذكرها، وتصفح فضائلها وسننها وأذكارها أدناه."
+            : "استعد لها بإسباغ الوضوء وترديد الأذان والدعاء بعده.");
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      decoration: BoxDecoration(
+        color: statusColor.withOpacity(palette.isDark ? 0.14 : 0.10),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: statusColor.withOpacity(0.5)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(statusIcon, color: statusColor, size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  statusTitle,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  statusSub,
+                  style: TextStyle(
+                    color: palette.textSecondary,
+                    fontSize: 11.5,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

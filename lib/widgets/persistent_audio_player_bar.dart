@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/audio_player_provider.dart';
+import '../screens/quran_reader_screen.dart';
 import '../theme/islamic_theme.dart';
 
 class PersistentAudioPlayerBar extends StatefulWidget {
@@ -73,6 +74,48 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (player.errorMessage != null)
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.redAccent.withOpacity(0.14),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.redAccent.withOpacity(0.45)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 15),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      player.errorMessage!,
+                      style: TextStyle(color: palette.textPrimary, fontSize: 10.5),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => player.togglePlay(),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Text(
+                        "إعادة",
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: player.clearError,
+                    child: Icon(Icons.close_rounded, color: palette.textSecondary, size: 15),
+                  ),
+                ],
+              ),
+            ),
           Row(
             children: [
               GestureDetector(
@@ -118,10 +161,41 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      const SizedBox(height: 2),
+                      Text(
+                        player.isLoading
+                            ? "جاري تحميل الصوت..."
+                            : (player.isOfflineSource
+                                ? "متاح بدون إنترنت ✓"
+                                : "بث مباشر عبر الإنترنت"),
+                        style: TextStyle(
+                          color: player.isOfflineSource
+                              ? (palette.isDark ? const Color(0xFF34D399) : const Color(0xFF047857))
+                              : accent,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
+              if (player.currentSurahNumber != null)
+                IconButton(
+                  constraints: const BoxConstraints(),
+                  padding: const EdgeInsets.all(6),
+                  icon: Icon(Icons.auto_stories_rounded, color: accent, size: 20),
+                  tooltip: "قراءة السورة",
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => QuranReaderScreen(
+                          initialSurahNumber: player.currentSurahNumber,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               IconButton(
                 constraints: const BoxConstraints(),
                 padding: const EdgeInsets.all(6),
@@ -200,10 +274,21 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
                       ),
                     ],
                   ),
-                  child: Icon(
-                    player.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                    color: palette.onAccentColor,
-                    size: 26,
+                  child: Center(
+                    child: player.isLoading
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.4,
+                              color: palette.onAccentColor,
+                            ),
+                          )
+                        : Icon(
+                            player.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                            color: palette.onAccentColor,
+                            size: 26,
+                          ),
                   ),
                 ),
               ),

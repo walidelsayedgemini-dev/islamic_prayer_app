@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:adhan/adhan.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
+import '../widgets/islamic_theme_effects_canvas.dart';
+import '../widgets/real_mosque_background.dart';
 
 class JannatiScreen extends StatefulWidget {
   const JannatiScreen({super.key});
@@ -128,7 +131,8 @@ class _JannatiScreenState extends State<JannatiScreen>
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
     final isNight = settings.isNightEffective;
-    final palette = IslamicTheme.resolvePalette(settings.selectedTheme, isNight: isNight);
+    final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
+    final palette = themeOption.resolve(isNight: isNight);
     final accentColor = palette.accentColor;
 
     final emeraldColor = isNight ? const Color(0xFF10B981) : const Color(0xFF047857);
@@ -138,60 +142,90 @@ class _JannatiScreenState extends State<JannatiScreen>
 
     return Scaffold(
       backgroundColor: palette.scaffoldColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 1. الترويسة الملكية
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: RealMosqueBackground(
+              currentPrayer: isNight ? Prayer.isha : Prayer.dhuhr,
+              themeOption: themeOption,
+              isNightMode: isNight,
+            ),
+          ),
+          Positioned.fill(
+            child: IslamicThemeEffectsCanvas(
+              themeOption: themeOption,
+              isNightMode: isNight,
+            ),
+          ),
+          SafeArea(
+            child: Column(
+              children: [
+                // 1. الترويسة الملكية مع شعار قصر في الجنة
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: const RadialGradient(
-                        colors: [Color(0xFFFDE68A), Color(0xFFD4AF37), Color(0xFF78350F)],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFD4AF37).withOpacity(0.4),
-                          blurRadius: 14,
-                          spreadRadius: 1,
-                        ),
-                      ],
+                      color: palette.cardColor.withOpacity(isNight ? 0.78 : 0.88),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: accentColor.withOpacity(0.45)),
                     ),
-                    child: const Icon(
-                      Icons.workspace_premium_rounded,
-                      color: Color(0xFF071913),
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(
-                          "خَزِينَةُ الفِرْدَوْسِ الأَعْلَى • جَنَّتِي",
-                          style: TextStyle(
-                            color: accentColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 17,
-                            letterSpacing: 0.4,
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: accentColor, width: 2.0),
+                            boxShadow: [
+                              BoxShadow(
+                                color: accentColor.withOpacity(0.42),
+                                blurRadius: 14,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                          child: ClipOval(
+                            child: Image.asset(
+                              'assets/images/palace_jannah_logo.png',
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                Icons.workspace_premium_rounded,
+                                color: Color(0xFFD4AF37),
+                                size: 24,
+                              ),
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          "«مَا فِي الجَنَّةِ شَجَرَةٌ إِلَّا وَسَاقُهَا مِنْ ذَهَبٍ» (صحيح الترمذي)",
-                          style: TextStyle(color: palette.textSecondary, fontSize: 11),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "خَزِينَةُ الفِرْدَوْسِ الأَعْلَى • جَنَّتِي",
+                                style: TextStyle(
+                                  color: accentColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16.5,
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                "«مَا فِي الجَنَّةِ شَجَرَةٌ إِلَّا وَسَاقُهَا مِنْ ذَهَبٍ» (صحيح الترمذي)",
+                                style: TextStyle(color: palette.textSecondary, fontSize: 11),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
+                ),
 
             // 2. صرح الأرصدة والذخائر
             _buildRoyalTreasuryVault(
@@ -276,7 +310,9 @@ class _JannatiScreenState extends State<JannatiScreen>
           ],
         ),
       ),
-    );
+    ],
+  ),
+);
   }
 
   Widget _buildRoyalTreasuryVault({
@@ -297,9 +333,9 @@ class _JannatiScreenState extends State<JannatiScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            palette.cardColor,
-            palette.elevatedCardColor,
-            palette.cardColor,
+            palette.cardColor.withOpacity(palette.isDark ? 0.84 : 0.90),
+            palette.elevatedCardColor.withOpacity(palette.isDark ? 0.86 : 0.92),
+            palette.cardColor.withOpacity(palette.isDark ? 0.84 : 0.90),
           ],
         ),
         border: Border.all(color: accentColor.withOpacity(0.55), width: 1.5),
@@ -466,7 +502,7 @@ class _JannatiScreenState extends State<JannatiScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: palette.cardColor,
+        color: palette.cardColor.withOpacity(palette.isDark ? 0.85 : 0.90),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: deedColor.withOpacity(0.45), width: 1.3),
         boxShadow: [

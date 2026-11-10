@@ -36,6 +36,11 @@ dependencies:
   # إدارة الحالة التفاعلية
   provider: ^6.1.2
 
+  # مشغل الصوتيات الحقيقي وتخزينها محلياً للاستماع بدون إنترنت
+  audioplayers: ^6.1.0
+  http: ^1.2.2
+  path_provider: ^2.1.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -45,6 +50,9 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/images/themes/
+    - assets/data/
+    - assets/audio/
   fonts:
     # 1. عارف رقعة
     - family: Aref Ruqaa

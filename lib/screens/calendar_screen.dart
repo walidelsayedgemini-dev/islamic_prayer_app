@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:adhan/adhan.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:provider/provider.dart';
 import '../models/hijri_calendar_model.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
+import '../widgets/islamic_theme_effects_canvas.dart';
+import '../widgets/real_mosque_background.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -251,90 +254,116 @@ class _CalendarScreenState extends State<CalendarScreen>
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
     final isNight = settings.isNightEffective;
-    final palette = IslamicTheme.resolvePalette(settings.selectedTheme, isNight: isNight);
+    final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
+    final palette = themeOption.resolve(isNight: isNight);
     final accentColor = palette.accentColor;
 
     return Scaffold(
       backgroundColor: palette.scaffoldColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 1. الترويسة الرئيسية
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: RealMosqueBackground(
+              currentPrayer: isNight ? Prayer.isha : Prayer.dhuhr,
+              themeOption: themeOption,
+              isNightMode: isNight,
+            ),
+          ),
+          Positioned.fill(
+            child: IslamicThemeEffectsCanvas(
+              themeOption: themeOption,
+              isNightMode: isNight,
+            ),
+          ),
+          SafeArea(
+            child: Column(
+              children: [
+                // 1. الترويسة الرئيسية
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: accentColor.withOpacity(0.18),
-                      border: Border.all(color: accentColor, width: 1.3),
+                      color: palette.cardColor.withOpacity(isNight ? 0.80 : 0.90),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: accentColor.withOpacity(0.4)),
                     ),
-                    child: Icon(Icons.event_note_rounded, color: accentColor, size: 22),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(
-                          "التقويم الهجري والمناسبات • الفردوس",
-                          style: TextStyle(
-                            color: accentColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: accentColor.withOpacity(0.18),
+                            border: Border.all(color: accentColor, width: 1.3),
                           ),
+                          child: Icon(Icons.event_note_rounded, color: accentColor, size: 22),
                         ),
-                        Text(
-                          "اليوم: ${_selectedHijri.formatFullArabic()}",
-                          style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "التقويم الهجري والمناسبات • الفردوس",
+                                style: TextStyle(
+                                  color: accentColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Text(
+                                "اليوم: ${_selectedHijri.formatFullArabic()}",
+                                style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
-
-            // 2. شريط التبويب
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              height: 42,
-              decoration: BoxDecoration(
-                color: palette.cardColor,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: accentColor.withOpacity(0.3)),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                indicator: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: accentColor.withOpacity(0.22),
-                  border: Border.all(color: accentColor, width: 1.2),
                 ),
-                indicatorSize: TabBarIndicatorSize.tab,
-                labelColor: accentColor,
-                unselectedLabelColor: palette.textMuted,
-                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
-                tabs: const [
-                  Tab(text: "التقويم الهجري الشهري"),
-                  Tab(text: "محول التاريخ (هجري / ميلادي)"),
-                ],
-              ),
-            ),
 
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildMonthlyCalendarTab(palette),
-                  _buildDateConverterTab(palette),
-                ],
-              ),
+                // 2. شريط التبويب
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: palette.cardColor.withOpacity(isNight ? 0.84 : 0.90),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: accentColor.withOpacity(0.3)),
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    indicator: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: accentColor.withOpacity(0.22),
+                      border: Border.all(color: accentColor, width: 1.2),
+                    ),
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    labelColor: accentColor,
+                    unselectedLabelColor: palette.textMuted,
+                    labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                    tabs: const [
+                      Tab(text: "التقويم الهجري الشهري"),
+                      Tab(text: "محول التاريخ (هجري / ميلادي)"),
+                    ],
+                  ),
+                ),
+
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildMonthlyCalendarTab(palette),
+                      _buildDateConverterTab(palette),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -364,7 +393,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: palette.cardColor,
+            color: palette.cardColor.withOpacity(palette.isDark ? 0.85 : 0.90),
             borderRadius: BorderRadius.circular(22),
             border: Border.all(color: accentColor.withOpacity(0.45), width: 1.3),
             boxShadow: [
@@ -640,7 +669,7 @@ class _CalendarScreenState extends State<CalendarScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: palette.cardColor,
+        color: palette.cardColor.withOpacity(palette.isDark ? 0.85 : 0.90),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: accentColor.withOpacity(0.55), width: 1.5),
         boxShadow: [

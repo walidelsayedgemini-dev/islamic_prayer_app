@@ -40,39 +40,11 @@ class _RealMosqueBackgroundState extends State<RealMosqueBackground>
   }
 
   String _getPhotoAsset() {
-    if (!widget.isNightMode) {
-      if (widget.currentPrayer == Prayer.sunrise) {
-        return 'assets/images/nabawi_courtyard_marble.jpg';
-      }
-      return 'assets/images/nabawi_arch_day.jpg';
+    final key = widget.themeOption.key;
+    if (key.isNotEmpty) {
+      return 'assets/images/themes/$key.jpg';
     }
-
-    if (widget.simulatedHour != null) {
-      final h = widget.simulatedHour!;
-      if (h >= 16.5 && h <= 19.0) {
-        return 'assets/images/nabawi_sunset.jpg';
-      } else if (h > 19.0 || h < 5.5) {
-        return 'assets/images/nabawi_dome_minaret.jpg';
-      } else if (h >= 5.5 && h <= 9.0) {
-        return 'assets/images/nabawi_courtyard_marble.jpg';
-      } else {
-        return 'assets/images/nabawi_arch_day.jpg';
-      }
-    }
-
-    switch (widget.currentPrayer) {
-      case Prayer.maghrib:
-        return 'assets/images/nabawi_sunset.jpg';
-      case Prayer.isha:
-      case Prayer.fajr:
-      case Prayer.none:
-        return 'assets/images/nabawi_dome_minaret.jpg';
-      case Prayer.sunrise:
-        return 'assets/images/nabawi_courtyard_marble.jpg';
-      case Prayer.dhuhr:
-      case Prayer.asr:
-        return 'assets/images/nabawi_dome_minaret.jpg';
-    }
+    return 'assets/images/nabawi_dome_minaret.jpg';
   }
 
   @override
@@ -83,7 +55,7 @@ class _RealMosqueBackgroundState extends State<RealMosqueBackground>
     return Stack(
       fit: StackFit.expand,
       children: [
-        // 1. الصورة الحقيقية مع حركة الزوم الهادئة
+        // 1. الصورة الحقيقية لكل ثيم مع حركة الزوم الهادئة
         AnimatedBuilder(
           animation: _breathingController,
           builder: (context, child) {
@@ -91,7 +63,7 @@ class _RealMosqueBackgroundState extends State<RealMosqueBackground>
             return Transform.scale(
               scale: scale,
               child: AnimatedSwitcher(
-                duration: const Duration(seconds: 1),
+                duration: const Duration(milliseconds: 800),
                 child: Image.asset(
                   assetPath,
                   key: ValueKey<String>("${assetPath}_${widget.isNightMode}"),
@@ -107,7 +79,7 @@ class _RealMosqueBackgroundState extends State<RealMosqueBackground>
           },
         ),
 
-        // 2. طبقة التدرج المتكيفة تماماً مع الوضع الليلي أو النهاري لضمان تباين فائق للنصوص
+        // 2. طبقة التدرج المتكيفة تماماً مع الوضع الليلي أو النهاري لضمان وضوح الخلفية وتباين النصوص
         Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -115,16 +87,16 @@ class _RealMosqueBackgroundState extends State<RealMosqueBackground>
               end: Alignment.bottomCenter,
               colors: widget.isNightMode
                   ? [
-                      palette.scaffoldColor.withOpacity(0.75),
-                      Colors.black.withOpacity(0.30),
-                      palette.scaffoldColor.withOpacity(0.72),
-                      palette.scaffoldColor.withOpacity(0.95),
+                      palette.scaffoldColor.withOpacity(0.62),
+                      Colors.black.withOpacity(0.24),
+                      palette.scaffoldColor.withOpacity(0.60),
+                      palette.scaffoldColor.withOpacity(0.88),
                     ]
                   : [
-                      palette.scaffoldColor.withOpacity(0.72),
-                      palette.scaffoldColor.withOpacity(0.32),
-                      palette.scaffoldColor.withOpacity(0.68),
-                      palette.scaffoldColor.withOpacity(0.92),
+                      palette.scaffoldColor.withOpacity(0.60),
+                      palette.scaffoldColor.withOpacity(0.24),
+                      palette.scaffoldColor.withOpacity(0.58),
+                      palette.scaffoldColor.withOpacity(0.86),
                     ],
               stops: const [0.0, 0.35, 0.72, 1.0],
             ),
@@ -133,7 +105,7 @@ class _RealMosqueBackgroundState extends State<RealMosqueBackground>
 
         // 3. مسحة لونية خفيفة من الثيم المختار لتوحيد الهوية البصرية
         Container(
-          color: palette.primaryColor.withOpacity(widget.isNightMode ? 0.22 : 0.08),
+          color: palette.primaryColor.withOpacity(widget.isNightMode ? 0.18 : 0.06),
         ),
       ],
     );
