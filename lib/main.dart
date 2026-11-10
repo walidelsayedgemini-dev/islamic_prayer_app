@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/audio_player_provider.dart';
 import 'providers/firdaws_user_provider.dart';
+import 'providers/jannati_provider.dart';
 import 'screens/main_navigation_screen.dart';
 import 'services/notification_service.dart';
 import 'theme/islamic_theme.dart';
@@ -14,6 +15,7 @@ void main() async {
   final settingsProvider = SettingsProvider();
   final audioPlayerProvider = AudioPlayerProvider();
   final firdawsUserProvider = FirdawsUserProvider();
+  final jannatiProvider = JannatiProvider();
 
   // تشغيل التطبيق فوراً دون انتظار عمليات الحساسات أو التنبيهات
   runApp(
@@ -22,6 +24,7 @@ void main() async {
         ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
         ChangeNotifierProvider<AudioPlayerProvider>.value(value: audioPlayerProvider),
         ChangeNotifierProvider<FirdawsUserProvider>.value(value: firdawsUserProvider),
+        ChangeNotifierProvider<JannatiProvider>.value(value: jannatiProvider),
       ],
       child: const IslamicPrayerApp(),
     ),
@@ -32,6 +35,7 @@ void main() async {
     try {
       await settingsProvider.init();
       await firdawsUserProvider.init();
+      await jannatiProvider.init();
       await NotificationService().initialize();
     } catch (e) {
       debugPrint("Background init: $e");

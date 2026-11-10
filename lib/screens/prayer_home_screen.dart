@@ -1438,6 +1438,42 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 10),
+          Divider(color: palette.dividerColor, height: 8),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildHubActionItem(
+                icon: Icons.park_rounded,
+                label: "واحة جَنَّتِي",
+                color: isDark ? const Color(0xFF34D399) : const Color(0xFF047857),
+                palette: palette,
+                onTap: () => FirdawsNavBridge.jumpTo(5, jannatiTab: 0),
+              ),
+              _buildHubActionItem(
+                icon: Icons.architecture_rounded,
+                label: "مُهندس الجنة",
+                color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309),
+                palette: palette,
+                onTap: () => FirdawsNavBridge.jumpTo(5, jannatiTab: 1),
+              ),
+              _buildHubActionItem(
+                icon: Icons.auto_stories_rounded,
+                label: "أطلس الجنة",
+                color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF6D28D9),
+                palette: palette,
+                onTap: () => FirdawsNavBridge.jumpTo(5, jannatiTab: 2),
+              ),
+              _buildHubActionItem(
+                icon: Icons.question_answer_rounded,
+                label: "٥٠٠ سؤال وجواب",
+                color: isDark ? const Color(0xFFF472B6) : const Color(0xFFBE185D),
+                palette: palette,
+                onTap: () => FirdawsNavBridge.jumpTo(6, openHelpQa: true),
+              ),
+            ],
+          ),
         ],
       ),
     );

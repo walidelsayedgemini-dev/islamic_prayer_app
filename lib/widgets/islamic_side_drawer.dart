@@ -192,6 +192,26 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                           },
                         ),
                         _drawerShortcutChip(
+                          label: 'جَنَّتِي الفردوس',
+                          icon: Icons.park_rounded,
+                          accent: accent,
+                          palette: palette,
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            FirdawsNavBridge.jumpTo(5, jannatiTab: 0);
+                          },
+                        ),
+                        _drawerShortcutChip(
+                          label: '٥٠٠ سؤال وجواب',
+                          icon: Icons.question_answer_rounded,
+                          accent: accent,
+                          palette: palette,
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            FirdawsNavBridge.jumpTo(6, openHelpQa: true);
+                          },
+                        ),
+                        _drawerShortcutChip(
                           label: 'بياناتي',
                           icon: Icons.person_rounded,
                           accent: accent,

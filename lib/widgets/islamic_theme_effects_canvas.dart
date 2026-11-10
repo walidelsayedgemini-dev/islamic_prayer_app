@@ -179,8 +179,61 @@ class _IslamicThemeMasterPainter extends CustomPainter {
         _paintRamadanAstralEffects(canvas, size);
         break;
       case 'arabian_pearl':
-      default:
         _paintSereneKhushooEffects(canvas, size);
+        break;
+      // --- الثيمات الـ 40 الجديدة مصنفة حسب طبيعتها الروحية والمعمارية ---
+      case 'qiyam_aurora':
+      case 'laylat_qadr':
+      case 'isha_indigo':
+      case 'fajr_sapphire':
+        _paintAuroraAndNightSkyEffects(canvas, size, key);
+        break;
+      case 'firdaws_waterfall':
+      case 'kawthar_silver':
+      case 'salsabil_spring':
+      case 'zamzam_spring':
+        _paintParadiseWaterAndMistEffects(canvas, size);
+        break;
+      case 'ramadan_hilal':
+      case 'al_azhar_cairo':
+      case 'sultan_qaboos_muscat':
+      case 'amr_ibn_as':
+      case 'salahuddin_citadel':
+      case 'ibn_tulun_cairo':
+      case 'aleppo_umayyad':
+      case 'hassan_casablanca':
+      case 'koutoubia_marrakech':
+      case 'qairawan_tunis':
+        _paintLanternAndCourtyardEffects(canvas, size, key);
+        break;
+      case 'cordoba_arches':
+      case 'alhambra_granada':
+      case 'andalus_orange_blossom':
+      case 'olive_palestine':
+      case 'sidrat_muntaha':
+      case 'oud_royal_mahogany':
+        _paintBotanicalSanctuaryEffects(canvas, size, key);
+        break;
+      case 'suleymaniye_istanbul':
+      case 'sheikh_zayed_abudhabi':
+      case 'samarkand_registan':
+      case 'bukhara_turquoise':
+      case 'lahore_badshahi':
+        _paintGrandCupolaGeometryEffects(canvas, size);
+        break;
+      case 'arafat_mercy':
+      case 'mina_tents':
+      case 'hira_light':
+      case 'uhud_dawn':
+      case 'baqi_serenity':
+      case 'duha_sunlight':
+      case 'asr_gold':
+      case 'maghrib_crimson':
+      case 'musk_obsidian':
+      case 'saffron_imperial':
+      case 'yemen_aqeeq':
+      default:
+        _paintSacredSolarAndDesertEffects(canvas, size, key);
         break;
     }
   }
@@ -735,6 +788,274 @@ class _IslamicThemeMasterPainter extends CustomPainter {
         ..cubicTo(-p.size * 0.6, p.size * 0.5, -p.size * 0.6, -p.size * 0.5, 0, -p.size);
       canvas.drawPath(path, petalPaint);
       canvas.restore();
+    }
+  }
+
+  // 13. شفق القيام وليلة القدر والفجر السماوي
+  void _paintAuroraAndNightSkyEffects(Canvas canvas, Size size, String key) {
+    final t = progress * math.pi * 2;
+    final accent = themeOption.accentColor;
+    final secondary =
+        themeOption.beadColors.isNotEmpty ? themeOption.beadColors.first : accent;
+
+    // توهج شفق سماوي متموج
+    for (int band = 0; band < 3; band++) {
+      final path = Path();
+      final baseY = size.height * (0.14 + band * 0.11);
+      path.moveTo(0, baseY);
+      for (double x = 0; x <= size.width; x += 24) {
+        final wave = math.sin((x / size.width * 3.2) + t + band * 1.4) * 26.0;
+        path.lineTo(x, baseY + wave);
+      }
+      final auroraPaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 22.0 - band * 4.0
+        ..color = (band.isEven ? accent : secondary)
+            .withOpacity((isNightMode ? 0.14 : 0.08) + 0.03 * math.sin(t + band))
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18.0);
+      canvas.drawPath(path, auroraPaint);
+    }
+
+    if (key == 'laylat_qadr' || key == 'isha_indigo') {
+      _drawGlowingCrescentMoon(
+        canvas,
+        Offset(size.width * 0.78, size.height * 0.15),
+        22.0,
+        accent,
+        t,
+      );
+    }
+
+    for (final p in particles) {
+      p.update(0.016, 0.01 * math.sin(t + p.pulseOffset), -0.008);
+      final px = p.x * size.width;
+      final py = p.y * size.height;
+      final pulse = (math.sin(t * 3 + p.pulseOffset) * 0.4 + 0.6) * p.opacity;
+      canvas.drawCircle(
+        Offset(px, py),
+        p.size * 0.42,
+        Paint()..color = accent.withOpacity(pulse * (isNightMode ? 0.85 : 0.65)),
+      );
+    }
+  }
+
+  // 14. شلالات الفردوس والأنهار والينابيع (فirdaws / زمزم / الكوثر / سلسبيل)
+  void _paintParadiseWaterAndMistEffects(Canvas canvas, Size size) {
+    final t = progress * math.pi * 2;
+    final accent = themeOption.accentColor;
+
+    // موجات نورية سفلية وبخار مائي متلألئ
+    final center = Offset(size.width * 0.5, size.height * 0.55);
+    for (int i = 0; i < 4; i++) {
+      final prog = (progress + i * 0.25) % 1.0;
+      canvas.drawCircle(
+        center,
+        prog * size.width * 0.6,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.6
+          ..color = accent.withOpacity((1.0 - prog) * (isNightMode ? 0.18 : 0.12)),
+      );
+    }
+
+    for (final p in particles) {
+      p.update(0.016, 0.02 * math.sin(t + p.pulseOffset), 0.055);
+      final px = p.x * size.width;
+      final py = p.y * size.height;
+      canvas.drawCircle(
+        Offset(px, py),
+        p.size * 0.48,
+        Paint()
+          ..color = accent.withOpacity(p.opacity * (isNightMode ? 0.55 : 0.45))
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0),
+      );
+      canvas.drawCircle(
+        Offset(px - 1, py - 1),
+        p.size * 0.20,
+        Paint()..color = Colors.white.withOpacity(p.opacity * 0.7),
+      );
+    }
+  }
+
+  // 15. الساحات المضاءة والقناديل والمآذن (الأزهر، رمضان، قيروان، الكتبية، عمرو بن العاص...)
+  void _paintLanternAndCourtyardEffects(Canvas canvas, Size size, String key) {
+    final t = progress * math.pi * 2;
+    final accent = themeOption.accentColor;
+
+    final haloPaint = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(0.0, -0.55),
+        radius: 0.9,
+        colors: [
+          accent.withOpacity(isNightMode ? 0.18 : 0.10),
+          Colors.transparent,
+        ],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, haloPaint);
+
+    // قنديلان متأرجحان
+    final xs = [size.width * 0.18, size.width * 0.82];
+    final lens = [105.0, 125.0];
+    for (int i = 0; i < 2; i++) {
+      canvas.save();
+      canvas.translate(xs[i], 0);
+      canvas.rotate(math.sin(t * 1.1 + i * 1.7) * 0.06);
+      canvas.drawLine(
+        Offset.zero,
+        Offset(0, lens[i]),
+        Paint()
+          ..color = accent.withOpacity(0.35)
+          ..strokeWidth = 1.0,
+      );
+      if (key == 'ramadan_hilal') {
+        _drawRamadanFanous(canvas, Offset(0, lens[i]), 18.0, accent, t + i);
+      } else {
+        _drawBrassLantern(canvas, Offset(0, lens[i]), 15.0, accent, t + i);
+      }
+      canvas.restore();
+    }
+
+    for (final p in particles) {
+      p.update(0.016, 0.018 * math.sin(t + p.pulseOffset), -0.025);
+      final px = p.x * size.width;
+      final py = p.y * size.height;
+      final pPulse = (math.sin(t * 3 + p.pulseOffset) * 0.4 + 0.6) * p.opacity;
+      canvas.drawCircle(
+        Offset(px, py),
+        p.size * 0.42,
+        Paint()
+          ..color = accent.withOpacity(pPulse * 0.72)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.8),
+      );
+    }
+  }
+
+  // 16. رياض الأندلس والزيتون وسدرة المنتهى والعود الملكي
+  void _paintBotanicalSanctuaryEffects(Canvas canvas, Size size, String key) {
+    final t = progress * math.pi * 2;
+    final accent = themeOption.accentColor;
+
+    // أقواس أندلسية أو أشعة شمس دافئة بين الأغصان
+    if (key == 'cordoba_arches' || key == 'alhambra_granada') {
+      _drawAndalusianHorseshoeArch(
+        canvas,
+        size,
+        accent.withOpacity(isNightMode ? 0.12 : 0.10),
+      );
+    } else {
+      final center = Offset(size.width * 0.25, size.height * 0.15);
+      for (int i = 0; i < 6; i++) {
+        final angle = 0.35 + i * 0.22 + math.sin(t + i) * 0.02;
+        final path = Path()
+          ..moveTo(center.dx, center.dy)
+          ..lineTo(
+            center.dx + math.cos(angle - 0.06) * size.height,
+            center.dy + math.sin(angle - 0.06) * size.height,
+          )
+          ..lineTo(
+            center.dx + math.cos(angle + 0.06) * size.height,
+            center.dy + math.sin(angle + 0.06) * size.height,
+          )
+          ..close();
+        canvas.drawPath(
+          path,
+          Paint()..color = accent.withOpacity(isNightMode ? 0.045 : 0.055),
+        );
+      }
+    }
+
+    for (final p in particles) {
+      p.update(0.016, 0.03 * math.sin(t + p.pulseOffset), 0.032);
+      final px = p.x * size.width;
+      final py = p.y * size.height;
+      canvas.save();
+      canvas.translate(px, py);
+      canvas.rotate(p.rotation);
+      final leaf = Path()
+        ..moveTo(0, -p.size)
+        ..quadraticBezierTo(p.size * 0.65, 0, 0, p.size)
+        ..quadraticBezierTo(-p.size * 0.65, 0, 0, -p.size);
+      canvas.drawPath(leaf, Paint()..color = accent.withOpacity(p.opacity * 0.7));
+      canvas.restore();
+    }
+  }
+
+  // 17. القباب العظمى والزخارف السمرقندية والعثمانية والإماراتية
+  void _paintGrandCupolaGeometryEffects(Canvas canvas, Size size) {
+    final t = progress * math.pi * 2;
+    final accent = themeOption.accentColor;
+    final center = Offset(size.width * 0.5, size.height * 0.36);
+
+    _drawEightPointStar(
+      canvas,
+      center,
+      size.width * 0.34,
+      accent.withOpacity(isNightMode ? 0.10 : 0.08),
+      t * 0.12,
+    );
+    _drawMoroccanZelligeGeometry(
+      canvas,
+      center,
+      size.width * 0.24,
+      accent.withOpacity(isNightMode ? 0.08 : 0.06),
+      -t * 0.08,
+    );
+
+    for (final p in particles) {
+      p.update(0.016, 0.014 * math.cos(t + p.pulseOffset), 0.02);
+      final px = p.x * size.width;
+      final py = p.y * size.height;
+      canvas.save();
+      canvas.translate(px, py);
+      canvas.rotate(p.rotation);
+      final d = p.size * 0.55;
+      final diamond = Path()
+        ..moveTo(0, -d)
+        ..lineTo(d * 0.65, 0)
+        ..lineTo(0, d)
+        ..lineTo(-d * 0.65, 0)
+        ..close();
+      canvas.drawPath(diamond, Paint()..color = accent.withOpacity(p.opacity * 0.68));
+      canvas.restore();
+    }
+  }
+
+  // 18. مشاعر مكة وأوقات النهار الذهبية والعنبر والزعفران والعقيق
+  void _paintSacredSolarAndDesertEffects(Canvas canvas, Size size, String key) {
+    final t = progress * math.pi * 2;
+    final accent = themeOption.accentColor;
+    final sunGlow = Paint()
+      ..shader = RadialGradient(
+        center: key == 'maghrib_crimson'
+            ? const Alignment(0.0, 0.25)
+            : const Alignment(0.0, -0.35),
+        radius: 0.9,
+        colors: [
+          accent.withOpacity((isNightMode ? 0.18 : 0.12) + 0.04 * math.sin(t)),
+          Colors.transparent,
+        ],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, sunGlow);
+
+    _drawCalligraphicGoldRibbons(
+      canvas,
+      size,
+      accent.withOpacity(isNightMode ? 0.14 : 0.10),
+      t,
+    );
+
+    for (final p in particles) {
+      p.update(0.016, 0.03 * math.sin(t + p.pulseOffset), -0.015);
+      final px = p.x * size.width;
+      final py = p.y * size.height;
+      final pulse = (math.sin(t * 2.5 + p.pulseOffset) * 0.4 + 0.6) * p.opacity;
+      canvas.drawCircle(
+        Offset(px, py),
+        p.size * 0.46,
+        Paint()
+          ..color = accent.withOpacity(pulse * 0.78)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.6),
+      );
     }
   }
 

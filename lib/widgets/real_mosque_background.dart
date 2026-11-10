@@ -68,6 +68,7 @@ class _RealMosqueBackgroundState extends State<RealMosqueBackground>
                   assetPath,
                   key: ValueKey<String>("${assetPath}_${widget.isNightMode}"),
                   fit: BoxFit.cover,
+                  filterQuality: FilterQuality.high,
                   width: double.infinity,
                   height: double.infinity,
                   errorBuilder: (context, error, stackTrace) {
@@ -79,7 +80,7 @@ class _RealMosqueBackgroundState extends State<RealMosqueBackground>
           },
         ),
 
-        // 2. طبقة التدرج المتكيفة تماماً مع الوضع الليلي أو النهاري لضمان وضوح الخلفية وتباين النصوص
+        // 2. طبقة التدرج المتكيفة تماماً مع الوضع الليلي أو النهاري لضمان وضوح الخلفية 4K وتباين النصوص
         Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -87,25 +88,25 @@ class _RealMosqueBackgroundState extends State<RealMosqueBackground>
               end: Alignment.bottomCenter,
               colors: widget.isNightMode
                   ? [
-                      palette.scaffoldColor.withOpacity(0.62),
-                      Colors.black.withOpacity(0.24),
-                      palette.scaffoldColor.withOpacity(0.60),
-                      palette.scaffoldColor.withOpacity(0.88),
+                      palette.scaffoldColor.withOpacity(0.56),
+                      Colors.black.withOpacity(0.16),
+                      palette.scaffoldColor.withOpacity(0.52),
+                      palette.scaffoldColor.withOpacity(0.84),
                     ]
                   : [
-                      palette.scaffoldColor.withOpacity(0.60),
-                      palette.scaffoldColor.withOpacity(0.24),
-                      palette.scaffoldColor.withOpacity(0.58),
-                      palette.scaffoldColor.withOpacity(0.86),
+                      palette.scaffoldColor.withOpacity(0.54),
+                      palette.scaffoldColor.withOpacity(0.18),
+                      palette.scaffoldColor.withOpacity(0.50),
+                      palette.scaffoldColor.withOpacity(0.82),
                     ],
-              stops: const [0.0, 0.35, 0.72, 1.0],
+              stops: const [0.0, 0.36, 0.72, 1.0],
             ),
           ),
         ),
 
         // 3. مسحة لونية خفيفة من الثيم المختار لتوحيد الهوية البصرية
         Container(
-          color: palette.primaryColor.withOpacity(widget.isNightMode ? 0.18 : 0.06),
+          color: palette.primaryColor.withOpacity(widget.isNightMode ? 0.14 : 0.05),
         ),
       ],
     );

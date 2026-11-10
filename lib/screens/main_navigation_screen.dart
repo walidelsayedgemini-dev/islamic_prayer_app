@@ -16,17 +16,23 @@ class FirdawsNavBridge {
     int pageIndex, {
     int? journeyTab,
     DateTime? journeyDate,
+    int? jannatiTab,
+    bool? openHelpQa,
   })? _navigator;
 
   static void jumpTo(
     int pageIndex, {
     int? journeyTab,
     DateTime? journeyDate,
+    int? jannatiTab,
+    bool? openHelpQa,
   }) {
     _navigator?.call(
       pageIndex,
       journeyTab: journeyTab,
       journeyDate: journeyDate,
+      jannatiTab: jannatiTab,
+      openHelpQa: openHelpQa,
     );
   }
 }
@@ -43,6 +49,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   late PageController _pageController;
   final ValueNotifier<FirdawsJourneyRequest?> _journeyRequest =
       ValueNotifier<FirdawsJourneyRequest?>(null);
+  final ValueNotifier<int?> _jannatiTabRequest = ValueNotifier<int?>(null);
+  final ValueNotifier<bool?> _helpQaRequest = ValueNotifier<bool?>(null);
 
   late final List<Widget> _screens = [
     const PrayerHomeScreen(),
@@ -50,8 +58,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     const QiblaScreen(),
     const CalendarScreen(),
     const TasbihScreen(),
-    const JannatiScreen(),
-    const HelpMeScreen(),
+    JannatiScreen(tabRequestNotifier: _jannatiTabRequest),
+    HelpMeScreen(openQaNotifier: _helpQaRequest),
     const SettingsScreen(),
   ];
 
@@ -66,6 +74,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     int pageIndex, {
     int? journeyTab,
     DateTime? journeyDate,
+    int? jannatiTab,
+    bool? openHelpQa,
   }) {
     if (!mounted) return;
     if (journeyTab != null || journeyDate != null) {
@@ -73,6 +83,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         tabIndex: journeyTab ?? 0,
         selectedDate: journeyDate,
       );
+    }
+    if (jannatiTab != null) {
+      _jannatiTabRequest.value = jannatiTab;
+    }
+    if (openHelpQa != null) {
+      _helpQaRequest.value = openHelpQa;
     }
     _onTabTapped(pageIndex);
   }
@@ -83,6 +99,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       FirdawsNavBridge._navigator = null;
     }
     _journeyRequest.dispose();
+    _jannatiTabRequest.dispose();
+    _helpQaRequest.dispose();
     _pageController.dispose();
     super.dispose();
   }

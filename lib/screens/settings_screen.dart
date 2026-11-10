@@ -20,6 +20,16 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  ThemeCategory? _selectedThemeCategory;
+  String _themeSearchQuery = '';
+  final TextEditingController _themeSearchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _themeSearchController.dispose();
+    super.dispose();
+  }
+
   void _showAllFontsPickerSheet(BuildContext context, ThemePalette palette) {
     String activeCategory = FontCatalog.categories.first;
 
@@ -767,8 +777,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
 
-                // 0. الوضع الليلي والنهاري لجميع الثيمات الـ 12
-            _buildSectionHeader("الإضاءة والمظهر (ليلي / نهاري لكل الثيمات)", accentColor),
+                // 0. الوضع الليلي والنهاري لجميع الثيمات الـ 52
+            _buildSectionHeader("الإضاءة والمظهر (ليلي / نهاري لكل الثيمات الـ 52)", accentColor),
             _buildCard(palette, [
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
@@ -776,7 +786,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "يدعم كل ثيم من الثيمات الـ 12 وضعاً نهارياً مضيئاً ووضعاً ليلياً مريحاً للعين:",
+                      "يدعم كل ثيم من الثيمات الـ 52 وضعاً نهارياً مضيئاً ووضعاً ليلياً مريحاً للعين:",
                       style: TextStyle(color: palette.textSecondary, fontSize: 12.5),
                     ),
                     const SizedBox(height: 10),
@@ -959,8 +969,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ]),
 
-            // 2. المظهر والألوان الإسلامية (12 ثيم إسلامي فاخر)
-            _buildSectionHeader("المظهر والألوان الإسلامية (12 نمطاً ليلياً ونهارياً)", accentColor),
+            // 2. المظهر والألوان الإسلامية (52 ثيم إسلامي فاخر بخلفيات 4K)
+            _buildSectionHeader(
+              "المظهر والألوان الإسلامية (${IslamicTheme.allThemes.length} ثيماً بخلفية 4K)",
+              accentColor,
+            ),
             _buildCard(palette, [
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
@@ -968,127 +981,343 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "اختر طابعك الروحي المفضل (يتحول تلقائياً بين الليل والنهار):",
-                      style: TextStyle(color: palette.textSecondary, fontSize: 13),
+                      "اختر طابعك الروحي المفضل من ${IslamicTheme.allThemes.length} ثيماً حقيقياً (يتحول تلقائياً بين الليل والنهار):",
+                      style: TextStyle(color: palette.textSecondary, fontSize: 12.5),
+                    ),
+                    const SizedBox(height: 10),
+                    // شريط البحث داخل الـ 52 ثيماً
+                    TextField(
+                      controller: _themeSearchController,
+                      style: TextStyle(color: palette.textPrimary, fontSize: 13),
+                      onChanged: (val) => setState(() => _themeSearchQuery = val.trim()),
+                      decoration: InputDecoration(
+                        hintText: "ابحث باسم الثيم أو المسجد أو المدينة (مثال: الأقصى، أذربيجان، فجر)...",
+                        hintStyle: TextStyle(color: palette.textMuted, fontSize: 11.5),
+                        prefixIcon: Icon(Icons.search_rounded, color: accentColor, size: 18),
+                        suffixIcon: _themeSearchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: Icon(Icons.clear_rounded, color: palette.textMuted, size: 17),
+                                onPressed: () {
+                                  _themeSearchController.clear();
+                                  setState(() => _themeSearchQuery = '');
+                                },
+                              )
+                            : null,
+                        isDense: true,
+                        filled: true,
+                        fillColor: palette.elevatedCardColor,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: palette.dividerColor),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: palette.dividerColor),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: accentColor, width: 1.5),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    // أزرار تصفية تصنيفات الثيمات الأربعة + الكل
+                    SizedBox(
+                      height: 36,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(left: 6),
+                            child: ChoiceChip(
+                              label: Text(
+                                "الكل (${IslamicTheme.allThemes.length})",
+                                style: TextStyle(
+                                  color: _selectedThemeCategory == null
+                                      ? palette.onAccentColor
+                                      : palette.textPrimary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11.5,
+                                ),
+                              ),
+                              selected: _selectedThemeCategory == null,
+                              selectedColor: accentColor,
+                              backgroundColor: palette.elevatedCardColor,
+                              side: BorderSide(
+                                color: _selectedThemeCategory == null
+                                    ? accentColor
+                                    : palette.dividerColor,
+                              ),
+                              onSelected: (_) => setState(() => _selectedThemeCategory = null),
+                            ),
+                          ),
+                          ...ThemeCategory.values.map((cat) {
+                            final isCatSelected = _selectedThemeCategory == cat;
+                            final catCount = IslamicTheme.themesByCategory(cat).length;
+                            return Padding(
+                              padding: const EdgeInsets.only(left: 6),
+                              child: ChoiceChip(
+                                avatar: Icon(
+                                  cat.icon,
+                                  size: 14,
+                                  color: isCatSelected ? palette.onAccentColor : accentColor,
+                                ),
+                                label: Text(
+                                  "${cat.shortLabel} ($catCount)",
+                                  style: TextStyle(
+                                    color: isCatSelected
+                                        ? palette.onAccentColor
+                                        : palette.textPrimary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 11.5,
+                                  ),
+                                ),
+                                selected: isCatSelected,
+                                selectedColor: accentColor,
+                                backgroundColor: palette.elevatedCardColor,
+                                side: BorderSide(
+                                  color: isCatSelected ? accentColor : palette.dividerColor,
+                                ),
+                                onSelected: (_) => setState(() {
+                                  _selectedThemeCategory = isCatSelected ? null : cat;
+                                }),
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 12),
-                    ...IslamicTheme.allThemes.map((theme) {
-                      final isSelected = settings.selectedTheme == theme.key;
-                      final itemPalette = theme.resolve(isNight: isNight);
+                    ...(() {
+                      final byCat = IslamicTheme.themesByCategory(_selectedThemeCategory);
+                      final q = _themeSearchQuery.toLowerCase();
+                      final filtered = q.isEmpty
+                          ? byCat
+                          : byCat
+                              .where((t) =>
+                                  t.name.toLowerCase().contains(q) ||
+                                  t.subtitle.toLowerCase().contains(q) ||
+                                  t.landmarkName.toLowerCase().contains(q) ||
+                                  t.key.toLowerCase().contains(q))
+                              .toList();
 
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: InkWell(
-                          onTap: () => settings.setTheme(theme.key),
-                          borderRadius: BorderRadius.circular(14),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? itemPalette.accentColor.withOpacity(isNight ? 0.18 : 0.14)
-                                  : palette.elevatedCardColor.withOpacity(0.75),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: isSelected ? itemPalette.accentColor : palette.dividerColor,
-                                width: isSelected ? 2.0 : 1.0,
+                      if (filtered.isEmpty) {
+                        return <Widget>[
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: Text(
+                                "لا توجد ثيمات مطابقة لكلمة «$_themeSearchQuery» — جرّب مسح البحث.",
+                                style: TextStyle(color: palette.textMuted, fontSize: 12.5),
+                                textAlign: TextAlign.center,
                               ),
                             ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: itemPalette.scaffoldColor,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: itemPalette.accentColor, width: 2),
-                                    boxShadow: isSelected
-                                        ? [
-                                            BoxShadow(
-                                              color: itemPalette.accentColor.withOpacity(0.35),
-                                              blurRadius: 10,
-                                            )
-                                          ]
-                                        : [],
-                                  ),
-                                  child: Icon(theme.icon, color: itemPalette.accentColor, size: 20),
+                          ),
+                        ];
+                      }
+
+                      return filtered.map((theme) {
+                        final isSelected = settings.selectedTheme == theme.key;
+                        final itemPalette = theme.resolve(isNight: isNight);
+
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: InkWell(
+                            onTap: () => settings.setTheme(theme.key),
+                            borderRadius: BorderRadius.circular(14),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? itemPalette.accentColor.withOpacity(isNight ? 0.18 : 0.14)
+                                    : palette.elevatedCardColor.withOpacity(0.78),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? itemPalette.accentColor
+                                      : palette.dividerColor,
+                                  width: isSelected ? 2.0 : 1.0,
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                              ),
+                              child: Row(
+                                children: [
+                                  // صورة معاينة مصغرة 4K حقيقية للثيم
+                                  Stack(
                                     children: [
-                                      Text(
-                                        theme.name,
-                                        style: TextStyle(
-                                          color: isSelected
-                                              ? itemPalette.accentColor
-                                              : palette.textPrimary,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
+                                      Container(
+                                        width: 50,
+                                        height: 50,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color: itemPalette.accentColor,
+                                            width: isSelected ? 2.0 : 1.3,
+                                          ),
+                                          boxShadow: isSelected
+                                              ? [
+                                                  BoxShadow(
+                                                    color:
+                                                        itemPalette.accentColor.withOpacity(0.35),
+                                                    blurRadius: 10,
+                                                  )
+                                                ]
+                                              : [],
                                         ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(10),
+                                          child: Image.asset(
+                                            'assets/images/themes/${theme.key}.jpg',
+                                            width: 50,
+                                            height: 50,
+                                            cacheWidth: 240,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) => Container(
+                                              color: itemPalette.scaffoldColor,
+                                              child: Icon(
+                                                theme.icon,
+                                                color: itemPalette.accentColor,
+                                                size: 20,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
                                       ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        theme.subtitle,
-                                        style: TextStyle(
-                                          color: palette.textSecondary,
-                                          fontSize: 11,
+                                      Positioned(
+                                        left: 2,
+                                        bottom: 2,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 4,
+                                            vertical: 1,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black.withOpacity(0.72),
+                                            borderRadius: BorderRadius.circular(5),
+                                          ),
+                                          child: const Text(
+                                            '4K',
+                                            style: TextStyle(
+                                              color: Color(0xFFFBBF24),
+                                              fontSize: 7.5,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                         ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ],
                                   ),
-                                ),
-                                // دوائر معاينة النهاري والليلي للثيم
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      width: 14,
-                                      height: 14,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: theme.dayPalette.scaffoldColor,
-                                        border: Border.all(color: theme.dayPalette.accentColor, width: 1.5),
-                                      ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Flexible(
+                                              child: Text(
+                                                theme.name,
+                                                style: TextStyle(
+                                                  color: isSelected
+                                                      ? itemPalette.accentColor
+                                                      : palette.textPrimary,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 13.5,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 5),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 5,
+                                                vertical: 1.5,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: itemPalette.accentColor.withOpacity(0.14),
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                theme.category.shortLabel,
+                                                style: TextStyle(
+                                                  color: itemPalette.accentColor,
+                                                  fontSize: 9,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          theme.subtitle,
+                                          style: TextStyle(
+                                            color: palette.textSecondary,
+                                            fontSize: 11,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(width: 4),
-                                    Container(
-                                      width: 14,
-                                      height: 14,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: theme.nightPalette.scaffoldColor,
-                                        border: Border.all(color: theme.nightPalette.accentColor, width: 1.5),
+                                  ),
+                                  // دوائر معاينة النهاري والليلي للثيم
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 13,
+                                        height: 13,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: theme.dayPalette.scaffoldColor,
+                                          border: Border.all(
+                                            color: theme.dayPalette.accentColor,
+                                            width: 1.5,
+                                          ),
+                                        ),
                                       ),
+                                      const SizedBox(width: 3),
+                                      Container(
+                                        width: 13,
+                                        height: 13,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: theme.nightPalette.scaffoldColor,
+                                          border: Border.all(
+                                            color: theme.nightPalette.accentColor,
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.info_outline_rounded,
+                                      color: isSelected
+                                          ? itemPalette.accentColor
+                                          : palette.textMuted,
+                                      size: 18,
                                     ),
-                                  ],
-                                ),
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.info_outline_rounded,
-                                    color: isSelected ? itemPalette.accentColor : palette.textMuted,
-                                    size: 18,
+                                    tooltip: "معاينة خصائص وأجواء الثيم الـ 22",
+                                    onPressed: () => _showTheme22Details(context, theme, isNight),
                                   ),
-                                  tooltip: "معاينة خصائص وأجواء الثيم الـ 22",
-                                  onPressed: () => _showTheme22Details(context, theme, isNight),
-                                ),
-                                if (isSelected)
-                                  Icon(
-                                    Icons.check_circle_rounded,
-                                    color: itemPalette.accentColor,
-                                    size: 22,
-                                  ),
-                              ],
+                                  if (isSelected)
+                                    Icon(
+                                      Icons.check_circle_rounded,
+                                      color: itemPalette.accentColor,
+                                      size: 21,
+                                    ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    }),
+                        );
+                      }).toList();
+                    })(),
                   ],
                 ),
               ),

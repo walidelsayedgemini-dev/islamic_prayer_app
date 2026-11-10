@@ -6,7 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:islamic_prayer_app/models/font_catalog.dart';
 import 'package:islamic_prayer_app/models/islamic_audio_data.dart';
 import 'package:islamic_prayer_app/models/islamic_missions_data.dart';
+import 'package:islamic_prayer_app/models/islamic_qa_500.dart';
 import 'package:islamic_prayer_app/models/islamic_titles_200.dart';
+import 'package:islamic_prayer_app/models/jannati_encyclopedia_data.dart';
 import 'package:islamic_prayer_app/models/motivational_phrases_500.dart';
 import 'package:islamic_prayer_app/models/prayer_identity_model.dart';
 import 'package:islamic_prayer_app/models/prayer_info.dart';
@@ -14,6 +16,7 @@ import 'package:islamic_prayer_app/models/prayer_model.dart';
 import 'package:islamic_prayer_app/models/quran_model.dart';
 import 'package:islamic_prayer_app/models/tasbih_challenge.dart';
 import 'package:islamic_prayer_app/providers/firdaws_user_provider.dart';
+import 'package:islamic_prayer_app/providers/jannati_provider.dart';
 import 'package:islamic_prayer_app/theme/islamic_theme.dart';
 import 'package:islamic_prayer_app/utils/compass_utils.dart';
 import 'package:islamic_prayer_app/widgets/prayer_time_effects_canvas.dart';
@@ -64,11 +67,25 @@ void main() {
     expect(TasbihChallengesCatalog.builtIn.length, greaterThanOrEqualTo(10));
   });
 
-  test('All 12 themes support distinct Day and Night palettes + custom font', () {
-    expect(IslamicTheme.allThemes.length, 12);
+  test('All 52 themes span 4 categories with distinct Day and Night palettes + custom font', () {
+    expect(IslamicTheme.allThemes.length, 52);
+    final keys = IslamicTheme.allThemes.map((t) => t.key).toSet();
+    expect(keys.length, 52);
+
+    int catTotal = 0;
+    for (final cat in ThemeCategory.values) {
+      final list = IslamicTheme.themesByCategory(cat);
+      expect(list, isNotEmpty, reason: 'Empty ThemeCategory $cat');
+      catTotal += list.length;
+    }
+    expect(catTotal, 52);
+    expect(IslamicTheme.themesByCategory(null).length, 52);
+
     for (final theme in IslamicTheme.allThemes) {
       expect(theme.nightPalette.isDark, isTrue);
       expect(theme.dayPalette.isDark, isFalse);
+      expect(theme.name.trim(), isNotEmpty);
+      expect(theme.landmarkName.trim(), isNotEmpty);
 
       final nightTheme = IslamicTheme.getTheme(
         theme.key,
@@ -171,12 +188,12 @@ void main() {
       }
     }
 
-    // Verify Palace logo and all 12 theme background photos exist
+    // Verify Palace logo and all 52 theme background photos exist
     final logoBytes = await rootBundle.load('assets/images/palace_jannah_logo.png');
     expect(logoBytes.lengthInBytes, greaterThan(10000));
     for (final t in IslamicTheme.allThemes) {
       final bgBytes = await rootBundle.load('assets/images/themes/${t.key}.jpg');
-      expect(bgBytes.lengthInBytes, greaterThan(10000), reason: 'Missing theme bg for ${t.key}');
+      expect(bgBytes.lengthInBytes, greaterThan(15000), reason: 'Missing theme bg for ${t.key}');
     }
   });
 
@@ -373,5 +390,85 @@ void main() {
 
     await prov.deleteJournalEntry(noteId);
     expect(prov.journalEntries, isEmpty);
+  });
+
+  test('IslamicQaCatalog provides 500 verified Q&A items across 10 categories with smart lookup',
+      () {
+    final all = IslamicQaCatalog.allQuestions;
+    expect(all.length, 500);
+    final ids = all.map((q) => q.id).toSet();
+    final numbers = all.map((q) => q.number).toSet();
+    expect(ids.length, 500);
+    expect(numbers.length, 500);
+    expect(all.first.number, 1);
+    expect(all.last.number, 500);
+
+    for (final cat in IslamicQaCategory.values) {
+      expect(
+        IslamicQaCatalog.byCategory(cat).length,
+        50,
+        reason: 'Category $cat should have 50 Q&A items',
+      );
+    }
+
+    final palaceRes = IslamicQaCatalog.answerAnyQuestion('كيف أبني قصراً في الجنة؟');
+    expect(palaceRes.hasDirectAnswer, isTrue);
+    expect(palaceRes.matches, isNotEmpty);
+
+    final colloquialRes = IslamicQaCatalog.answerAnyQuestion('ازاي اتوب ربنا؟');
+    expect(colloquialRes.hasDirectAnswer, isTrue);
+    expect(colloquialRes.smartSummary.trim(), isNotEmpty);
+  });
+
+  test('JannatiCatalog encyclopedia and JannatiProvider state persistence & rank progression',
+      () async {
+    expect(JannatiCatalog.investments.length, 14);
+    expect(JannatiCatalog.gatesOfJannah.length, 8);
+    expect(JannatiCatalog.levelsAndNames.length, 12);
+    expect(JannatiCatalog.riversAndSprings.length, 8);
+    expect(JannatiCatalog.atlasOfDelights.length, 18);
+    expect(JannatiCatalog.dailyArchitectChecklist.length, 16);
+    expect(JannatiCatalog.companionshipPaths.length, 10);
+    expect(JannatiCatalog.ranks.length, 12);
+    expect(JannatiCatalog.quizQuestions.length, 25);
+
+    SharedPreferences.setMockInitialValues({});
+    final jp = JannatiProvider();
+    await jp.init();
+    expect(jp.isInitialized, isTrue);
+    expect(jp.currentRank.level, 1);
+
+    // 1. Direct palm tap builds 1 palm immediately
+    final palmRes = await jp.performInvestmentTap('palms');
+    expect(palmRes.completedCycle, isTrue);
+    expect(jp.palmsCount, 1);
+
+    // 2. Ikhlas palace requires 10 recitations per palace
+    for (int i = 0; i < 9; i++) {
+      final stepRes = await jp.performInvestmentTap('ikhlas_palaces');
+      expect(stepRes.completedCycle, isFalse);
+      expect(jp.cycleProgressFor('ikhlas_palaces'), i + 1);
+    }
+    final palaceComplete = await jp.performInvestmentTap('ikhlas_palaces');
+    expect(palaceComplete.completedCycle, isTrue);
+    expect(jp.palacesCount, 1);
+    expect(jp.totalJannahPoints, greaterThanOrEqualTo(135));
+
+    // 3. Daily architect checklist & Q&A bookmark & Aspirations & Quiz
+    final addedDaily =
+        await jp.toggleDailyAction(JannatiCatalog.dailyArchitectChecklist.first.id);
+    expect(addedDaily, isTrue);
+    expect(jp.currentRank.level, greaterThanOrEqualTo(2));
+
+    await jp.addPersonalAspiration('دخول الفردوس بلا حساب');
+    expect(jp.personalAspirations.contains('دخول الفردوس بلا حساب'), isTrue);
+
+    final bookmarked = await jp.toggleQaBookmark('qa_1');
+    expect(bookmarked, isTrue);
+    expect(jp.bookmarkedQaIds.contains('qa_1'), isTrue);
+
+    await jp.recordQuizResult(score: 25, total: 25);
+    expect(jp.bestQuizScore, 25);
+    expect(jp.quizzesCompleted, 1);
   });
 }

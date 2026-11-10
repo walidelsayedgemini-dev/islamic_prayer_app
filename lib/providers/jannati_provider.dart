@@ -1,0 +1,437 @@
+import 'dart:convert';
+import 'dart:math' as math;
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/jannati_encyclopedia_data.dart';
+
+class JannahDeedLogItem {
+  final String investmentId;
+  final String title;
+  final String timestampIso;
+  final int pointsEarned;
+  final bool completedCycle;
+
+  const JannahDeedLogItem({
+    required this.investmentId,
+    required this.title,
+    required this.timestampIso,
+    required this.pointsEarned,
+    required this.completedCycle,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'investmentId': investmentId,
+        'title': title,
+        'timestampIso': timestampIso,
+        'pointsEarned': pointsEarned,
+        'completedCycle': completedCycle,
+      };
+
+  factory JannahDeedLogItem.fromJson(Map<String, dynamic> json) {
+    return JannahDeedLogItem(
+      investmentId: json['investmentId'] as String? ?? 'palms',
+      title: json['title'] as String? ?? '',
+      timestampIso: json['timestampIso'] as String? ?? '',
+      pointsEarned: (json['pointsEarned'] as num?)?.toInt() ?? 0,
+      completedCycle: json['completedCycle'] as bool? ?? true,
+    );
+  }
+}
+
+class JannahTapOutcome {
+  final JannahInvestment investment;
+  final int newCount;
+  final int cycleProgress;
+  final bool completedCycle;
+  final int pointsEarned;
+  final JannahRankTier? promotedToRank;
+  final String feedbackMessage;
+
+  const JannahTapOutcome({
+    required this.investment,
+    required this.newCount,
+    required this.cycleProgress,
+    required this.completedCycle,
+    required this.pointsEarned,
+    required this.promotedToRank,
+    required this.feedbackMessage,
+  });
+}
+
+class JannatiProvider extends ChangeNotifier {
+  SharedPreferences? _prefs;
+  bool _initialized = false;
+
+  static const String _kCountsKey = 'jannati_investment_counts_v1';
+  static const String _kCyclesKey = 'jannati_cycle_progress_v1';
+  static const String _kDailyDateKey = 'jannati_daily_date_v1';
+  static const String _kDailyCheckedKey = 'jannati_daily_checked_v1';
+  static const String _kBookmarksKey = 'jannati_qa_bookmarks_v1';
+  static const String _kAspirationsKey = 'jannati_aspirations_v1';
+  static const String _kBestQuizKey = 'jannati_best_quiz_v1';
+  static const String _kQuizCountKey = 'jannati_quiz_count_v1';
+  static const String _kLogsKey = 'jannati_deed_logs_v1';
+  static const String _kBonusPtsKey = 'jannati_bonus_points_v1';
+
+  final Map<String, int> _counts = {
+    for (final inv in JannatiCatalog.investments) inv.id: 0,
+  };
+  final Map<String, int> _cycleProgress = {};
+  final Set<String> _dailyCheckedIds = {};
+  final Set<String> _bookmarkedQaIds = {};
+  final List<String> _personalAspirations = [
+    JannatiCatalog.aspirationTemplates[0],
+    JannatiCatalog.aspirationTemplates[1],
+    JannatiCatalog.aspirationTemplates[2],
+  ];
+  final List<JannahDeedLogItem> _recentLogs = [];
+
+  String _dailyDate = '';
+  int _bestQuizScore = 0;
+  int _quizzesCompleted = 0;
+  int _bonusPoints = 0;
+
+  bool get isInitialized => _initialized;
+
+  int countFor(String investmentId) => _counts[investmentId] ?? 0;
+
+  int cycleProgressFor(String investmentId) => _cycleProgress[investmentId] ?? 0;
+
+  int get palmsCount => countFor('palms');
+  int get palacesCount =>
+      countFor('ikhlas_palaces') + countFor('ethics_palaces') + countFor('duha_homes');
+  int get housesCount => countFor('rawatib_houses') + countFor('mosque_shares');
+  int get treasuresCount => countFor('throne_treasures') + countFor('sayyid_istighfar');
+  int get grovesCount => countFor('ibrahim_groves') + countFor('tuba_groves');
+  int get charityCount => countFor('charity_pavilions') + countFor('parents_crowns');
+  int get salawatCount => countFor('salawat_kawthar') + countFor('wudu_gates');
+
+  Set<String> get dailyCheckedIds => Set<String>.unmodifiable(_dailyCheckedIds);
+  Set<String> get bookmarkedQaIds => Set<String>.unmodifiable(_bookmarkedQaIds);
+  List<String> get personalAspirations => List<String>.unmodifiable(_personalAspirations);
+  List<JannahDeedLogItem> get recentLogs => List<JannahDeedLogItem>.unmodifiable(_recentLogs);
+
+  int get bestQuizScore => _bestQuizScore;
+  int get quizzesCompleted => _quizzesCompleted;
+
+  int get totalInvestmentActions =>
+      _counts.values.fold<int>(0, (sum, value) => sum + value);
+
+  int get totalJannahPoints {
+    var pts = _bonusPoints;
+    for (final inv in JannatiCatalog.investments) {
+      pts += countFor(inv.id) * inv.pointsPerCompletion;
+      pts += cycleProgressFor(inv.id) * inv.pointsPerTap;
+    }
+    for (final action in JannatiCatalog.dailyArchitectChecklist) {
+      if (_dailyCheckedIds.contains(action.id)) {
+        pts += action.points;
+      }
+    }
+    return pts;
+  }
+
+  /// درجة ازدهار الحديقة التفاعلية (0.0..1.0)
+  double get gardenVibrancy {
+    final pts = totalJannahPoints;
+    if (pts <= 0) return 0.12;
+    return (0.15 + math.min(0.85, pts / 4500.0)).clamp(0.15, 1.0);
+  }
+
+  JannahRankTier get currentRank => _rankForPoints(totalJannahPoints);
+
+  JannahRankTier? get nextRank {
+    final current = currentRank;
+    final idx = JannatiCatalog.ranks.indexWhere((r) => r.level == current.level);
+    if (idx < 0 || idx + 1 >= JannatiCatalog.ranks.length) return null;
+    return JannatiCatalog.ranks[idx + 1];
+  }
+
+  double get rankProgress {
+    final current = currentRank;
+    final next = nextRank;
+    if (next == null) return 1.0;
+    final span = next.minPoints - current.minPoints;
+    if (span <= 0) return 1.0;
+    return ((totalJannahPoints - current.minPoints) / span).clamp(0.0, 1.0);
+  }
+
+  static JannahRankTier _rankForPoints(int points) {
+    JannahRankTier tier = JannatiCatalog.ranks.first;
+    for (final candidate in JannatiCatalog.ranks) {
+      if (points >= candidate.minPoints) {
+        tier = candidate;
+      }
+    }
+    return tier;
+  }
+
+  static String _todayKey() {
+    final now = DateTime.now();
+    return '${now.year.toString().padLeft(4, '0')}-'
+        '${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> init() async {
+    try {
+      _prefs ??= await SharedPreferences.getInstance();
+      _loadFromPrefs();
+      _initialized = true;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('JannatiProvider init error: $e');
+    }
+  }
+
+  void _loadFromPrefs() {
+    final prefs = _prefs;
+    if (prefs == null) return;
+
+    final countsRaw = prefs.getString(_kCountsKey);
+    if (countsRaw != null && countsRaw.isNotEmpty) {
+      try {
+        final map = jsonDecode(countsRaw) as Map<String, dynamic>;
+        for (final entry in map.entries) {
+          _counts[entry.key] = (entry.value as num?)?.toInt() ?? 0;
+        }
+      } catch (_) {}
+    }
+
+    final cyclesRaw = prefs.getString(_kCyclesKey);
+    if (cyclesRaw != null && cyclesRaw.isNotEmpty) {
+      try {
+        final map = jsonDecode(cyclesRaw) as Map<String, dynamic>;
+        for (final entry in map.entries) {
+          _cycleProgress[entry.key] = (entry.value as num?)?.toInt() ?? 0;
+        }
+      } catch (_) {}
+    }
+
+    final today = _todayKey();
+    final savedDate = prefs.getString(_kDailyDateKey) ?? '';
+    _dailyDate = today;
+    _dailyCheckedIds.clear();
+    if (savedDate == today) {
+      final list = prefs.getStringList(_kDailyCheckedKey) ?? const [];
+      _dailyCheckedIds.addAll(list);
+    } else {
+      prefs.setString(_kDailyDateKey, today);
+      prefs.setStringList(_kDailyCheckedKey, const []);
+    }
+
+    final savedBookmarks = prefs.getStringList(_kBookmarksKey);
+    if (savedBookmarks != null) {
+      _bookmarkedQaIds
+        ..clear()
+        ..addAll(savedBookmarks);
+    }
+
+    final savedAspirations = prefs.getStringList(_kAspirationsKey);
+    if (savedAspirations != null && savedAspirations.isNotEmpty) {
+      _personalAspirations
+        ..clear()
+        ..addAll(savedAspirations);
+    }
+
+    _bestQuizScore = prefs.getInt(_kBestQuizKey) ?? 0;
+    _quizzesCompleted = prefs.getInt(_kQuizCountKey) ?? 0;
+    _bonusPoints = prefs.getInt(_kBonusPtsKey) ?? 0;
+
+    final logsRaw = prefs.getString(_kLogsKey);
+    if (logsRaw != null && logsRaw.isNotEmpty) {
+      try {
+        final list = jsonDecode(logsRaw) as List<dynamic>;
+        _recentLogs
+          ..clear()
+          ..addAll(
+            list
+                .whereType<Map<String, dynamic>>()
+                .map(JannahDeedLogItem.fromJson)
+                .take(40),
+          );
+      } catch (_) {}
+    }
+  }
+
+  void _ensureTodayChecklist() {
+    final today = _todayKey();
+    if (_dailyDate != today) {
+      _dailyDate = today;
+      _dailyCheckedIds.clear();
+      _prefs?.setString(_kDailyDateKey, today);
+      _prefs?.setStringList(_kDailyCheckedKey, const []);
+    }
+  }
+
+  Future<JannahTapOutcome> performInvestmentTap(String investmentId) async {
+    final investment = JannatiCatalog.investments.firstWhere(
+      (i) => i.id == investmentId,
+      orElse: () => JannatiCatalog.investments.first,
+    );
+
+    final rankBefore = currentRank.level;
+    bool completedCycle = false;
+    int pointsEarned = investment.pointsPerTap;
+
+    if (investment.cycleTarget <= 1) {
+      _counts[investment.id] = countFor(investment.id) + 1;
+      completedCycle = true;
+      pointsEarned = investment.pointsPerCompletion;
+    } else {
+      final nextProgress = cycleProgressFor(investment.id) + 1;
+      if (nextProgress >= investment.cycleTarget) {
+        _cycleProgress[investment.id] = 0;
+        _counts[investment.id] = countFor(investment.id) + 1;
+        completedCycle = true;
+        pointsEarned = investment.pointsPerCompletion;
+      } else {
+        _cycleProgress[investment.id] = nextProgress;
+      }
+    }
+
+    _recentLogs.insert(
+      0,
+      JannahDeedLogItem(
+        investmentId: investment.id,
+        title: completedCycle
+            ? '${investment.title} (+١ ${investment.unitSingular})'
+            : '${investment.shortLabel} (${cycleProgressFor(investment.id)}/${investment.cycleTarget})',
+        timestampIso: DateTime.now().toIso8601String(),
+        pointsEarned: pointsEarned,
+        completedCycle: completedCycle,
+      ),
+    );
+    if (_recentLogs.length > 40) {
+      _recentLogs.removeRange(40, _recentLogs.length);
+    }
+
+    final newRank = currentRank;
+    final promoted = newRank.level > rankBefore ? newRank : null;
+
+    await _persistCountsAndLogs();
+    notifyListeners();
+
+    final countNow = countFor(investment.id);
+    final cycleNow = cycleProgressFor(investment.id);
+    final msg = completedCycle
+        ? 'ما شاء الله! نلت +١ ${investment.unitSingular} في «${investment.shortLabel}» (رصيدك: $countNow) ✨'
+        : 'مبارك الخطوة ($cycleNow/${investment.cycleTarget}) نحو ${investment.unitSingular} جديدة في ${investment.shortLabel} 📖';
+
+    return JannahTapOutcome(
+      investment: investment,
+      newCount: countNow,
+      cycleProgress: cycleNow,
+      completedCycle: completedCycle,
+      pointsEarned: pointsEarned,
+      promotedToRank: promoted,
+      feedbackMessage: msg,
+    );
+  }
+
+  Future<bool> toggleDailyAction(String actionId) async {
+    _ensureTodayChecklist();
+    final added = !_dailyCheckedIds.contains(actionId);
+    if (added) {
+      _dailyCheckedIds.add(actionId);
+      final action = JannatiCatalog.dailyArchitectChecklist.firstWhere(
+        (a) => a.id == actionId,
+        orElse: () => JannatiCatalog.dailyArchitectChecklist.first,
+      );
+      _recentLogs.insert(
+        0,
+        JannahDeedLogItem(
+          investmentId: 'daily',
+          title: 'ورد يومي: ${action.title}',
+          timestampIso: DateTime.now().toIso8601String(),
+          pointsEarned: action.points,
+          completedCycle: true,
+        ),
+      );
+      if (_recentLogs.length > 40) {
+        _recentLogs.removeRange(40, _recentLogs.length);
+      }
+      await _prefs?.setString(
+        _kLogsKey,
+        jsonEncode(_recentLogs.map((l) => l.toJson()).toList()),
+      );
+    } else {
+      _dailyCheckedIds.remove(actionId);
+    }
+    await _prefs?.setString(_kDailyDateKey, _dailyDate);
+    await _prefs?.setStringList(_kDailyCheckedKey, _dailyCheckedIds.toList());
+    notifyListeners();
+    return added;
+  }
+
+  Future<bool> toggleQaBookmark(String qaId) async {
+    final added = !_bookmarkedQaIds.contains(qaId);
+    if (added) {
+      _bookmarkedQaIds.add(qaId);
+    } else {
+      _bookmarkedQaIds.remove(qaId);
+    }
+    await _prefs?.setStringList(_kBookmarksKey, _bookmarkedQaIds.toList());
+    notifyListeners();
+    return added;
+  }
+
+  Future<void> addPersonalAspiration(String wish) async {
+    final trimmed = wish.trim();
+    if (trimmed.isEmpty) return;
+    if (!_personalAspirations.contains(trimmed)) {
+      _personalAspirations.insert(0, trimmed);
+      await _prefs?.setStringList(_kAspirationsKey, _personalAspirations);
+      notifyListeners();
+    }
+  }
+
+  Future<void> removePersonalAspiration(int index) async {
+    if (index < 0 || index >= _personalAspirations.length) return;
+    _personalAspirations.removeAt(index);
+    await _prefs?.setStringList(_kAspirationsKey, _personalAspirations);
+    notifyListeners();
+  }
+
+  Future<void> recordQuizResult({
+    required int score,
+    required int total,
+  }) async {
+    _quizzesCompleted++;
+    if (score > _bestQuizScore) {
+      _bestQuizScore = score;
+    }
+    final earned = score * 20 + (score == total ? 100 : 0);
+    _bonusPoints += earned;
+    _recentLogs.insert(
+      0,
+      JannahDeedLogItem(
+        investmentId: 'quiz',
+        title: 'اختبار المعرفة بالجنة: $score/$total',
+        timestampIso: DateTime.now().toIso8601String(),
+        pointsEarned: earned,
+        completedCycle: true,
+      ),
+    );
+    if (_recentLogs.length > 40) {
+      _recentLogs.removeRange(40, _recentLogs.length);
+    }
+    await _prefs?.setInt(_kBestQuizKey, _bestQuizScore);
+    await _prefs?.setInt(_kQuizCountKey, _quizzesCompleted);
+    await _prefs?.setInt(_kBonusPtsKey, _bonusPoints);
+    await _prefs?.setString(
+      _kLogsKey,
+      jsonEncode(_recentLogs.map((l) => l.toJson()).toList()),
+    );
+    notifyListeners();
+  }
+
+  Future<void> _persistCountsAndLogs() async {
+    await _prefs?.setString(_kCountsKey, jsonEncode(_counts));
+    await _prefs?.setString(_kCyclesKey, jsonEncode(_cycleProgress));
+    await _prefs?.setString(
+      _kLogsKey,
+      jsonEncode(_recentLogs.map((l) => l.toJson()).toList()),
+    );
+  }
+}

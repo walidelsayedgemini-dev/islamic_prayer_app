@@ -111,6 +111,7 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
                 ? _buildCompassView(
                     heading: _manualHeading,
                     qiblaDirection: qiblaDirection,
+                    themeOption: themeOption,
                     palette: palette,
                     fontFamily: settings.selectedFont,
                     isSimulated: true,
@@ -171,6 +172,7 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
                       return _buildCompassView(
                         heading: _filteredHeading,
                         qiblaDirection: qiblaDirection,
+                        themeOption: themeOption,
                         palette: palette,
                         fontFamily: settings.selectedFont,
                         isSimulated: false,
@@ -186,6 +188,7 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
   Widget _buildCompassView({
     required double heading,
     required double qiblaDirection,
+    required ThemeOption themeOption,
     required ThemePalette palette,
     required String fontFamily,
     required bool isSimulated,
@@ -225,7 +228,38 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
             palette: palette,
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
+
+          // شارة الثيم النشط وخلفية 4K المرافقة للبوصلة
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: palette.cardColor.withOpacity(palette.isDark ? 0.80 : 0.90),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: accentColor.withOpacity(0.38)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(themeOption.icon, color: accentColor, size: 15),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    'أجواء القبلة: ${themeOption.name} • ${themeOption.landmarkName}',
+                    style: TextStyle(
+                      color: palette.textSecondary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 10),
 
           // 2. شارة السهم العلوي الإرشادية الصريحة ("سهم للسهولة")
           _buildTurnGuidanceBanner(
@@ -316,6 +350,7 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
                     painter: _LargeDialPainter(
                       skin: _selectedSkin,
                       fontFamily: fontFamily,
+                      themeAccent: palette.accentColor,
                     ),
                   ),
                 ),
@@ -656,10 +691,12 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
 class _LargeDialPainter extends CustomPainter {
   final CompassSkinStyle skin;
   final String fontFamily;
+  final Color themeAccent;
 
   _LargeDialPainter({
     required this.skin,
     required this.fontFamily,
+    required this.themeAccent,
   });
 
   @override
@@ -676,10 +713,10 @@ class _LargeDialPainter extends CustomPainter {
     switch (skin) {
       case CompassSkinStyle.whiteSmartDial:
         dialBg = Colors.white;
-        rimColor = const Color(0xFFCBD5E1);
+        rimColor = Color.lerp(const Color(0xFFCBD5E1), themeAccent, 0.45)!;
         tickColor = const Color(0xFF1E293B);
         cardinalColor = const Color(0xFF0F172A);
-        subtleRingColor = const Color(0xFFE2E8F0);
+        subtleRingColor = themeAccent.withOpacity(0.26);
         break;
       case CompassSkinStyle.emeraldClassic:
         dialBg = const Color(0xFF04241B);
@@ -830,7 +867,9 @@ class _LargeDialPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _LargeDialPainter oldDelegate) {
-    return oldDelegate.skin != skin || oldDelegate.fontFamily != fontFamily;
+    return oldDelegate.skin != skin ||
+        oldDelegate.fontFamily != fontFamily ||
+        oldDelegate.themeAccent != themeAccent;
   }
 }
 

@@ -206,6 +206,58 @@ class _ParticlePainter extends CustomPainter {
         diamond.close();
         canvas.drawPath(diamond, paint);
         break;
+
+      case ThemeParticleType.waterfallsMist:
+        // قطرة رذاذ مائية متلألئة
+        final haloPaint = Paint()
+          ..color = Colors.white.withOpacity(p.opacity * 0.25)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, p.size * 0.7);
+        canvas.drawCircle(Offset.zero, p.size * 0.75, haloPaint);
+        canvas.drawCircle(Offset.zero, p.size * 0.42, paint);
+        final dropRing = Paint()
+          ..color = Colors.white.withOpacity(p.opacity * 0.65)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.8;
+        canvas.drawCircle(Offset.zero, p.size * 0.58, dropRing);
+        break;
+
+      case ThemeParticleType.auroraRibbons:
+        // شريط شفق متوهج انسيابي
+        final ribbonPaint = Paint()
+          ..color = color
+          ..strokeWidth = (p.size * 0.35).clamp(1.5, 4.0)
+          ..strokeCap = StrokeCap.round
+          ..style = PaintingStyle.stroke
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, p.size * 0.65);
+        final ribbonPath = Path()
+          ..moveTo(-p.size * 1.1, -p.size * 0.3)
+          ..quadraticBezierTo(0, p.size * 0.5, p.size * 1.1, -p.size * 0.2);
+        canvas.drawPath(ribbonPath, ribbonPaint);
+        break;
+
+      case ThemeParticleType.lanternSparks:
+        // شرارة فانوس دافئة رباعية البريق
+        final emberGlow = Paint()
+          ..color = color.withOpacity(p.opacity * 0.45)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, p.size * 0.9);
+        canvas.drawCircle(Offset.zero, p.size * 0.75, emberGlow);
+        final star = Paint()
+          ..color = Colors.white.withOpacity(p.opacity * 0.85)
+          ..strokeWidth = 1.0;
+        final len = p.size * 0.7;
+        canvas.drawLine(Offset(-len, 0), Offset(len, 0), star);
+        canvas.drawLine(Offset(0, -len), Offset(0, len), star);
+        break;
+
+      case ThemeParticleType.crescentGleams:
+        // هلال صغير مضيء
+        final r = p.size * 0.62;
+        final outerOval = Path()..addOval(Rect.fromCircle(center: Offset.zero, radius: r));
+        final cutOval = Path()
+          ..addOval(Rect.fromCircle(center: Offset(r * 0.42, -r * 0.14), radius: r * 0.86));
+        final crescent = Path.combine(PathOperation.difference, outerOval, cutOval);
+        canvas.drawPath(crescent, paint);
+        break;
     }
   }
 

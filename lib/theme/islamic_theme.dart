@@ -1,5 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:adhan/adhan.dart';
+import 'islamic_theme_extra.dart';
+
+enum ThemeCategory {
+  haramain, // الحرمين والمشاعر
+  landmarks, // المعالم والمساجد
+  skyPrayer, // أوقات الصلاة والمواسم
+  jannahNature, // رياض الجنة والطبيعة
+}
+
+extension ThemeCategoryExtension on ThemeCategory {
+  String get label {
+    switch (this) {
+      case ThemeCategory.haramain:
+        return 'الحرمين والمشاعر';
+      case ThemeCategory.landmarks:
+        return 'المعالم والمساجد';
+      case ThemeCategory.skyPrayer:
+        return 'أوقات الصلاة والمواسم';
+      case ThemeCategory.jannahNature:
+        return 'رياض الجنة والطبيعة';
+    }
+  }
+
+  String get shortLabel {
+    switch (this) {
+      case ThemeCategory.haramain:
+        return 'الحرمين';
+      case ThemeCategory.landmarks:
+        return 'المعالم';
+      case ThemeCategory.skyPrayer:
+        return 'الأوقات';
+      case ThemeCategory.jannahNature:
+        return 'الجنة';
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case ThemeCategory.haramain:
+        return Icons.mosque_rounded;
+      case ThemeCategory.landmarks:
+        return Icons.account_balance_rounded;
+      case ThemeCategory.skyPrayer:
+        return Icons.nights_stay_rounded;
+      case ThemeCategory.jannahNature:
+        return Icons.park_rounded;
+    }
+  }
+}
 
 enum ThemeParticleType {
   rosePetals, // بتلات الورد الطائفي المتطايرة
@@ -12,6 +61,10 @@ enum ThemeParticleType {
   sandGrains, // رمال طيبة الذهبية الناعمة
   geometricZellij, // شظايا الزليج والفسيفساء الزرقاء
   copperGlow, // بريق النحاس الدمشقي العتيق
+  waterfallsMist, // رذاذ أنهار الفردوس وينابيع زمزم
+  auroraRibbons, // أشرطة أنوار السحر والقيام
+  lanternSparks, // شرارات نور الفوانيس والقناديل
+  crescentGleams, // وميض الأهلة السماوية المضيئة
 }
 
 class ThemePalette {
@@ -53,9 +106,10 @@ class ThemeOption {
   final String subtitle;
   // 4. قصة الثيم التاريخية
   final String historicalStory;
-  // 5. الصرح والمعلم التاريخي
+  // 5. الصرح والمعلم التاريخي والتصنيف
   final String landmarkName;
   final IconData landmarkIcon;
+  final ThemeCategory category;
 
   // 6-10. ألوان الهوية الافتراضية (الوضع الليلي)
   final Color primaryColor;
@@ -65,7 +119,7 @@ class ThemeOption {
   final bool isDark;
   final IconData icon;
 
-  // لوحة الوضع النهاري ولوحة الوضع الليلي المخصصتين لكل ثيم من الـ 12 ثيماً
+  // لوحة الوضع النهاري ولوحة الوضع الليلي المخصصتين لكل ثيم من الـ 52 ثيماً
   final ThemePalette dayPalette;
   final ThemePalette nightPalette;
 
@@ -105,6 +159,7 @@ class ThemeOption {
     required this.historicalStory,
     required this.landmarkName,
     required this.landmarkIcon,
+    required this.category,
     required this.primaryColor,
     required this.accentColor,
     required this.scaffoldColor,
@@ -132,7 +187,7 @@ class ThemeOption {
 }
 
 class IslamicTheme {
-  static const List<ThemeOption> allThemes = [
+  static const List<ThemeOption> _core12Themes = [
     // 1. واحة الزمرد والذهب
     ThemeOption(
       key: 'emerald_gold',
@@ -141,6 +196,7 @@ class IslamicTheme {
       historicalStory: 'مستوحى من خضرة القبة النبوية المطهرة ورخام الروضة الشريفة حيث السلام على رسول الله ﷺ وصاحبيه.',
       landmarkName: 'المسجد النبوي الشريف',
       landmarkIcon: Icons.mosque_rounded,
+      category: ThemeCategory.haramain,
       primaryColor: Color(0xFF0F3E32),
       accentColor: Color(0xFFD4AF37),
       scaffoldColor: Color(0xFF061814),
@@ -198,6 +254,7 @@ class IslamicTheme {
       historicalStory: 'مستوحى من جلال الكعبة المشرفة وحرير كسوتها السوداء المطرزة بأسلاك الذهب والفضة بآيات التوحيد.',
       landmarkName: 'الكعبة المشرفة ومقام إبراهيم',
       landmarkIcon: Icons.crop_square_rounded,
+      category: ThemeCategory.haramain,
       primaryColor: Color(0xFF1E1E1E),
       accentColor: Color(0xFFF3C644),
       scaffoldColor: Color(0xFF0A0A0A),
@@ -255,6 +312,7 @@ class IslamicTheme {
       historicalStory: 'مستوحى من رخام ساحات الحرم المكي الشريف والمسجد النبوي بالمدينة، الرخام اليوناني البارد الطبيعي المطعم بفواصل النحاس والذهب الخالص.',
       landmarkName: 'ساحات الحرمين الشريفين ورخام ثاسوس',
       landmarkIcon: Icons.account_balance_rounded,
+      category: ThemeCategory.haramain,
       primaryColor: Color(0xFF13362A),
       accentColor: Color(0xFFD4AF37),
       scaffoldColor: Color(0xFF0A2219),
@@ -312,6 +370,7 @@ class IslamicTheme {
       historicalStory: 'مستلهم من جبال مكة وقت السحر وعبير مزارع الورد الطائفي النبيل التي يغسل بها الكعبة المشرفة سنوياً.',
       landmarkName: 'جبال الصفا ومزارع الورد الطائفي',
       landmarkIcon: Icons.local_florist_rounded,
+      category: ThemeCategory.haramain,
       primaryColor: Color(0xFF2E131C),
       accentColor: Color(0xFFF472B6),
       scaffoldColor: Color(0xFF160A10),
@@ -369,6 +428,7 @@ class IslamicTheme {
       historicalStory: 'يجسد روعة أكثر من عشرين ألف قطعة خزف فيروزي مصنوعة يدوياً بقصر توبكابي ومسجد السلطان أحمد التاريخي.',
       landmarkName: 'مسجد السلطان أحمد وقباب إسطنبول',
       landmarkIcon: Icons.brightness_auto_rounded,
+      category: ThemeCategory.landmarks,
       primaryColor: Color(0xFF0B2838),
       accentColor: Color(0xFF22D3EE),
       scaffoldColor: Color(0xFF04141E),
@@ -426,6 +486,7 @@ class IslamicTheme {
       historicalStory: 'يعيدنا إلى ليالي الصحراء العربية الصافية حين كان الأجداد يهتدون بالنجوم في ظلمات البر والبحر.',
       landmarkName: 'بادية الحجاز ومرصد النجوم الكونية',
       landmarkIcon: Icons.nights_stay_rounded,
+      category: ThemeCategory.skyPrayer,
       primaryColor: Color(0xFF111D36),
       accentColor: Color(0xFF93C5FD),
       scaffoldColor: Color(0xFF080E1C),
@@ -483,6 +544,7 @@ class IslamicTheme {
       historicalStory: 'مستوحى من قدسية المسجد الأقصى المبارك وقبة الصخرة المشرفة التي عرج منها النبي ﷺ إلى السماوات العلى.',
       landmarkName: 'المسجد الأقصى وقبة الصخرة الذهبية',
       landmarkIcon: Icons.temple_buddhist_rounded,
+      category: ThemeCategory.landmarks,
       primaryColor: Color(0xFF26103B),
       accentColor: Color(0xFFFBBF24),
       scaffoldColor: Color(0xFF12071E),
@@ -540,6 +602,7 @@ class IslamicTheme {
       historicalStory: 'يستحضر عظمة الجامع الأموي الكبير بدمشق، وفن التخريم النحاسي العريق الذي تفرد به حرفيو الشام عبر القرون.',
       landmarkName: 'الجامع الأموي الكبير بدمشق',
       landmarkIcon: Icons.fireplace_rounded,
+      category: ThemeCategory.landmarks,
       primaryColor: Color(0xFF2C1910),
       accentColor: Color(0xFFFB923C),
       scaffoldColor: Color(0xFF160B06),
@@ -597,6 +660,7 @@ class IslamicTheme {
       historicalStory: 'مستوحى من عصر بيت الحكمة الذهبي في بغداد، حيث كان العلماء يسطرون أبهى صفحات الطب والفلك والهندسة.',
       landmarkName: 'بيت الحكمة ونهر دجلة الخالد',
       landmarkIcon: Icons.star_rounded,
+      category: ThemeCategory.landmarks,
       primaryColor: Color(0xFF2C1E0A),
       accentColor: Color(0xFFF59E0B),
       scaffoldColor: Color(0xFF140D04),
@@ -654,6 +718,7 @@ class IslamicTheme {
       historicalStory: 'يخلد ذكرى أول مسجد بني في الإسلام بـ (قباء) وبساتين النخيل التي آوت المهاجرين والأنصار في صفاء العقيدة.',
       landmarkName: 'مسجد قباء وبساتين عوالي المدينة',
       landmarkIcon: Icons.forest_rounded,
+      category: ThemeCategory.haramain,
       primaryColor: Color(0xFF241F17),
       accentColor: Color(0xFFD4B996),
       scaffoldColor: Color(0xFF12100B),
@@ -711,6 +776,7 @@ class IslamicTheme {
       historicalStory: 'يحيي تراث بحارة الخليج العربي ورحلات الغوص للبحث عن اللؤلؤ الحر وهم يصدحون بالتهليل والتسبيح بين الأمواج.',
       landmarkName: 'منارات سواحل الخليج ومحار الدانة',
       landmarkIcon: Icons.water_rounded,
+      category: ThemeCategory.skyPrayer,
       primaryColor: Color(0xFF0C2433),
       accentColor: Color(0xFF38BDF8),
       scaffoldColor: Color(0xFF05131C),
@@ -768,6 +834,7 @@ class IslamicTheme {
       historicalStory: 'مستلهم من وصف الجنة في الكتاب والسنة: رياض خضراء، وسندس واستبرق، وحوض الكوثر الذي ترابه المسك.',
       landmarkName: 'باب الريان ورياض الفردوس الأعلى',
       landmarkIcon: Icons.auto_awesome_rounded,
+      category: ThemeCategory.jannahNature,
       primaryColor: Color(0xFF042F2C),
       accentColor: Color(0xFF34D399),
       scaffoldColor: Color(0xFF021715),
@@ -817,6 +884,16 @@ class IslamicTheme {
       landmarkSilhouetteAsset: 'jannah_gardens',
     ),
   ];
+
+  static const List<ThemeOption> allThemes = [
+    ..._core12Themes,
+    ...extra40IslamicThemes,
+  ];
+
+  static List<ThemeOption> themesByCategory(ThemeCategory? category) {
+    if (category == null) return allThemes;
+    return allThemes.where((t) => t.category == category).toList();
+  }
 
   static ThemeOption getThemeOption(String key) {
     final normalizedKey = key == 'emerald' ? 'emerald_gold' : key;

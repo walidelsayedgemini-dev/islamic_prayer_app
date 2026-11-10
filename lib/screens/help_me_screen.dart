@@ -4,11 +4,17 @@ import 'package:provider/provider.dart';
 import '../models/help_me_model.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
+import '../widgets/islamic_qa_explorer_widget.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/real_mosque_background.dart';
 
 class HelpMeScreen extends StatefulWidget {
-  const HelpMeScreen({super.key});
+  final ValueNotifier<bool?>? openQaNotifier;
+
+  const HelpMeScreen({
+    super.key,
+    this.openQaNotifier,
+  });
 
   @override
   State<HelpMeScreen> createState() => _HelpMeScreenState();
@@ -17,6 +23,7 @@ class HelpMeScreen extends StatefulWidget {
 class _HelpMeScreenState extends State<HelpMeScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _breathingController;
+  int _modeIndex = 0; // 0: صيدلية الروح، 1: اسألني (500 سؤال وجواب)
 
   @override
   void initState() {
@@ -25,10 +32,38 @@ class _HelpMeScreenState extends State<HelpMeScreen>
       vsync: this,
       duration: const Duration(seconds: 8),
     )..repeat(reverse: true);
+    widget.openQaNotifier?.addListener(_consumeOpenQaRequest);
+    _consumeOpenQaRequest();
+  }
+
+  void _consumeOpenQaRequest() {
+    final notifier = widget.openQaNotifier;
+    if (notifier == null) return;
+    final val = notifier.value;
+    if (val != null) {
+      final target = val ? 1 : 0;
+      if (mounted) {
+        setState(() => _modeIndex = target);
+      } else {
+        _modeIndex = target;
+      }
+      notifier.value = null;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant HelpMeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.openQaNotifier != widget.openQaNotifier) {
+      oldWidget.openQaNotifier?.removeListener(_consumeOpenQaRequest);
+      widget.openQaNotifier?.addListener(_consumeOpenQaRequest);
+      _consumeOpenQaRequest();
+    }
   }
 
   @override
   void dispose() {
+    widget.openQaNotifier?.removeListener(_consumeOpenQaRequest);
     _breathingController.dispose();
     super.dispose();
   }
@@ -421,120 +456,244 @@ class _HelpMeScreenState extends State<HelpMeScreen>
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: palette.cardColor.withOpacity(isNight ? 0.80 : 0.90),
+                      color: palette.cardColor.withOpacity(isNight ? 0.82 : 0.92),
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: accentColor.withOpacity(0.4)),
+                      border: Border.all(color: accentColor.withOpacity(0.45)),
                     ),
-                    child: Row(
+                    child: Column(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: accentColor.withOpacity(0.18),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: accentColor, width: 1.2),
-                          ),
-                          child: Icon(Icons.favorite_rounded, color: accentColor, size: 22),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: accentColor.withOpacity(0.18),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: accentColor, width: 1.2),
+                              ),
+                              child: Icon(
+                                _modeIndex == 0
+                                    ? Icons.favorite_rounded
+                                    : Icons.question_answer_rounded,
+                                color: accentColor,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _modeIndex == 0
+                                        ? "سَاعِدْنِي • صيدلية الروح والسكينة"
+                                        : "اسْأَلْنِي • موسوعة ٥٠٠ سؤال وجواب",
+                                    style: TextStyle(
+                                      color: accentColor,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15.5,
+                                    ),
+                                  ),
+                                  Text(
+                                    _modeIndex == 0
+                                        ? "علاج القلوب بالهدي النبوي والقرآن الكريم لكل أحوال الإنسان"
+                                        : "ابحث بالعربية الفصحى أو العامية في العقيدة والفقه والجَنَّة والحياة",
+                                    style: TextStyle(color: palette.textSecondary, fontSize: 11),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "سَاعِدْنِي • صيدلية الروح والسكينة",
-                                style: TextStyle(
-                                  color: accentColor,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16.5,
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => _modeIndex = 0),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 220),
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: _modeIndex == 0
+                                        ? accentColor
+                                        : palette.elevatedCardColor,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: _modeIndex == 0
+                                          ? accentColor
+                                          : palette.dividerColor,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.healing_rounded,
+                                        size: 16,
+                                        color: _modeIndex == 0
+                                            ? palette.onAccentColor
+                                            : palette.textSecondary,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        "صيدلية الروح",
+                                        style: TextStyle(
+                                          color: _modeIndex == 0
+                                              ? palette.onAccentColor
+                                              : palette.textPrimary,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                              Text(
-                                "علاج القلوب بالهدي النبوي والقرآن الكريم لكل أحوال الإنسان",
-                                style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => _modeIndex = 1),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 220),
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: _modeIndex == 1
+                                        ? accentColor
+                                        : palette.elevatedCardColor,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: _modeIndex == 1
+                                          ? accentColor
+                                          : palette.dividerColor,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.question_answer_rounded,
+                                        size: 16,
+                                        color: _modeIndex == 1
+                                            ? palette.onAccentColor
+                                            : palette.textSecondary,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        "٥٠٠ سؤال وجواب",
+                                        style: TextStyle(
+                                          color: _modeIndex == 1
+                                              ? palette.onAccentColor
+                                              : palette.textPrimary,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
                 ),
                 Expanded(
-                  child: GridView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 95),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 0.88,
-                    ),
-                    itemCount: HelpMeCategory.categories.length,
-                    itemBuilder: (context, index) {
-                      final cat = HelpMeCategory.categories[index];
-                      final catAccent = _resolveCatAccent(cat, palette.isDark);
-                      return GestureDetector(
-                        onTap: () => _showCategoryDetails(context, cat, palette),
-                        child: Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: palette.cardColor.withOpacity(isNight ? 0.85 : 0.90),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: catAccent.withOpacity(0.45), width: 1.2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: cat.primaryColor.withOpacity(palette.isDark ? 0.16 : 0.10),
-                                blurRadius: 12,
-                                offset: const Offset(0, 3),
-                              )
-                            ],
+                  child: _modeIndex == 1
+                      ? SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 98),
+                          physics: const BouncingScrollPhysics(),
+                          child: IslamicQaExplorerWidget(
+                            palette: palette,
+                            headerTitle: 'مَوْسُوعَةُ الفَرْدَوْسِ • ٥٠٠ سُؤَالٍ وَجَوَابٍ',
+                            headerSubtitle:
+                                'اكتب أي سؤال بالعامية أو الفصحى لتصلك الإجابة الشرعية والدليل فوراً',
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(12),
+                        )
+                      : GridView.builder(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 95),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 0.88,
+                          ),
+                          itemCount: HelpMeCategory.categories.length,
+                          itemBuilder: (context, index) {
+                            final cat = HelpMeCategory.categories[index];
+                            final catAccent = _resolveCatAccent(cat, palette.isDark);
+                            return GestureDetector(
+                              onTap: () => _showCategoryDetails(context, cat, palette),
+                              child: Container(
+                                padding: const EdgeInsets.all(14),
                                 decoration: BoxDecoration(
-                                  color: cat.primaryColor.withOpacity(0.18),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: catAccent.withOpacity(0.7)),
+                                  color: palette.cardColor.withOpacity(isNight ? 0.85 : 0.90),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: catAccent.withOpacity(0.45),
+                                    width: 1.2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: cat.primaryColor.withOpacity(
+                                        palette.isDark ? 0.16 : 0.10,
+                                      ),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 3),
+                                    )
+                                  ],
                                 ),
-                                child: Icon(cat.icon, color: catAccent, size: 30),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                cat.title,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: catAccent,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: cat.primaryColor.withOpacity(0.18),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: catAccent.withOpacity(0.7)),
+                                      ),
+                                      child: Icon(cat.icon, color: catAccent, size: 30),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      cat.title,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: catAccent,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      cat.subtitle,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: palette.textSecondary,
+                                        fontSize: 10,
+                                        height: 1.3,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
                                 ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: 6),
-                              Text(
-                                cat.subtitle,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: palette.textSecondary,
-                                  fontSize: 10,
-                                  height: 1.3,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
                 ),
               ],
             ),
