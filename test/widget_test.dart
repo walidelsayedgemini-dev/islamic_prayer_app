@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +8,7 @@ import 'package:islamic_prayer_app/models/font_catalog.dart';
 import 'package:islamic_prayer_app/models/islamic_audio_data.dart';
 import 'package:islamic_prayer_app/models/islamic_missions_data.dart';
 import 'package:islamic_prayer_app/models/islamic_qa_500.dart';
+import 'package:islamic_prayer_app/models/islamic_stories_data.dart';
 import 'package:islamic_prayer_app/models/islamic_titles_200.dart';
 import 'package:islamic_prayer_app/models/jannati_encyclopedia_data.dart';
 import 'package:islamic_prayer_app/models/motivational_phrases_500.dart';
@@ -14,7 +16,11 @@ import 'package:islamic_prayer_app/models/prayer_identity_model.dart';
 import 'package:islamic_prayer_app/models/prayer_info.dart';
 import 'package:islamic_prayer_app/models/prayer_model.dart';
 import 'package:islamic_prayer_app/models/quran_model.dart';
+import 'package:islamic_prayer_app/models/sacred_reference_parser.dart';
+import 'package:islamic_prayer_app/models/sahih_hadith_data.dart';
+import 'package:islamic_prayer_app/models/tasbih_3d_phrases_200.dart';
 import 'package:islamic_prayer_app/models/tasbih_challenge.dart';
+import 'package:islamic_prayer_app/models/touch_effects_200.dart';
 import 'package:islamic_prayer_app/providers/firdaws_user_provider.dart';
 import 'package:islamic_prayer_app/providers/jannati_provider.dart';
 import 'package:islamic_prayer_app/theme/islamic_theme.dart';
@@ -470,5 +476,105 @@ void main() {
     await jp.recordQuizResult(score: 25, total: 25);
     expect(jp.bestQuizScore, 25);
     expect(jp.quizzesCompleted, 1);
+
+    // 4. Hadith-read kinetic counter
+    final prevTick = jp.statsKineticTick;
+    final firstRead = await jp.markJannahHadithRead('jannah_h_1', title: 'حديث الفردوس');
+    expect(firstRead, isTrue);
+    expect(jp.hadithsReadCount, 1);
+    expect(jp.statsKineticTick, prevTick + 1);
+  });
+
+  test('All 5 Adhan voice MP3s & offline Tafsir Muyassar (6236 ayahs) load properly',
+      () async {
+    expect(IslamicAudioLibrary.adhanVoices.length, 5);
+    for (final v in IslamicAudioLibrary.adhanVoices) {
+      final bd = await rootBundle.load('assets/${v.assetPath}');
+      expect(bd.lengthInBytes, greaterThan(10000), reason: 'Missing Adhan audio ${v.assetPath}');
+    }
+
+    final tafsirMap = await TafsirRepository.loadOfflineMuyassar();
+    expect(tafsirMap.length, 114);
+    final totalTafsirAyahs = tafsirMap.values.fold<int>(0, (sum, list) => sum + list.length);
+    expect(totalTafsirAyahs, 6236);
+    expect(tafsirMap['1']!.first.trim(), isNotEmpty);
+
+    final prayers = AdvancedPrayerTimes.calculate(
+      latitude: 24.7136,
+      longitude: 46.6753,
+      method: CalculationMethod.umm_al_qura,
+      madhab: Madhab.shafi,
+    );
+    expect(prayers.tomorrowFajr.isAfter(prayers.prayerTimes.fajr), isTrue);
+  });
+
+  test('Authentic Islamic Stories (52), Sahih Bukhari (120) & SacredReferenceParser work accurately',
+      () async {
+    expect(IslamicStoriesCatalog.allStories.length, 52);
+    for (final cat in StoryCategory.values) {
+      expect(IslamicStoriesCatalog.byCategory(cat), isNotEmpty);
+    }
+    for (final st in IslamicStoriesCatalog.allStories) {
+      expect(st.chapters, isNotEmpty, reason: 'Empty chapters for ${st.id}');
+      expect(st.lessons, isNotEmpty, reason: 'Empty lessons for ${st.id}');
+      final imgBytes = await rootBundle.load('assets/images/themes/${st.themeImageKey}.jpg');
+      expect(imgBytes.lengthInBytes, greaterThan(5000),
+          reason: 'Missing story background ${st.themeImageKey}.jpg');
+    }
+
+    expect(SahihHadithCatalog.allHadiths.length, 120);
+    for (final ch in SahihHadithCatalog.chapters) {
+      expect(SahihHadithCatalog.byChapter(ch.id), isNotEmpty);
+    }
+    expect(SahihHadithCatalog.resolveReference('صحيح البخاري (1)').id, 'b_1');
+
+    final refs1 = SacredReferenceParser.extractQuranReferences('تأمل في البقرة: 255 وسورة الإخلاص: 1');
+    expect(refs1.any((r) => r.surahNumber == 2 && r.ayahNumber == 255), isTrue);
+    expect(refs1.any((r) => r.surahNumber == 112 && r.ayahNumber == 1), isTrue);
+
+    final refs2 = SacredReferenceParser.extractQuranReferences('في سورة غافر — الآية (٨) و آية الكرسي');
+    expect(refs2.any((r) => r.surahNumber == 40 && r.ayahNumber == 8), isTrue);
+    expect(refs2.any((r) => r.surahNumber == 2 && r.ayahNumber == 255), isTrue);
+
+    expect(SacredReferenceParser.containsHadithReference('رواه البخاري (6306)'), isTrue);
+    final hResolved = SacredReferenceParser.resolveHadith('رواه البخاري (1)');
+    expect(hResolved.sourceReference.contains('1'), isTrue);
+  });
+
+  test('200 Touch Effects, 200 3D Tasbih Phrases, Per-Theme Emojis, Avatar & About Me persistence',
+      () async {
+    expect(TouchEffectsCatalog.allEffects.length, 200);
+    expect(TouchEffectsCatalog.allEffects.map((e) => e.number).toSet().length, 200);
+    expect(TouchEffectsCatalog.allEffects.map((e) => e.id).toSet().length, 200);
+    for (final cat in TouchEffectCategory.values) {
+      expect(TouchEffectsCatalog.allEffects.where((e) => e.category == cat), isNotEmpty);
+    }
+
+    expect(Tasbih3DPhrasesCatalog.allPhrases.length, 200);
+    expect(Tasbih3DPhrasesCatalog.allPhrases.map((p) => p.number).toSet().length, 200);
+
+    for (final t in IslamicTheme.allThemes) {
+      expect(t.primaryEmoji.trim(), isNotEmpty, reason: 'Empty primaryEmoji for ${t.key}');
+      expect(t.signatureEmojis.length, 8, reason: 'Expected 8 emojis for ${t.key}');
+    }
+
+    SharedPreferences.setMockInitialValues({});
+    final userProv = FirdawsUserProvider();
+    await userProv.init();
+
+    final sampleB64 = base64Encode([137, 80, 78, 71, 13, 10, 26, 10]);
+    await userProv.updateAvatarBase64(sampleB64);
+    expect(userProv.avatarBytes, isNotNull);
+    expect(userProv.avatarBytes!.length, 8);
+
+    await userProv.updateAboutInfo(
+      creatorName: 'وليد',
+      creatorTitle: 'مطور تطبيق الفردوس',
+      bio: 'نسألكم الدعاء بالقبول والتوفيق',
+      duaRequest: 'اللهم اغفر لي ولوالدي',
+    );
+    expect(userProv.aboutCreatorName, 'وليد');
+    await userProv.incrementCreatorDua();
+    expect(userProv.creatorDuasCount, 1);
   });
 }

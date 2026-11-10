@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:adhan/adhan.dart';
@@ -9,6 +10,7 @@ import '../providers/audio_player_provider.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
+import '../widgets/audio_download_manager_sheet.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/persistent_audio_player_bar.dart';
 import '../widgets/real_mosque_background.dart';
@@ -16,11 +18,13 @@ import '../widgets/real_mosque_background.dart';
 class QuranReaderScreen extends StatefulWidget {
   final int? initialSurahNumber;
   final int? initialHighlightAyah;
+  final bool openTafsirOnStart;
 
   const QuranReaderScreen({
     super.key,
     this.initialSurahNumber,
     this.initialHighlightAyah,
+    this.openTafsirOnStart = false,
   });
 
   @override
@@ -108,11 +112,76 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
         _activeSurah = initial;
         _highlightedAyahNumber = widget.initialHighlightAyah;
       });
+      if (initial != null && widget.initialHighlightAyah != null) {
+        final startSurah = initial;
+        final targetAyah = widget.initialHighlightAyah!.clamp(1, startSurah.ayahs.length);
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          await _scrollToAyah(startSurah, targetAyah);
+          if (widget.openTafsirOnStart && mounted) {
+            final ayahObj = startSurah.ayahs[targetAyah - 1];
+            _showAyahTafsirModal(startSurah, ayahObj);
+          }
+        });
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _loadError = 'تعذر تحميل بيانات المصحف الشريف: $e';
       });
+    }
+  }
+
+  List<List<QuranAyah>> _groupPagesForSurah(QuranSurah surah) {
+    final pages = <List<QuranAyah>>[];
+    for (final ayah in surah.ayahs) {
+      if (pages.isEmpty || pages.last.first.page != ayah.page) {
+        pages.add([ayah]);
+      } else {
+        pages.last.add(ayah);
+      }
+    }
+    return pages;
+  }
+
+  Future<void> _scrollToAyah(QuranSurah surah, int targetAyah) async {
+    if (!mounted) return;
+    final clamped = targetAyah.clamp(1, surah.ayahs.length);
+    final ayahObj = surah.ayahs[clamped - 1];
+    final targetKey = _mushafContinuousMode
+        ? GlobalObjectKey('page_${surah.number}_${ayahObj.page}')
+        : GlobalObjectKey('ayah_${surah.number}_$clamped');
+
+    if (targetKey.currentContext != null) {
+      await Scrollable.ensureVisible(
+        targetKey.currentContext!,
+        alignment: 0.14,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOutCubic,
+      );
+      return;
+    }
+
+    if (!_readerScrollController.hasClients) return;
+    final pages = _groupPagesForSurah(surah);
+    int targetItemIndex = clamped;
+    if (_mushafContinuousMode) {
+      final pIdx = pages.indexWhere((pg) => pg.any((a) => a.number == clamped));
+      targetItemIndex = (pIdx < 0 ? 0 : pIdx) + 1;
+    }
+    final approxExtent = _mushafContinuousMode ? 310.0 : 180.0;
+    final maxExtent = _readerScrollController.position.maxScrollExtent;
+    final estOffset = (targetItemIndex * approxExtent).clamp(0.0, maxExtent);
+    _readerScrollController.jumpTo(estOffset);
+
+    await Future<void>.delayed(const Duration(milliseconds: 60));
+    if (!mounted) return;
+    if (targetKey.currentContext != null) {
+      await Scrollable.ensureVisible(
+        targetKey.currentContext!,
+        alignment: 0.14,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+      );
     }
   }
 
@@ -126,7 +195,11 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
       Provider.of<FirdawsUserProvider>(context, listen: false)
           .recordSurahRead(surah.number);
     } catch (_) {}
-    if (_readerScrollController.hasClients) {
+    if (highlightAyah != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToAyah(surah, highlightAyah);
+      });
+    } else if (_readerScrollController.hasClients) {
       _readerScrollController.jumpTo(0);
     }
   }
@@ -289,7 +362,14 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                 }
               },
             ),
-          ] else
+          ] else ...[
+            IconButton(
+              constraints: const BoxConstraints(),
+              padding: const EdgeInsets.all(6),
+              icon: Icon(Icons.cloud_download_rounded, color: accent, size: 22),
+              tooltip: "إدارة التحميل بدون إنترنت ⬇️",
+              onPressed: () => showAudioDownloadManagerSheet(context),
+            ),
             IconButton(
               constraints: const BoxConstraints(),
               padding: const EdgeInsets.all(6),
@@ -297,6 +377,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
               tooltip: "إغلاق المصحف",
               onPressed: () => Navigator.of(context).pop(),
             ),
+          ],
         ],
       ),
     );
@@ -972,6 +1053,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
     final lastAyahNum = pageAyahs.last.number;
 
     return Container(
+      key: GlobalObjectKey('page_${surah.number}_$pageNum'),
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
       decoration: BoxDecoration(
@@ -983,7 +1065,6 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 "الجزء ${toArabicIndicDigits(juzNum)} • صفحة ${toArabicIndicDigits(pageNum)}",
@@ -993,6 +1074,30 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              const Spacer(),
+              InkWell(
+                onTap: () => _showAyahTafsirModal(surah, pageAyahs.first),
+                borderRadius: BorderRadius.circular(10),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.menu_book_rounded, color: accent, size: 14),
+                      const SizedBox(width: 4),
+                      Text(
+                        "التفسير 📖",
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
               InkWell(
                 onTap: () async {
                   await _saveReadingBookmark(surah.number, firstAyahNum);
@@ -1027,43 +1132,18 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
             ],
           ),
           Divider(color: palette.dividerColor, height: 14),
-          SelectableText.rich(
-            TextSpan(
-              children: [
-                for (final ayah in pageAyahs) ...[
-                  TextSpan(
-                    text: '${ayah.text} ',
-                    style: TextStyle(
-                      fontFamily: readerFont,
-                      fontSize: _fontSize,
-                      height: 2.05,
-                      color: _highlightedAyahNumber == ayah.number
-                          ? accent
-                          : palette.textPrimary,
-                      backgroundColor: _highlightedAyahNumber == ayah.number
-                          ? accent.withOpacity(0.14)
-                          : null,
-                    ),
-                  ),
-                  TextSpan(
-                    text: '﴿${toArabicIndicDigits(ayah.number)}﴾ ',
-                    style: TextStyle(
-                      fontFamily: readerFont,
-                      fontSize: (_fontSize * 0.86).clamp(14.0, 30.0),
-                      fontWeight: FontWeight.bold,
-                      color: accent,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            textAlign: TextAlign.justify,
-            textDirection: TextDirection.rtl,
+          _MushafInteractivePageText(
+            pageAyahs: pageAyahs,
+            highlightedAyahNumber: _highlightedAyahNumber,
+            fontSize: _fontSize,
+            readerFont: readerFont,
+            palette: palette,
+            onTapAyah: (ayah) => _showAyahTafsirModal(surah, ayah),
           ),
           const SizedBox(height: 8),
           Center(
             child: Text(
-              "الآيات ${toArabicIndicDigits(firstAyahNum)} – ${toArabicIndicDigits(lastAyahNum)}",
+              "اضغط على أي آية لعرض تفسيرها الموثق ✨ • الآيات ${toArabicIndicDigits(firstAyahNum)} – ${toArabicIndicDigits(lastAyahNum)}",
               style: TextStyle(color: palette.textMuted, fontSize: 10.5),
             ),
           ),
@@ -1083,96 +1163,380 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
         _lastReadSurah == surah.number && _lastReadAyah == ayah.number;
     final isHighlighted = _highlightedAyahNumber == ayah.number;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isHighlighted
-            ? accent.withOpacity(palette.isDark ? 0.20 : 0.14)
-            : palette.cardColor.withOpacity(palette.isDark ? 0.86 : 0.94),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: (isHighlighted || isBookmarked) ? accent : palette.dividerColor,
-          width: (isHighlighted || isBookmarked) ? 1.5 : 1.0,
+    return GestureDetector(
+      key: GlobalObjectKey('ayah_${surah.number}_${ayah.number}'),
+      onTap: () => _showAyahTafsirModal(surah, ayah),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isHighlighted
+              ? accent.withOpacity(palette.isDark ? 0.22 : 0.16)
+              : palette.cardColor.withOpacity(palette.isDark ? 0.86 : 0.94),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: (isHighlighted || isBookmarked) ? accent : palette.dividerColor,
+            width: (isHighlighted || isBookmarked) ? 1.6 : 1.0,
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                decoration: BoxDecoration(
-                  color: accent.withOpacity(0.16),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: accent.withOpacity(0.45)),
-                ),
-                child: Text(
-                  "الآية ${toArabicIndicDigits(ayah.number)}",
-                  style: TextStyle(
-                    color: accent,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 11.5,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: accent.withOpacity(0.16),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: accent.withOpacity(0.45)),
+                  ),
+                  child: Text(
+                    "الآية ${toArabicIndicDigits(ayah.number)}",
+                    style: TextStyle(
+                      color: accent,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11.5,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                "ج ${toArabicIndicDigits(ayah.juz)} • ص ${toArabicIndicDigits(ayah.page)}",
-                style: TextStyle(color: palette.textMuted, fontSize: 11),
-              ),
-              const Spacer(),
-              IconButton(
-                constraints: const BoxConstraints(),
-                padding: const EdgeInsets.all(4),
-                icon: Icon(
-                  isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-                  color: isBookmarked ? accent : palette.textMuted,
-                  size: 19,
+                const SizedBox(width: 8),
+                Text(
+                  "ج ${toArabicIndicDigits(ayah.juz)} • ص ${toArabicIndicDigits(ayah.page)}",
+                  style: TextStyle(color: palette.textMuted, fontSize: 11),
                 ),
-                tooltip: "حفظ موضع القراءة عند هذه الآية",
-                onPressed: () => _saveReadingBookmark(surah.number, ayah.number),
-              ),
-              IconButton(
-                constraints: const BoxConstraints(),
-                padding: const EdgeInsets.all(4),
-                icon: Icon(Icons.copy_rounded, color: palette.textMuted, size: 18),
-                tooltip: "نسخ الآية",
-                onPressed: () {
-                  Clipboard.setData(
-                    ClipboardData(
-                      text: "${ayah.text} ﴿${surah.cleanName}: ${ayah.number}﴾",
+                const Spacer(),
+                InkWell(
+                  onTap: () => _showAyahTafsirModal(surah, ayah),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: accent.withOpacity(0.14),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: palette.cardColor,
-                      content: Text(
-                        "تم نسخ الآية الكريمة ✓",
-                        style: TextStyle(color: palette.textPrimary),
+                    child: Text(
+                      "التفسير 📖",
+                      style: TextStyle(
+                        color: accent,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
                       ),
-                      duration: const Duration(seconds: 2),
                     ),
-                  );
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          SelectableText(
-            "${ayah.text} ﴿${toArabicIndicDigits(ayah.number)}﴾",
-            textAlign: TextAlign.right,
-            textDirection: TextDirection.rtl,
-            style: TextStyle(
-              fontFamily: readerFont,
-              color: palette.textPrimary,
-              fontSize: _fontSize,
-              height: 1.95,
+                  ),
+                ),
+                IconButton(
+                  constraints: const BoxConstraints(),
+                  padding: const EdgeInsets.all(4),
+                  icon: Icon(
+                    isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                    color: isBookmarked ? accent : palette.textMuted,
+                    size: 19,
+                  ),
+                  tooltip: "حفظ موضع القراءة عند هذه الآية",
+                  onPressed: () => _saveReadingBookmark(surah.number, ayah.number),
+                ),
+                IconButton(
+                  constraints: const BoxConstraints(),
+                  padding: const EdgeInsets.all(4),
+                  icon: Icon(Icons.copy_rounded, color: palette.textMuted, size: 18),
+                  tooltip: "نسخ الآية",
+                  onPressed: () {
+                    Clipboard.setData(
+                      ClipboardData(
+                        text: "${ayah.text} ﴿${surah.cleanName}: ${ayah.number}﴾",
+                      ),
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: palette.cardColor,
+                        content: Text(
+                          "تم نسخ الآية الكريمة ✓",
+                          style: TextStyle(color: palette.textPrimary),
+                        ),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            SelectableText(
+              "${ayah.text} ﴿${toArabicIndicDigits(ayah.number)}﴾",
+              textAlign: TextAlign.right,
+              textDirection: TextDirection.rtl,
+              style: TextStyle(
+                fontFamily: readerFont,
+                color: palette.textPrimary,
+                fontSize: _fontSize,
+                height: 1.95,
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  void _showAyahTafsirModal(QuranSurah surah, QuranAyah initialAyah) {
+    setState(() => _highlightedAyahNumber = initialAyah.number);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        QuranAyah activeAyah = initialAyah;
+        TafsirEdition activeEdition = TafsirEdition.muyassar;
+
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final settings = Provider.of<SettingsProvider>(ctx);
+            final themeOpt = IslamicTheme.getThemeOption(settings.selectedTheme);
+            final palette = themeOpt.resolve(isNight: settings.isNightEffective);
+            final accent = palette.accentColor;
+
+            return Container(
+              height: MediaQuery.of(ctx).size.height * 0.80,
+              decoration: BoxDecoration(
+                color: palette.scaffoldColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                border: Border(top: BorderSide(color: accent, width: 1.8)),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 10),
+                  Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: palette.dividerColor,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    child: Row(
+                      children: [
+                        ClipOval(
+                          child: Image.asset(
+                            'assets/images/palace_jannah_logo.png',
+                            width: 28,
+                            height: 28,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                Icon(Icons.menu_book_rounded, color: accent),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'تفسير سورة ${surah.cleanName} • الآية ${toArabicIndicDigits(activeAyah.number)} 📖',
+                                style: TextStyle(
+                                  color: palette.textPrimary,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                'مراجعة ومطابقة Quran.com • الجزء ${toArabicIndicDigits(activeAyah.juz)} • ص ${toArabicIndicDigits(activeAyah.page)}',
+                                style: TextStyle(
+                                  color: palette.textSecondary,
+                                  fontSize: 10.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.arrow_back_ios_rounded, color: accent, size: 17),
+                          tooltip: 'الآية السابقة',
+                          onPressed: activeAyah.number <= 1
+                              ? null
+                              : () {
+                                  final prev = surah.ayahs[activeAyah.number - 2];
+                                  setSheetState(() => activeAyah = prev);
+                                  setState(() => _highlightedAyahNumber = prev.number);
+                                },
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.arrow_forward_ios_rounded, color: accent, size: 17),
+                          tooltip: 'الآية التالية',
+                          onPressed: activeAyah.number >= surah.ayahs.length
+                              ? null
+                              : () {
+                                  final next = surah.ayahs[activeAyah.number];
+                                  setSheetState(() => activeAyah = next);
+                                  setState(() => _highlightedAyahNumber = next.number);
+                                },
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.close_rounded, color: palette.textSecondary),
+                          onPressed: () => Navigator.of(ctx).pop(),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // اختيار كتاب التفسير
+                  SizedBox(
+                    height: 38,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      children: [
+                        for (final ed in TafsirEdition.values)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 6),
+                            child: ChoiceChip(
+                              label: Text(
+                                '${ed.title} • ${ed.badge}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: activeEdition == ed
+                                      ? palette.onAccentColor
+                                      : palette.textPrimary,
+                                  fontWeight: activeEdition == ed
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                              selected: activeEdition == ed,
+                              selectedColor: accent,
+                              backgroundColor: palette.cardColor,
+                              onSelected: (_) =>
+                                  setSheetState(() => activeEdition = ed),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: accent.withOpacity(0.10),
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(color: accent.withOpacity(0.5)),
+                            ),
+                            child: SelectableText(
+                              '${activeAyah.text} ﴿${toArabicIndicDigits(activeAyah.number)}﴾',
+                              textAlign: TextAlign.center,
+                              textDirection: TextDirection.rtl,
+                              style: TextStyle(
+                                fontFamily: _useTraditionalMushafFont
+                                    ? 'Amiri'
+                                    : settings.selectedFont,
+                                fontSize: 22,
+                                height: 1.9,
+                                color: palette.textPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          FutureBuilder<String>(
+                            future: TafsirRepository.getTafsir(
+                              surah: surah.number,
+                              ayah: activeAyah.number,
+                              edition: activeEdition,
+                            ),
+                            builder: (_, snap) {
+                              if (snap.connectionState == ConnectionState.waiting) {
+                                return Padding(
+                                  padding: const EdgeInsets.all(24),
+                                  child: Center(
+                                    child: CircularProgressIndicator(color: accent),
+                                  ),
+                                );
+                              }
+                              final text = snap.data ??
+                                  'التفسير الميسر غير متوفر حالياً لهذه الآية.';
+                              return Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: palette.cardColor,
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(color: palette.dividerColor),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          activeEdition.title,
+                                          style: TextStyle(
+                                            color: accent,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const Spacer(),
+                                        IconButton(
+                                          constraints: const BoxConstraints(),
+                                          padding: EdgeInsets.zero,
+                                          icon: Icon(
+                                            Icons.copy_rounded,
+                                            color: palette.textMuted,
+                                            size: 18,
+                                          ),
+                                          tooltip: 'نسخ الآية والتفسير',
+                                          onPressed: () {
+                                            Clipboard.setData(
+                                              ClipboardData(
+                                                text:
+                                                    '﴿${activeAyah.text}﴾ [${surah.cleanName}: ${activeAyah.number}]\n\n${activeEdition.title}:\n$text',
+                                              ),
+                                            );
+                                            ScaffoldMessenger.of(ctx).showSnackBar(
+                                              SnackBar(
+                                                backgroundColor: palette.cardColor,
+                                                content: Text(
+                                                  'تم نسخ الآية والتفسير ✓',
+                                                  style: TextStyle(color: palette.textPrimary),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    SelectableText(
+                                      text,
+                                      textDirection: TextDirection.rtl,
+                                      style: TextStyle(
+                                        color: palette.textPrimary,
+                                        fontSize: 15,
+                                        height: 1.75,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -1227,6 +1591,108 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _MushafInteractivePageText extends StatefulWidget {
+  final List<QuranAyah> pageAyahs;
+  final int? highlightedAyahNumber;
+  final double fontSize;
+  final String readerFont;
+  final ThemePalette palette;
+  final ValueChanged<QuranAyah> onTapAyah;
+
+  const _MushafInteractivePageText({
+    required this.pageAyahs,
+    required this.highlightedAyahNumber,
+    required this.fontSize,
+    required this.readerFont,
+    required this.palette,
+    required this.onTapAyah,
+  });
+
+  @override
+  State<_MushafInteractivePageText> createState() =>
+      _MushafInteractivePageTextState();
+}
+
+class _MushafInteractivePageTextState
+    extends State<_MushafInteractivePageText> {
+  final List<TapGestureRecognizer> _recognizers = [];
+
+  void _rebuildRecognizers() {
+    for (final r in _recognizers) {
+      r.dispose();
+    }
+    _recognizers.clear();
+    for (final ayah in widget.pageAyahs) {
+      _recognizers.add(
+        TapGestureRecognizer()..onTap = () => widget.onTapAyah(ayah),
+      );
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _rebuildRecognizers();
+  }
+
+  @override
+  void didUpdateWidget(covariant _MushafInteractivePageText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.pageAyahs != widget.pageAyahs) {
+      _rebuildRecognizers();
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final r in _recognizers) {
+      r.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = widget.palette.accentColor;
+    return SelectableText.rich(
+      TextSpan(
+        children: [
+          for (int i = 0; i < widget.pageAyahs.length; i++) ...[
+            TextSpan(
+              text: '${widget.pageAyahs[i].text} ',
+              recognizer: i < _recognizers.length ? _recognizers[i] : null,
+              style: TextStyle(
+                fontFamily: widget.readerFont,
+                fontSize: widget.fontSize,
+                height: 2.05,
+                color: widget.highlightedAyahNumber == widget.pageAyahs[i].number
+                    ? accent
+                    : widget.palette.textPrimary,
+                backgroundColor:
+                    widget.highlightedAyahNumber == widget.pageAyahs[i].number
+                        ? accent.withOpacity(0.16)
+                        : null,
+              ),
+            ),
+            TextSpan(
+              text: '﴿${toArabicIndicDigits(widget.pageAyahs[i].number)}﴾ ',
+              recognizer: i < _recognizers.length ? _recognizers[i] : null,
+              style: TextStyle(
+                fontFamily: widget.readerFont,
+                fontSize: (widget.fontSize * 0.86).clamp(14.0, 30.0),
+                fontWeight: FontWeight.bold,
+                color: accent,
+              ),
+            ),
+          ],
+        ],
+      ),
+      textAlign: TextAlign.justify,
+      textDirection: TextDirection.rtl,
     );
   }
 }

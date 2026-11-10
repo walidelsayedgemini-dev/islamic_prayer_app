@@ -4,6 +4,7 @@ import '../models/jannati_encyclopedia_data.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/jannati_provider.dart';
 import '../theme/islamic_theme.dart';
+import 'sacred_reference_widgets.dart';
 
 /// التبويب الثاني في جنتي: مهندس الجنة اليومي (جدول الـ ١٦ ورداً + الـ ١٤ استثماراً نبوياً)
 class JannatiArchitectTabView extends StatefulWidget {
@@ -401,6 +402,13 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
               height: 1.4,
             ),
           ),
+          const SizedBox(height: 6),
+          SacredEvidenceFooter(
+            evidenceText: '${inv.exactHadith} (${inv.sourceReference})',
+            titleForHadith: inv.title,
+            hadithVerbatim: inv.exactHadith,
+            trackInJannati: true,
+          ),
           const SizedBox(height: 4),
           Text(
             inv.paradiseDescription,
@@ -609,6 +617,12 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                       'ترحيب الملائكة: ${gate.angelGreeting}',
                       style: TextStyle(color: col, fontSize: 11, fontWeight: FontWeight.w600),
                     ),
+                    const SizedBox(height: 6),
+                    SacredEvidenceFooter(
+                      evidenceText: '${gate.dalil} (${gate.source})',
+                      titleForHadith: gate.name,
+                      trackInJannati: true,
+                    ),
                   ],
                 ),
               ),
@@ -686,15 +700,26 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                   color: palette.elevatedCardColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  lvl.quranVerse,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: palette.textPrimary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    height: 1.45,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      lvl.quranVerse,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        height: 1.45,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    SacredEvidenceFooter(
+                      evidenceText: lvl.quranVerse,
+                      titleForHadith: lvl.name,
+                      trackInJannati: true,
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 8),
@@ -773,6 +798,12 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                   fontSize: 11.2,
                 ),
               ),
+              const SizedBox(height: 6),
+              SacredEvidenceFooter(
+                evidenceText: riv.quranOrHadith,
+                titleForHadith: riv.name,
+                trackInJannati: true,
+              ),
             ],
           ),
         );
@@ -843,14 +874,25 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                   color: palette.elevatedCardColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  d.quranOrHadith,
-                  style: TextStyle(
-                    color: palette.textPrimary,
-                    fontSize: 11.8,
-                    fontWeight: FontWeight.w600,
-                    height: 1.45,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      d.quranOrHadith,
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontSize: 11.8,
+                        fontWeight: FontWeight.w600,
+                        height: 1.45,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    SacredEvidenceFooter(
+                      evidenceText: d.quranOrHadith,
+                      titleForHadith: d.title,
+                      trackInJannati: true,
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 8),
@@ -935,6 +977,13 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                   fontStyle: FontStyle.italic,
                   height: 1.4,
                 ),
+              ),
+              const SizedBox(height: 6),
+              SacredEvidenceFooter(
+                evidenceText: '${p.hadithText} (${p.source})',
+                titleForHadith: p.title,
+                hadithVerbatim: p.hadithText,
+                trackInJannati: true,
               ),
               const SizedBox(height: 6),
               Text(

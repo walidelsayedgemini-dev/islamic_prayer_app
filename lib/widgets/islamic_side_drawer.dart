@@ -3,9 +3,13 @@ import 'package:provider/provider.dart';
 import '../models/islamic_audio_data.dart';
 import '../providers/audio_player_provider.dart';
 import '../providers/firdaws_user_provider.dart';
+import '../screens/about_me_screen.dart';
+import '../screens/islamic_stories_screen.dart';
 import '../screens/main_navigation_screen.dart';
 import '../screens/quran_reader_screen.dart';
+import '../screens/sahih_hadith_screen.dart';
 import '../theme/islamic_theme.dart';
+import 'audio_download_manager_sheet.dart';
 import 'user_profile_editor_sheet.dart';
 
 class IslamicSideDrawer extends StatefulWidget {
@@ -54,13 +58,14 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
     final userProv = Provider.of<FirdawsUserProvider>(context);
     final palette = widget.themeOption.resolve(isNight: widget.isNightMode);
     final accent = palette.accentColor;
+    final avatarBytes = userProv.avatarBytes;
 
     return Drawer(
       backgroundColor: palette.scaffoldColor,
       child: SafeArea(
         child: Column(
           children: [
-            // 1. رأس القائمة الفاخر مع اسم التطبيق "الفردوس" وبيانات المستخدم واللقب
+            // 1. رأس القائمة الفاخر مع اسم التطبيق "الفردوس" وصورة المستخدم وبياناته واللقب
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
@@ -71,29 +76,42 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                 children: [
                   Row(
                     children: [
-                      Container(
-                        width: 46,
-                        height: 46,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: accent, width: 1.6),
-                          boxShadow: [
-                            BoxShadow(
-                              color: accent.withOpacity(0.32),
-                              blurRadius: 10,
-                            ),
-                          ],
-                        ),
-                        child: ClipOval(
-                          child: Image.asset(
-                            'assets/images/palace_jannah_logo.png',
-                            width: 46,
-                            height: 46,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: accent.withOpacity(0.18),
-                              child: Icon(Icons.menu_book_rounded, color: accent, size: 22),
-                            ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          UserProfileEditorSheet.show(context);
+                        },
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: accent, width: 1.8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: accent.withOpacity(0.32),
+                                blurRadius: 10,
+                              ),
+                            ],
+                          ),
+                          child: ClipOval(
+                            child: avatarBytes != null
+                                ? Image.memory(
+                                    avatarBytes,
+                                    width: 48,
+                                    height: 48,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.asset(
+                                    'assets/images/palace_jannah_logo.png',
+                                    width: 48,
+                                    height: 48,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      color: accent.withOpacity(0.18),
+                                      child: Icon(Icons.menu_book_rounded, color: accent, size: 22),
+                                    ),
+                                  ),
                           ),
                         ),
                       ),
@@ -104,19 +122,20 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                           children: [
                             Text(
                               userProv.profile.hasCustomName
-                                  ? 'أهلاً يا ${userProv.displayName}'
-                                  : "الفردوس • المكتبة الشاملة",
+                                  ? '${widget.themeOption.primaryEmoji} أهلاً يا ${userProv.displayName}'
+                                  : "${widget.themeOption.primaryEmoji} الفردوس • المكتبة الشاملة",
                               style: TextStyle(
                                 color: palette.textPrimary,
-                                fontSize: 16,
+                                fontSize: 15.5,
                                 fontWeight: FontWeight.bold,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
-                              userProv.activeTitleLabel ??
-                                  "المصحف الكامل • رقية شرعية • إبتهالات",
+                              userProv.activeTitleLabel != null
+                                  ? '${userProv.activeTitleLabel} ${widget.themeOption.emojiStrip}'
+                                  : "المصحف الكامل • القصص • صحيح البخاري ${widget.themeOption.emojiStrip}",
                               style: TextStyle(
                                 color: userProv.activeTitleLabel != null
                                     ? accent
@@ -209,6 +228,55 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                           onTap: () {
                             Navigator.of(context).pop();
                             FirdawsNavBridge.jumpTo(6, openHelpQa: true);
+                          },
+                        ),
+                        _drawerShortcutChip(
+                          label: '📖 القصص النبوية',
+                          icon: Icons.history_edu_rounded,
+                          accent: accent,
+                          palette: palette,
+                          onTap: () {
+                            final nav = Navigator.of(context);
+                            nav.pop();
+                            nav.push(
+                              MaterialPageRoute(builder: (_) => const IslamicStoriesScreen()),
+                            );
+                          },
+                        ),
+                        _drawerShortcutChip(
+                          label: '📜 صحيح البخاري',
+                          icon: Icons.verified_rounded,
+                          accent: accent,
+                          palette: palette,
+                          onTap: () {
+                            final nav = Navigator.of(context);
+                            nav.pop();
+                            nav.push(
+                              MaterialPageRoute(builder: (_) => const SahihHadithScreen()),
+                            );
+                          },
+                        ),
+                        _drawerShortcutChip(
+                          label: '⬇️ مركز التحميل',
+                          icon: Icons.download_for_offline_rounded,
+                          accent: accent,
+                          palette: palette,
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            showAudioDownloadManagerSheet(context);
+                          },
+                        ),
+                        _drawerShortcutChip(
+                          label: '🤲 عنّي والدعاء',
+                          icon: Icons.favorite_rounded,
+                          accent: accent,
+                          palette: palette,
+                          onTap: () {
+                            final nav = Navigator.of(context);
+                            nav.pop();
+                            nav.push(
+                              MaterialPageRoute(builder: (_) => const AboutMeScreen()),
+                            );
                           },
                         ),
                         _drawerShortcutChip(
@@ -451,59 +519,96 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
       itemCount: surahs.length + 1,
       itemBuilder: (context, rawIdx) {
         if (rawIdx == 0) {
-          return GestureDetector(
-            onTap: () {
-              final nav = Navigator.of(context);
-              nav.pop();
-              nav.push(MaterialPageRoute(builder: (_) => const QuranReaderScreen()));
-            },
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    accent.withOpacity(palette.isDark ? 0.28 : 0.18),
-                    palette.cardColor,
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: accent, width: 1.4),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: accent,
-                      shape: BoxShape.circle,
+          return Column(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  final nav = Navigator.of(context);
+                  nav.pop();
+                  nav.push(MaterialPageRoute(builder: (_) => const QuranReaderScreen()));
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        accent.withOpacity(palette.isDark ? 0.28 : 0.18),
+                        palette.cardColor,
+                      ],
                     ),
-                    child: Icon(Icons.auto_stories_rounded, color: palette.onAccentColor, size: 18),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: accent, width: 1.4),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: accent,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.auto_stories_rounded, color: palette.onAccentColor, size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "📖 قراءة المصحف الشريف كاملاً (١١٤ سورة)",
+                              style: TextStyle(
+                                color: palette.textPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                            Text(
+                              "مراجعة Quran.com • تفسير • علامة القراءة",
+                              style: TextStyle(color: palette.textSecondary, fontSize: 10.5),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.arrow_forward_ios_rounded, color: accent, size: 15),
+                    ],
+                  ),
+                ),
+              ),
+              if (player.supportsOfflineDownload)
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    showAudioDownloadManagerSheet(context);
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                    decoration: BoxDecoration(
+                      color: offlineBadgeColor.withOpacity(0.14),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: offlineBadgeColor.withOpacity(0.55)),
+                    ),
+                    child: Row(
                       children: [
-                        Text(
-                          "قراءة المصحف الشريف كاملاً (١١٤ سورة)",
-                          style: TextStyle(
-                            color: palette.textPrimary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
+                        Icon(Icons.download_for_offline_rounded, color: offlineBadgeColor, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            "⬇️ مدير التحميل بدون إنترنت (حمّل ما تريد فقط)",
+                            style: TextStyle(
+                              color: palette.textPrimary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
-                        Text(
-                          "بحث في الآيات • علامة القراءة • تلاوة القراء",
-                          style: TextStyle(color: palette.textSecondary, fontSize: 10.5),
-                        ),
+                        Icon(Icons.chevron_left_rounded, color: offlineBadgeColor, size: 18),
                       ],
                     ),
                   ),
-                  Icon(Icons.arrow_forward_ios_rounded, color: accent, size: 15),
-                ],
-              ),
-            ),
+                ),
+            ],
           );
         }
 
@@ -1000,13 +1105,56 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
       children: [
         _buildShortcutTile(
           icon: Icons.auto_stories_rounded,
-          title: "المصحف الشريف الكامل (١١٤ سورة)",
-          subtitle: "تلاوة وقراءة بالبحث وتحديد الآيات",
+          title: "📖 المصحف الشريف الكامل (١١٤ سورة)",
+          subtitle: "مراجعة Quran.com • التفسير الميسر • القفز المباشر لأي آية",
           palette: palette,
           onTap: () {
             final nav = Navigator.of(context);
             nav.pop();
             nav.push(MaterialPageRoute(builder: (_) => const QuranReaderScreen()));
+          },
+        ),
+        _buildShortcutTile(
+          icon: Icons.history_edu_rounded,
+          title: "🌙 القصص النبوية وسير الصحابة والصالحين",
+          subtitle: "٥٢ قصة موثقة بالصور والمشاهد الحية المتدرجة وربط الآيات والأحاديث",
+          palette: palette,
+          onTap: () {
+            final nav = Navigator.of(context);
+            nav.pop();
+            nav.push(MaterialPageRoute(builder: (_) => const IslamicStoriesScreen()));
+          },
+        ),
+        _buildShortcutTile(
+          icon: Icons.verified_rounded,
+          title: "📜 صحيح البخاري ومسلم وشروحهما",
+          subtitle: "١٢٠ حديثاً موثقاً بالباب والشرح وارتباطات الآيات",
+          palette: palette,
+          onTap: () {
+            final nav = Navigator.of(context);
+            nav.pop();
+            nav.push(MaterialPageRoute(builder: (_) => const SahihHadithScreen()));
+          },
+        ),
+        _buildShortcutTile(
+          icon: Icons.download_for_offline_rounded,
+          title: "⬇️ مركز التحميل بدون إنترنت",
+          subtitle: "حمّل السور والرقية والأدعية حسب رغبتك وبحجم تطبيق خفيف",
+          palette: palette,
+          onTap: () {
+            Navigator.of(context).pop();
+            showAudioDownloadManagerSheet(context);
+          },
+        ),
+        _buildShortcutTile(
+          icon: Icons.favorite_rounded,
+          title: "🤲 عنّي وبياناتي والدعاء",
+          subtitle: "إن وجدت التطبيق مفيداً فلا تنسَنا من صالح دعائك",
+          palette: palette,
+          onTap: () {
+            final nav = Navigator.of(context);
+            nav.pop();
+            nav.push(MaterialPageRoute(builder: (_) => const AboutMeScreen()));
           },
         ),
         _buildShortcutTile(

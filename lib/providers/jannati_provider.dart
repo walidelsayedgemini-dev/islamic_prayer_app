@@ -72,6 +72,8 @@ class JannatiProvider extends ChangeNotifier {
   static const String _kQuizCountKey = 'jannati_quiz_count_v1';
   static const String _kLogsKey = 'jannati_deed_logs_v1';
   static const String _kBonusPtsKey = 'jannati_bonus_points_v1';
+  static const String _kHadithReadsCountKey = 'jannati_hadith_reads_count_v1';
+  static const String _kHadithReadIdsKey = 'jannati_hadith_read_ids_v1';
 
   final Map<String, int> _counts = {
     for (final inv in JannatiCatalog.investments) inv.id: 0,
@@ -79,6 +81,7 @@ class JannatiProvider extends ChangeNotifier {
   final Map<String, int> _cycleProgress = {};
   final Set<String> _dailyCheckedIds = {};
   final Set<String> _bookmarkedQaIds = {};
+  final Set<String> _readJannahHadithIds = {};
   final List<String> _personalAspirations = [
     JannatiCatalog.aspirationTemplates[0],
     JannatiCatalog.aspirationTemplates[1],
@@ -90,8 +93,14 @@ class JannatiProvider extends ChangeNotifier {
   int _bestQuizScore = 0;
   int _quizzesCompleted = 0;
   int _bonusPoints = 0;
+  int _hadithsReadCount = 0;
+  int _statsKineticTick = 0;
 
   bool get isInitialized => _initialized;
+  int get hadithsReadCount => _hadithsReadCount;
+  Set<String> get readJannahHadithIds =>
+      Set<String>.unmodifiable(_readJannahHadithIds);
+  int get statsKineticTick => _statsKineticTick;
 
   int countFor(String investmentId) => _counts[investmentId] ?? 0;
 
@@ -237,6 +246,13 @@ class JannatiProvider extends ChangeNotifier {
     _bestQuizScore = prefs.getInt(_kBestQuizKey) ?? 0;
     _quizzesCompleted = prefs.getInt(_kQuizCountKey) ?? 0;
     _bonusPoints = prefs.getInt(_kBonusPtsKey) ?? 0;
+    _hadithsReadCount = prefs.getInt(_kHadithReadsCountKey) ?? 0;
+    final savedHadithIds = prefs.getStringList(_kHadithReadIdsKey);
+    if (savedHadithIds != null) {
+      _readJannahHadithIds
+        ..clear()
+        ..addAll(savedHadithIds);
+    }
 
     final logsRaw = prefs.getString(_kLogsKey);
     if (logsRaw != null && logsRaw.isNotEmpty) {
@@ -308,6 +324,7 @@ class JannatiProvider extends ChangeNotifier {
 
     final newRank = currentRank;
     final promoted = newRank.level > rankBefore ? newRank : null;
+    _statsKineticTick++;
 
     await _persistCountsAndLogs();
     notifyListeners();
@@ -360,8 +377,50 @@ class JannatiProvider extends ChangeNotifier {
     }
     await _prefs?.setString(_kDailyDateKey, _dailyDate);
     await _prefs?.setStringList(_kDailyCheckedKey, _dailyCheckedIds.toList());
+    _statsKineticTick++;
     notifyListeners();
     return added;
+  }
+
+  /// يسجل قراءة/تصفح حديث نبوي في الجنة ويحرّك الشريط الإحصائي مباشرةً
+  Future<bool> markJannahHadithRead(
+    String hadithKey, {
+    String? title,
+    String? sourceRef,
+  }) async {
+    final isFirstTime = _readJannahHadithIds.add(hadithKey);
+    _hadithsReadCount++;
+    _bonusPoints += isFirstTime ? 15 : 5;
+    _statsKineticTick++;
+
+    _recentLogs.insert(
+      0,
+      JannahDeedLogItem(
+        investmentId: 'hadith',
+        title: title != null
+            ? 'قراءة حديث: $title'
+            : 'تأمل حديث شريف في الجنة ${sourceRef ?? ""}'.trim(),
+        timestampIso: DateTime.now().toIso8601String(),
+        pointsEarned: isFirstTime ? 15 : 5,
+        completedCycle: true,
+      ),
+    );
+    if (_recentLogs.length > 40) {
+      _recentLogs.removeRange(40, _recentLogs.length);
+    }
+
+    await _prefs?.setInt(_kHadithReadsCountKey, _hadithsReadCount);
+    await _prefs?.setStringList(
+      _kHadithReadIdsKey,
+      _readJannahHadithIds.toList(),
+    );
+    await _prefs?.setInt(_kBonusPtsKey, _bonusPoints);
+    await _prefs?.setString(
+      _kLogsKey,
+      jsonEncode(_recentLogs.map((l) => l.toJson()).toList()),
+    );
+    notifyListeners();
+    return isFirstTime;
   }
 
   Future<bool> toggleQaBookmark(String qaId) async {
@@ -423,6 +482,7 @@ class JannatiProvider extends ChangeNotifier {
       _kLogsKey,
       jsonEncode(_recentLogs.map((l) => l.toJson()).toList()),
     );
+    _statsKineticTick++;
     notifyListeners();
   }
 

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/hijri_calendar_model.dart';
@@ -380,11 +381,43 @@ class FirdawsUserProvider extends ChangeNotifier {
   int _bestPrayerStreak = 0;
   int _motivationSeed = 0;
 
+  // صورة المستخدم الشخصية المرفوعة من المعرض (Base64)
+  String? _avatarBase64;
+  Uint8List? _cachedAvatarBytes;
+
+  // بيانات قسم «عنّي وبياناتي والدعاء»
+  String _aboutCreatorName = 'صاحبُ رسالة تطبيق الفردوس';
+  String _aboutCreatorTitle = 'خادمُ كتاب الله وسنة نبيه ﷺ';
+  String _aboutBio =
+      'اجتهدتُ في جمع مواقيت الصلاة، المصحف المرتل الموثق، صحيح البخاري، القصص النبوية، والأذكار في مكانٍ واحدٍ ليكون رفيقك إلى الجنة.';
+  String _aboutDuaRequest =
+      'أتمنى من كل من انتفع بهذا التطبيق ولو بآيةٍ أو تسبيحةٍ أو صلاةٍ أن يذكرني ووالديَّ وأهلي بصادق الدعوات في ظهر الغيب — جزاكم الله خيراً ولا تنسوني من صالح الدعاء 🤲💛';
+  String _aboutContactInfo = 'مشروع وقف وصدقة جارية لوجه الله تعالى';
+  int _creatorDuasCount = 0;
+
   // --------------------- Getters ---------------------
   bool get isInitialized => _initialized;
   FirdawsUserProfile get profile => _profile;
   bool get isFemale => _profile.isFemale;
   String get displayName => _profile.displayName;
+  String? get avatarBase64 => _avatarBase64;
+  Uint8List? get avatarBytes {
+    if (_avatarBase64 == null || _avatarBase64!.isEmpty) return null;
+    if (_cachedAvatarBytes != null) return _cachedAvatarBytes;
+    try {
+      _cachedAvatarBytes = base64Decode(_avatarBase64!);
+      return _cachedAvatarBytes;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String get aboutCreatorName => _aboutCreatorName;
+  String get aboutCreatorTitle => _aboutCreatorTitle;
+  String get aboutBio => _aboutBio;
+  String get aboutDuaRequest => _aboutDuaRequest;
+  String get aboutContactInfo => _aboutContactInfo;
+  int get creatorDuasCount => _creatorDuasCount;
   Map<String, DayPrayerRecord> get prayerLogs => _prayerLogs;
   List<JournalEntry> get journalEntries => List.unmodifiable(_journalEntries);
   Set<String> get unlockedTitleIds => Set.unmodifiable(_unlockedTitleIds);
@@ -634,6 +667,18 @@ class FirdawsUserProvider extends ChangeNotifier {
     _competitionPoints = _prefs!.getInt('firdaws_competition_points') ?? 0;
     _bestPrayerStreak = _prefs!.getInt('firdaws_best_streak') ?? 0;
     _motivationSeed = _prefs!.getInt('firdaws_motivation_seed') ?? 0;
+    _avatarBase64 = _prefs!.getString('firdaws_avatar_base64');
+    _cachedAvatarBytes = null;
+    _aboutCreatorName =
+        _prefs!.getString('firdaws_about_name') ?? _aboutCreatorName;
+    _aboutCreatorTitle =
+        _prefs!.getString('firdaws_about_title') ?? _aboutCreatorTitle;
+    _aboutBio = _prefs!.getString('firdaws_about_bio') ?? _aboutBio;
+    _aboutDuaRequest =
+        _prefs!.getString('firdaws_about_dua') ?? _aboutDuaRequest;
+    _aboutContactInfo =
+        _prefs!.getString('firdaws_about_contact') ?? _aboutContactInfo;
+    _creatorDuasCount = _prefs!.getInt('firdaws_about_duas_count') ?? 0;
   }
 
   Future<void> _saveToPrefs() async {
@@ -1184,5 +1229,45 @@ class FirdawsUserProvider extends ChangeNotifier {
     _motivationSeed = (_motivationSeed + 1) % 500;
     notifyListeners();
     _saveToPrefs();
+  }
+
+  Future<void> updateAvatarBase64(String? base64Data) async {
+    _avatarBase64 = (base64Data == null || base64Data.isEmpty) ? null : base64Data;
+    _cachedAvatarBytes = null;
+    if (_avatarBase64 == null) {
+      await _prefs?.remove('firdaws_avatar_base64');
+    } else {
+      await _prefs?.setString('firdaws_avatar_base64', _avatarBase64!);
+    }
+    notifyListeners();
+  }
+
+  Future<void> updateAboutInfo({
+    String? creatorName,
+    String? creatorTitle,
+    String? bio,
+    String? duaRequest,
+    String? contactInfo,
+  }) async {
+    if (creatorName != null) _aboutCreatorName = creatorName.trim();
+    if (creatorTitle != null) _aboutCreatorTitle = creatorTitle.trim();
+    if (bio != null) _aboutBio = bio.trim();
+    if (duaRequest != null) _aboutDuaRequest = duaRequest.trim();
+    if (contactInfo != null) _aboutContactInfo = contactInfo.trim();
+
+    await _prefs?.setString('firdaws_about_name', _aboutCreatorName);
+    await _prefs?.setString('firdaws_about_title', _aboutCreatorTitle);
+    await _prefs?.setString('firdaws_about_bio', _aboutBio);
+    await _prefs?.setString('firdaws_about_dua', _aboutDuaRequest);
+    await _prefs?.setString('firdaws_about_contact', _aboutContactInfo);
+    notifyListeners();
+  }
+
+  Future<void> incrementCreatorDua() async {
+    _creatorDuasCount++;
+    _competitionPoints += 10;
+    await _prefs?.setInt('firdaws_about_duas_count', _creatorDuasCount);
+    await _prefs?.setInt('firdaws_competition_points', _competitionPoints);
+    notifyListeners();
   }
 }

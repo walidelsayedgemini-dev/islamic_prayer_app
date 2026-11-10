@@ -13,7 +13,8 @@ class ThemeAtmosphericParticles extends StatefulWidget {
   });
 
   @override
-  State<ThemeAtmosphericParticles> createState() => _ThemeAtmosphericParticlesState();
+  State<ThemeAtmosphericParticles> createState() =>
+      _ThemeAtmosphericParticlesState();
 }
 
 class _ThemeAtmosphericParticlesState extends State<ThemeAtmosphericParticles>
@@ -35,7 +36,7 @@ class _ThemeAtmosphericParticlesState extends State<ThemeAtmosphericParticles>
 
   void _initParticles() {
     _particles.clear();
-    const count = 35;
+    const count = 36;
     for (int i = 0; i < count; i++) {
       _particles.add(
         _ParticleItem(
@@ -47,6 +48,8 @@ class _ThemeAtmosphericParticlesState extends State<ThemeAtmosphericParticles>
           rotationSpeed: (_random.nextDouble() - 0.5) * 2.0,
           opacity: 0.25 + _random.nextDouble() * 0.55,
           swaySpeed: 1.0 + _random.nextDouble() * 2.0,
+          isEmoji: i % 5 == 0, // 7 إيموجي مميزة تسبح برفق مع طابع الثيم
+          emojiSlot: i ~/ 5,
         ),
       );
     }
@@ -68,6 +71,7 @@ class _ThemeAtmosphericParticlesState extends State<ThemeAtmosphericParticles>
 
   @override
   Widget build(BuildContext context) {
+    final emojis = widget.themeOption.signatureEmojis;
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
@@ -80,6 +84,7 @@ class _ThemeAtmosphericParticlesState extends State<ThemeAtmosphericParticles>
             primaryColor: widget.themeOption.accentColor,
             secondaryColor: widget.themeOption.primaryColor,
             isNight: widget.isNight,
+            signatureEmojis: emojis,
           ),
         );
       },
@@ -96,6 +101,8 @@ class _ParticleItem {
   final double rotationSpeed;
   final double opacity;
   final double swaySpeed;
+  final bool isEmoji;
+  final int emojiSlot;
 
   _ParticleItem({
     required this.x,
@@ -106,6 +113,8 @@ class _ParticleItem {
     required this.rotationSpeed,
     required this.opacity,
     required this.swaySpeed,
+    required this.isEmoji,
+    required this.emojiSlot,
   });
 }
 
@@ -116,6 +125,7 @@ class _ParticlePainter extends CustomPainter {
   final Color primaryColor;
   final Color secondaryColor;
   final bool isNight;
+  final List<String> signatureEmojis;
 
   _ParticlePainter({
     required this.particles,
@@ -124,14 +134,15 @@ class _ParticlePainter extends CustomPainter {
     required this.primaryColor,
     required this.secondaryColor,
     required this.isNight,
+    required this.signatureEmojis,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     for (var p in particles) {
-      // حركة انسيابية هادئة للجسيمات مع التمايل
       final currentY = (p.y + progress * p.speed) % 1.0;
-      final sway = math.sin(progress * math.pi * 2 * p.swaySpeed + p.x * 10) * 0.03;
+      final sway =
+          math.sin(progress * math.pi * 2 * p.swaySpeed + p.x * 10) * 0.03;
       final currentX = (p.x + sway).clamp(0.0, 1.0);
 
       final pos = Offset(currentX * size.width, currentY * size.height);
@@ -139,9 +150,25 @@ class _ParticlePainter extends CustomPainter {
 
       canvas.save();
       canvas.translate(pos.dx, pos.dy);
-      canvas.rotate(currentAngle);
 
-      _drawParticleShape(canvas, p);
+      if (p.isEmoji && signatureEmojis.isNotEmpty) {
+        final emoji = signatureEmojis[p.emojiSlot % signatureEmojis.length];
+        canvas.rotate(math.sin(progress * math.pi * 2 + p.x) * 0.25);
+        final tp = TextPainter(
+          text: TextSpan(
+            text: emoji,
+            style: TextStyle(
+              fontSize: 13.0 + p.size * 0.9,
+              color: Colors.white.withOpacity((p.opacity * 0.65).clamp(0.2, 0.72)),
+            ),
+          ),
+          textDirection: TextDirection.rtl,
+        )..layout();
+        tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
+      } else {
+        canvas.rotate(currentAngle);
+        _drawParticleShape(canvas, p);
+      }
 
       canvas.restore();
     }
@@ -153,17 +180,17 @@ class _ParticlePainter extends CustomPainter {
 
     switch (particleType) {
       case ThemeParticleType.rosePetals:
-        // بتلة ورد طائفي منحنية
         final petalPath = Path();
         petalPath.moveTo(0, -p.size);
-        petalPath.cubicTo(p.size * 0.9, -p.size * 0.5, p.size * 0.9, p.size * 0.8, 0, p.size);
-        petalPath.cubicTo(-p.size * 0.9, p.size * 0.8, -p.size * 0.9, -p.size * 0.5, 0, -p.size);
+        petalPath.cubicTo(
+            p.size * 0.9, -p.size * 0.5, p.size * 0.9, p.size * 0.8, 0, p.size);
+        petalPath.cubicTo(
+            -p.size * 0.9, p.size * 0.8, -p.size * 0.9, -p.size * 0.5, 0, -p.size);
         canvas.drawPath(petalPath, paint);
         break;
 
       case ThemeParticleType.goldenLeaves:
       case ThemeParticleType.oliveLeaves:
-        // ورقة شجر ذهبية أو زيتون
         final leafPath = Path();
         leafPath.moveTo(0, -p.size);
         leafPath.quadraticBezierTo(p.size * 0.7, 0, 0, p.size);
@@ -175,7 +202,6 @@ class _ParticlePainter extends CustomPainter {
       case ThemeParticleType.amberSparks:
       case ThemeParticleType.emeraldDust:
       case ThemeParticleType.copperGlow:
-        // نجمة متوهجة أو ذرة نور
         canvas.drawCircle(Offset.zero, p.size * 0.45, paint);
         final glowPaint = Paint()
           ..color = color.withOpacity(p.opacity * 0.3)
@@ -184,20 +210,18 @@ class _ParticlePainter extends CustomPainter {
         break;
 
       case ThemeParticleType.pearlBubbles:
-        // لؤلؤة دائرية مع لميع داخلي
         paint.style = PaintingStyle.fill;
         canvas.drawCircle(Offset.zero, p.size * 0.5, paint);
         final gleam = Paint()..color = Colors.white.withOpacity(p.opacity);
-        canvas.drawCircle(Offset(-p.size * 0.15, -p.size * 0.15), p.size * 0.15, gleam);
+        canvas.drawCircle(
+            Offset(-p.size * 0.15, -p.size * 0.15), p.size * 0.15, gleam);
         break;
 
       case ThemeParticleType.sandGrains:
-        // حبات رمل ذهبية ناعمة
         canvas.drawCircle(Offset.zero, p.size * 0.35, paint);
         break;
 
       case ThemeParticleType.geometricZellij:
-        // شظية زليج معينة الشكل
         final diamond = Path();
         diamond.moveTo(0, -p.size * 0.6);
         diamond.lineTo(p.size * 0.6, 0);
@@ -208,7 +232,6 @@ class _ParticlePainter extends CustomPainter {
         break;
 
       case ThemeParticleType.waterfallsMist:
-        // قطرة رذاذ مائية متلألئة
         final haloPaint = Paint()
           ..color = Colors.white.withOpacity(p.opacity * 0.25)
           ..maskFilter = MaskFilter.blur(BlurStyle.normal, p.size * 0.7);
@@ -222,7 +245,6 @@ class _ParticlePainter extends CustomPainter {
         break;
 
       case ThemeParticleType.auroraRibbons:
-        // شريط شفق متوهج انسيابي
         final ribbonPaint = Paint()
           ..color = color
           ..strokeWidth = (p.size * 0.35).clamp(1.5, 4.0)
@@ -236,7 +258,6 @@ class _ParticlePainter extends CustomPainter {
         break;
 
       case ThemeParticleType.lanternSparks:
-        // شرارة فانوس دافئة رباعية البريق
         final emberGlow = Paint()
           ..color = color.withOpacity(p.opacity * 0.45)
           ..maskFilter = MaskFilter.blur(BlurStyle.normal, p.size * 0.9);
@@ -250,11 +271,12 @@ class _ParticlePainter extends CustomPainter {
         break;
 
       case ThemeParticleType.crescentGleams:
-        // هلال صغير مضيء
         final r = p.size * 0.62;
-        final outerOval = Path()..addOval(Rect.fromCircle(center: Offset.zero, radius: r));
+        final outerOval = Path()
+          ..addOval(Rect.fromCircle(center: Offset.zero, radius: r));
         final cutOval = Path()
-          ..addOval(Rect.fromCircle(center: Offset(r * 0.42, -r * 0.14), radius: r * 0.86));
+          ..addOval(
+              Rect.fromCircle(center: Offset(r * 0.42, -r * 0.14), radius: r * 0.86));
         final crescent = Path.combine(PathOperation.difference, outerOval, cutOval);
         canvas.drawPath(crescent, paint);
         break;

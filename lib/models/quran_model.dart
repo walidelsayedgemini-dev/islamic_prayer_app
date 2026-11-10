@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:http/http.dart' as http;
 import 'islamic_audio_data.dart';
 
 class QuranAyah {
@@ -51,10 +52,22 @@ class QuranSearchHit {
   const QuranSearchHit({required this.surah, required this.ayah});
 }
 
+enum TafsirEdition {
+  muyassar(16, 'التفسير الميسر (مجمع الملك فهد)', 'بدون إنترنت ✅'),
+  sadi(91, 'تفسير العلامة السعدي', 'عبر Quran.com 🌐'),
+  ibnKathir(14, 'تفسير الحافظ ابن كثير', 'عبر Quran.com 🌐');
+
+  final int apiId;
+  final String title;
+  final String badge;
+
+  const TafsirEdition(this.apiId, this.title, this.badge);
+}
+
 /// يزيل التشكيل والرموز العثمانية ويوحد الحروف لتسهيل البحث الدقيق
 String normalizeArabicForSearch(String input) {
   var s = input.replaceAll('\uFEFF', '').trim();
-  // إزالة علامات الضبط والتجويد والتشكيل والوقف العثماني والألف الخنجرية والتطويل
+  // إزالة علامات الضبط والتجويد والتشكيل والوقف العثماني والألف الخنجرية والتطويل والمد
   s = s.replaceAll(
     RegExp(r'[\u0610-\u061A\u0640\u064B-\u065F\u0670\u06D6-\u06ED]'),
     '',
@@ -95,7 +108,6 @@ String _stripPrependedBasmalah(int surahNumber, int ayahNumber, String text) {
 
   const exactPrefix1 = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ ';
   const exactPrefix2 = 'بِّسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ ';
-  // بعض علامات الشدة أو الترتيب في حزمة الخطوط العثمانية
   const raheemMarker = 'ٱلرَّحِيمِ';
   const raheemMarkerAlt = 'ٱلرَّحِيمِ';
 
@@ -153,7 +165,8 @@ List<QuranSurah> parseQuranJsonString(String rawJson) {
         number: number,
         ornateName: ornateName,
         cleanName: cleanName,
-        normalizedName: normalizeArabicForSearch('$cleanName $ornateName $englishName $number'),
+        normalizedName:
+            normalizeArabicForSearch('$cleanName $ornateName $englishName $number'),
         englishName: englishName,
         isMakki: isMakki,
         ayahs: ayahs,
@@ -187,6 +200,13 @@ class QuranRepository {
     }
   }
 
+  static QuranSurah? findSurahByNumber(List<QuranSurah> surahs, int number) {
+    for (final s in surahs) {
+      if (s.number == number) return s;
+    }
+    return null;
+  }
+
   static List<QuranSearchHit> searchInsideAyahs(
     List<QuranSurah> surahs,
     String query, {
@@ -205,5 +225,110 @@ class QuranRepository {
       }
     }
     return hits;
+  }
+}
+
+Map<String, List<String>> _parseTafsirMuyassarJson(String rawJson) {
+  final decoded =
+      jsonDecode(rawJson.replaceFirst('\uFEFF', '')) as Map<String, dynamic>;
+  final result = <String, List<String>>{};
+  for (final entry in decoded.entries) {
+    final list = (entry.value as List<dynamic>).map((e) => e.toString()).toList();
+    result[entry.key] = list;
+  }
+  return result;
+}
+
+class TafsirRepository {
+  static Map<String, List<String>>? _muyassarMap;
+  static Future<Map<String, List<String>>>? _inFlightOffline;
+  static final Map<String, String> _onlineCache = {};
+
+  static Future<Map<String, List<String>>> loadOfflineMuyassar() async {
+    if (_muyassarMap != null) return _muyassarMap!;
+    if (_inFlightOffline != null) return _inFlightOffline!;
+
+    _inFlightOffline = () async {
+      final raw = await rootBundle.loadString('assets/data/tafsir_muyassar.json');
+      final parsed = await compute(_parseTafsirMuyassarJson, raw);
+      _muyassarMap = parsed;
+      return parsed;
+    }();
+
+    try {
+      return await _inFlightOffline!;
+    } catch (e) {
+      _inFlightOffline = null;
+      rethrow;
+    }
+  }
+
+  static String? getCachedOfflineMuyassar(int surah, int ayah) {
+    final map = _muyassarMap;
+    if (map == null) return null;
+    final list = map['$surah'];
+    if (list == null || ayah < 1 || ayah > list.length) return null;
+    return list[ayah - 1];
+  }
+
+  static Future<String> getTafsir({
+    required int surah,
+    required int ayah,
+    TafsirEdition edition = TafsirEdition.muyassar,
+  }) async {
+    if (edition == TafsirEdition.muyassar) {
+      final map = await loadOfflineMuyassar();
+      final list = map['$surah'];
+      if (list != null && ayah >= 1 && ayah <= list.length) {
+        final text = list[ayah - 1].trim();
+        if (text.isNotEmpty) return text;
+      }
+    }
+
+    final cacheKey = '${edition.apiId}:$surah:$ayah';
+    final cachedOnline = _onlineCache[cacheKey];
+    if (cachedOnline != null) return cachedOnline;
+
+    try {
+      final uri = Uri.parse(
+        'https://api.quran.com/api/v4/tafsirs/${edition.apiId}/by_ayah/$surah:$ayah',
+      );
+      final res = await http.get(uri, headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'AlFirdawsIslamicApp/1.0',
+      }).timeout(const Duration(seconds: 12));
+
+      if (res.statusCode == 200) {
+        final jsonMap = jsonDecode(res.body) as Map<String, dynamic>;
+        final tafsirObj = jsonMap['tafsir'] as Map<String, dynamic>?;
+        final rawHtml = tafsirObj?['text'] as String? ?? '';
+        final cleaned = rawHtml
+            .replaceAll(RegExp(r'<[^>]+>'), ' ')
+            .replaceAll('&quot;', '"')
+            .replaceAll('&amp;', '&')
+            .replaceAll('&nbsp;', ' ')
+            .replaceAll(RegExp(r'\s+'), ' ')
+            .trim();
+        if (cleaned.isNotEmpty) {
+          _onlineCache[cacheKey] = cleaned;
+          return cleaned;
+        }
+      }
+    } catch (e) {
+      debugPrint('Online tafsir fallback ($edition $surah:$ayah): $e');
+    }
+
+    // عودة احتياطية آمنة إلى التفسير الميسر بدون إنترنت
+    final map = await loadOfflineMuyassar();
+    final fallbackList = map['$surah'];
+    if (fallbackList != null && ayah >= 1 && ayah <= fallbackList.length) {
+      final text = fallbackList[ayah - 1].trim();
+      if (text.isNotEmpty) {
+        return edition == TafsirEdition.muyassar
+            ? text
+            : '$text\n\n(عرض تلقائي من التفسير الميسر الموثق لعدم توفر الاتصال حالياً)';
+      }
+    }
+    return 'لا يتوفر نص تفسير لهذه الآية حالياً.';
   }
 }

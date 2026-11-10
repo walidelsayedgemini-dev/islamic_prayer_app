@@ -184,6 +184,75 @@ class ThemeOption {
   });
 
   ThemePalette resolve({required bool isNight}) => isNight ? nightPalette : dayPalette;
+
+  String get primaryEmoji => ThemeEmojiRegistry.primaryFor(key);
+  List<String> get signatureEmojis => ThemeEmojiRegistry.packFor(key);
+  String get emojiStrip => signatureEmojis.take(5).join(' ');
+}
+
+/// سجل الإيموجي الخاص بكل ثيم من الـ 52 ثيماً إسلامياً
+class ThemeEmojiRegistry {
+  static const Map<String, List<String>> packsByKey = {
+    'emerald_gold': ['🕌', '🌿', '✨', '💚', '🌟', '🕋', '🤲', '📖'],
+    'kaaba_black_gold': ['🕋', '✨', '🖤', '🌟', '🤲', '🕊️', '🕯️', '👑'],
+    'andalusian': ['🏛️', '🤍', '✨', '🕌', '🌟', '🌿', '💧', '🕊️'],
+    'makkah_rose': ['🌸', '🕋', '🌷', '✨', '🕊️', '🌅', '💎', '🪷'],
+    'blue_mosque': ['💎', '🕌', '🩵', '🌀', '✨', '🌊', '🕊️', '🏛️'],
+    'desert_night': ['🌌', '⭐', '🌙', '🏜️', '✨', '🔭', '🪐', '💫'],
+    'dome_of_rock': ['🕌', '👑', '🫒', '✨', '💜', '🕊️', '🌟', '🟡'],
+    'damascus_bronze': ['🍂', '🏮', '🪵', '🏺', '✨', '🕌', '🧡', '🕊️'],
+    'baghdad_amber': ['📜', '✨', '🟡', '🏛️', '🌟', '📖', '🕯️', '🍯'],
+    'madinah_sands': ['🌴', '🏜️', '💚', '🕌', '✨', '🌾', '🕊️', '💛'],
+    'arabian_pearl': ['🦪', '🌊', '🩵', '💎', '✨', '🐚', '⛵', '🌙'],
+    'celestial_rayyan': ['🍃', '✨', '💚', '🌊', '👑', '🕊️', '🌸', '🌳'],
+    'arafat_mercy': ['⛰️', '🤲', '☀️', '🤍', '✨', '🕋', '🌿', '💛'],
+    'mina_tents': ['⛺', '🤍', '🕌', '☀️', '✨', '🕊️', '⛰️', '🌿'],
+    'hira_light': ['📖', '💡', '✨', '⛰️', '🕯️', '🕋', '🌟', '💛'],
+    'uhud_dawn': ['❤️', '⛰️', '🌅', '🌺', '✨', '🕌', '🦅', '💚'],
+    'zamzam_spring': ['💧', '🌊', '💎', '🤍', '✨', '🕋', '🌿', '🤲'],
+    'baqi_serenity': ['🕊️', '☂️', '🌙', '🤍', '✨', '🕌', '🌿', '💎'],
+    'al_azhar_cairo': ['📚', '🕌', '🟡', '✨', '🕯️', '🏛️', '📖', '🌟'],
+    'cordoba_arches': ['🏛️', '🟠', '🕌', '🌺', '✨', '🎨', '🪵', '☀️'],
+    'alhambra_granada': ['🏰', '🧡', '💧', '🌸', '✨', '🌿', '👑', '🎨'],
+    'qairawan_tunis': ['🛡️', '🏛️', '🏜️', '🕌', '✨', '🌞', '🐪', '🌟'],
+    'hassan_casablanca': ['🌊', '🕌', '💎', '🩵', '✨', '🐚', '⚓', '🌟'],
+    'koutoubia_marrakech': ['📕', '🌴', '🕌', '🏜️', '✨', '🏔️', '☀️', '🌺'],
+    'suleymaniye_istanbul': ['🌆', '🕌', '⛵', '🌟', '✨', '💎', '🕊️', '🌊'],
+    'sheikh_zayed_abudhabi': ['💎', '🤍', '🕌', '💧', '✨', '🌟', '🪞', '🕊️'],
+    'sultan_qaboos_muscat': ['🪔', '🕌', '✨', '👑', '🟡', '🪷', '🏛️', '💫'],
+    'samarkand_registan': ['💠', '🌌', '🕌', '🩵', '✨', '📚', '⭐', '🏛️'],
+    'bukhara_turquoise': ['🗼', '🩵', '🏜️', '🕌', '✨', '📖', '🌟', '🧭'],
+    'lahore_badshahi': ['❤️', '🏛️', '🕌', '🌺', '✨', '👑', '☀️', '🌸'],
+    'ibn_tulun_cairo': ['📜', '🗼', '🏜️', '💧', '✨', '🏛️', '☀️', '🪨'],
+    'aleppo_umayyad': ['🕊️', '🏛️', '⌛', '✨', '🕌', '🤍', '🪨', '🌿'],
+    'amr_ibn_as': ['🌟', '🕌', '🌿', '✨', '📖', '🏛️', '💧', '☀️'],
+    'salahuddin_citadel': ['🦅', '🏰', '💚', '✨', '🕌', '🟡', '🕯️', '🏛️'],
+    'fajr_sapphire': ['🌅', '💙', '⭐', '🕊️', '✨', '🕌', '❄️', '💧'],
+    'duha_sunlight': ['☀️', '💛', '🌼', '🕊️', '✨', '🌿', '🌈', '🌻'],
+    'asr_gold': ['🏜️', '🟠', '☀️', '🌾', '✨', '⏳', '🕌', '🟡'],
+    'maghrib_crimson': ['🌇', '❤️', '🌹', '🕊️', '✨', '🌙', '🌊', '💫'],
+    'isha_indigo': ['🌌', '🪐', '🌙', '✨', '🤲', '🕊️', '🌟', '💫'],
+    'qiyam_aurora': ['✨', '🟢', '🌠', '🕊️', '🤲', '🌙', '💎', '🌿'],
+    'ramadan_hilal': ['🏮', '🌙', '⭐', '📖', '✨', '🤲', '🕌', '💛'],
+    'laylat_qadr': ['🌙', '💜', '👑', '✨', '🕊️', '📖', '🌠', '💫'],
+    'firdaws_waterfall': ['🌊', '💚', '🏞️', '💧', '✨', '🌿', '🕊️', '🌸'],
+    'kawthar_silver': ['🥂', '❄️', '💧', '💎', '✨', '☁️', '🕊️', '🤍'],
+    'salsabil_spring': ['🌿', '💧', '🌸', '🍃', '✨', '💚', '🦋', '🕊️'],
+    'sidrat_muntaha': ['🌳', '☀️', '🍃', '🌟', '✨', '💚', '👑', '🕊️'],
+    'musk_obsidian': ['🖤', '💫', '🟡', '🪔', '✨', '🌌', '👑', '🌙'],
+    'oud_royal_mahogany': ['🪵', '🪔', '👑', '🕌', '✨', '🍂', '💎', '📖'],
+    'saffron_imperial': ['✍️', '📖', '🟡', '🧡', '✨', '🕯️', '📜', '👑'],
+    'olive_palestine': ['🫒', '🌿', '💚', '🕊️', '✨', '🌳', '🏛️', '☀️'],
+    'yemen_aqeeq': ['💎', '❤️', '🏛️', '☀️', '✨', '🌹', '🪵', '🏜️'],
+    'andalus_orange_blossom': ['🍊', '🌸', '🌳', '💧', '✨', '☀️', '🕌', '💚'],
+  };
+
+  static List<String> packFor(String key) {
+    final normalized = key == 'emerald' ? 'emerald_gold' : key;
+    return packsByKey[normalized] ?? const ['🕌', '✨', '🌙', '🌿', '🤲', '📖', '💚', '⭐'];
+  }
+
+  static String primaryFor(String key) => packFor(key).first;
 }
 
 class IslamicTheme {

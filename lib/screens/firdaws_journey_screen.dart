@@ -14,6 +14,7 @@ import '../theme/islamic_theme.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/real_mosque_background.dart';
 import '../widgets/user_profile_editor_sheet.dart';
+import 'about_me_screen.dart';
 
 class FirdawsJourneyRequest {
   final int tabIndex;
@@ -222,7 +223,7 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
             child: Column(
               children: [
                 // 1. بطاقة الملف الشخصي والألقاب والإحصائيات
-                _buildTopProfileHeader(context, userProv, palette),
+                _buildTopProfileHeader(context, userProv, palette, themeOption),
 
                 // 2. شريط التنقل الرباعي داخل الميدان
                 Container(
@@ -281,11 +282,13 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
     BuildContext context,
     FirdawsUserProvider userProv,
     ThemePalette palette,
+    ThemeOption themeOption,
   ) {
     final accent = palette.accentColor;
     final p = userProv.profile;
     final activeTitle = userProv.activeTitle;
     final titleColor = activeTitle?.badgeColor ?? accent;
+    final avatarBytes = userProv.avatarBytes;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
@@ -307,28 +310,59 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
         children: [
           Row(
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: titleColor, width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: titleColor.withOpacity(0.32),
-                      blurRadius: 10,
+              GestureDetector(
+                onTap: () => UserProfileEditorSheet.show(context),
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: titleColor, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: titleColor.withOpacity(0.32),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: avatarBytes != null
+                            ? Image.memory(
+                                avatarBytes,
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
+                              )
+                            : Image.asset(
+                                'assets/images/palace_jannah_logo.png',
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) =>
+                                    Icon(Icons.person_rounded, color: accent, size: 24),
+                              ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: accent,
+                          border: Border.all(color: palette.scaffoldColor, width: 1.2),
+                        ),
+                        child: Icon(
+                          Icons.camera_alt_rounded,
+                          size: 10,
+                          color: palette.onAccentColor,
+                        ),
+                      ),
                     ),
                   ],
-                ),
-                child: ClipOval(
-                  child: Image.asset(
-                    'assets/images/palace_jannah_logo.png',
-                    width: 44,
-                    height: 44,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) =>
-                        Icon(Icons.person_rounded, color: accent, size: 24),
-                  ),
                 ),
               ),
               const SizedBox(width: 10),
@@ -341,12 +375,12 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                         Flexible(
                           child: Text(
                             p.hasCustomName
-                                ? 'مرحباً يا ${userProv.displayName}'
-                                : 'أهلاً بك في ميدان الفردوس',
+                                ? '🌟 مرحباً يا ${userProv.displayName} ${themeOption.primaryEmoji}'
+                                : '✨ أهلاً بك في ميدان الفردوس ${themeOption.primaryEmoji}',
                             style: TextStyle(
                               color: palette.textPrimary,
                               fontWeight: FontWeight.bold,
-                              fontSize: 14.5,
+                              fontSize: 14,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -363,7 +397,7 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            '${p.isFemale ? 'أنثى' : 'ذكر'} • ${p.age} سنة',
+                            '${p.isFemale ? '👩 أنثى' : '👨 ذكر'} • ${p.age} سنة',
                             style: TextStyle(
                               color: accent,
                               fontSize: 10,
@@ -385,8 +419,8 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                         Expanded(
                           child: Text(
                             activeTitle != null
-                                ? 'اللقب المُرتدى (#${activeTitle.number}): ${userProv.activeTitleLabel}'
-                                : 'اللقب: لم يُختر بعد • افتح أول لقب من الـ 200!',
+                                ? '👑 اللقب المُرتدى (#${activeTitle.number}): ${userProv.activeTitleLabel}'
+                                : '🏅 اللقب: لم يُختر بعد • افتح أول لقب من الـ 200!',
                             style: TextStyle(
                               color: titleColor,
                               fontSize: 11,
@@ -401,24 +435,53 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                   ],
                 ),
               ),
-              TextButton.icon(
-                onPressed: () => UserProfileEditorSheet.show(context),
-                icon: Icon(Icons.edit_rounded, color: accent, size: 15),
-                label: Text(
-                  p.hasCustomName ? 'بياناتي' : 'سجّل اسمك',
-                  style: TextStyle(
-                    color: accent,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => UserProfileEditorSheet.show(context),
+                    icon: Icon(Icons.edit_rounded, color: accent, size: 14),
+                    label: Text(
+                      p.hasCustomName ? 'بياناتي 📸' : 'سجّل اسمك ✨',
+                      style: TextStyle(
+                        color: accent,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      backgroundColor: accent.withOpacity(0.14),
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
                   ),
-                ),
-                style: TextButton.styleFrom(
-                  backgroundColor: accent.withOpacity(0.14),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  const SizedBox(height: 4),
+                  InkWell(
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const AboutMeScreen()),
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF59E0B).withOpacity(0.16),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        '🤲 عنّي والدعاء',
+                        style: TextStyle(
+                          color: Color(0xFFF59E0B),
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ],
           ),
@@ -427,7 +490,7 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
             children: [
               Expanded(
                 child: _buildMiniStat(
-                  'السلسلة',
+                  '🔥 السلسلة',
                   '${userProv.currentPrayerStreak} يوم',
                   Icons.local_fire_department_rounded,
                   const Color(0xFFF59E0B),
@@ -437,7 +500,7 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
               const SizedBox(width: 6),
               Expanded(
                 child: _buildMiniStat(
-                  'الصلوات',
+                  '🕌 الصلوات',
                   '${userProv.totalPrayersLogged}',
                   Icons.mosque_rounded,
                   const Color(0xFF10B981),
@@ -447,7 +510,7 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
               const SizedBox(width: 6),
               Expanded(
                 child: _buildMiniStat(
-                  'الألقاب',
+                  '👑 الألقاب',
                   '${userProv.unlockedTitleIds.length}/200',
                   Icons.workspace_premium_rounded,
                   const Color(0xFF8B5CF6),
@@ -457,7 +520,7 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
               const SizedBox(width: 6),
               Expanded(
                 child: _buildMiniStat(
-                  'النقاط',
+                  '⭐ النقاط',
                   '${userProv.competitionPoints}',
                   Icons.stars_rounded,
                   const Color(0xFF38BDF8),

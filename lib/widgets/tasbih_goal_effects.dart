@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../models/tasbih_3d_phrases_200.dart';
 
 /// 20 تأثيراً بصرياً احتفالياً عند الوصول للهدف في السبحة
 enum TasbihGoalEffectType {
@@ -296,6 +297,31 @@ class _TasbihGoalEffectsMasterPainter extends CustomPainter {
       size.width * originNormalized.dx,
       size.height * originNormalized.dy,
     );
+
+    // موجة إضاءة ثلاثية الأبعاد عميقة تعزز كافة تأثيرات السبحة العشرين
+    final haloRadius = (size.width * 0.52) * Curves.easeOut.transform(t.clamp(0.0, 1.0));
+    if (haloRadius > 8) {
+      canvas.drawCircle(
+        origin,
+        haloRadius,
+        Paint()
+          ..shader = RadialGradient(
+            colors: [
+              accentColor.withOpacity(0.28 * _fade),
+              const Color(0xFFFFD700).withOpacity(0.16 * _fade),
+              Colors.transparent,
+            ],
+          ).createShader(Rect.fromCircle(center: origin, radius: haloRadius)),
+      );
+      canvas.drawCircle(
+        origin,
+        haloRadius * 0.92,
+        Paint()
+          ..color = const Color(0xFFFFD700).withOpacity(0.45 * _fade * (1.0 - t * 0.5))
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3.2 * (1.0 - t * 0.6),
+      );
+    }
 
     switch (effectType) {
       case TasbihGoalEffectType.goldenFireworks:
@@ -839,4 +865,480 @@ class _TasbihGoalEffectsMasterPainter extends CustomPainter {
         oldDelegate.effectType != effectType ||
         oldDelegate.accentColor != accentColor;
   }
+}
+
+/// لافتة تحفيزية ثلاثية الأبعاد (3D Perspective Extruded) تعرض واحدة من ٢۰۰ جملة تحفيزية مبهرة
+class Tasbih3DMotivationBanner extends StatefulWidget {
+  final Tasbih3DPhrase phrase;
+  final int achievedCount;
+  final VoidCallback onNextPhrase;
+  final VoidCallback onOpenCatalog;
+  final VoidCallback onDismiss;
+
+  const Tasbih3DMotivationBanner({
+    super.key,
+    required this.phrase,
+    required this.achievedCount,
+    required this.onNextPhrase,
+    required this.onOpenCatalog,
+    required this.onDismiss,
+  });
+
+  @override
+  State<Tasbih3DMotivationBanner> createState() =>
+      _Tasbih3DMotivationBannerState();
+}
+
+class _Tasbih3DMotivationBannerState extends State<Tasbih3DMotivationBanner>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _anim;
+  double _dragTiltX = 0.0;
+  double _dragTiltY = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _anim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3400),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _anim.dispose();
+    super.dispose();
+  }
+
+  Widget _buildExtruded3DText(String text, {double fontSize = 16.5}) {
+    // 5 طبقات مجسّمة لتكوين عمق ثلاثي الأبعاد حقيقي للنص العربي
+    const depthColors = [
+      Color(0xFF0F172A),
+      Color(0xFF1E293B),
+      Color(0xFF451A03),
+      Color(0xFF78350F),
+    ];
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        for (int i = depthColors.length; i >= 1; i--)
+          Transform.translate(
+            offset: Offset(i * 0.9, i * 1.15),
+            child: Text(
+              text,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: fontSize,
+                fontWeight: FontWeight.w900,
+                height: 1.5,
+                color: depthColors[depthColors.length - i].withOpacity(0.82),
+              ),
+            ),
+          ),
+        ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.white,
+              Color(0xFFFEF08A),
+              Color(0xFFFBBF24),
+            ],
+          ).createShader(bounds),
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: fontSize,
+              fontWeight: FontWeight.w900,
+              height: 1.5,
+              color: Colors.white,
+              shadows: [
+                Shadow(
+                  color: widget.phrase.glowColor.withOpacity(0.75),
+                  blurRadius: 14,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.phrase;
+    return GestureDetector(
+      onPanUpdate: (d) {
+        setState(() {
+          _dragTiltY = (_dragTiltY - d.delta.dx * 0.008).clamp(-0.28, 0.28);
+          _dragTiltX = (_dragTiltX + d.delta.dy * 0.008).clamp(-0.22, 0.22);
+        });
+      },
+      onPanEnd: (_) {
+        setState(() {
+          _dragTiltX = 0;
+          _dragTiltY = 0;
+        });
+      },
+      child: AnimatedBuilder(
+        animation: _anim,
+        builder: (context, child) {
+          final wave = math.sin(_anim.value * math.pi * 2);
+          final rx = 0.06 + wave * 0.05 + _dragTiltX;
+          final ry = wave * 0.08 + _dragTiltY;
+          final lift = wave * 4.5;
+
+          return Transform.translate(
+            offset: Offset(0, lift),
+            child: Transform(
+              alignment: Alignment.center,
+              transform: Matrix4.identity()
+                ..setEntry(3, 2, 0.0017)
+                ..rotateX(rx)
+                ..rotateY(ry)
+                ..scale(0.985 + (_anim.value * 0.025)),
+              child: child,
+            ),
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              // ظل قاعدة 3D عميق
+              BoxShadow(
+                color: p.gradientColors.first.withOpacity(0.9),
+                offset: const Offset(0, 10),
+                blurRadius: 0,
+              ),
+              BoxShadow(
+                color: p.glowColor.withOpacity(0.45),
+                blurRadius: 24,
+                spreadRadius: 2,
+              ),
+            ],
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                p.gradientColors.first,
+                p.gradientColors[1],
+                p.gradientColors.first.withOpacity(0.95),
+              ],
+            ),
+            border: Border.all(
+              color: const Color(0xFFFEF08A).withOpacity(0.85),
+              width: 2.0,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.28),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: const Color(0xFFFEF08A).withOpacity(0.55),
+                        ),
+                      ),
+                      child: Text(
+                        '${p.emoji} ${p.badgeTitle} • 3D',
+                        style: const TextStyle(
+                          color: Color(0xFFFEF08A),
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFBBF24),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '🎯 ${widget.achievedCount}',
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    InkWell(
+                      onTap: widget.onDismiss,
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.28),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.close_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                _buildExtruded3DText(p.text, fontSize: 16.5),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: widget.onNextPhrase,
+                      icon: const Icon(Icons.auto_awesome_rounded, size: 15),
+                      label: const Text(
+                        'تحفيز 3D تالٍ ✨',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFEF08A),
+                        foregroundColor: const Color(0xFF1E293B),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(
+                      onPressed: widget.onOpenCatalog,
+                      icon: const Icon(Icons.view_in_ar_rounded, size: 15),
+                      label: const Text(
+                        'الموسوعة (200) 📜',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Color(0xFFFEF08A)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+void showTasbih200PhrasesExplorerSheet(
+  BuildContext context, {
+  required int currentNumber,
+  required ValueChanged<Tasbih3DPhrase> onSelectPhrase,
+}) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (ctx) {
+      String query = '';
+      return StatefulBuilder(
+        builder: (ctx, setSheet) {
+          final filtered = query.trim().isEmpty
+              ? Tasbih3DPhrasesCatalog.allPhrases
+              : Tasbih3DPhrasesCatalog.allPhrases
+                  .where(
+                    (e) =>
+                        e.text.contains(query.trim()) ||
+                        e.badgeTitle.contains(query.trim()) ||
+                        '${e.number}' == query.trim(),
+                  )
+                  .toList();
+
+          return Container(
+            height: MediaQuery.of(ctx).size.height * 0.82,
+            decoration: const BoxDecoration(
+              color: Color(0xFF0A1624),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              border: Border(
+                top: BorderSide(color: Color(0xFFFBBF24), width: 1.6),
+              ),
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: Row(
+                    children: [
+                      const Text('✨', style: TextStyle(fontSize: 22)),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'موسوعة 200 جملة تحفيزية ثلاثية الأبعاد (3D)',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                        onPressed: () => Navigator.of(ctx).pop(),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: TextField(
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                    onChanged: (v) => setSheet(() => query = v),
+                    decoration: InputDecoration(
+                      hintText: 'ابحث في 200 جملة تحفيزية أو برقم الجملة...',
+                      hintStyle: const TextStyle(color: Colors.white54, fontSize: 12),
+                      prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFFFBBF24)),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.07),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(14, 4, 14, 24),
+                    itemCount: filtered.length,
+                    itemBuilder: (_, idx) {
+                      final item = filtered[idx];
+                      final isSel = item.number == currentNumber;
+                      return GestureDetector(
+                        onTap: () {
+                          onSelectPhrase(item);
+                          Navigator.of(ctx).pop();
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(18),
+                            gradient: LinearGradient(
+                              colors: [
+                                item.gradientColors.first.withOpacity(isSel ? 0.95 : 0.72),
+                                item.gradientColors[1].withOpacity(isSel ? 0.85 : 0.48),
+                              ],
+                            ),
+                            border: Border.all(
+                              color: isSel
+                                  ? const Color(0xFFFEF08A)
+                                  : Colors.white.withOpacity(0.18),
+                              width: isSel ? 1.8 : 1.0,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: item.gradientColors.first.withOpacity(0.5),
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(item.emoji, style: const TextStyle(fontSize: 22)),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.badgeTitle,
+                                      style: const TextStyle(
+                                        color: Color(0xFFFEF08A),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      item.text,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.bold,
+                                        height: 1.45,
+                                        shadows: [
+                                          Shadow(
+                                            color: Colors.black54,
+                                            offset: Offset(1, 2),
+                                            blurRadius: 2,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                isSel ? Icons.check_circle_rounded : Icons.view_in_ar_rounded,
+                                color: const Color(0xFFFEF08A),
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
 }

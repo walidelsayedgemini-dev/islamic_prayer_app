@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:adhan/adhan.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/tasbih_3d_phrases_200.dart';
 import '../models/tasbih_challenge.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
@@ -31,10 +32,12 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
   TasbihChallenge? _customChallenge;
   final Map<String, int> _challengeProgress = {};
 
-  // تأثيرات الوصول للهدف الـ 20
+  // تأثيرات الوصول للهدف الـ 20 + اللافتة التحفيزية الثلاثية الأبعاد (200 عبارة 3D)
   int _selectedEffectIndex = 0; // 0..19
   int _activePlayingEffectIndex = 0;
   bool _autoCycleEffects = true;
+  int _phraseNumber3d = 1; // 1..200
+  bool _show3dBanner = false;
 
   late AnimationController _beadScaleController;
   late Animation<double> _scaleAnimation;
@@ -122,6 +125,7 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
         _selectedEffectIndex = (prefs.getInt('tasbih_effect_idx') ?? 0).clamp(0, 19);
         _activePlayingEffectIndex = _selectedEffectIndex;
         _autoCycleEffects = prefs.getBool('tasbih_effect_autocycle') ?? true;
+        _phraseNumber3d = (prefs.getInt('tasbih_3d_phrase_num') ?? 1).clamp(1, 200);
         _customChallenge = loadedCustom;
         _challengeProgress
           ..clear()
@@ -147,6 +151,7 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
       }
       await prefs.setInt('tasbih_effect_idx', _selectedEffectIndex);
       await prefs.setBool('tasbih_effect_autocycle', _autoCycleEffects);
+      await prefs.setInt('tasbih_3d_phrase_num', _phraseNumber3d);
       await prefs.setString('tasbih_challenge_progress', jsonEncode(_challengeProgress));
       if (_customChallenge != null) {
         await prefs.setString('tasbih_custom_challenge', jsonEncode(_customChallenge!.toJson()));
@@ -170,6 +175,21 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
     super.dispose();
   }
 
+  void _open3dPhrasesCatalog() {
+    showTasbih200PhrasesExplorerSheet(
+      context,
+      currentNumber: _phraseNumber3d,
+      onSelectPhrase: (phrase) {
+        setState(() {
+          _phraseNumber3d = phrase.number;
+          _show3dBanner = true;
+        });
+        _goalEffectController.forward(from: 0.0);
+        _saveTasbihState();
+      },
+    );
+  }
+
   void _triggerGoalEffect({int? overrideIndex, String? message}) {
     int effectIdx = overrideIndex ?? _selectedEffectIndex;
     if (overrideIndex == null && _autoCycleEffects) {
@@ -178,17 +198,20 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
     }
     setState(() {
       _activePlayingEffectIndex = effectIdx;
+      _phraseNumber3d = (_phraseNumber3d % 200) + 1;
+      _show3dBanner = true;
     });
     _goalEffectController.forward(from: 0.0);
     _saveTasbihState();
 
     final userProv = Provider.of<FirdawsUserProvider>(context, listen: false);
     final effectInfo = TasbihGoalEffectsCatalog.getByIndex(effectIdx);
+    final phrase3d = Tasbih3DPhrasesCatalog.getByNumber(_phraseNumber3d);
     final personalizedPhrase =
         userProv.getPersonalizedMotivation(category: 'أنس الذكر والتسبيح');
     _showCelebrationBanner(
       message ??
-          "هنيئاً يا ${userProv.displayName}! (${effectInfo.number}/20: ${effectInfo.name}) • $personalizedPhrase",
+          "هنيئاً يا ${userProv.displayName}! ${phrase3d.emoji} (${effectInfo.number}/20: ${effectInfo.name}) • $personalizedPhrase",
     );
   }
 
@@ -851,17 +874,25 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
       appBar: AppBar(
         backgroundColor: palette.cardColor.withOpacity(isNight ? 0.78 : 0.88),
         elevation: 0,
-        title: const Text("مسبحة وتحديات الفردوس"),
+        title: Text("📿 مسبحة الفردوس ${themeOption.primaryEmoji}"),
         actions: [
+          TextButton.icon(
+            onPressed: _open3dPhrasesCatalog,
+            icon: Icon(Icons.auto_stories_rounded, color: accentColor, size: 17),
+            label: Text(
+              "200 عبارة 3D ✨",
+              style: TextStyle(color: accentColor, fontSize: 11.5, fontWeight: FontWeight.bold),
+            ),
+          ),
           TextButton.icon(
             onPressed: () => _triggerGoalEffect(
               message:
-                  "معاينة التأثير (${TasbihGoalEffectsCatalog.getByIndex(_selectedEffectIndex).number}/20) ✨",
+                  "معاينة التأثير #${TasbihGoalEffectsCatalog.getByIndex(_selectedEffectIndex).number}/20 ✨🎆",
             ),
             icon: Icon(Icons.auto_awesome_rounded, color: accentColor, size: 18),
             label: Text(
-              "معاينة",
-              style: TextStyle(color: accentColor, fontSize: 12, fontWeight: FontWeight.bold),
+              "معاينة 🎆",
+              style: TextStyle(color: accentColor, fontSize: 11.5, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -925,7 +956,7 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              activeChallenge?.title ?? "التحديات الإيمانية",
+                                              activeChallenge?.title ?? "🏆 التحديات الإيمانية",
                                               style: TextStyle(
                                                 color: palette.textPrimary,
                                                 fontWeight: FontWeight.bold,
@@ -936,8 +967,8 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                                             ),
                                             Text(
                                               activeChallenge != null
-                                                  ? "$_counter / ${activeChallenge.targetCount}"
-                                                  : "12 تحدياً + تحدٍ مخصص",
+                                                  ? "🎯 $_counter / ${activeChallenge.targetCount}"
+                                                  : "✨ 12 تحدياً + تحدٍ مخصص",
                                               style: TextStyle(
                                                 color: accentColor,
                                                 fontSize: 10.5,
@@ -974,7 +1005,7 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              "تأثيرات الهدف (20)",
+                                              "🎆 تأثيرات الهدف (20)",
                                               style: TextStyle(
                                                 color: palette.textPrimary,
                                                 fontWeight: FontWeight.bold,
@@ -985,7 +1016,7 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                                             ),
                                             Text(
                                               _autoCycleEffects
-                                                  ? "تلقائي: #${currentEffect.number}"
+                                                  ? "🔄 تلقائي: #${currentEffect.number} + 200 عبارة 3D"
                                                   : "#${currentEffect.number}: ${currentEffect.name}",
                                               style: TextStyle(
                                                 color: accentColor,
@@ -1298,8 +1329,8 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                                   ),
                                   child: Text(
                                     effectiveTarget > 0
-                                        ? "الدورة: ${_counter ~/ effectiveTarget} • الإجمالي: $_totalLifetimeTasbih"
-                                        : "الإجمالي التراكمي: $_totalLifetimeTasbih",
+                                        ? "🌟 الدورة: ${_counter ~/ effectiveTarget} • 📿 الإجمالي: $_totalLifetimeTasbih ${themeOption.primaryEmoji}"
+                                        : "📿 الإجمالي التراكمي: $_totalLifetimeTasbih ${themeOption.primaryEmoji}",
                                     style: TextStyle(
                                       color: accentColor,
                                       fontSize: 13,
@@ -1307,6 +1338,27 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              InkWell(
+                                onTap: _open3dPhrasesCatalog,
+                                borderRadius: BorderRadius.circular(14),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                                  decoration: BoxDecoration(
+                                    color: accentColor.withOpacity(0.18),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(color: accentColor.withOpacity(0.55)),
+                                  ),
+                                  child: Text(
+                                    "✨ #$_phraseNumber3d/200",
+                                    style: TextStyle(
+                                      color: accentColor,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -1319,6 +1371,26 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                 },
               ),
           ),
+
+          // لافتة التحفيز الثلاثية الأبعاد 3D فوق المسبحة
+          if (_show3dBanner)
+            Positioned(
+              top: kToolbarHeight + MediaQuery.of(context).padding.top + 6,
+              left: 0,
+              right: 0,
+              child: Tasbih3DMotivationBanner(
+                phrase: Tasbih3DPhrasesCatalog.getByNumber(_phraseNumber3d),
+                achievedCount: _counter,
+                onNextPhrase: () {
+                  setState(() {
+                    _phraseNumber3d = (_phraseNumber3d % 200) + 1;
+                  });
+                  _saveTasbihState();
+                },
+                onOpenCatalog: _open3dPhrasesCatalog,
+                onDismiss: () => setState(() => _show3dBanner = false),
+              ),
+            ),
 
           // طبقة تأثيرات الوصول للهدف الـ 20
           Positioned.fill(

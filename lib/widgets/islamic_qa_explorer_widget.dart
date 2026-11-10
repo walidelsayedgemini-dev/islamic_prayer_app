@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/islamic_qa_500.dart';
 import '../providers/jannati_provider.dart';
 import '../theme/islamic_theme.dart';
+import 'sacred_reference_widgets.dart';
 
 /// واجهة بحث ذكية وتفاعلية شاملة للـ 500 سؤال وجواب في الإسلام (عقيدة، طهارة، صلاة، جنة، قرآن، حياة يومية)
 class IslamicQaExplorerWidget extends StatefulWidget {
@@ -537,21 +538,32 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: catCol.withOpacity(0.35)),
                               ),
-                              child: Row(
+                              child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(Icons.menu_book_rounded, color: catCol, size: 16),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'الدليل والمرجع: ${item.evidence}',
-                                      style: TextStyle(
-                                        color: palette.textPrimary,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 11.5,
-                                        height: 1.4,
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(Icons.menu_book_rounded, color: catCol, size: 16),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          '📜 الدليل والمرجع: ${item.evidence}',
+                                          style: TextStyle(
+                                            color: palette.textPrimary,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 11.5,
+                                            height: 1.4,
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  SacredEvidenceFooter(
+                                    evidenceText: '${item.evidence}\n${item.answer}',
+                                    titleForHadith: item.question,
+                                    trackInJannati: true,
                                   ),
                                 ],
                               ),

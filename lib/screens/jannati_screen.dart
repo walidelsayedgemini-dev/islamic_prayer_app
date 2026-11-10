@@ -13,6 +13,7 @@ import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/jannati_atlas_and_covenant_views.dart';
 import '../widgets/jannati_garden_canvas.dart';
 import '../widgets/real_mosque_background.dart';
+import '../widgets/sacred_reference_widgets.dart';
 
 /// واحة الفردوس الأعلى التفاعلية الشاملة («جنتي» + ٥٠٠ سؤال وجواب):
 /// 5 تبويبات متكاملة:
@@ -421,11 +422,18 @@ class _JannatiScreenState extends State<JannatiScreen>
                   ),
                   const SizedBox(height: 12),
                   _sheetInfoBox(
-                    title: 'الدليل الشرعي والحديث الصحيح',
+                    title: '📜 الدليل الشرعي والحديث الصحيح',
                     body: '${inv.exactHadith}\n(${inv.sourceReference})',
                     icon: Icons.verified_rounded,
                     color: c,
                     palette: palette,
+                  ),
+                  const SizedBox(height: 6),
+                  SacredEvidenceFooter(
+                    evidenceText: '${inv.exactHadith}\n(${inv.sourceReference})',
+                    titleForHadith: inv.title,
+                    hadithVerbatim: inv.exactHadith,
+                    trackInJannati: true,
                   ),
                   const SizedBox(height: 10),
                   _sheetInfoBox(
@@ -736,11 +744,17 @@ class _JannatiScreenState extends State<JannatiScreen>
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'الدليل: ${river.quranOrHadith}',
+                            '📜 الدليل: ${river.quranOrHadith}',
                             style: TextStyle(
                               color: palette.textSecondary,
                               fontSize: 10.5,
                             ),
+                          ),
+                          const SizedBox(height: 6),
+                          SacredEvidenceFooter(
+                            evidenceText: river.quranOrHadith,
+                            titleForHadith: river.name,
+                            trackInJannati: true,
                           ),
                         ],
                       ),
@@ -830,12 +844,12 @@ class _JannatiScreenState extends State<JannatiScreen>
           SafeArea(
             child: Column(
               children: [
-                // 1. الترويسة الملكية وشريط المقام والنقاط
+                // 1. الترويسة الملكية وشريط المقام والنقاط والإحصائيات الحركية
                 _buildRoyalSanctuaryHeader(
                   palette: palette,
                   jannati: jannati,
                   userProv: userProv,
-                  themeName: themeOption.name,
+                  themeOption: themeOption,
                 ),
 
                 // 2. شريط التبويبات الخمسة
@@ -863,7 +877,7 @@ class _JannatiScreenState extends State<JannatiScreen>
     required ThemePalette palette,
     required JannatiProvider jannati,
     required FirdawsUserProvider userProv,
-    required String themeName,
+    required ThemeOption themeOption,
   }) {
     final accent = palette.accentColor;
     final rank = jannati.currentRank;
@@ -906,14 +920,21 @@ class _JannatiScreenState extends State<JannatiScreen>
                     ],
                   ),
                   child: ClipOval(
-                    child: Image.asset(
-                      'assets/images/palace_jannah_logo.png',
-                      width: 46,
-                      height: 46,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          Icon(Icons.castle_rounded, color: accent, size: 24),
-                    ),
+                    child: userProv.avatarBytes != null
+                        ? Image.memory(
+                            userProv.avatarBytes!,
+                            width: 46,
+                            height: 46,
+                            fit: BoxFit.cover,
+                          )
+                        : Image.asset(
+                            'assets/images/palace_jannah_logo.png',
+                            width: 46,
+                            height: 46,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                Icon(Icons.castle_rounded, color: accent, size: 24),
+                          ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -923,12 +944,12 @@ class _JannatiScreenState extends State<JannatiScreen>
                     children: [
                       Text(
                         userProv.profile.hasCustomName
-                            ? 'جَنَّةُ ${userProv.displayName} • مَوْسُوعَةُ الفِرْدَوْس'
-                            : 'جَنَّتِي الأَعْلَى • مَوْسُوعَةُ الفِرْدَوْس',
+                            ? '${themeOption.primaryEmoji} جَنَّةُ ${userProv.displayName} • مَوْسُوعَةُ الفِرْدَوْس'
+                            : '${themeOption.primaryEmoji} جَنَّتِي الأَعْلَى • مَوْسُوعَةُ الفِرْدَوْس',
                         style: TextStyle(
                           color: accent,
                           fontWeight: FontWeight.bold,
-                          fontSize: 14.5,
+                          fontSize: 14,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -940,7 +961,7 @@ class _JannatiScreenState extends State<JannatiScreen>
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              '${rank.arabicTitle} • ازدهار البستان $vibrancyPct% • $themeName',
+                              '${rank.arabicTitle} • ازدهار البستان $vibrancyPct% • ${themeOption.name} ${themeOption.emojiStrip}',
                               style: TextStyle(
                                 color: palette.textSecondary,
                                 fontSize: 10.5,
@@ -966,7 +987,7 @@ class _JannatiScreenState extends State<JannatiScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        '${jannati.totalJannahPoints}',
+                        '✨ ${jannati.totalJannahPoints}',
                         style: TextStyle(
                           color: rankColor,
                           fontWeight: FontWeight.bold,
@@ -1013,9 +1034,116 @@ class _JannatiScreenState extends State<JannatiScreen>
                 ),
               ],
             ),
+            const SizedBox(height: 8),
+            // شريط الإحصائيات الحركي: يتحرك وينبض كلما قُرئ حديث أو زُرعت غرسة في الجنة!
+            TweenAnimationBuilder<double>(
+              key: ValueKey<int>(jannati.statsKineticTick),
+              tween: Tween<double>(begin: 1.0, end: 0.0),
+              duration: const Duration(milliseconds: 650),
+              curve: Curves.easeOutBack,
+              builder: (context, pulse, _) {
+                final scale = 1.0 + (pulse * 0.045).clamp(-0.02, 0.06);
+                final glowOpacity = (0.14 + pulse * 0.42).clamp(0.14, 0.60);
+                return Transform.scale(
+                  scale: scale,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: palette.elevatedCardColor,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: accent.withOpacity(glowOpacity),
+                        width: pulse > 0.1 ? 1.5 : 1.0,
+                      ),
+                      boxShadow: [
+                        if (pulse > 0.05)
+                          BoxShadow(
+                            color: accent.withOpacity((pulse * 0.35).clamp(0.0, 0.4)),
+                            blurRadius: 12,
+                          ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _kineticMiniStat(
+                          '🌴',
+                          '${jannati.palmsCount}',
+                          'نخلة',
+                          const Color(0xFF10B981),
+                          palette,
+                        ),
+                        _kineticMiniStat(
+                          '🏰',
+                          '${jannati.palacesCount}',
+                          'قصور',
+                          const Color(0xFFF59E0B),
+                          palette,
+                        ),
+                        _kineticMiniStat(
+                          '💎',
+                          '${jannati.treasuresCount}',
+                          'كنز',
+                          const Color(0xFF8B5CF6),
+                          palette,
+                        ),
+                        _kineticMiniStat(
+                          '📖',
+                          '${jannati.hadithsReadCount}',
+                          'حديث مقروء',
+                          const Color(0xFF38BDF8),
+                          palette,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _kineticMiniStat(
+    String emoji,
+    String value,
+    String label,
+    Color color,
+    ThemePalette palette,
+  ) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(emoji, style: const TextStyle(fontSize: 13)),
+        const SizedBox(width: 4),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 280),
+              child: Text(
+                value,
+                key: ValueKey<String>('$label-$value'),
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                color: palette.textMuted,
+                fontSize: 8.8,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -1694,14 +1822,34 @@ class _JannatiScreenState extends State<JannatiScreen>
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            '${inv.exactHadith} (${inv.sourceReference})',
-            style: TextStyle(
-              color: palette.textPrimary,
-              fontSize: 11.5,
-              height: 1.4,
-              fontStyle: FontStyle.italic,
+          InkWell(
+            onTap: () => SacredNavigator.openHadithSheet(
+              context,
+              '${inv.exactHadith} (${inv.sourceReference})',
+              titleOverride: inv.title,
+              verbatimText: inv.exactHadith,
+              trackInJannati: true,
             ),
+            borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Text(
+                '📜 ${inv.exactHadith} (${inv.sourceReference})',
+                style: TextStyle(
+                  color: palette.textPrimary,
+                  fontSize: 11.5,
+                  height: 1.4,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          SacredEvidenceFooter(
+            evidenceText: '${inv.exactHadith} (${inv.sourceReference})',
+            titleForHadith: inv.title,
+            hadithVerbatim: inv.exactHadith,
+            trackInJannati: true,
           ),
           if (inv.cycleTarget > 1) ...[
             const SizedBox(height: 10),
@@ -1948,6 +2096,12 @@ class _JannatiScreenState extends State<JannatiScreen>
                   Text(
                     '${dua.source} — ${dua.reflection}',
                     style: TextStyle(color: palette.textSecondary, fontSize: 10.5),
+                  ),
+                  const SizedBox(height: 6),
+                  SacredEvidenceFooter(
+                    evidenceText: '${dua.source}\n${dua.arabicText}',
+                    titleForHadith: dua.title,
+                    trackInJannati: true,
                   ),
                 ],
               ),

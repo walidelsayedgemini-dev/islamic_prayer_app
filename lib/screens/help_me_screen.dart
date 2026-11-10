@@ -7,6 +7,7 @@ import '../theme/islamic_theme.dart';
 import '../widgets/islamic_qa_explorer_widget.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/real_mosque_background.dart';
+import '../widgets/sacred_reference_widgets.dart';
 
 class HelpMeScreen extends StatefulWidget {
   final ValueNotifier<bool?>? openQaNotifier;
@@ -167,15 +168,26 @@ class _HelpMeScreenState extends State<HelpMeScreen>
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: catAccent.withOpacity(0.35)),
                     ),
-                    child: Text(
-                      category.quranAyah,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: palette.textPrimary,
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        height: 1.5,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          '📖 ${category.quranAyah}',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: palette.textPrimary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            height: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SacredEvidenceFooter(
+                          evidenceText: category.quranAyah,
+                          titleForHadith: category.title,
+                          trackInJannati: true,
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -194,7 +206,7 @@ class _HelpMeScreenState extends State<HelpMeScreen>
                             Icon(Icons.record_voice_over_rounded, color: catAccent, size: 18),
                             const SizedBox(width: 8),
                             Text(
-                              "دعاء الكرب وتفريج الضيق:",
+                              "🤲 دعاء الكرب وتفريج الضيق:",
                               style: TextStyle(
                                 color: catAccent,
                                 fontWeight: FontWeight.bold,
@@ -214,12 +226,19 @@ class _HelpMeScreenState extends State<HelpMeScreen>
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          category.hadithReference,
+                          '📜 ${category.hadithReference}',
                           style: TextStyle(
                             color: palette.textSecondary,
                             fontSize: 11,
                             height: 1.4,
                           ),
+                        ),
+                        const SizedBox(height: 8),
+                        SacredEvidenceFooter(
+                          evidenceText: category.hadithReference,
+                          titleForHadith: category.title,
+                          hadithVerbatim: category.mainDuha,
+                          trackInJannati: true,
                         ),
                       ],
                     ),

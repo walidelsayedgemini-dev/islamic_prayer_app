@@ -3,6 +3,7 @@ import 'package:adhan/adhan.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/font_catalog.dart';
 import '../models/prayer_model.dart';
+import '../services/firdaws_native_service.dart';
 import '../services/location_service.dart';
 import '../services/notification_service.dart';
 
@@ -22,6 +23,16 @@ class SettingsProvider extends ChangeNotifier {
   String _cityName = "الرياض، المملكة العربية السعودية";
   bool _playPreAdhanReminder = true;
   bool _autoMuteDuringPrayer = false;
+
+  // 200 تأثير تفاعلي للمس وحركة المؤشر والماوس
+  bool _touchEffectsEnabled = true;
+  int _touchEffectNumber = 1; // 1..200
+  bool _touchEffectsAutoCycle = false;
+
+  // التذكير العائم بالصلاة على النبي ﷺ فوق كل التطبيقات
+  bool _salawatOverlayEnabled = true;
+  int _salawatIntervalMinutes = 30;
+  List<String> _salawatCustomTimes = ['09:00', '13:30', '20:00'];
 
   // إزاحات التوقيت بالدقائق (+ أو -)
   Map<String, int> _offsets = {
@@ -45,6 +56,14 @@ class SettingsProvider extends ChangeNotifier {
   bool get playPreAdhanReminder => _playPreAdhanReminder;
   bool get autoMuteDuringPrayer => _autoMuteDuringPrayer;
   Map<String, int> get offsets => _offsets;
+
+  bool get touchEffectsEnabled => _touchEffectsEnabled;
+  int get touchEffectNumber => _touchEffectNumber;
+  bool get touchEffectsAutoCycle => _touchEffectsAutoCycle;
+
+  bool get salawatOverlayEnabled => _salawatOverlayEnabled;
+  int get salawatIntervalMinutes => _salawatIntervalMinutes;
+  List<String> get salawatCustomTimes => List.unmodifiable(_salawatCustomTimes);
 
   /// تحديد ما إذا كان الوضع الليلي مفعلاً حالياً (يدوياً أو تلقائياً مع المغرب والفجر)
   bool get isNightEffective {
@@ -115,6 +134,18 @@ class SettingsProvider extends ChangeNotifier {
     _playPreAdhanReminder = _prefs!.getBool('pre_adhan_reminder') ?? true;
     _autoMuteDuringPrayer = _prefs!.getBool('auto_mute') ?? false;
 
+    _touchEffectsEnabled = _prefs!.getBool('touch_fx_enabled') ?? true;
+    _touchEffectNumber = (_prefs!.getInt('touch_fx_number') ?? 1).clamp(1, 200);
+    _touchEffectsAutoCycle = _prefs!.getBool('touch_fx_autocycle') ?? false;
+
+    _salawatOverlayEnabled = _prefs!.getBool('salawat_enabled') ?? true;
+    _salawatIntervalMinutes =
+        (_prefs!.getInt('salawat_interval_mins') ?? 30).clamp(1, 180);
+    final savedTimes = _prefs!.getStringList('salawat_custom_times');
+    if (savedTimes != null) {
+      _salawatCustomTimes = List<String>.from(savedTimes);
+    }
+
     _offsets = {
       'fajr': _prefs!.getInt('offset_fajr') ?? 0,
       'dhuhr': _prefs!.getInt('offset_dhuhr') ?? 0,
@@ -123,6 +154,67 @@ class SettingsProvider extends ChangeNotifier {
       'isha': _prefs!.getInt('offset_isha') ?? 0,
     };
     notifyListeners();
+    _syncSalawatReminders();
+  }
+
+  void setTouchEffectsEnabled(bool enabled) {
+    _touchEffectsEnabled = enabled;
+    _prefs?.setBool('touch_fx_enabled', enabled);
+    notifyListeners();
+  }
+
+  void setTouchEffectNumber(int number) {
+    _touchEffectNumber = number.clamp(1, 200);
+    _prefs?.setInt('touch_fx_number', _touchEffectNumber);
+    notifyListeners();
+  }
+
+  void setTouchEffectsAutoCycle(bool autoCycle) {
+    _touchEffectsAutoCycle = autoCycle;
+    _prefs?.setBool('touch_fx_autocycle', autoCycle);
+    notifyListeners();
+  }
+
+  void setSalawatOverlayEnabled(bool enabled) {
+    _salawatOverlayEnabled = enabled;
+    _prefs?.setBool('salawat_enabled', enabled);
+    notifyListeners();
+    _syncSalawatReminders();
+  }
+
+  void setSalawatIntervalMinutes(int minutes) {
+    _salawatIntervalMinutes = minutes.clamp(0, 240);
+    _prefs?.setInt('salawat_interval_mins', _salawatIntervalMinutes);
+    notifyListeners();
+    _syncSalawatReminders();
+  }
+
+  void addSalawatCustomTime(String hhMm) {
+    final trimmed = hhMm.trim();
+    if (!_salawatCustomTimes.contains(trimmed)) {
+      _salawatCustomTimes = [..._salawatCustomTimes, trimmed]..sort();
+      _prefs?.setStringList('salawat_custom_times', _salawatCustomTimes);
+      notifyListeners();
+      _syncSalawatReminders();
+    }
+  }
+
+  void removeSalawatCustomTime(String hhMm) {
+    _salawatCustomTimes =
+        _salawatCustomTimes.where((t) => t != hhMm).toList();
+    _prefs?.setStringList('salawat_custom_times', _salawatCustomTimes);
+    notifyListeners();
+    _syncSalawatReminders();
+  }
+
+  void _syncSalawatReminders() {
+    try {
+      FirdawsNativeService().scheduleSalawatReminders(
+        enabled: _salawatOverlayEnabled,
+        intervalMinutes: _salawatIntervalMinutes,
+        customTimes: _salawatCustomTimes,
+      );
+    } catch (_) {}
   }
 
   Future<void> refreshCurrentLocation() async {
@@ -216,6 +308,11 @@ class SettingsProvider extends ChangeNotifier {
     _prefs?.setBool('auto_loc', false);
     notifyListeners();
     _rescheduleNotifications();
+  }
+
+  void syncAllNotifications() {
+    _rescheduleNotifications();
+    _syncSalawatReminders();
   }
 
   void _rescheduleNotifications() {

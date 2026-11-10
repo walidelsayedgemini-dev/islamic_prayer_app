@@ -2,14 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:adhan/adhan.dart';
 import 'package:provider/provider.dart';
 import '../models/font_catalog.dart';
+import '../models/touch_effects_200.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
+import '../services/firdaws_native_service.dart';
 import '../services/location_service.dart';
 import '../theme/islamic_theme.dart';
+import '../widgets/audio_download_manager_sheet.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/prayer_time_effects_canvas.dart';
 import '../widgets/real_mosque_background.dart';
 import '../widgets/user_profile_editor_sheet.dart';
+import 'about_me_screen.dart';
+import 'adhan_alarm_screen.dart';
 import 'main_navigation_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -28,6 +33,245 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void dispose() {
     _themeSearchController.dispose();
     super.dispose();
+  }
+
+  void _showTouchEffectsCatalogSheet(BuildContext context, ThemePalette palette) {
+    TouchEffectCategory? activeCat;
+    String query = '';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            final settings = Provider.of<SettingsProvider>(ctx);
+            final accent = palette.accentColor;
+            final byCat = TouchEffectsCatalog.byCategory(activeCat);
+            final filtered = query.isEmpty
+                ? byCat
+                : byCat
+                    .where((e) =>
+                        e.name.contains(query) ||
+                        e.number.toString() == query ||
+                        e.category.arabicLabel.contains(query))
+                    .toList();
+
+            return DraggableScrollableSheet(
+              initialChildSize: 0.88,
+              minChildSize: 0.52,
+              maxChildSize: 0.96,
+              builder: (_, sc) {
+                return Container(
+                  decoration: BoxDecoration(
+                    color: palette.scaffoldColor,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                    border: Border.all(color: accent.withOpacity(0.55), width: 1.5),
+                  ),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 10),
+                      Container(
+                        width: 46,
+                        height: 4.5,
+                        decoration: BoxDecoration(
+                          color: palette.dividerColor,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 12, 18, 8),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(9),
+                              decoration: BoxDecoration(
+                                color: accent.withOpacity(0.18),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(Icons.touch_app_rounded, color: accent, size: 22),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '✨ مكتبة 200 تأثير للمس والماوس',
+                                    style: TextStyle(
+                                      color: accent,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15.5,
+                                    ),
+                                  ),
+                                  Text(
+                                    'اختر التأثير الذي يتبع لمساتك ومؤشر الفأرة في كل الشاشات',
+                                    style: TextStyle(
+                                      color: palette.textSecondary,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.close_rounded, color: palette.textMuted),
+                              onPressed: () => Navigator.pop(ctx),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: TextField(
+                          style: TextStyle(color: palette.textPrimary, fontSize: 13),
+                          onChanged: (v) => setModalState(() => query = v.trim()),
+                          decoration: InputDecoration(
+                            hintText: 'ابحث بالاسم أو رقم التأثير (1 - 200)...',
+                            hintStyle: TextStyle(color: palette.textMuted, fontSize: 12),
+                            prefixIcon: Icon(Icons.search_rounded, color: accent, size: 18),
+                            isDense: true,
+                            filled: true,
+                            fillColor: palette.cardColor,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(color: palette.dividerColor),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 36,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(left: 6),
+                              child: ChoiceChip(
+                                label: Text(
+                                  'الكل (200)',
+                                  style: TextStyle(
+                                    color: activeCat == null
+                                        ? palette.onAccentColor
+                                        : palette.textPrimary,
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                selected: activeCat == null,
+                                selectedColor: accent,
+                                backgroundColor: palette.cardColor,
+                                onSelected: (_) => setModalState(() => activeCat = null),
+                              ),
+                            ),
+                            ...TouchEffectCategory.values.map((cat) {
+                              final isSel = activeCat == cat;
+                              return Padding(
+                                padding: const EdgeInsets.only(left: 6),
+                                child: ChoiceChip(
+                                  label: Text(
+                                    '${cat.emoji} ${cat.arabicLabel}',
+                                    style: TextStyle(
+                                      color: isSel
+                                          ? palette.onAccentColor
+                                          : palette.textPrimary,
+                                      fontSize: 11.5,
+                                      fontWeight:
+                                          isSel ? FontWeight.bold : FontWeight.normal,
+                                    ),
+                                  ),
+                                  selected: isSel,
+                                  selectedColor: accent,
+                                  backgroundColor: palette.cardColor,
+                                  onSelected: (_) => setModalState(
+                                    () => activeCat = isSel ? null : cat,
+                                  ),
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Expanded(
+                        child: ListView.builder(
+                          controller: sc,
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
+                          itemCount: filtered.length,
+                          itemBuilder: (_, idx) {
+                            final fx = filtered[idx];
+                            final isSel = settings.touchEffectNumber == fx.number;
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              decoration: BoxDecoration(
+                                color: isSel
+                                    ? fx.primaryColor.withOpacity(0.16)
+                                    : palette.cardColor,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: isSel ? fx.primaryColor : palette.dividerColor,
+                                  width: isSel ? 1.8 : 1.0,
+                                ),
+                              ),
+                              child: ListTile(
+                                dense: true,
+                                leading: Container(
+                                  width: 38,
+                                  height: 38,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: LinearGradient(
+                                      colors: [fx.primaryColor, fx.secondaryColor],
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      fx.emoji,
+                                      style: const TextStyle(fontSize: 17),
+                                    ),
+                                  ),
+                                ),
+                                title: Text(
+                                  '#${fx.number} • ${fx.name}',
+                                  style: TextStyle(
+                                    color: palette.textPrimary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  '${fx.category.arabicLabel} • ${fx.hasRippleRing ? 'موجة تموجات' : 'جسيمات متطايرة'}',
+                                  style: TextStyle(
+                                    color: palette.textSecondary,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                                trailing: isSel
+                                    ? Icon(Icons.check_circle_rounded, color: accent)
+                                    : Icon(Icons.touch_app_outlined, color: palette.textMuted, size: 18),
+                                onTap: () {
+                                  settings.setTouchEffectNumber(fx.number);
+                                  if (settings.touchEffectsAutoCycle) {
+                                    settings.setTouchEffectsAutoCycle(false);
+                                  }
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
   }
 
   void _showAllFontsPickerSheet(BuildContext context, ThemePalette palette) {
@@ -620,63 +864,78 @@ class _SettingsScreenState extends State<SettingsScreen> {
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 100),
               physics: const BouncingScrollPhysics(),
               children: [
-                // بطاقة هوية الفردوس وشعار القصر
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: palette.cardColor.withOpacity(isNight ? 0.85 : 0.90),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: accentColor.withOpacity(0.5), width: 1.4),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 52,
-                        height: 52,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: accentColor, width: 2.0),
-                          boxShadow: [
-                            BoxShadow(
-                              color: accentColor.withOpacity(0.35),
-                              blurRadius: 12,
-                            ),
-                          ],
-                        ),
-                        child: ClipOval(
-                          child: Image.asset(
-                            'assets/images/palace_jannah_logo.png',
-                            width: 52,
-                            height: 52,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
-                                Icon(Icons.castle_rounded, color: accentColor, size: 26),
-                          ),
-                        ),
+                // بطاقة هوية الفردوس وشعار القصر وصورة المستخدم
+                Consumer<FirdawsUserProvider>(
+                  builder: (_, userProv, __) {
+                    final avatarBytes = userProv.avatarBytes;
+                    return Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: palette.cardColor.withOpacity(isNight ? 0.85 : 0.90),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: accentColor.withOpacity(0.5), width: 1.4),
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "تطبيق الفردوس الإسلامي الشامل",
-                              style: TextStyle(
-                                color: accentColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15.5,
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () => UserProfileEditorSheet.show(context),
+                            child: Container(
+                              width: 54,
+                              height: 54,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: accentColor, width: 2.0),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: accentColor.withOpacity(0.35),
+                                    blurRadius: 12,
+                                  ),
+                                ],
+                              ),
+                              child: ClipOval(
+                                child: avatarBytes != null
+                                    ? Image.memory(
+                                        avatarBytes,
+                                        width: 54,
+                                        height: 54,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Image.asset(
+                                        'assets/images/palace_jannah_logo.png',
+                                        width: 54,
+                                        height: 54,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) =>
+                                            Icon(Icons.castle_rounded, color: accentColor, size: 26),
+                                      ),
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              "الثيم النشط: ${themeOption.name} • الوضع ${isNight ? 'الليلي' : 'النهاري'}",
-                              style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "${themeOption.primaryEmoji} تطبيق الفردوس الإسلامي الشامل",
+                                  style: TextStyle(
+                                    color: accentColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  "الثيم: ${themeOption.name} ${themeOption.emojiStrip} • ${isNight ? '🌙 ليلي' : '☀️ نهاري'}",
+                                  style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
 
                 // 0-أ. بيانات المستخدم الشخصية وتفضيلاته + مؤثرات أوقات الصلاة
@@ -684,16 +943,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   builder: (_, userProv, __) {
                     final p = userProv.profile;
                     final titleLabel = userProv.activeTitleLabel;
+                    final avatarBytes = userProv.avatarBytes;
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _buildSectionHeader("ملفي الشخصي وتفضيلاتي (الاسم، العمر، النوع)", accentColor),
+                        _buildSectionHeader("🪪 ملفي الشخصي وتفضيلاتي وصورتي 📸", accentColor),
                         _buildCard(palette, [
                           ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: CircleAvatar(
                               backgroundColor: accentColor.withOpacity(0.18),
-                              child: Icon(Icons.person_rounded, color: accentColor),
+                              backgroundImage:
+                                  avatarBytes != null ? MemoryImage(avatarBytes) : null,
+                              child: avatarBytes == null
+                                  ? Icon(Icons.person_rounded, color: accentColor)
+                                  : null,
                             ),
                             title: Text(
                               p.hasCustomName
@@ -1217,7 +1481,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           children: [
                                             Flexible(
                                               child: Text(
-                                                theme.name,
+                                                theme.primaryEmoji.isNotEmpty
+                                                    ? '${theme.primaryEmoji} ${theme.name}'
+                                                    : theme.name,
                                                 style: TextStyle(
                                                   color: isSelected
                                                       ? itemPalette.accentColor
@@ -1452,20 +1718,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ]),
 
-            // 5. صوت الأذان والتنبيه
-            _buildSectionHeader("صوت الأذان والتنبيهات", accentColor),
+            // 5. صوت الأذان والتنبيهات + منبه الأذان المتواصل
+            _buildSectionHeader("🔊 صوت الأذان والتنبيهات (الأذان الكامل)", accentColor),
             _buildCard(palette, [
               _buildDropdownTile<String>(
                 title: "صوت المؤذن",
-                value: settings.adhanVoice,
+                value: const ['madinah', 'makkah', 'aqsa', 'cairo', 'afasy']
+                        .contains(settings.adhanVoice)
+                    ? settings.adhanVoice
+                    : 'madinah',
                 palette: palette,
                 items: const [
-                  DropdownMenuItem(value: "madinah", child: Text("أذان الحرم النبوي المدني")),
-                  DropdownMenuItem(value: "makkah", child: Text("أذان المسجد الحرام بمكة")),
-                  DropdownMenuItem(value: "aqsa", child: Text("أذان المسجد الأقصى المبارك")),
-                  DropdownMenuItem(value: "cairo", child: Text("أذان مساجد القاهرة")),
+                  DropdownMenuItem(value: "madinah", child: Text("🕌 أذان الحرم النبوي المدني")),
+                  DropdownMenuItem(value: "makkah", child: Text("🕋 أذان المسجد الحرام بمكة")),
+                  DropdownMenuItem(value: "aqsa", child: Text("🏛️ أذان المسجد الأقصى المبارك")),
+                  DropdownMenuItem(value: "cairo", child: Text("🌙 أذان مساجد القاهرة")),
+                  DropdownMenuItem(value: "afasy", child: Text("🎙️ أذان الشيخ مشاري العفاسي")),
                 ],
                 onChanged: (val) => val != null ? settings.setAdhanVoice(val) : null,
+              ),
+              Divider(color: palette.dividerColor),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => AdhanAlarmScreen(
+                              prayerName: 'الفجر (معاينة)',
+                              voiceId: settings.adhanVoice,
+                              useNativeService: FirdawsNativeService().isAndroid,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.volume_up_rounded, size: 19),
+                      label: const Text(
+                        "🔊 تجربة منبه الأذان المتواصل بصوت المؤذن المختار",
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: accentColor,
+                        foregroundColor: palette.onAccentColor,
+                        padding: const EdgeInsets.symmetric(vertical: 11),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      "🔔 عند دخول وقت الصلاة يصدح الأذان متواصلاً فوق القفل ولا يتوقف إلا بزر رفع الصوت الجانبي أو السحب والضغط على إلغاء.",
+                      style: TextStyle(color: palette.textSecondary, fontSize: 11, height: 1.35),
+                    ),
+                  ],
+                ),
               ),
               Divider(color: palette.dividerColor),
               SwitchListTile(
@@ -1494,6 +1804,272 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: settings.autoMuteDuringPrayer,
                 activeTrackColor: accentColor,
                 onChanged: (val) => settings.setAutoMute(val),
+              ),
+            ]),
+
+            // 5-ب. 200 تأثير للمس وحركة الماوس والمؤشر
+            _buildSectionHeader("✨ 200 تأثير للمس وحركة المؤشر (Touch Waves)", accentColor),
+            _buildCard(palette, [
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  "🌊 تفعيل تأثيرات اللمس والتموّج وحركة المؤشر",
+                  style: TextStyle(color: palette.textPrimary, fontSize: 13.5, fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  "تظهر موجات وتموّجات جميلة تحت إصبعك أو مؤشر الفأرة فوق التطبيق",
+                  style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
+                ),
+                value: settings.touchEffectsEnabled,
+                activeTrackColor: accentColor,
+                onChanged: (v) => settings.setTouchEffectsEnabled(v),
+              ),
+              Divider(color: palette.dividerColor),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  "🔄 تبديل التأثير تلقائياً بين الـ 200 مع اللمسات",
+                  style: TextStyle(color: palette.textPrimary, fontSize: 13),
+                ),
+                value: settings.touchEffectsAutoCycle,
+                activeTrackColor: accentColor,
+                onChanged: (v) => settings.setTouchEffectsAutoCycle(v),
+              ),
+              Divider(color: palette.dividerColor),
+              Builder(
+                builder: (_) {
+                  final fx = TouchEffectsCatalog.getByNumber(settings.touchEffectNumber);
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: CircleAvatar(
+                      backgroundColor: fx.primaryColor.withOpacity(0.20),
+                      child: Text(fx.emoji, style: const TextStyle(fontSize: 18)),
+                    ),
+                    title: Text(
+                      "التأثير النشط #${fx.number}/200: ${fx.name}",
+                      style: TextStyle(color: palette.textPrimary, fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                    subtitle: Text(
+                      "${fx.category.arabicLabel} • اضغط لتصفح كل الـ 200 تأثير واختيار تأثيرك",
+                      style: TextStyle(color: palette.textSecondary, fontSize: 11),
+                    ),
+                    trailing: ElevatedButton(
+                      onPressed: () => _showTouchEffectsCatalogSheet(context, palette),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: accentColor,
+                        foregroundColor: palette.onAccentColor,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text("الـ 200 ✨", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
+                    ),
+                    onTap: () => _showTouchEffectsCatalogSheet(context, palette),
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+              Container(
+                height: 76,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      accentColor.withOpacity(0.14),
+                      palette.elevatedCardColor,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: accentColor.withOpacity(0.45)),
+                ),
+                child: Center(
+                  child: Text(
+                    "🎨✨ المس أو اسحب أصبعك / الماوس هنا لتجربة التأثير النشط مباشرة!",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+            ]),
+
+            // 5-ج. تذكير الصلاة على النبي ﷺ فوق كل التطبيقات
+            _buildSectionHeader("🌹 الصلاة على النبي ﷺ فوق كل التطبيقات", accentColor),
+            _buildCard(palette, [
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  "💫 إظهار شريط الصلاة على النبي ﷺ العائم بأشكال متجددة",
+                  style: TextStyle(color: palette.textPrimary, fontSize: 13.5, fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  "يظهر بتصميم مبهج ومختلف كل مرة فوق أي تطبيق، ويختفي فوراً عند لمسه",
+                  style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
+                ),
+                value: settings.salawatOverlayEnabled,
+                activeTrackColor: accentColor,
+                onChanged: (v) => settings.setSalawatOverlayEnabled(v),
+              ),
+              Divider(color: palette.dividerColor),
+              Text(
+                "⏱️ التكرار التلقائي كل:",
+                style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 12.5),
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [10, 15, 30, 45, 60, 120].map((mins) {
+                  final sel = settings.salawatIntervalMinutes == mins;
+                  return ChoiceChip(
+                    label: Text(
+                      mins >= 60 ? '${mins ~/ 60} ساعة' : '$mins دقيقة',
+                      style: TextStyle(
+                        color: sel ? palette.onAccentColor : palette.textPrimary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11.5,
+                      ),
+                    ),
+                    selected: sel,
+                    selectedColor: accentColor,
+                    backgroundColor: palette.elevatedCardColor,
+                    onSelected: (_) => settings.setSalawatIntervalMinutes(mins),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "⏰ مواعيد محددة من اختيارك:",
+                    style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 12.5),
+                  ),
+                  TextButton.icon(
+                    onPressed: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.now(),
+                      );
+                      if (picked != null) {
+                        final hh = picked.hour.toString().padLeft(2, '0');
+                        final mm = picked.minute.toString().padLeft(2, '0');
+                        settings.addSalawatCustomTime('$hh:$mm');
+                      }
+                    },
+                    icon: Icon(Icons.add_alarm_rounded, color: accentColor, size: 17),
+                    label: Text(
+                      "+ إضافة وقت",
+                      style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: settings.salawatCustomTimes.map((t) {
+                  return InputChip(
+                    label: Text(
+                      "🕰️ $t",
+                      style: TextStyle(color: palette.textPrimary, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    backgroundColor: palette.elevatedCardColor,
+                    deleteIconColor: Colors.redAccent,
+                    onDeleted: () => settings.removeSalawatCustomTime(t),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        final messenger = ScaffoldMessenger.of(context);
+                        final ok = await FirdawsNativeService().showSalawatOverlayNow();
+                        if (!mounted) return;
+                        if (!ok) {
+                          FirdawsNativeService().onShowInAppSalawatPreview?.call();
+                          messenger.showSnackBar(
+                            SnackBar(
+                              backgroundColor: palette.cardColor,
+                              behavior: SnackBarBehavior.floating,
+                              content: Text(
+                                FirdawsNativeService().isAndroid
+                                    ? "🌹 تم عرض شريط الصلاة على النبي ﷺ داخل التطبيق — فعّل «إذن فوق التطبيقات» ليظهر فوق كل التطبيقات، والمس الشريط ليختفي فوراً."
+                                    : "🌹 تم عرض شريط الصلاة على النبي ﷺ العائم بأعلى الشاشة — المسه ليختفي فوراً ويكسبك أجر الذكر.",
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.auto_awesome_rounded, size: 16),
+                      label: const Text("🌹 معاينة الآن", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: accentColor,
+                        foregroundColor: palette.onAccentColor,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => FirdawsNativeService().requestOverlayPermission(),
+                      icon: Icon(Icons.layers_rounded, color: accentColor, size: 16),
+                      label: Text(
+                        "⚙️ إذن فوق التطبيقات",
+                        style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 11),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: accentColor),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+            ]),
+
+            // 5-د. التحميل بدون إنترنت وعنّي والدعاء
+            _buildSectionHeader("📥 مركز التحميل بدون نت وعنّي والدعاء", accentColor),
+            _buildCard(palette, [
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CircleAvatar(
+                  backgroundColor: accentColor.withOpacity(0.18),
+                  child: Icon(Icons.download_for_offline_rounded, color: accentColor),
+                ),
+                title: Text(
+                  "📥 تحميل القرآن الكريم والرقية والأدعية بدون إنترنت",
+                  style: TextStyle(color: palette.textPrimary, fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+                subtitle: Text(
+                  "حمّل فقط ما تريد للاستماع بدون إنترنت وحافظ على مساحة هاتفك",
+                  style: TextStyle(color: palette.textSecondary, fontSize: 11),
+                ),
+                trailing: Icon(Icons.chevron_left_rounded, color: accentColor),
+                onTap: () => showAudioDownloadManagerSheet(context),
+              ),
+              Divider(color: palette.dividerColor),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0x33F59E0B),
+                  child: Icon(Icons.favorite_rounded, color: Color(0xFFF59E0B)),
+                ),
+                title: Text(
+                  "🤲 عنّي وبياناتي والدعاء (متنسونيش من الدعاء)",
+                  style: TextStyle(color: palette.textPrimary, fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+                subtitle: Text(
+                  "اكتب بياناتك أو شارك نداء الدعاء بالخير اذا كان التطبيق مفيداً لك",
+                  style: TextStyle(color: palette.textSecondary, fontSize: 11),
+                ),
+                trailing: Icon(Icons.chevron_left_rounded, color: accentColor),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AboutMeScreen()),
+                ),
               ),
             ]),
 

@@ -7,6 +7,7 @@ import '../models/prayer_identity_model.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
+import '../widgets/sacred_reference_widgets.dart';
 
 class Prayer22DetailsSheet extends StatefulWidget {
   final Prayer prayer;
@@ -459,6 +460,12 @@ class _Prayer22DetailsSheetState extends State<Prayer22DetailsSheet> {
           Text(
             content,
             style: TextStyle(color: palette.textPrimary, fontSize: 13, height: 1.4),
+          ),
+          const SizedBox(height: 8),
+          SacredEvidenceFooter(
+            evidenceText: content,
+            titleForHadith: title,
+            trackInJannati: true,
           ),
         ],
       ),

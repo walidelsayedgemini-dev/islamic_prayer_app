@@ -1,3 +1,19 @@
+class AdhanVoiceInfo {
+  final String id;
+  final String title;
+  final String muezzin;
+  final String rawResourceName;
+  final String assetPath;
+
+  const AdhanVoiceInfo({
+    required this.id,
+    required this.title,
+    required this.muezzin,
+    required this.rawResourceName,
+    required this.assetPath,
+  });
+}
+
 class ReciterInfo {
   final String id;
   final String name;
@@ -77,6 +93,51 @@ class IbtihalAudioItem {
 }
 
 class IslamicAudioLibrary {
+  static const List<AdhanVoiceInfo> adhanVoices = [
+    AdhanVoiceInfo(
+      id: 'madinah',
+      title: 'أذان الحرم النبوي الشريف 🕌',
+      muezzin: 'المدينة المنورة',
+      rawResourceName: 'adhan_madinah',
+      assetPath: 'audio/adhan_madinah.mp3',
+    ),
+    AdhanVoiceInfo(
+      id: 'makkah',
+      title: 'أذان الحرم المكي الشريف 🕋',
+      muezzin: 'مكة المكرمة',
+      rawResourceName: 'adhan_makkah',
+      assetPath: 'audio/adhan_makkah.mp3',
+    ),
+    AdhanVoiceInfo(
+      id: 'aqsa',
+      title: 'أذان المسجد الأقصى المبارك 🌙',
+      muezzin: 'القدس الشريف',
+      rawResourceName: 'adhan_aqsa',
+      assetPath: 'audio/adhan_aqsa.mp3',
+    ),
+    AdhanVoiceInfo(
+      id: 'cairo',
+      title: 'الأذان المصري الخاشع ✨',
+      muezzin: 'مصر المباركة',
+      rawResourceName: 'adhan_cairo',
+      assetPath: 'audio/adhan_cairo.mp3',
+    ),
+    AdhanVoiceInfo(
+      id: 'afasy',
+      title: 'أذان الشيخ مشاري العفاسي 🎙️',
+      muezzin: 'الشيخ مشاري راشد العفاسي',
+      rawResourceName: 'adhan_afasy',
+      assetPath: 'audio/adhan_afasy.mp3',
+    ),
+  ];
+
+  static AdhanVoiceInfo getAdhanVoiceById(String id) {
+    return adhanVoices.firstWhere(
+      (v) => v.id == id,
+      orElse: () => adhanVoices.first,
+    );
+  }
+
   static const List<ReciterInfo> reciters = [
     ReciterInfo(
       id: 'qatami',
@@ -288,9 +349,8 @@ class IslamicAudioLibrary {
       reciter: 'الشيخ مشاري راشد العفاسي',
       duration: '72:50',
       purpose: 'تفريج الهم والحزن وعلاج نوبات القلق والأرق قبل النوم',
-      description: 'آيات السكينة الست في القرآن الكريم مع أدعية الحفظ والشفاء بصوت خاشع ومريح — متاحة بدون إنترنت.',
+      description: 'آيات السكينة الست في القرآن الكريم مع أدعية الحفظ والشفاء بصوت خاشع ومريح — متاحة للتحميل عند الطلب أو البث المباشر.',
       streamUrl: 'https://archive.org/download/roqya-shar2ya_mp3/afasy.mp3',
-      localAsset: 'audio/ruqyah_afasy.mp3',
     ),
     RuqyahAudioItem(
       id: 'ruqyah_mass',
@@ -298,9 +358,8 @@ class IslamicAudioLibrary {
       reciter: 'الشيخ سعد الغامدي',
       duration: '62:34',
       purpose: 'طرد الوساوس والتخبط الليلي وحفظ النفس والبيت بإذن الله',
-      description: 'تلاوة كاملة للرقية الشرعية الثابتة في الكتاب والسنة — متاحة بدون إنترنت.',
+      description: 'تلاوة كاملة للرقية الشرعية الثابتة في الكتاب والسنة — متاحة للتحميل عند الطلب أو البث المباشر.',
       streamUrl: 'https://archive.org/download/roqya-shar2ya_mp3/saad.mp3',
-      localAsset: 'audio/ruqyah_saad.mp3',
     ),
     RuqyahAudioItem(
       id: 'ruqyah_shifa',
@@ -308,9 +367,8 @@ class IslamicAudioLibrary {
       reciter: 'الشيخ أحمد العجمي',
       duration: '62:32',
       purpose: 'الاستشفاء بآيات الشفاء الست والأدعية النبوية للمريض',
-      description: 'تلاوة خاشعة مؤثرة لآيات الشفاء والعافية في القرآن الكريم — متاحة بدون إنترنت.',
+      description: 'تلاوة خاشعة مؤثرة لآيات الشفاء والعافية في القرآن الكريم — متاحة للتحميل عند الطلب أو البث المباشر.',
       streamUrl: 'https://archive.org/download/roqya-shar2ya_mp3/ajmee.mp3',
-      localAsset: 'audio/ruqyah_ajmee.mp3',
     ),
     RuqyahAudioItem(
       id: 'ruqyah_ayn',
@@ -349,7 +407,6 @@ class IslamicAudioLibrary {
       duration: '08:15',
       maqam: 'مقام البياتي والصبا',
       streamUrl: 'https://archive.org/download/Tawashih/Almonady.mp3',
-      localAsset: 'audio/ibtihal_monady.mp3',
     ),
     IbtihalAudioItem(
       id: 'ibtihal_naqsh_1',
@@ -358,7 +415,6 @@ class IslamicAudioLibrary {
       duration: '06:17',
       maqam: 'مقام الرست والحجاز',
       streamUrl: 'https://archive.org/download/20240309_20240309_1714/008%20%20%D9%85%D9%88%D9%84%D8%A7%D9%8A%20%D8%A5%D9%86%D9%8A%20%D8%A8%D8%A8%D8%A7%D8%A8%D9%83%20%D9%82%D8%AF%20%D8%A8%D8%B3%D8%B7%D8%AA%20%D9%8A%D8%AF%D9%8A%20%20%20%D9%84%D9%84%D8%B4%D9%8A%D8%AE%20%D8%A7%D9%84%D9%86%D9%82%D8%B4%D8%A8%D9%86%D8%AF%D9%89.mp3',
-      localAsset: 'audio/ibtihal_naqsh_mawlay.mp3',
     ),
     IbtihalAudioItem(
       id: 'ibtihal_naqsh_yarab',
@@ -367,7 +423,6 @@ class IslamicAudioLibrary {
       duration: '03:08',
       maqam: 'مقام النهاوند والخشوع',
       streamUrl: 'https://archive.org/download/20240309_20240309_1714/004%20%20%D8%A7%D9%84%D8%B4%D9%8A%D8%AE%20%D8%B3%D9%8A%D8%AF%20%D8%A7%D9%84%D9%86%D9%82%D8%B4%D8%A8%D9%86%D8%AF%D9%89%2C%20%D9%8A%D8%A7%20%D8%B1%D8%A8%20%D8%A7%D9%86%20%D8%B9%D8%B8%D9%85%D8%AA%20%D8%B0%D9%86%D9%88%D8%A8%D9%89%20%D9%83%D8%AB%D8%B1%D8%A9.mp3',
-      localAsset: 'audio/ibtihal_naqsh_yarab.mp3',
     ),
     IbtihalAudioItem(
       id: 'ibtihal_dua_sudais',
@@ -376,7 +431,6 @@ class IslamicAudioLibrary {
       duration: '06:52',
       maqam: 'الحرم المكي الشريف',
       streamUrl: 'https://archive.org/download/Dua-e-qunootFromMakkahOn11thNightOfRamadaan/Night11-Dua-e-Qunoot_Shaikh_Sudais_64kb.mp3',
-      localAsset: 'audio/ibtihal_sudais_qunoot.mp3',
     ),
     IbtihalAudioItem(
       id: 'ibtihal_khatm_quran',
@@ -393,7 +447,6 @@ class IslamicAudioLibrary {
       duration: '04:55',
       maqam: 'مقام الكرد الروحي',
       streamUrl: 'https://archive.org/download/Tawashih/04.mp3',
-      localAsset: 'audio/ibtihal_wled_hoda.mp3',
     ),
   ];
 }

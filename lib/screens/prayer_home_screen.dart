@@ -15,10 +15,14 @@ import '../widgets/prayer_time_effects_canvas.dart';
 import '../widgets/islamic_side_drawer.dart';
 import '../widgets/islamic_prayer_card_view.dart';
 import '../widgets/persistent_audio_player_bar.dart';
+import '../widgets/audio_download_manager_sheet.dart';
 import '../widgets/real_mosque_background.dart';
+import '../widgets/sacred_reference_widgets.dart';
 import '../widgets/user_profile_editor_sheet.dart';
 import '../models/daily_inspiration_model.dart';
 import '../models/hijri_calendar_model.dart';
+import 'about_me_screen.dart';
+import 'islamic_stories_screen.dart';
 import 'main_navigation_screen.dart';
 import 'quran_azkar_sheet.dart';
 import 'prayer_22_details_sheet.dart';
@@ -26,6 +30,7 @@ import 'islamic_greeting_cards_sheet.dart';
 import 'islamic_books_sheet.dart';
 import 'qibla_screen.dart';
 import 'help_me_screen.dart';
+import 'sahih_hadith_screen.dart';
 
 class PrayerHomeScreen extends StatefulWidget {
   const PrayerHomeScreen({super.key});
@@ -306,6 +311,12 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                         height: 1.4,
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    SacredEvidenceFooter(
+                      evidenceText: info.hadith,
+                      titleForHadith: info.title,
+                      trackInJannati: true,
+                    ),
                   ],
                 ),
               ),
@@ -501,28 +512,41 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                           ),
                           const SizedBox(width: 8),
 
-                          // شعار قصر في الجنة بجانب هوية الفردوس
-                          Container(
-                            width: 30,
-                            height: 30,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: accentColor, width: 1.4),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: accentColor.withOpacity(0.28),
-                                  blurRadius: 6,
-                                ),
-                              ],
-                            ),
-                            child: ClipOval(
-                              child: Image.asset(
-                                'assets/images/palace_jannah_logo.png',
-                                width: 30,
-                                height: 30,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) =>
-                                    Icon(Icons.castle_rounded, color: accentColor, size: 16),
+                          // شعار قصر في الجنة أو صورة المستخدم بجانب هوية الفردوس
+                          GestureDetector(
+                            onTap: () => UserProfileEditorSheet.show(context),
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: accentColor, width: 1.5),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: accentColor.withOpacity(0.28),
+                                    blurRadius: 6,
+                                  ),
+                                ],
+                              ),
+                              child: ClipOval(
+                                child: userProv.avatarBytes != null
+                                    ? Image.memory(
+                                        userProv.avatarBytes!,
+                                        width: 32,
+                                        height: 32,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Image.asset(
+                                        'assets/images/palace_jannah_logo.png',
+                                        width: 32,
+                                        height: 32,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Icon(
+                                          Icons.castle_rounded,
+                                          color: accentColor,
+                                          size: 16,
+                                        ),
+                                      ),
                               ),
                             ),
                           ),
@@ -545,7 +569,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
-                                        "الفردوس",
+                                        "الفردوس ${themeOption.primaryEmoji}",
                                         style: TextStyle(
                                           color: palette.onAccentColor,
                                           fontSize: 10.5,
@@ -1474,6 +1498,48 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 10),
+          Divider(color: palette.dividerColor, height: 8),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildHubActionItem(
+                icon: Icons.auto_stories_rounded,
+                label: "📖 القصص النبوية",
+                color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309),
+                palette: palette,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const IslamicStoriesScreen()),
+                ),
+              ),
+              _buildHubActionItem(
+                icon: Icons.verified_rounded,
+                label: "📜 صحيح البخاري",
+                color: isDark ? const Color(0xFF34D399) : const Color(0xFF047857),
+                palette: palette,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SahihHadithScreen()),
+                ),
+              ),
+              _buildHubActionItem(
+                icon: Icons.download_for_offline_rounded,
+                label: "⬇️ مركز التحميل",
+                color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0369A1),
+                palette: palette,
+                onTap: () => showAudioDownloadManagerSheet(context),
+              ),
+              _buildHubActionItem(
+                icon: Icons.favorite_rounded,
+                label: "🤲 عنّي والدعاء",
+                color: isDark ? const Color(0xFFF472B6) : const Color(0xFFBE185D),
+                palette: palette,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AboutMeScreen()),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -1834,6 +1900,11 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
               fontSize: 11,
             ),
           ),
+          const SizedBox(height: 6),
+          SacredEvidenceFooter(
+            evidenceText: verse.surahAndAyah,
+            trackInJannati: false,
+          ),
           const SizedBox(height: 4),
           Text(
             verse.reflection,
@@ -1928,6 +1999,13 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
               fontSize: 10.5,
               height: 1.3,
             ),
+          ),
+          const SizedBox(height: 8),
+          SacredEvidenceFooter(
+            evidenceText: '${dua.source}\n${dua.textArabic}',
+            titleForHadith: 'دعاء اليوم المأثور',
+            hadithVerbatim: dua.textArabic,
+            trackInJannati: true,
           ),
         ],
       ),

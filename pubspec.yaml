@@ -41,6 +41,9 @@ dependencies:
   http: ^1.2.2
   path_provider: ^2.1.4
 
+  # رفع صورة الملف الشخصي من معرض الصور
+  image_picker: ^1.2.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -5,13 +5,15 @@ class AdvancedPrayerTimes {
   final DateTime qiyamStart;
   final DateTime islamicMidnight;
   final DateTime duhaStart;
+  final DateTime tomorrowFajr;
 
   AdvancedPrayerTimes({
     required this.prayerTimes,
     required this.qiyamStart,
     required this.islamicMidnight,
     required this.duhaStart,
-  });
+    DateTime? tomorrowFajr,
+  }) : tomorrowFajr = tomorrowFajr ?? prayerTimes.fajr.add(const Duration(days: 1));
 
   factory AdvancedPrayerTimes.calculate({
     required double latitude,
@@ -54,6 +56,7 @@ class AdvancedPrayerTimes {
       qiyamStart: qiyam,
       islamicMidnight: midnight,
       duhaStart: duha,
+      tomorrowFajr: nextDayTimes.fajr,
     );
   }
 }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
+import '../widgets/audio_download_manager_sheet.dart';
+import '../widgets/sacred_reference_widgets.dart';
 import 'quran_reader_screen.dart';
 
 class QuranAzkarSheet {
@@ -76,11 +78,11 @@ class QuranAzkarSheet {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "أذكار الصباح والمساء وحصن المسلم",
+                          "📿 أذكار الصباح والمساء وحصن المسلم",
                           style: TextStyle(
                             color: accent,
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                            fontSize: 15.5,
                           ),
                         ),
                         Text(
@@ -88,6 +90,18 @@ class QuranAzkarSheet {
                           style: TextStyle(color: palette.textSecondary, fontSize: 11),
                         ),
                       ],
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => showAudioDownloadManagerSheet(context),
+                    icon: Icon(Icons.download_for_offline_rounded, color: accent, size: 17),
+                    label: Text(
+                      "تحميل ⬇️",
+                      style: TextStyle(
+                        color: accent,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -98,30 +112,30 @@ class QuranAzkarSheet {
                   physics: const BouncingScrollPhysics(),
                   children: [
                     _buildDhikrCard(
-                      "أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ",
+                      "🌅 أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ",
                       "أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ.",
-                      "يُقال مرة واحدة كل صباح ومساء لحفظ الملك لله والاعتراف بتوحيده.",
+                      "يُقال مرة واحدة كل صباح ومساء لحفظ الملك لله والاعتراف بتوحيده (صحيح مسلم).",
                       palette,
                     ),
                     const SizedBox(height: 12),
                     _buildDhikrCard(
-                      "سيد الاستغفار",
+                      "💎 سيد الاستغفار",
                       "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ لَكَ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ.",
-                      "من قالها موقناً بها فمات من يومه أو ليلته دخل الجنة.",
+                      "من قالها موقناً بها فمات من يومه أو ليلته دخل الجنة — صحيح البخاري (6306).",
                       palette,
                     ),
                     const SizedBox(height: 12),
                     _buildDhikrCard(
-                      "بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ (3 مرات)",
+                      "🛡️ بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ (3 مرات)",
                       "بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ.",
-                      "من قالها ثلاثاً إذا أصبح وثلاثاً إذا أمسى لم يضره شيء أبداً.",
+                      "من قالها ثلاثاً إذا أصبح وثلاثاً إذا أمسى لم يضره شيء أبداً (حديث صحيح).",
                       palette,
                     ),
                     const SizedBox(height: 12),
                     _buildDhikrCard(
-                      "رَضِيتُ بِاللَّهِ رَبًّا (3 مرات)",
+                      "✨ رَضِيتُ بِاللَّهِ رَبًّا (3 مرات)",
                       "رَضِيتُ بِاللَّهِ رَبًّا، وَبِالْإِسْلَامِ دِينًا، وَبِمُحَمَّدٍ ﷺ نَبِيًّا وَرَسُولًا.",
-                      "كان حقاً على الله تعالى أن يرضيه يوم القيامة.",
+                      "كان حقاً على الله تعالى أن يرضيه يوم القيامة (حديث حسن).",
                       palette,
                     ),
                   ],
@@ -176,6 +190,13 @@ class QuranAzkarSheet {
               fontSize: 11,
               fontStyle: FontStyle.italic,
             ),
+          ),
+          const SizedBox(height: 8),
+          SacredEvidenceFooter(
+            evidenceText: virtue,
+            titleForHadith: title,
+            hadithVerbatim: text,
+            trackInJannati: true,
           ),
         ],
       ),

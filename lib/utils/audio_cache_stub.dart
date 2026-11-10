@@ -14,4 +14,8 @@ class AudioCacheHelper {
   }
 
   static Future<void> deleteCachedTrack(String trackKey) async {}
+
+  static Future<int> getCacheSizeBytes() async => 0;
+
+  static Future<void> clearAllCache() async {}
 }

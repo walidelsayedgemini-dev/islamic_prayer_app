@@ -105,4 +105,28 @@ class AudioCacheHelper {
       }
     } catch (_) {}
   }
+
+  static Future<int> getCacheSizeBytes() async {
+    int total = 0;
+    try {
+      final dir = await _getCacheDir();
+      await for (final entity in dir.list()) {
+        if (entity is File && entity.path.toLowerCase().endsWith('.mp3')) {
+          total += await entity.length();
+        }
+      }
+    } catch (_) {}
+    return total;
+  }
+
+  static Future<void> clearAllCache() async {
+    try {
+      final dir = await _getCacheDir();
+      await for (final entity in dir.list()) {
+        if (entity is File) {
+          await entity.delete();
+        }
+      }
+    } catch (_) {}
+  }
 }

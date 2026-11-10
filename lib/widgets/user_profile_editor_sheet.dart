@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
@@ -51,6 +53,53 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
     super.dispose();
   }
 
+  final ImagePicker _picker = ImagePicker();
+  bool _pickingAvatar = false;
+
+  Future<void> _pickAvatarFromGallery(ThemePalette palette) async {
+    if (_pickingAvatar) return;
+    setState(() => _pickingAvatar = true);
+    try {
+      final XFile? file = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 82,
+      );
+      if (file == null) return;
+      final bytes = await file.readAsBytes();
+      if (!mounted) return;
+      final userProv = Provider.of<FirdawsUserProvider>(context, listen: false);
+      await userProv.updateAvatarBase64(base64Encode(bytes));
+      HapticFeedback.mediumImpact();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: palette.cardColor,
+          behavior: SnackBarBehavior.floating,
+          content: Text(
+            '📸✨ تم حفظ صورتك الشخصية بنجاح!',
+            style: TextStyle(color: palette.textPrimary, fontWeight: FontWeight.bold),
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: palette.cardColor,
+          content: Text(
+            'تعذر فتح معرض الصور حالياً: $e',
+            style: TextStyle(color: palette.textPrimary),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _pickingAvatar = false);
+    }
+  }
+
   Future<void> _saveProfile(ThemePalette palette) async {
     final userProv = Provider.of<FirdawsUserProvider>(context, listen: false);
     final parsedAge = (int.tryParse(_ageController.text.trim()) ?? 24).clamp(5, 110);
@@ -88,11 +137,11 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
-    final palette = IslamicTheme.resolvePalette(
-      settings.selectedTheme,
-      isNight: settings.isNightEffective,
-    );
+    final userProv = Provider.of<FirdawsUserProvider>(context);
+    final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
+    final palette = themeOption.resolve(isNight: settings.isNightEffective);
     final accent = palette.accentColor;
+    final avatarBytes = userProv.avatarBytes;
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -122,14 +171,27 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                   padding: const EdgeInsets.fromLTRB(18, 12, 18, 8),
                   child: Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: accent.withOpacity(0.18),
-                          border: Border.all(color: accent, width: 1.5),
+                      GestureDetector(
+                        onTap: () => _pickAvatarFromGallery(palette),
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: accent.withOpacity(0.18),
+                            border: Border.all(color: accent, width: 1.8),
+                          ),
+                          child: ClipOval(
+                            child: avatarBytes != null
+                                ? Image.memory(avatarBytes, fit: BoxFit.cover)
+                                : Image.asset(
+                                    'assets/images/palace_jannah_logo.png',
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) =>
+                                        Icon(Icons.person_rounded, color: accent, size: 22),
+                                  ),
+                          ),
                         ),
-                        child: Icon(Icons.person_rounded, color: accent, size: 22),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -137,15 +199,15 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'ملفي الشخصي وتفضيلاتي في الفردوس',
+                              '🌟 ملفي الشخصي وتفضيلاتي في الفردوس ${themeOption.primaryEmoji}',
                               style: TextStyle(
                                 color: accent,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                                fontSize: 15.5,
                               ),
                             ),
                             Text(
-                              'يُخصَّص الاسم والنوع للـ 500 عبارة تشجيعية والألقاب الـ 200',
+                              '✨ يُخصَّص الاسم والصورة والنوع للـ 500 عبارة والألقاب الـ 200',
                               style: TextStyle(color: palette.textSecondary, fontSize: 11),
                             ),
                           ],
@@ -164,8 +226,158 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                     controller: scrollController,
                     padding: const EdgeInsets.fromLTRB(18, 14, 18, 28),
                     children: [
+                      // بطاقة الصورة الشخصية العصرية من المعرض
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              accent.withOpacity(0.14),
+                              palette.cardColor,
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: accent.withOpacity(0.45)),
+                        ),
+                        child: Row(
+                          children: [
+                            Stack(
+                              children: [
+                                Container(
+                                  width: 72,
+                                  height: 72,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: accent, width: 2.2),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: accent.withOpacity(0.28),
+                                        blurRadius: 12,
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipOval(
+                                    child: avatarBytes != null
+                                        ? Image.memory(avatarBytes, fit: BoxFit.cover)
+                                        : Image.asset(
+                                            'assets/images/palace_jannah_logo.png',
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) => Icon(
+                                              Icons.person_rounded,
+                                              color: accent,
+                                              size: 36,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 0,
+                                  right: 0,
+                                  child: InkWell(
+                                    onTap: () => _pickAvatarFromGallery(palette),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(5),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: accent,
+                                        border: Border.all(
+                                          color: palette.scaffoldColor,
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: Icon(
+                                        Icons.camera_alt_rounded,
+                                        size: 13,
+                                        color: palette.onAccentColor,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '📸 صورتك الشخصية في الفردوس ✨',
+                                    style: TextStyle(
+                                      color: palette.textPrimary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    'ارفع صورة من معرض جهازك لتظهر في ملفك والقائمة الجانبية',
+                                    style: TextStyle(
+                                      color: palette.textSecondary,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 6,
+                                    children: [
+                                      ElevatedButton.icon(
+                                        onPressed: _pickingAvatar
+                                            ? null
+                                            : () => _pickAvatarFromGallery(palette),
+                                        icon: const Icon(Icons.photo_library_rounded, size: 16),
+                                        label: Text(
+                                          _pickingAvatar
+                                              ? 'جاري الفتح...'
+                                              : '📷 اختيار من المعرض',
+                                          style: const TextStyle(
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: accent,
+                                          foregroundColor: palette.onAccentColor,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 6,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                        ),
+                                      ),
+                                      if (avatarBytes != null)
+                                        OutlinedButton.icon(
+                                          onPressed: () => userProv.updateAvatarBase64(null),
+                                          icon: const Icon(Icons.delete_outline_rounded, size: 15),
+                                          label: const Text(
+                                            '🗑️ حذف',
+                                            style: TextStyle(fontSize: 11),
+                                          ),
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor: Colors.redAccent,
+                                            side: const BorderSide(color: Colors.redAccent),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 6,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                       Text(
-                        'الاسم (يظهر في التحيات والعبارات التشجيعية والألقاب)',
+                        '🪪 الاسم (يظهر في التحيات والعبارات التشجيعية والألقاب)',
                         style: TextStyle(
                           color: accent,
                           fontWeight: FontWeight.bold,

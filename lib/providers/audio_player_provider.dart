@@ -42,6 +42,12 @@ class AudioPlayerProvider extends ChangeNotifier {
   final Map<String, double> _downloadingProgress = <String, double>{};
   Future<void> Function()? _replayLastTrack;
 
+  bool _isBatchDownloading = false;
+  bool _batchCancelRequested = false;
+  int _batchCompleted = 0;
+  int _batchTotal = 0;
+  int? _batchCurrentSurah;
+
   AudioPlayerProvider() {
     if (!kIsWeb && AudioCacheHelper.supportsOfflineFileCache) {
       unawaited(refreshDownloadedKeys());
@@ -62,6 +68,11 @@ class AudioPlayerProvider extends ChangeNotifier {
   bool get isLooping => _isLooping;
   String? get errorMessage => _errorMessage;
   bool get supportsOfflineDownload => AudioCacheHelper.supportsOfflineFileCache;
+  bool get isBatchDownloading => _isBatchDownloading;
+  int get batchCompleted => _batchCompleted;
+  int get batchTotal => _batchTotal;
+  int? get batchCurrentSurah => _batchCurrentSurah;
+  int get downloadedCount => _downloadedKeys.length;
 
   double get progressRatio {
     if (_duration.inMilliseconds <= 0) return 0.0;
@@ -337,6 +348,80 @@ class AudioPlayerProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     }
+  }
+
+  /// تحميل دفعة سور متتابعة للاستماع بدون إنترنت دون تضخيم حجم التطبيق الأساسي
+  Future<void> downloadSurahsBatch(
+    List<int> surahNumbers, {
+    String? reciterId,
+  }) async {
+    if (!supportsOfflineDownload || _isBatchDownloading) return;
+    final targetReciter = reciterId ?? _selectedReciter.id;
+
+    final pending = <int>[];
+    for (final n in surahNumbers) {
+      if (IslamicAudioLibrary.getBundledSurahAsset(targetReciter, n) != null) {
+        continue;
+      }
+      final key = IslamicAudioLibrary.surahCacheKey(targetReciter, n);
+      if (!_downloadedKeys.contains(key)) {
+        pending.add(n);
+      }
+    }
+    if (pending.isEmpty) return;
+
+    _isBatchDownloading = true;
+    _batchCancelRequested = false;
+    _batchCompleted = 0;
+    _batchTotal = pending.length;
+    notifyListeners();
+
+    for (final num in pending) {
+      if (_batchCancelRequested) break;
+      _batchCurrentSurah = num;
+      notifyListeners();
+      final key = IslamicAudioLibrary.surahCacheKey(targetReciter, num);
+      final url = IslamicAudioLibrary.getSurahUrl(targetReciter, num);
+      await downloadTrackForOffline(key, url);
+      _batchCompleted++;
+      notifyListeners();
+    }
+
+    _isBatchDownloading = false;
+    _batchCurrentSurah = null;
+    notifyListeners();
+  }
+
+  Future<void> downloadJuz30({String? reciterId}) {
+    return downloadSurahsBatch(
+      List<int>.generate(37, (i) => 78 + i),
+      reciterId: reciterId,
+    );
+  }
+
+  void cancelBatchDownload() {
+    _batchCancelRequested = true;
+    notifyListeners();
+  }
+
+  Future<void> deleteCachedTrack(String cacheKey) async {
+    await AudioCacheHelper.deleteCachedTrack(cacheKey);
+    _downloadedKeys.remove(cacheKey);
+    if (_currentCacheKey == cacheKey) {
+      _isOfflineSource = false;
+    }
+    notifyListeners();
+  }
+
+  Future<void> clearAllOfflineCache() async {
+    await AudioCacheHelper.clearAllCache();
+    _downloadedKeys.clear();
+    _isOfflineSource = false;
+    notifyListeners();
+  }
+
+  Future<int> getOfflineCacheBytes() {
+    return AudioCacheHelper.getCacheSizeBytes();
   }
 
   Future<void> togglePlay() async {
