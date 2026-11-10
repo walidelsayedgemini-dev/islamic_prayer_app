@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/islamic_audio_data.dart';
 import '../models/quran_model.dart';
 import '../providers/audio_player_provider.dart';
+import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
@@ -121,6 +122,10 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
       _highlightedAyahNumber = highlightAyah;
     });
     _saveReadingBookmark(surah.number, highlightAyah ?? 1);
+    try {
+      Provider.of<FirdawsUserProvider>(context, listen: false)
+          .recordSurahRead(surah.number);
+    } catch (_) {}
     if (_readerScrollController.hasClients) {
       _readerScrollController.jumpTo(0);
     }

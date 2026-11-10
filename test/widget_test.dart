@@ -2,15 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:adhan/adhan.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:islamic_prayer_app/models/font_catalog.dart';
 import 'package:islamic_prayer_app/models/islamic_audio_data.dart';
+import 'package:islamic_prayer_app/models/islamic_missions_data.dart';
+import 'package:islamic_prayer_app/models/islamic_titles_200.dart';
+import 'package:islamic_prayer_app/models/motivational_phrases_500.dart';
 import 'package:islamic_prayer_app/models/prayer_identity_model.dart';
 import 'package:islamic_prayer_app/models/prayer_info.dart';
 import 'package:islamic_prayer_app/models/prayer_model.dart';
 import 'package:islamic_prayer_app/models/quran_model.dart';
 import 'package:islamic_prayer_app/models/tasbih_challenge.dart';
+import 'package:islamic_prayer_app/providers/firdaws_user_provider.dart';
 import 'package:islamic_prayer_app/theme/islamic_theme.dart';
 import 'package:islamic_prayer_app/utils/compass_utils.dart';
+import 'package:islamic_prayer_app/widgets/prayer_time_effects_canvas.dart';
 import 'package:islamic_prayer_app/widgets/tasbih_goal_effects.dart';
 
 void main() {
@@ -199,5 +205,173 @@ void main() {
     ]) {
       expect(Prayer22Distinctions.data[p], isNotNull, reason: 'Missing 22-distinction for $p');
     }
+  });
+
+  test('Exactly 200 distinct Islamic titles exist with unique IDs, genders, and positive targets', () {
+    const titles = IslamicTitlesCatalog.allTitles;
+    expect(titles.length, 200);
+
+    final ids = titles.map((t) => t.id).toSet();
+    final numbers = titles.map((t) => t.number).toSet();
+    final males = titles.map((t) => t.titleMale).toSet();
+    final females = titles.map((t) => t.titleFemale).toSet();
+
+    expect(ids.length, 200);
+    expect(numbers.length, 200);
+    expect(titles.first.number, 1);
+    expect(titles.last.number, 200);
+    expect(males.length, 200);
+    expect(females.length, 200);
+
+    for (final t in titles) {
+      expect(t.targetValue, greaterThan(0), reason: 'Invalid target for ${t.id}');
+      expect(t.missionDescription.trim(), isNotEmpty, reason: 'Empty mission for ${t.id}');
+    }
+  });
+
+  test('Exactly 500 unique motivational phrases personalize cleanly by name & gender', () {
+    final phrases = MotivationalPhrasesCatalog.allPhrases;
+    expect(phrases.length, 500);
+
+    final uniqueTemplates = phrases.map((p) => p.template).toSet();
+    expect(uniqueTemplates.length, 500, reason: 'Duplicate template detected in 500 phrases');
+
+    for (int i = 0; i < phrases.length; i++) {
+      final p = phrases[i];
+      expect(p.number, i + 1);
+      expect(p.template.contains('{name}'), isTrue, reason: 'Phrase #${p.number} missing {name}');
+
+      final formattedMale = p.format(name: 'وليد', isFemale: false);
+      final formattedFemale = p.format(name: 'فاطمة', isFemale: true);
+      expect(formattedMale.contains('وليد'), isTrue);
+      expect(formattedFemale.contains('فاطمة'), isTrue);
+      expect(formattedMale.contains('[['), isFalse, reason: 'Unresolved tag in male #${p.number}');
+      expect(formattedFemale.contains('[['), isFalse, reason: 'Unresolved tag in female #${p.number}');
+      expect(formattedMale.contains(']]'), isFalse);
+      expect(formattedFemale.contains(']]'), isFalse);
+    }
+  });
+
+  test('Islamic missions cover all 4 categories and Quiz Bank has 50 valid questions', () {
+    final missions = IslamicMissionsCatalog.builtInMissions;
+    expect(missions.length, 28);
+    for (final cat in IslamicMissionCategory.values) {
+      expect(missions.where((m) => m.category == cat), isNotEmpty);
+    }
+
+    const quiz = IslamicQuizBank.allQuestions;
+    expect(quiz.length, 50);
+    for (final q in quiz) {
+      expect(q.options.length, 4);
+      expect(q.correctIndex, inInclusiveRange(0, 3));
+      expect(q.question.trim(), isNotEmpty);
+      expect(q.explanation.trim(), isNotEmpty);
+    }
+  });
+
+  test('Prayer time atmospheric effects resolve for every override and daylight window', () {
+    final prayers = AdvancedPrayerTimes.calculate(
+      latitude: 24.7136,
+      longitude: 46.6753,
+      method: CalculationMethod.umm_al_qura,
+      madhab: Madhab.shafi,
+    );
+    expect(PrayerWindowEffect.values.length, 7);
+    for (final eff in PrayerWindowEffect.values) {
+      final resolved = PrayerWindowEffectExt.resolveActiveWindow(
+        prayerData: prayers,
+        overrideKey: eff.name,
+      );
+      expect(resolved, eff);
+    }
+    final autoResolved = PrayerWindowEffectExt.resolveActiveWindow(
+      prayerData: prayers,
+      overrideKey: 'auto',
+    );
+    expect(PrayerWindowEffect.values.contains(autoResolved), isTrue);
+  });
+
+  test('FirdawsUserProvider tracks historical Prayer Log, Qada, Journal, Missions & Title unlocks',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final prov = FirdawsUserProvider();
+    await prov.init();
+
+    // 1. Profile & Personalized phrase
+    await prov.updateProfile(
+      name: 'أحمد',
+      age: 27,
+      gender: 'male',
+      preferences: ['الفجر في جماعة', 'قيام الليل والوتر'],
+      dailyDhikrGoal: 300,
+    );
+    expect(prov.displayName, 'أحمد');
+    expect(prov.profile.age, 27);
+    expect(prov.getPersonalizedMotivation().contains('أحمد'), isTrue);
+
+    // 2. Historical prayer log & Qada recovery
+    final pastDay = DateTime.now().subtract(const Duration(days: 4));
+    await prov.setPrayerStatus(pastDay, 'fajr', PrayerLogStatus.missed);
+    expect(prov.getMissedPrayerEntries().length, 1);
+
+    final unlockedFromQada =
+        await prov.setPrayerStatus(pastDay, 'fajr', PrayerLogStatus.prayedQada);
+    expect(prov.getMissedPrayerEntries(), isEmpty);
+    expect(prov.qadaRecoveredCount, 1);
+    expect(prov.totalPrayersLogged, 1);
+    expect(unlockedFromQada, isNotEmpty);
+
+    // 3. Today complete 5 prayers streak
+    final today = DateTime.now();
+    for (final k in FirdawsUserProvider.obligatoryPrayerKeys) {
+      await prov.setPrayerStatus(today, k, PrayerLogStatus.prayedInGroup);
+    }
+    expect(prov.recordForDate(today).allFiveCompleted, isTrue);
+    expect(prov.currentPrayerStreak, greaterThanOrEqualTo(1));
+    expect(prov.fajrOnTimeCount, greaterThanOrEqualTo(1));
+    expect(prov.congregationPrayersCount, 5);
+
+    // 4. Personal Journal CRUD
+    await prov.addJournalEntry(
+      title: 'خاطرة الفجر',
+      content: 'الحمد لله على صلاة الفجر في جماعة اليوم.',
+      category: 'خاطرة إيمانية',
+      mood: 'طمأنينة',
+    );
+    expect(prov.journalEntries.length, 1);
+    final noteId = prov.journalEntries.first.id;
+    await prov.togglePinJournal(noteId);
+    expect(prov.journalEntries.first.isPinned, isTrue);
+    await prov.updateJournalEntry(
+      id: noteId,
+      title: 'خاطرة محدثة',
+      content: 'محتوى محدث',
+      category: 'تأمل قرآني',
+      mood: 'شكر',
+    );
+    expect(prov.journalEntries.first.title, 'خاطرة محدثة');
+
+    // 5. Quiz win & Custom mission & Title equipping
+    await prov.recordQuizRoundResult(correctAnswers: 4, totalQuestions: 5);
+    expect(prov.competitionsWon, 1);
+
+    await prov.addCustomMission(
+      islamicTitle: 'وردُ المراجعة',
+      subtitle: 'مراجعة سورة الملك',
+      category: IslamicMissionCategory.taat,
+      targetCount: 1,
+    );
+    expect(prov.customMissions.length, 1);
+    await prov.advanceMission(prov.customMissions.first.id, amount: 1);
+    expect(prov.completedMissionsTotal, greaterThanOrEqualTo(1));
+
+    expect(prov.unlockedTitleIds, isNotEmpty);
+    final firstUnlockedId = prov.unlockedTitleIds.first;
+    final equipped = await prov.equipTitle(firstUnlockedId);
+    expect(equipped, isTrue);
+    expect(prov.activeTitle?.id, firstUnlockedId);
+
+    await prov.deleteJournalEntry(noteId);
+    expect(prov.journalEntries, isEmpty);
   });
 }

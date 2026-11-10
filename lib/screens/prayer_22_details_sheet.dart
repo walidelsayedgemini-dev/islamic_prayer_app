@@ -4,6 +4,7 @@ import 'package:adhan/adhan.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:provider/provider.dart';
 import '../models/prayer_identity_model.dart';
+import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 
@@ -55,7 +56,83 @@ class _Prayer22DetailsSheetState extends State<Prayer22DetailsSheet> {
   bool _prayedSunnah = false;
   bool _readAthkar = false;
 
-  void _checkComplete(ThemePalette palette) {
+  String? get _prayerLogKey {
+    switch (widget.prayer) {
+      case Prayer.fajr:
+        return 'fajr';
+      case Prayer.dhuhr:
+        return 'dhuhr';
+      case Prayer.asr:
+        return 'asr';
+      case Prayer.maghrib:
+        return 'maghrib';
+      case Prayer.isha:
+        return 'isha';
+      default:
+        return null;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final logKey = _prayerLogKey;
+      if (logKey == null) return;
+      final userProv = Provider.of<FirdawsUserProvider>(context, listen: false);
+      final rec = userProv.recordForDate(DateTime.now());
+      final st = rec.statusFor(logKey);
+      setState(() {
+        _prayedOnTime = st.isCompleted;
+        _prayedInGroup = st == PrayerLogStatus.prayedInGroup;
+      });
+    });
+  }
+
+  Future<void> _syncPrayerStatus(ThemePalette palette) async {
+    final userProv = Provider.of<FirdawsUserProvider>(context, listen: false);
+    final logKey = _prayerLogKey;
+    if (logKey != null) {
+      final PrayerLogStatus newStatus;
+      if (_prayedInGroup) {
+        newStatus = PrayerLogStatus.prayedInGroup;
+      } else if (_prayedOnTime) {
+        newStatus = widget.isPassed
+            ? PrayerLogStatus.prayedQada
+            : PrayerLogStatus.prayedOnTime;
+      } else {
+        newStatus = PrayerLogStatus.none;
+      }
+      final unlocked = await userProv.setPrayerStatus(
+        DateTime.now(),
+        logKey,
+        newStatus,
+      );
+      if (unlocked.isNotEmpty && mounted) {
+        HapticFeedback.heavyImpact();
+        final first = unlocked.first;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: palette.cardColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: BorderSide(color: first.badgeColor, width: 1.5),
+            ),
+            content: Text(
+              'مبارك يا ${userProv.displayName}! فُتح لقب #${first.number}: ${first.localizedTitle(isFemale: userProv.isFemale)} 🏆',
+              style: TextStyle(color: palette.textPrimary, fontWeight: FontWeight.bold),
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+    _checkComplete(palette, userProv.displayName);
+  }
+
+  void _checkComplete(ThemePalette palette, String userName) {
     if (_prayedOnTime && _prayedInGroup && _prayedSunnah && _readAthkar) {
       HapticFeedback.heavyImpact();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -72,7 +149,7 @@ class _Prayer22DetailsSheetState extends State<Prayer22DetailsSheet> {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  "ما شاء الله! أتممت صلاتك وسننها وأذكارها كاملة! بارك الله فيك 🌟✨",
+                  "ما شاء الله يا $userName! أتممت صلاتك وسننها وأذكارها وسُجلت في سجل الصلوات 🌟✨",
                   style: TextStyle(color: palette.textPrimary, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -209,11 +286,14 @@ class _Prayer22DetailsSheetState extends State<Prayer22DetailsSheet> {
                     const SizedBox(height: 10),
                     _buildCheckItem("صليت الفريضة في وقتها", _prayedOnTime, palette, (v) {
                       setState(() => _prayedOnTime = v!);
-                      _checkComplete(palette);
+                      _syncPrayerStatus(palette);
                     }),
                     _buildCheckItem("صليت في جماعة / في المسجد", _prayedInGroup, palette, (v) {
-                      setState(() => _prayedInGroup = v!);
-                      _checkComplete(palette);
+                      setState(() {
+                        _prayedInGroup = v!;
+                        if (_prayedInGroup) _prayedOnTime = true;
+                      });
+                      _syncPrayerStatus(palette);
                     }),
                     _buildCheckItem(
                       "صليت السنن الرواتب (${info.sunnahRawatib})",
@@ -221,7 +301,11 @@ class _Prayer22DetailsSheetState extends State<Prayer22DetailsSheet> {
                       palette,
                       (v) {
                         setState(() => _prayedSunnah = v!);
-                        _checkComplete(palette);
+                        if (v == true && mounted) {
+                          Provider.of<FirdawsUserProvider>(context, listen: false)
+                              .updateDayNawafil(DateTime.now(), sunnahCount: 2);
+                        }
+                        _syncPrayerStatus(palette);
                       },
                     ),
                     _buildCheckItem(
@@ -230,7 +314,7 @@ class _Prayer22DetailsSheetState extends State<Prayer22DetailsSheet> {
                       palette,
                       (v) {
                         setState(() => _readAthkar = v!);
-                        _checkComplete(palette);
+                        _syncPrayerStatus(palette);
                       },
                     ),
                   ],

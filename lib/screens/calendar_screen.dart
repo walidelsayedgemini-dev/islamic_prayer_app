@@ -3,10 +3,12 @@ import 'package:adhan/adhan.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:provider/provider.dart';
 import '../models/hijri_calendar_model.dart';
+import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/real_mosque_background.dart';
+import 'main_navigation_screen.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -242,6 +244,68 @@ class _CalendarScreenState extends State<CalendarScreen>
                 hijri.description,
                 style: TextStyle(color: palette.textSecondary, fontSize: 12, height: 1.4),
               ),
+              if (!greg.isAfter(DateTime.now())) ...[
+                const SizedBox(height: 12),
+                Builder(
+                  builder: (innerCtx) {
+                    final userProv =
+                        Provider.of<FirdawsUserProvider>(innerCtx, listen: false);
+                    final dayRec = userProv.recordForDate(greg);
+                    return Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: palette.cardColor,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: accent.withOpacity(0.4)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.fact_check_rounded, color: accent, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'سجل صلوات هذا اليوم: ${dayRec.completedObligatoryCount} / 5',
+                              style: TextStyle(
+                                color: palette.textPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              FirdawsNavBridge.jumpTo(
+                                1,
+                                journeyTab: 0,
+                                journeyDate: DateTime(greg.year, greg.month, greg.day),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: accent,
+                              foregroundColor: palette.onAccentColor,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: const Text(
+                              'فتح السجل',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
               const SizedBox(height: 16),
             ],
           ),

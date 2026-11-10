@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:adhan/adhan.dart';
 import 'package:provider/provider.dart';
 import '../models/font_catalog.dart';
+import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/location_service.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
+import '../widgets/prayer_time_effects_canvas.dart';
 import '../widgets/real_mosque_background.dart';
+import '../widgets/user_profile_editor_sheet.dart';
+import 'main_navigation_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -663,6 +667,104 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ],
                   ),
+                ),
+
+                // 0-أ. بيانات المستخدم الشخصية وتفضيلاته + مؤثرات أوقات الصلاة
+                Consumer<FirdawsUserProvider>(
+                  builder: (_, userProv, __) {
+                    final p = userProv.profile;
+                    final titleLabel = userProv.activeTitleLabel;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildSectionHeader("ملفي الشخصي وتفضيلاتي (الاسم، العمر، النوع)", accentColor),
+                        _buildCard(palette, [
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: CircleAvatar(
+                              backgroundColor: accentColor.withOpacity(0.18),
+                              child: Icon(Icons.person_rounded, color: accentColor),
+                            ),
+                            title: Text(
+                              p.hasCustomName
+                                  ? '${userProv.displayName} (${p.isFemale ? 'أنثى' : 'ذكر'} • ${p.age} سنة)'
+                                  : 'لم تسجل اسمك بعد — خصص الـ 500 عبارة والألقاب باسمك',
+                              style: TextStyle(
+                                color: palette.textPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.5,
+                              ),
+                            ),
+                            subtitle: Text(
+                              titleLabel != null
+                                  ? 'اللقب المُرتدى: $titleLabel • التفضيلات: ${p.preferences.length}'
+                                  : 'التفضيلات المختارة: ${p.preferences.length} • الألقاب المفتوحة: ${userProv.unlockedTitleIds.length}/200',
+                              style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
+                            ),
+                            trailing: ElevatedButton(
+                              onPressed: () => UserProfileEditorSheet.show(context),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: accentColor,
+                                foregroundColor: palette.onAccentColor,
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text(
+                                'تعديل',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                          Divider(color: palette.dividerColor),
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              'مؤثرات أوقات الصلاة الحيّة (الفجر، الشروق، الظهر، العصر، المغرب، العشاء، القيام)',
+                              style: TextStyle(color: palette.textPrimary, fontSize: 13),
+                            ),
+                            value: p.enablePrayerTimeEffects,
+                            activeTrackColor: accentColor,
+                            onChanged: (v) => userProv.setPrayerTimeEffectsEnabled(v),
+                          ),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              ChoiceChip(
+                                label: const Text('تلقائي', style: TextStyle(fontSize: 11)),
+                                selected: p.prayerTimeEffectOverride == 'auto',
+                                selectedColor: accentColor,
+                                onSelected: (_) => userProv.setPrayerTimeEffectOverride('auto'),
+                              ),
+                              ...PrayerWindowEffect.values.map((eff) {
+                                final sel = p.prayerTimeEffectOverride == eff.name;
+                                return ChoiceChip(
+                                  label: Text(eff.shortLabel, style: const TextStyle(fontSize: 11)),
+                                  selected: sel,
+                                  selectedColor: eff.accentColor,
+                                  onSelected: (_) => userProv.setPrayerTimeEffectOverride(eff.name),
+                                );
+                              }),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton.icon(
+                              onPressed: () => FirdawsNavBridge.jumpTo(1, journeyTab: 2),
+                              icon: Icon(Icons.workspace_premium_rounded, color: accentColor, size: 17),
+                              label: Text(
+                                'عرض المسابقات والـ 200 لقب ومذكرتي',
+                                style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
+                            ),
+                          ),
+                        ]),
+                      ],
+                    );
+                  },
                 ),
 
                 // 0. الوضع الليلي والنهاري لجميع الثيمات الـ 12

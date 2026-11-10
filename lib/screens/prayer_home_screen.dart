@@ -6,16 +6,20 @@ import 'package:intl/intl.dart' hide TextDirection;
 import 'package:provider/provider.dart';
 import '../models/prayer_info.dart';
 import '../models/prayer_model.dart';
+import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/glowing_pulse_container.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
+import '../widgets/prayer_time_effects_canvas.dart';
 import '../widgets/islamic_side_drawer.dart';
 import '../widgets/islamic_prayer_card_view.dart';
 import '../widgets/persistent_audio_player_bar.dart';
 import '../widgets/real_mosque_background.dart';
+import '../widgets/user_profile_editor_sheet.dart';
 import '../models/daily_inspiration_model.dart';
 import '../models/hijri_calendar_model.dart';
+import 'main_navigation_screen.dart';
 import 'quran_azkar_sheet.dart';
 import 'prayer_22_details_sheet.dart';
 import 'islamic_greeting_cards_sheet.dart';
@@ -361,6 +365,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
+    final userProv = Provider.of<FirdawsUserProvider>(context);
     final isNight = settings.isNightEffective;
     final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
     final palette = themeOption.resolve(isNight: isNight);
@@ -376,6 +381,10 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
 
     final currentPrayer = prayerData.prayerTimes.currentPrayer();
     final nextPrayer = prayerData.prayerTimes.nextPrayer();
+    final activePrayerEffect = PrayerWindowEffectExt.resolveActiveWindow(
+      prayerData: prayerData,
+      overrideKey: userProv.profile.prayerTimeEffectOverride,
+    );
 
     final nextTime = prayerData.prayerTimes.timeForPrayer(nextPrayer) ?? DateTime.now();
     final remaining = nextTime.difference(DateTime.now());
@@ -442,6 +451,15 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 isNightMode: isNight,
               ),
             ),
+
+            // 1.5 مؤثرات أوقات الصلاة الحيّة (الفجر، الشروق، الظهر، العصر، المغرب، العشاء، القيام)
+            if (userProv.profile.enablePrayerTimeEffects)
+              Positioned.fill(
+                child: PrayerTimeEffectsCanvas(
+                  windowEffect: activePrayerEffect,
+                  isNightMode: isNight,
+                ),
+              ),
 
             // 2. المحتوى الرئيسي: شريط الهوية "الفردوس" + بطاقة الصلاة
             SafeArea(
@@ -632,12 +650,18 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                     ),
                   ),
 
-                  // عرض بطاقة الصلاة وشبكة الأزرار الستة
+                  // عرض بطاقة الترحيب الشخصية ومؤثرات الأوقات + بطاقة الصلاة وشبكة الأزرار الستة
                   Expanded(
                     child: SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
                       child: Column(
                         children: [
+                          _buildPersonalMotivationAndEffectsCard(
+                            context,
+                            userProv,
+                            palette,
+                            activePrayerEffect,
+                          ),
                           IslamicPrayerCardView(
                             prayerTimes: prayerData.prayerTimes,
                             themeOption: themeOption,
@@ -904,6 +928,23 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     );
   }
 
+  String _prayerEnumKey(Prayer p) {
+    switch (p) {
+      case Prayer.fajr:
+        return 'fajr';
+      case Prayer.dhuhr:
+        return 'dhuhr';
+      case Prayer.asr:
+        return 'asr';
+      case Prayer.maghrib:
+        return 'maghrib';
+      case Prayer.isha:
+        return 'isha';
+      default:
+        return '';
+    }
+  }
+
   Widget _buildPrayerCard(
     String name,
     DateTime time,
@@ -912,6 +953,12 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     ThemePalette palette, {
     bool isSunnah = false,
   }) {
+    final userProv = Provider.of<FirdawsUserProvider>(context);
+    final logKey = _prayerEnumKey(prayerType);
+    final todayRecord = userProv.recordForDate(DateTime.now());
+    final loggedStatus =
+        logKey.isNotEmpty ? todayRecord.statusFor(logKey) : PrayerLogStatus.none;
+
     final isCurrent = currentPrayer == prayerType;
     final isPassed = !isCurrent && time.isBefore(DateTime.now());
     final accentColor = palette.accentColor;
@@ -992,6 +1039,33 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                               child: Text(
                                 "شروق",
                                 style: TextStyle(fontSize: 10, color: palette.textSecondary),
+                              ),
+                            ),
+                          ),
+                        if (loggedStatus != PrayerLogStatus.none)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: loggedStatus
+                                    .statusColor(palette.isDark)
+                                    .withOpacity(0.18),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: loggedStatus
+                                      .statusColor(palette.isDark)
+                                      .withOpacity(0.5),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: Text(
+                                loggedStatus.arabicLabel,
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: loggedStatus.statusColor(palette.isDark),
+                                ),
                               ),
                             ),
                           ),
@@ -1301,17 +1375,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0369A1),
                 palette: palette,
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: palette.cardColor,
-                      behavior: SnackBarBehavior.floating,
-                      content: Text(
-                        "افتح تبويب التقويم الهجري والمناسبات الإسلامية من الشريط السفلي 📅",
-                        style: TextStyle(color: palette.textPrimary, fontSize: 12),
-                      ),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
+                  FirdawsNavBridge.jumpTo(3);
                 },
               ),
               _buildHubActionItem(
@@ -1338,8 +1402,270 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 10),
+          Divider(color: palette.dividerColor, height: 8),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildHubActionItem(
+                icon: Icons.fact_check_rounded,
+                label: "سجل الصلوات",
+                color: isDark ? const Color(0xFF34D399) : const Color(0xFF047857),
+                palette: palette,
+                onTap: () => FirdawsNavBridge.jumpTo(1, journeyTab: 0),
+              ),
+              _buildHubActionItem(
+                icon: Icons.task_alt_rounded,
+                label: "المهام والطاعات",
+                color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309),
+                palette: palette,
+                onTap: () => FirdawsNavBridge.jumpTo(1, journeyTab: 1),
+              ),
+              _buildHubActionItem(
+                icon: Icons.workspace_premium_rounded,
+                label: "200 لقب ومسابقة",
+                color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF6D28D9),
+                palette: palette,
+                onTap: () => FirdawsNavBridge.jumpTo(1, journeyTab: 2),
+              ),
+              _buildHubActionItem(
+                icon: Icons.edit_note_rounded,
+                label: "مذكرتي و500 عبارة",
+                color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0369A1),
+                palette: palette,
+                onTap: () => FirdawsNavBridge.jumpTo(1, journeyTab: 3),
+              ),
+            ],
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPersonalMotivationAndEffectsCard(
+    BuildContext context,
+    FirdawsUserProvider userProv,
+    ThemePalette palette,
+    PrayerWindowEffect activeEffect,
+  ) {
+    final accent = palette.accentColor;
+    final p = userProv.profile;
+    final phrase = userProv.getPersonalizedMotivation();
+    final activeTitleLabel = userProv.activeTitleLabel;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 4, 14, 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: palette.cardColor.withOpacity(palette.isDark ? 0.78 : 0.90),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: accent.withOpacity(0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => UserProfileEditorSheet.show(context),
+                  child: Row(
+                    children: [
+                      Icon(
+                        activeEffect.icon,
+                        color: activeEffect.accentColor,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          p.hasCustomName
+                              ? 'مرحباً يا ${userProv.displayName}${activeTitleLabel != null ? ' • $activeTitleLabel' : ''}'
+                              : 'اضغط هنا لتسجيل اسمك وتخصيص 500 عبارة تشجيعية لك',
+                          style: TextStyle(
+                            color: palette.textPrimary,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              InkWell(
+                onTap: () =>
+                    _showPrayerTimeEffectsSelector(context, userProv, palette),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: activeEffect.accentColor.withOpacity(0.16),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: activeEffect.accentColor.withOpacity(0.5),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.auto_awesome_rounded,
+                        color: activeEffect.accentColor,
+                        size: 12,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        p.enablePrayerTimeEffects
+                            ? 'مؤثر ${activeEffect.shortLabel}'
+                            : 'المؤثرات متوقفة',
+                        style: TextStyle(
+                          color: activeEffect.accentColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (p.enableMotivations) ...[
+            const SizedBox(height: 5),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    phrase,
+                    style: TextStyle(
+                      color: palette.textSecondary,
+                      fontSize: 11.5,
+                      height: 1.35,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                IconButton(
+                  constraints: const BoxConstraints(),
+                  padding: const EdgeInsets.all(4),
+                  icon: Icon(Icons.shuffle_rounded, color: accent, size: 17),
+                  tooltip: 'عبارة تشجيعية جديدة باسمك',
+                  onPressed: userProv.nextMotivation,
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showPrayerTimeEffectsSelector(
+    BuildContext context,
+    FirdawsUserProvider userProv,
+    ThemePalette palette,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) {
+        return Consumer<FirdawsUserProvider>(
+          builder: (_, prov, __) {
+            final accent = palette.accentColor;
+            final currentKey = prov.profile.prayerTimeEffectOverride;
+            return Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: palette.scaffoldColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+                border: Border.all(color: accent.withOpacity(0.5), width: 1.5),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.auto_awesome_rounded, color: accent),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'مؤثرات أوقات الصلاة الحيّة',
+                          style: TextStyle(
+                            color: accent,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                      Switch(
+                        value: prov.profile.enablePrayerTimeEffects,
+                        activeTrackColor: accent,
+                        onChanged: (v) => prov.setPrayerTimeEffectsEnabled(v),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    'يتبدل الجو النوراني تلقائياً مع دخول كل صلاة، ويمكنك معاينة أي وقت الآن:',
+                    style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      ChoiceChip(
+                        label: Text(
+                          'تلقائي مع الوقت الفعلي',
+                          style: TextStyle(
+                            color: currentKey == 'auto'
+                                ? palette.onAccentColor
+                                : palette.textPrimary,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        selected: currentKey == 'auto',
+                        selectedColor: accent,
+                        onSelected: (_) => prov.setPrayerTimeEffectOverride('auto'),
+                      ),
+                      ...PrayerWindowEffect.values.map((eff) {
+                        final isSel = currentKey == eff.name;
+                        return ChoiceChip(
+                          avatar: Icon(
+                            eff.icon,
+                            size: 14,
+                            color: isSel ? Colors.white : eff.accentColor,
+                          ),
+                          label: Text(
+                            eff.shortLabel,
+                            style: TextStyle(
+                              color: isSel ? Colors.white : palette.textPrimary,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          selected: isSel,
+                          selectedColor: eff.accentColor,
+                          onSelected: (_) =>
+                              prov.setPrayerTimeEffectOverride(eff.name),
+                        );
+                      }),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/audio_player_provider.dart';
+import 'providers/firdaws_user_provider.dart';
 import 'screens/main_navigation_screen.dart';
 import 'services/notification_service.dart';
 import 'theme/islamic_theme.dart';
@@ -12,6 +13,7 @@ void main() async {
 
   final settingsProvider = SettingsProvider();
   final audioPlayerProvider = AudioPlayerProvider();
+  final firdawsUserProvider = FirdawsUserProvider();
 
   // تشغيل التطبيق فوراً دون انتظار عمليات الحساسات أو التنبيهات
   runApp(
@@ -19,6 +21,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
         ChangeNotifierProvider<AudioPlayerProvider>.value(value: audioPlayerProvider),
+        ChangeNotifierProvider<FirdawsUserProvider>.value(value: firdawsUserProvider),
       ],
       child: const IslamicPrayerApp(),
     ),
@@ -28,6 +31,7 @@ void main() async {
   Future.microtask(() async {
     try {
       await settingsProvider.init();
+      await firdawsUserProvider.init();
       await NotificationService().initialize();
     } catch (e) {
       debugPrint("Background init: $e");

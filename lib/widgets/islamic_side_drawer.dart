@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/islamic_audio_data.dart';
 import '../providers/audio_player_provider.dart';
+import '../providers/firdaws_user_provider.dart';
+import '../screens/main_navigation_screen.dart';
 import '../screens/quran_reader_screen.dart';
 import '../theme/islamic_theme.dart';
+import 'user_profile_editor_sheet.dart';
 
 class IslamicSideDrawer extends StatefulWidget {
   final ThemeOption themeOption;
@@ -48,6 +51,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
   @override
   Widget build(BuildContext context) {
     final player = Provider.of<AudioPlayerProvider>(context);
+    final userProv = Provider.of<FirdawsUserProvider>(context);
     final palette = widget.themeOption.resolve(isNight: widget.isNightMode);
     final accent = palette.accentColor;
 
@@ -56,75 +60,149 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
       child: SafeArea(
         child: Column(
           children: [
-            // 1. رأس القائمة الفاخر مع اسم التطبيق "الفردوس"
+            // 1. رأس القائمة الفاخر مع اسم التطبيق "الفردوس" وبيانات المستخدم واللقب
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 color: palette.cardColor.withOpacity(0.95),
                 border: Border(bottom: BorderSide(color: accent.withOpacity(0.35))),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  Container(
-                    width: 46,
-                    height: 46,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: accent, width: 1.6),
-                      boxShadow: [
-                        BoxShadow(
-                          color: accent.withOpacity(0.32),
-                          blurRadius: 10,
-                        ),
-                      ],
-                    ),
-                    child: ClipOval(
-                      child: Image.asset(
-                        'assets/images/palace_jannah_logo.png',
+                  Row(
+                    children: [
+                      Container(
                         width: 46,
                         height: 46,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: accent.withOpacity(0.18),
-                          child: Icon(Icons.menu_book_rounded, color: accent, size: 22),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: accent, width: 1.6),
+                          boxShadow: [
+                            BoxShadow(
+                              color: accent.withOpacity(0.32),
+                              blurRadius: 10,
+                            ),
+                          ],
+                        ),
+                        child: ClipOval(
+                          child: Image.asset(
+                            'assets/images/palace_jannah_logo.png',
+                            width: 46,
+                            height: 46,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: accent.withOpacity(0.18),
+                              child: Icon(Icons.menu_book_rounded, color: accent, size: 22),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "الفردوس • المكتبة الشاملة",
-                          style: TextStyle(
-                            color: palette.textPrimary,
-                            fontSize: 16.5,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              userProv.profile.hasCustomName
+                                  ? 'أهلاً يا ${userProv.displayName}'
+                                  : "الفردوس • المكتبة الشاملة",
+                              style: TextStyle(
+                                color: palette.textPrimary,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              userProv.activeTitleLabel ??
+                                  "المصحف الكامل • رقية شرعية • إبتهالات",
+                              style: TextStyle(
+                                color: userProv.activeTitleLabel != null
+                                    ? accent
+                                    : palette.textSecondary,
+                                fontSize: 11,
+                                fontWeight: userProv.activeTitleLabel != null
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
-                        Text(
-                          "المصحف الكامل • رقية شرعية • إبتهالات",
-                          style: TextStyle(
-                            color: palette.textSecondary,
-                            fontSize: 11,
+                      ),
+                      IconButton(
+                        icon: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: palette.elevatedCardColor,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: palette.dividerColor),
                           ),
+                          child: Icon(Icons.close_rounded, color: palette.textSecondary, size: 18),
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _drawerShortcutChip(
+                          label: 'سجل الصلوات',
+                          icon: Icons.fact_check_rounded,
+                          accent: accent,
+                          palette: palette,
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            FirdawsNavBridge.jumpTo(1, journeyTab: 0);
+                          },
+                        ),
+                        _drawerShortcutChip(
+                          label: 'المهام والطاعات',
+                          icon: Icons.task_alt_rounded,
+                          accent: accent,
+                          palette: palette,
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            FirdawsNavBridge.jumpTo(1, journeyTab: 1);
+                          },
+                        ),
+                        _drawerShortcutChip(
+                          label: 'الـ 200 لقب',
+                          icon: Icons.workspace_premium_rounded,
+                          accent: accent,
+                          palette: palette,
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            FirdawsNavBridge.jumpTo(1, journeyTab: 2);
+                          },
+                        ),
+                        _drawerShortcutChip(
+                          label: 'مذكرتي و500 عبارة',
+                          icon: Icons.edit_note_rounded,
+                          accent: accent,
+                          palette: palette,
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            FirdawsNavBridge.jumpTo(1, journeyTab: 3);
+                          },
+                        ),
+                        _drawerShortcutChip(
+                          label: 'بياناتي',
+                          icon: Icons.person_rounded,
+                          accent: accent,
+                          palette: palette,
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            UserProfileEditorSheet.show(context);
+                          },
                         ),
                       ],
                     ),
-                  ),
-                  IconButton(
-                    icon: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: palette.elevatedCardColor,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: palette.dividerColor),
-                      ),
-                      child: Icon(Icons.close_rounded, color: palette.textSecondary, size: 18),
-                    ),
-                    onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
               ),
@@ -984,6 +1062,45 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
           style: TextStyle(color: palette.textSecondary, fontSize: 11),
         ),
         trailing: Icon(Icons.arrow_forward_ios_rounded, color: accent, size: 14),
+      ),
+    );
+  }
+
+  Widget _drawerShortcutChip({
+    required String label,
+    required IconData icon,
+    required Color accent,
+    required ThemePalette palette,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 6),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+          decoration: BoxDecoration(
+            color: accent.withOpacity(0.14),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: accent.withOpacity(0.4)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: accent, size: 13),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: palette.textPrimary,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

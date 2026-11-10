@@ -5,6 +5,7 @@ import 'package:adhan/adhan.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/tasbih_challenge.dart';
+import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
@@ -181,10 +182,13 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
     _goalEffectController.forward(from: 0.0);
     _saveTasbihState();
 
+    final userProv = Provider.of<FirdawsUserProvider>(context, listen: false);
     final effectInfo = TasbihGoalEffectsCatalog.getByIndex(effectIdx);
+    final personalizedPhrase =
+        userProv.getPersonalizedMotivation(category: 'أنس الذكر والتسبيح');
     _showCelebrationBanner(
       message ??
-          "ما شاء الله! أتممت الهدف ✨ (${effectInfo.number}/20: ${effectInfo.name})",
+          "هنيئاً يا ${userProv.displayName}! (${effectInfo.number}/20: ${effectInfo.name}) • $personalizedPhrase",
     );
   }
 
@@ -196,6 +200,7 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
     HapticFeedback.lightImpact();
 
     final activeChallenge = _activeChallenge;
+    final activeDhikrText = activeChallenge?.dhikr ?? _dhikrList[_selectedDhikrIndex];
     String? pendingEffectMessage;
     bool shouldTriggerEffect = false;
 
@@ -221,6 +226,16 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
         if (_target > 0 && _counter % _target == 0) {
           shouldTriggerEffect = true;
         }
+      }
+    });
+
+    final userProv = Provider.of<FirdawsUserProvider>(context, listen: false);
+    userProv.recordDhikrByText(activeDhikrText).then((unlocked) {
+      if (unlocked.isNotEmpty && mounted) {
+        final first = unlocked.first;
+        _showCelebrationBanner(
+          "مبارك يا ${userProv.displayName}! فُتح لقب #${first.number}: ${first.localizedTitle(isFemale: userProv.isFemale)} 🏆",
+        );
       }
     });
 

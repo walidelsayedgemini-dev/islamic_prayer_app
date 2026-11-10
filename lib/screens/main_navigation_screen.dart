@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'prayer_home_screen.dart';
+import 'firdaws_journey_screen.dart';
 import 'qibla_screen.dart';
 import 'calendar_screen.dart';
 import 'tasbih_screen.dart';
@@ -9,6 +10,26 @@ import 'help_me_screen.dart';
 import 'settings_screen.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
+
+class FirdawsNavBridge {
+  static void Function(
+    int pageIndex, {
+    int? journeyTab,
+    DateTime? journeyDate,
+  })? _navigator;
+
+  static void jumpTo(
+    int pageIndex, {
+    int? journeyTab,
+    DateTime? journeyDate,
+  }) {
+    _navigator?.call(
+      pageIndex,
+      journeyTab: journeyTab,
+      journeyDate: journeyDate,
+    );
+  }
+}
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -20,25 +41,48 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
   late PageController _pageController;
+  final ValueNotifier<FirdawsJourneyRequest?> _journeyRequest =
+      ValueNotifier<FirdawsJourneyRequest?>(null);
 
-  final List<Widget> _screens = const [
-    PrayerHomeScreen(),
-    QiblaScreen(),
-    CalendarScreen(),
-    TasbihScreen(),
-    JannatiScreen(),
-    HelpMeScreen(),
-    SettingsScreen(),
+  late final List<Widget> _screens = [
+    const PrayerHomeScreen(),
+    FirdawsJourneyScreen(requestNotifier: _journeyRequest),
+    const QiblaScreen(),
+    const CalendarScreen(),
+    const TasbihScreen(),
+    const JannatiScreen(),
+    const HelpMeScreen(),
+    const SettingsScreen(),
   ];
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _currentIndex);
+    FirdawsNavBridge._navigator = _navigateFromExternal;
+  }
+
+  void _navigateFromExternal(
+    int pageIndex, {
+    int? journeyTab,
+    DateTime? journeyDate,
+  }) {
+    if (!mounted) return;
+    if (journeyTab != null || journeyDate != null) {
+      _journeyRequest.value = FirdawsJourneyRequest(
+        tabIndex: journeyTab ?? 0,
+        selectedDate: journeyDate,
+      );
+    }
+    _onTabTapped(pageIndex);
   }
 
   @override
   void dispose() {
+    if (FirdawsNavBridge._navigator == _navigateFromExternal) {
+      FirdawsNavBridge._navigator = null;
+    }
+    _journeyRequest.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -57,12 +101,77 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
     final isNight = settings.isNightEffective;
-    final palette = IslamicTheme.resolvePalette(settings.selectedTheme, isNight: isNight);
+    final palette =
+        IslamicTheme.resolvePalette(settings.selectedTheme, isNight: isNight);
     final accentColor = palette.accentColor;
 
-    final calAccent = isNight ? const Color(0xFF34D399) : const Color(0xFF047857);
-    final jannaAccent = isNight ? const Color(0xFFFBBF24) : const Color(0xFFB45309);
-    final helpAccent = isNight ? const Color(0xFF38BDF8) : const Color(0xFF0369A1);
+    final journeyAccent =
+        isNight ? const Color(0xFF34D399) : const Color(0xFF047857);
+    final calAccent =
+        isNight ? const Color(0xFF38BDF8) : const Color(0xFF0369A1);
+    final jannaAccent =
+        isNight ? const Color(0xFFFBBF24) : const Color(0xFFB45309);
+    final helpAccent =
+        isNight ? const Color(0xFFF472B6) : const Color(0xFFBE185D);
+
+    final navItems = [
+      _buildNavItem(
+        0,
+        Icons.access_time_filled_rounded,
+        'المواقيت',
+        accentColor,
+        palette,
+      ),
+      _buildNavItem(
+        1,
+        Icons.fact_check_rounded,
+        'السجل والمهام',
+        journeyAccent,
+        palette,
+      ),
+      _buildNavItem(
+        2,
+        Icons.explore_rounded,
+        'القبلة',
+        accentColor,
+        palette,
+      ),
+      _buildNavItem(
+        3,
+        Icons.calendar_month_rounded,
+        'التقويم',
+        calAccent,
+        palette,
+      ),
+      _buildNavItem(
+        4,
+        Icons.fingerprint_rounded,
+        'السبحة',
+        accentColor,
+        palette,
+      ),
+      _buildNavItem(
+        5,
+        Icons.workspace_premium_rounded,
+        'جَنَّتِي',
+        jannaAccent,
+        palette,
+      ),
+      _buildNavItem(
+        6,
+        Icons.favorite_rounded,
+        'سَاعِدْنِي',
+        helpAccent,
+        palette,
+      ),
+      _buildNavItem(
+        7,
+        Icons.tune_rounded,
+        'الإعدادات',
+        accentColor,
+        palette,
+      ),
+    ];
 
     return Scaffold(
       extendBody: true,
@@ -101,17 +210,28 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           borderRadius: BorderRadius.circular(26),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavItem(0, Icons.access_time_filled_rounded, "المواقيت", accentColor, palette),
-                _buildNavItem(1, Icons.explore_rounded, "القبلة", accentColor, palette),
-                _buildNavItem(2, Icons.calendar_month_rounded, "التقويم", calAccent, palette),
-                _buildNavItem(3, Icons.fingerprint_rounded, "السبحة", accentColor, palette),
-                _buildNavItem(4, Icons.workspace_premium_rounded, "جَنَّتِي", jannaAccent, palette),
-                _buildNavItem(5, Icons.favorite_rounded, "سَاعِدْنِي", helpAccent, palette),
-                _buildNavItem(6, Icons.tune_rounded, "الإعدادات", accentColor, palette),
-              ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth >= 460) {
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: navItems,
+                  );
+                }
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    children: navItems
+                        .map((item) => Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 2),
+                              child: item,
+                            ))
+                        .toList(),
+                  ),
+                );
+              },
             ),
           ),
         ),
@@ -135,12 +255,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: isSelected ? activeColor.withOpacity(palette.isDark ? 0.18 : 0.14) : Colors.transparent,
+          color: isSelected
+              ? activeColor.withOpacity(palette.isDark ? 0.18 : 0.14)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? activeColor.withOpacity(0.55) : Colors.transparent,
+            color: isSelected
+                ? activeColor.withOpacity(0.55)
+                : Colors.transparent,
             width: 1.0,
           ),
         ),
