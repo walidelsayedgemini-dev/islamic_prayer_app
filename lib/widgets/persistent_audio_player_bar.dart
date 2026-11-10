@@ -6,11 +6,13 @@ import '../theme/islamic_theme.dart';
 
 class PersistentAudioPlayerBar extends StatefulWidget {
   final ThemeOption themeOption;
+  final bool isNightMode;
   final VoidCallback onOpenDrawer;
 
   const PersistentAudioPlayerBar({
     super.key,
     required this.themeOption,
+    this.isNightMode = true,
     required this.onOpenDrawer,
   });
 
@@ -44,19 +46,20 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
       return const SizedBox.shrink();
     }
 
-    final accent = widget.themeOption.accentColor;
-    final cardBg = widget.themeOption.cardColor;
+    final palette = widget.themeOption.resolve(isNight: widget.isNightMode);
+    final accent = palette.accentColor;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: cardBg.withOpacity(0.95),
+        color: palette.cardColor.withOpacity(0.96),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: accent.withOpacity(0.55), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.65),
+            color: (palette.isDark ? Colors.black : palette.primaryColor)
+                .withOpacity(palette.isDark ? 0.65 : 0.20),
             blurRadius: 22,
             offset: const Offset(0, 6),
           ),
@@ -70,10 +73,8 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 1. رأس المشغل: معلومات التلاوة والقارئ مع أيقونة الراديو والزر X
           Row(
             children: [
-              // زر فتح القائمة الجانبية للتلاوات
               GestureDetector(
                 onTap: widget.onOpenDrawer,
                 child: Container(
@@ -90,8 +91,6 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
                 ),
               ),
               const SizedBox(width: 10),
-
-              // اسم السورة أو الرقية واسم الشيخ
               Expanded(
                 child: GestureDetector(
                   onTap: widget.onOpenDrawer,
@@ -101,9 +100,8 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
                     children: [
                       Text(
                         player.currentTitle,
-                        style: const TextStyle(
-                          fontFamily: 'Aref Ruqaa',
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: palette.textPrimary,
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
@@ -114,7 +112,7 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
                       Text(
                         player.currentSubTitle,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.75),
+                          color: palette.textSecondary,
                           fontSize: 11,
                         ),
                         maxLines: 1,
@@ -124,39 +122,36 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
                   ),
                 ),
               ),
-
-              // زر التكرار Loop
               IconButton(
                 constraints: const BoxConstraints(),
                 padding: const EdgeInsets.all(6),
                 icon: Icon(
                   Icons.repeat_rounded,
-                  color: player.isLooping ? accent : Colors.white38,
+                  color: player.isLooping ? accent : palette.textMuted,
                   size: 20,
                 ),
                 tooltip: "تكرار التشغيل",
                 onPressed: () => player.toggleLoop(),
               ),
-
-              // زر الإغلاق
               IconButton(
                 constraints: const BoxConstraints(),
                 padding: const EdgeInsets.all(6),
-                icon: const Icon(Icons.close_rounded, color: Colors.white54, size: 20),
+                icon: Icon(Icons.close_rounded, color: palette.textSecondary, size: 20),
                 tooltip: "إيقاف وإغلاق",
                 onPressed: () => player.closePlayer(),
               ),
             ],
           ),
-
           const SizedBox(height: 6),
-
-          // 2. سلايدر الوقت التفاعلي مع الوقت الحالي والإجمالي (مطابق للصورة 2 و 3)
           Row(
             children: [
               Text(
                 player.formatDuration(player.position),
-                style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: palette.textSecondary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Expanded(
                 child: SliderTheme(
@@ -165,8 +160,8 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
                     thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
                     overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
                     activeTrackColor: accent,
-                    inactiveTrackColor: Colors.white24,
-                    thumbColor: Colors.white,
+                    inactiveTrackColor: palette.dividerColor,
+                    thumbColor: accent,
                   ),
                   child: Slider(
                     value: player.progressRatio,
@@ -176,17 +171,15 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
               ),
               Text(
                 player.formatDuration(player.duration),
-                style: const TextStyle(color: Colors.white54, fontSize: 11),
+                style: TextStyle(color: palette.textMuted, fontSize: 11),
               ),
             ],
           ),
-
-          // 3. أزرار التحكم (رجوع 10ث، تشغيل/إيقاف، تقديم 10ث)
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               IconButton(
-                icon: const Icon(Icons.replay_10_rounded, color: Colors.white70, size: 24),
+                icon: Icon(Icons.replay_10_rounded, color: palette.textSecondary, size: 24),
                 tooltip: "رجوع 10 ثوانٍ",
                 onPressed: () => player.seekRewind10(),
               ),
@@ -209,14 +202,14 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
                   ),
                   child: Icon(
                     player.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                    color: Colors.black87,
+                    color: palette.onAccentColor,
                     size: 26,
                   ),
                 ),
               ),
               const SizedBox(width: 14),
               IconButton(
-                icon: const Icon(Icons.forward_10_rounded, color: Colors.white70, size: 24),
+                icon: Icon(Icons.forward_10_rounded, color: palette.textSecondary, size: 24),
                 tooltip: "تقديم 10 ثوانٍ",
                 onPressed: () => player.seekForward10(),
               ),

@@ -11,14 +11,12 @@ class JannatiScreen extends StatefulWidget {
   State<JannatiScreen> createState() => _JannatiScreenState();
 }
 
-class _JannatiScreenState extends State<JannatiScreen> with TickerProviderStateMixin {
-  // عدادات ذخائر الجنة المباركة
-  int _palmCount = 18; // نخلة ذهبية
-  int _palaceCount = 4; // قصر مشيد من اللؤلؤ والذهب
-  int _treasureCount = 65; // كنز من تحت العرش
-  int _seedlingCount = 42; // روضة في بستان الخليل
-
-  // تقدم بناء القصر الحالي بسورة الإخلاص (0 من 10)
+class _JannatiScreenState extends State<JannatiScreen>
+    with TickerProviderStateMixin {
+  int _palmCount = 18;
+  int _palaceCount = 4;
+  int _treasureCount = 65;
+  int _seedlingCount = 42;
   int _ikhlasCounter = 0;
 
   late AnimationController _pulseController;
@@ -48,14 +46,17 @@ class _JannatiScreenState extends State<JannatiScreen> with TickerProviderStateM
     });
   }
 
-  void _onPlantPalm() {
+  void _onPlantPalm(ThemePalette palette) {
     HapticFeedback.mediumImpact();
     _triggerHapticPulse();
     setState(() => _palmCount++);
-    _showSacredToast("ما شاء الله! غُرست لك نخلة في الفردوس الأعلى ساقها من ذهب وثمرها كالزمرد 🌴✨");
+    _showSacredToast(
+      "ما شاء الله! غُرست لك نخلة في الفردوس الأعلى ساقها من ذهب وثمرها كالزمرد 🌴✨",
+      palette,
+    );
   }
 
-  void _onReciteIkhlas() {
+  void _onReciteIkhlas(ThemePalette palette) {
     HapticFeedback.lightImpact();
     _triggerHapticPulse();
     setState(() {
@@ -64,44 +65,53 @@ class _JannatiScreenState extends State<JannatiScreen> with TickerProviderStateM
         _ikhlasCounter = 0;
         _palaceCount++;
         HapticFeedback.heavyImpact();
-        _showSacredToast("هنيئاً لك! أتممت 10 مرات سورة الإخلاص وبنى الله لك قصراً مشيداً في الجنة 🏰🌟");
+        _showSacredToast(
+          "هنيئاً لك! أتممت 10 مرات سورة الإخلاص وبنى الله لك قصراً مشيداً في الجنة 🏰🌟",
+          palette,
+        );
       }
     });
   }
 
-  void _onGatherTreasure() {
+  void _onGatherTreasure(ThemePalette palette) {
     HapticFeedback.mediumImpact();
     _triggerHapticPulse();
     setState(() => _treasureCount++);
-    _showSacredToast("ذخرت كنزاً نفيساً من كنوز تحت العرش الإلهي بالاستسلام لله 💎✨");
+    _showSacredToast(
+      "ذخرت كنزاً نفيساً من كنوز تحت العرش الإلهي بالاستسلام لله 💎✨",
+      palette,
+    );
   }
 
-  void _onPlantSeedling() {
+  void _onPlantSeedling(ThemePalette palette) {
     HapticFeedback.lightImpact();
     _triggerHapticPulse();
     setState(() => _seedlingCount += 4);
-    _showSacredToast("أجبت وصية خليل الرحمن إبراهيم وغرست 4 رياض خضراء في الفردوس 🌸🌿");
+    _showSacredToast(
+      "أجبت وصية خليل الرحمن إبراهيم وغرست 4 رياض خضراء في الفردوس 🌸🌿",
+      palette,
+    );
   }
 
-  void _showSacredToast(String message) {
+  void _showSacredToast(String message, ThemePalette palette) {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        backgroundColor: const Color(0xFF041812),
+        backgroundColor: palette.cardColor,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Color(0xFFD4AF37), width: 1.5),
+          side: BorderSide(color: palette.accentColor, width: 1.5),
         ),
         content: Row(
           children: [
-            const Icon(Icons.workspace_premium_rounded, color: Color(0xFFFBBF24), size: 24),
+            Icon(Icons.workspace_premium_rounded, color: palette.accentColor, size: 24),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: palette.textPrimary,
                   fontWeight: FontWeight.bold,
                   fontSize: 12.5,
                 ),
@@ -117,15 +127,21 @@ class _JannatiScreenState extends State<JannatiScreen> with TickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
-    final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
-    final accentColor = themeOption.accentColor;
+    final isNight = settings.isNightEffective;
+    final palette = IslamicTheme.resolvePalette(settings.selectedTheme, isNight: isNight);
+    final accentColor = palette.accentColor;
+
+    final emeraldColor = isNight ? const Color(0xFF10B981) : const Color(0xFF047857);
+    final goldColor = isNight ? const Color(0xFFF59E0B) : const Color(0xFFB45309);
+    final violetColor = isNight ? const Color(0xFF8B5CF6) : const Color(0xFF6D28D9);
+    final cyanColor = isNight ? const Color(0xFF06B6D4) : const Color(0xFF0E7490);
 
     return Scaffold(
-      backgroundColor: themeOption.scaffoldColor,
+      backgroundColor: palette.scaffoldColor,
       body: SafeArea(
         child: Column(
           children: [
-            // 1. الترويسة الملكية الإسلامية 3D (شعار خزينة الجنة)
+            // 1. الترويسة الملكية
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
@@ -139,13 +155,17 @@ class _JannatiScreenState extends State<JannatiScreen> with TickerProviderStateM
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFD4AF37).withOpacity(0.45),
-                          blurRadius: 16,
+                          color: const Color(0xFFD4AF37).withOpacity(0.4),
+                          blurRadius: 14,
                           spreadRadius: 1,
                         ),
                       ],
                     ),
-                    child: const Icon(Icons.workspace_premium_rounded, color: Color(0xFF071913), size: 24),
+                    child: const Icon(
+                      Icons.workspace_premium_rounded,
+                      color: Color(0xFF071913),
+                      size: 24,
+                    ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -162,9 +182,9 @@ class _JannatiScreenState extends State<JannatiScreen> with TickerProviderStateM
                           ),
                         ),
                         const SizedBox(height: 2),
-                        const Text(
+                        Text(
                           "«مَا فِي الجَنَّةِ شَجَرَةٌ إِلَّا وَسَاقُهَا مِنْ ذَهَبٍ» (صحيح الترمذي)",
-                          style: TextStyle(color: Colors.white70, fontSize: 11),
+                          style: TextStyle(color: palette.textSecondary, fontSize: 11),
                         ),
                       ],
                     ),
@@ -173,75 +193,82 @@ class _JannatiScreenState extends State<JannatiScreen> with TickerProviderStateM
               ),
             ),
 
-            // 2. صرح الأرصدة والذخائر الملكية 3D (موزعة في بطاقات رخامية فاخرة)
-            _buildRoyalTreasuryVault(accentColor),
+            // 2. صرح الأرصدة والذخائر
+            _buildRoyalTreasuryVault(
+              palette: palette,
+              emeraldColor: emeraldColor,
+              goldColor: goldColor,
+              violetColor: violetColor,
+              cyanColor: cyanColor,
+            ),
 
             const SizedBox(height: 12),
 
-            // 3. قائمة الأعمال الصالحة لبناء الجنة
+            // 3. قائمة الأعمال الصالحة
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 95),
                 children: [
-                  // بطاقة نخلة الفردوس ذات الساق الذهبية
                   _buildSacredDeedCard(
                     title: "نَخِيلُ الفِرْدَوْسِ الأَعْلَى",
                     dhikr: "سُبْحَانَ اللَّهِ الْعَظِيمِ وَبِحَمْدِهِ",
                     hadith: "«من قال: سبحان الله العظيم وبحمده، غُرست له نخلة في الجنة» (صحيح الترمذي)",
-                    virtueDescription: "نخلة طيبة في الجنة جذعها من ذهب خالص وثمارها ألين من الزبد وأحلى من العسل.",
+                    virtueDescription:
+                        "نخلة طيبة في الجنة جذعها من ذهب خالص وثمارها ألين من الزبد وأحلى من العسل.",
                     buttonLabel: "سَبِّح واغرس نخلة ذهبية 🌴",
                     countLabel: "$_palmCount نخلة مغروسة في بستانك",
-                    accentColor: const Color(0xFF10B981),
+                    deedColor: emeraldColor,
+                    palette: palette,
                     icon: Icons.forest_rounded,
-                    onTap: _onPlantPalm,
+                    onTap: () => _onPlantPalm(palette),
                   ),
-
                   const SizedBox(height: 14),
-
-                  // بطاقة تشييد القصور بسورة الإخلاص
                   _buildSacredDeedCard(
                     title: "قُصُورُ اللُّؤْلُؤِ وَاليَاقُوتِ المَشِيدَةِ",
                     dhikr: "قِرَاءَةُ سُورَةِ الإِخْلاصِ (10 مَرَّاتٍ لِكُلِّ قَصْرٍ)",
-                    hadith: "«من قرأ {قُلْ هُوَ اللَّهُ أَحَدٌ} حتى يختمها عشر مرات، بنى الله له قصراً في الجنة» (أحمد)",
-                    virtueDescription: "قصر مشيد لبنة من ذهب ولبنة من فضة وملاطها المسك الأذفر وحصباؤها اللؤلؤ.",
+                    hadith:
+                        "«من قرأ {قُلْ هُوَ اللَّهُ أَحَدٌ} حتى يختمها عشر مرات، بنى الله له قصراً في الجنة» (أحمد)",
+                    virtueDescription:
+                        "قصر مشيد لبنة من ذهب ولبنة من فضة وملاطها المسك الأذفر وحصباؤها اللؤلؤ.",
                     buttonLabel: "قرأتُ سورة الإخلاص مرة ($_ikhlasCounter/10) 📖",
                     countLabel: "أتممت تشييد $_palaceCount قصور في الفردوس",
-                    accentColor: const Color(0xFFF59E0B),
+                    deedColor: goldColor,
+                    palette: palette,
                     icon: Icons.castle_rounded,
-                    onTap: _onReciteIkhlas,
+                    onTap: () => _onReciteIkhlas(palette),
                     progressValue: _ikhlasCounter / 10.0,
                     progressSteps: 10,
                     currentStep: _ikhlasCounter,
                   ),
-
                   const SizedBox(height: 14),
-
-                  // بطاقة كنوز العرش الأقدس
                   _buildSacredDeedCard(
                     title: "كُنُوزُ العَرْشِ الإِلَهِيِّ المَدْخُورَةِ",
                     dhikr: "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
-                    hadith: "«ألا أدلك على كلمة هي كنز من كنوز الجنة من تحت العرش؟ لا حول ولا قوة إلا بالله» (متفق عليه)",
-                    virtueDescription: "كنز نفيس من تحت عرش الرحمن، تفويض كامل لله واستمداد للقوة والتوفيق منه سبحانه.",
+                    hadith:
+                        "«ألا أدلك على كلمة هي كنز من كنوز الجنة من تحت العرش؟ لا حول ولا قوة إلا بالله» (متفق عليه)",
+                    virtueDescription:
+                        "كنز نفيس من تحت عرش الرحمن، تفويض كامل لله واستمداد للقوة والتوفيق منه سبحانه.",
                     buttonLabel: "استعن بالله واذخر كنزاً 💎",
                     countLabel: "ذخرت $_treasureCount كنزاً مدخوراً في ميزانك",
-                    accentColor: const Color(0xFF8B5CF6),
+                    deedColor: violetColor,
+                    palette: palette,
                     icon: Icons.diamond_rounded,
-                    onTap: _onGatherTreasure,
+                    onTap: () => _onGatherTreasure(palette),
                   ),
-
                   const SizedBox(height: 14),
-
-                  // بطاقة غراس خليل الرحمن إبراهيم
                   _buildSacredDeedCard(
                     title: "غِرَاسُ رَوْضَةِ الخَلِيلِ إِبْرَاهِيمَ",
                     dhikr: "سُبْحَانَ اللَّهِ، وَالْحَمْدُ لِلَّهِ، وَلَا إِلَهَ إِلَّا اللَّهُ، وَاللَّهُ أَكْبَرُ",
-                    hadith: "«أوصى إبراهيم ﷺ ليلة الإسراء: أخبر أمتك أن الجنة طيبة التربة وأن غراسها الباقيات الصالحات»",
-                    virtueDescription: "أربع رياض في الفردوس الأعلى تزهر مع كل تسبيحة وتحميدة وتهليلة وتكبيرة.",
+                    hadith:
+                        "«أوصى إبراهيم ﷺ ليلة الإسراء: أخبر أمتك أن الجنة طيبة التربة وأن غراسها الباقيات الصالحات»",
+                    virtueDescription:
+                        "أربع رياض في الفردوس الأعلى تزهر مع كل تسبيحة وتحميدة وتهليلة وتكبيرة.",
                     buttonLabel: "ازرع 4 رياض خضراء 🌸",
                     countLabel: "أزهرت بستانك بـ $_seedlingCount روضة مباركة",
-                    accentColor: const Color(0xFF06B6D4),
+                    deedColor: cyanColor,
+                    palette: palette,
                     icon: Icons.spa_rounded,
-                    onTap: _onPlantSeedling,
+                    onTap: () => _onPlantSeedling(palette),
                   ),
                 ],
               ),
@@ -252,30 +279,39 @@ class _JannatiScreenState extends State<JannatiScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildRoyalTreasuryVault(Color accentColor) {
+  Widget _buildRoyalTreasuryVault({
+    required ThemePalette palette,
+    required Color emeraldColor,
+    required Color goldColor,
+    required Color violetColor,
+    required Color cyanColor,
+  }) {
+    final accentColor = palette.accentColor;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF06231A),
-            Color(0xFF02130E),
-            Color(0xFF051C15),
+            palette.cardColor,
+            palette.elevatedCardColor,
+            palette.cardColor,
           ],
         ),
         border: Border.all(color: accentColor.withOpacity(0.55), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: accentColor.withOpacity(0.18),
-            blurRadius: 22,
+            color: accentColor.withOpacity(0.16),
+            blurRadius: 20,
             offset: const Offset(0, 6),
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.60),
+            color: (palette.isDark ? Colors.black : palette.primaryColor)
+                .withOpacity(palette.isDark ? 0.55 : 0.14),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),
@@ -323,10 +359,34 @@ class _JannatiScreenState extends State<JannatiScreen> with TickerProviderStateM
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildTreasuryItem("$_palmCount نخلة", "جذع من ذهب", Icons.forest_rounded, const Color(0xFF10B981)),
-              _buildTreasuryItem("$_palaceCount قصور", "لؤلؤ وياقوت", Icons.castle_rounded, const Color(0xFFF59E0B)),
-              _buildTreasuryItem("$_treasureCount كنزاً", "تحت العرش", Icons.diamond_rounded, const Color(0xFF8B5CF6)),
-              _buildTreasuryItem("$_seedlingCount روضة", "غراس الأنبياء", Icons.spa_rounded, const Color(0xFF06B6D4)),
+              _buildTreasuryItem(
+                "$_palmCount نخلة",
+                "جذع من ذهب",
+                Icons.forest_rounded,
+                emeraldColor,
+                palette,
+              ),
+              _buildTreasuryItem(
+                "$_palaceCount قصور",
+                "لؤلؤ وياقوت",
+                Icons.castle_rounded,
+                goldColor,
+                palette,
+              ),
+              _buildTreasuryItem(
+                "$_treasureCount كنزاً",
+                "تحت العرش",
+                Icons.diamond_rounded,
+                violetColor,
+                palette,
+              ),
+              _buildTreasuryItem(
+                "$_seedlingCount روضة",
+                "غراس الأنبياء",
+                Icons.spa_rounded,
+                cyanColor,
+                palette,
+              ),
             ],
           ),
         ],
@@ -334,7 +394,13 @@ class _JannatiScreenState extends State<JannatiScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildTreasuryItem(String title, String subtitle, IconData icon, Color color) {
+  Widget _buildTreasuryItem(
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    ThemePalette palette,
+  ) {
     return ScaleTransition(
       scale: _pulseAnimation,
       child: Column(
@@ -344,12 +410,12 @@ class _JannatiScreenState extends State<JannatiScreen> with TickerProviderStateM
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: RadialGradient(
-                colors: [color.withOpacity(0.4), color.withOpacity(0.1)],
+                colors: [color.withOpacity(0.35), color.withOpacity(0.08)],
               ),
-              border: Border.all(color: color.withOpacity(0.7), width: 1.5),
+              border: Border.all(color: color.withOpacity(0.75), width: 1.5),
               boxShadow: [
                 BoxShadow(
-                  color: color.withOpacity(0.3),
+                  color: color.withOpacity(0.25),
                   blurRadius: 10,
                 ),
               ],
@@ -359,8 +425,8 @@ class _JannatiScreenState extends State<JannatiScreen> with TickerProviderStateM
           const SizedBox(height: 6),
           Text(
             title,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: palette.textPrimary,
               fontSize: 12,
               fontWeight: FontWeight.bold,
             ),
@@ -368,9 +434,9 @@ class _JannatiScreenState extends State<JannatiScreen> with TickerProviderStateM
           Text(
             subtitle,
             style: TextStyle(
-              color: color.withOpacity(0.85),
+              color: color,
               fontSize: 9.5,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -385,28 +451,34 @@ class _JannatiScreenState extends State<JannatiScreen> with TickerProviderStateM
     required String virtueDescription,
     required String buttonLabel,
     required String countLabel,
-    required Color accentColor,
+    required Color deedColor,
+    required ThemePalette palette,
     required IconData icon,
     required VoidCallback onTap,
     double? progressValue,
     int? progressSteps,
     int? currentStep,
   }) {
+    final btnForeground = ThemeData.estimateBrightnessForColor(deedColor) == Brightness.dark
+        ? Colors.white
+        : const Color(0xFF04120E);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF041914).withOpacity(0.95),
+        color: palette.cardColor,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: accentColor.withOpacity(0.4), width: 1.3),
+        border: Border.all(color: deedColor.withOpacity(0.45), width: 1.3),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.6),
-            blurRadius: 16,
+            color: (palette.isDark ? Colors.black : palette.primaryColor)
+                .withOpacity(palette.isDark ? 0.55 : 0.12),
+            blurRadius: 14,
             offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: accentColor.withOpacity(0.12),
-            blurRadius: 14,
+            color: deedColor.withOpacity(0.12),
+            blurRadius: 12,
             offset: const Offset(0, 2),
           ),
         ],
@@ -414,24 +486,23 @@ class _JannatiScreenState extends State<JannatiScreen> with TickerProviderStateM
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // رأس البطاقة مع الأيقونة والعنوان
           Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: accentColor.withOpacity(0.18),
-                  border: Border.all(color: accentColor, width: 1.2),
+                  color: deedColor.withOpacity(0.18),
+                  border: Border.all(color: deedColor, width: 1.2),
                 ),
-                child: Icon(icon, color: accentColor, size: 20),
+                child: Icon(icon, color: deedColor, size: 20),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   title,
                   style: TextStyle(
-                    color: accentColor,
+                    color: deedColor,
                     fontWeight: FontWeight.bold,
                     fontSize: 14.5,
                   ),
@@ -439,54 +510,43 @@ class _JannatiScreenState extends State<JannatiScreen> with TickerProviderStateM
               ),
             ],
           ),
-
           const SizedBox(height: 10),
-
-          // نص الذكر الشريف في كبسولة ذهبية مريحة
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.40),
+              color: palette.elevatedCardColor,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: accentColor.withOpacity(0.3)),
+              border: Border.all(color: deedColor.withOpacity(0.32)),
             ),
             child: Text(
               dhikr,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFFFDE68A),
+              style: TextStyle(
+                color: palette.isDark ? const Color(0xFFFDE68A) : palette.primaryColor,
                 fontWeight: FontWeight.bold,
                 fontSize: 15,
                 height: 1.4,
               ),
             ),
           ),
-
           const SizedBox(height: 10),
-
-          // نص الحديث الشريف المؤصل
           Text(
             hadith,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: palette.textPrimary,
               fontSize: 12,
               height: 1.4,
               fontStyle: FontStyle.italic,
             ),
           ),
-
           const SizedBox(height: 4),
-
-          // وصف النعيم المتحقق
           Text(
             virtueDescription,
-            style: const TextStyle(color: Colors.white60, fontSize: 11, height: 1.3),
+            style: TextStyle(color: palette.textSecondary, fontSize: 11, height: 1.3),
           ),
-
           if (progressSteps != null && currentStep != null) ...[
             const SizedBox(height: 10),
-            // نقاط خطوات تشييد القصر الـ 10
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: List.generate(progressSteps, (index) {
@@ -495,12 +555,12 @@ class _JannatiScreenState extends State<JannatiScreen> with TickerProviderStateM
                   width: 26,
                   height: 6,
                   decoration: BoxDecoration(
-                    color: isDone ? accentColor : Colors.white12,
+                    color: isDone ? deedColor : palette.dividerColor,
                     borderRadius: BorderRadius.circular(4),
                     boxShadow: isDone
                         ? [
                             BoxShadow(
-                              color: accentColor.withOpacity(0.6),
+                              color: deedColor.withOpacity(0.6),
                               blurRadius: 4,
                             )
                           ]
@@ -510,20 +570,17 @@ class _JannatiScreenState extends State<JannatiScreen> with TickerProviderStateM
               }),
             ),
           ],
-
           const SizedBox(height: 14),
-
-          // الزر التفاعلي 3D مع إحصائية الإنجاز
           Row(
             children: [
               Expanded(
                 child: ElevatedButton(
                   onPressed: onTap,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: accentColor,
-                    foregroundColor: const Color(0xFF04120E),
+                    backgroundColor: deedColor,
+                    foregroundColor: btnForeground,
                     elevation: 4,
-                    shadowColor: accentColor.withOpacity(0.5),
+                    shadowColor: deedColor.withOpacity(0.45),
                     padding: const EdgeInsets.symmetric(vertical: 11),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -541,14 +598,12 @@ class _JannatiScreenState extends State<JannatiScreen> with TickerProviderStateM
               ),
             ],
           ),
-
           const SizedBox(height: 8),
-
           Center(
             child: Text(
               countLabel,
               style: TextStyle(
-                color: accentColor.withOpacity(0.9),
+                color: deedColor,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),

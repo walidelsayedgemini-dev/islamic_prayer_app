@@ -11,7 +11,8 @@ class HelpMeScreen extends StatefulWidget {
   State<HelpMeScreen> createState() => _HelpMeScreenState();
 }
 
-class _HelpMeScreenState extends State<HelpMeScreen> with SingleTickerProviderStateMixin {
+class _HelpMeScreenState extends State<HelpMeScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _breathingController;
 
   @override
@@ -29,7 +30,23 @@ class _HelpMeScreenState extends State<HelpMeScreen> with SingleTickerProviderSt
     super.dispose();
   }
 
-  void _showCategoryDetails(BuildContext context, HelpMeCategory category) {
+  Color _resolveCatAccent(HelpMeCategory category, bool isDark) {
+    return isDark
+        ? category.accentColor
+        : Color.lerp(category.primaryColor, Colors.black, 0.20)!;
+  }
+
+  void _showCategoryDetails(
+    BuildContext context,
+    HelpMeCategory category,
+    ThemePalette palette,
+  ) {
+    final catAccent = _resolveCatAccent(category, palette.isDark);
+    final btnForeground =
+        ThemeData.estimateBrightnessForColor(catAccent) == Brightness.dark
+            ? Colors.white
+            : Colors.black;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -42,12 +59,13 @@ class _HelpMeScreenState extends State<HelpMeScreen> with SingleTickerProviderSt
           builder: (context, scrollController) {
             return Container(
               decoration: BoxDecoration(
-                color: const Color(0xFF071914),
+                color: palette.scaffoldColor,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-                border: Border.all(color: category.accentColor.withOpacity(0.4), width: 1.5),
+                border: Border.all(color: catAccent.withOpacity(0.45), width: 1.5),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.85),
+                    color: (palette.isDark ? Colors.black : palette.primaryColor)
+                        .withOpacity(palette.isDark ? 0.85 : 0.22),
                     blurRadius: 30,
                     offset: const Offset(0, -6),
                   ),
@@ -62,24 +80,22 @@ class _HelpMeScreenState extends State<HelpMeScreen> with SingleTickerProviderSt
                       width: 45,
                       height: 4.5,
                       decoration: BoxDecoration(
-                        color: Colors.white24,
+                        color: palette.dividerColor,
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
-
-                  // عنوان الحالة
                   Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: category.primaryColor.withOpacity(0.2),
+                          color: category.primaryColor.withOpacity(0.18),
                           shape: BoxShape.circle,
-                          border: Border.all(color: category.accentColor, width: 1.5),
+                          border: Border.all(color: catAccent, width: 1.5),
                         ),
-                        child: Icon(category.icon, color: category.accentColor, size: 26),
+                        child: Icon(category.icon, color: catAccent, size: 26),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -91,92 +107,91 @@ class _HelpMeScreenState extends State<HelpMeScreen> with SingleTickerProviderSt
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: category.accentColor,
+                                color: catAccent,
                               ),
                             ),
                             Text(
                               category.subtitle,
-                              style: const TextStyle(color: Colors.white70, fontSize: 12),
+                              style: TextStyle(color: palette.textSecondary, fontSize: 12),
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 16),
-                  const Divider(color: Colors.white12),
+                  Divider(color: palette.dividerColor),
                   const SizedBox(height: 10),
-
-                  // الآية القرآنية البلسم
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: category.primaryColor.withOpacity(0.12),
+                      color: category.primaryColor.withOpacity(palette.isDark ? 0.14 : 0.10),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: category.accentColor.withOpacity(0.3)),
+                      border: Border.all(color: catAccent.withOpacity(0.35)),
                     ),
-                    child: Column(
-                      children: [
-                        Text(
-                          category.quranAyah,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      category.quranAyah,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        height: 1.5,
+                      ),
                     ),
                   ),
-
                   const SizedBox(height: 14),
-
-                  // الدعاء النبوي الرئيسي
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.04),
+                      color: palette.cardColor,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white12),
+                      border: Border.all(color: palette.dividerColor),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.record_voice_over_rounded, color: category.accentColor, size: 18),
+                            Icon(Icons.record_voice_over_rounded, color: catAccent, size: 18),
                             const SizedBox(width: 8),
                             Text(
                               "دعاء الكرب وتفريج الضيق:",
-                              style: TextStyle(color: category.accentColor, fontWeight: FontWeight.bold, fontSize: 13),
+                              style: TextStyle(
+                                color: catAccent,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 8),
                         Text(
                           category.mainDuha,
-                          style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
+                          style: TextStyle(
+                            color: palette.textPrimary,
+                            fontSize: 14,
+                            height: 1.4,
+                          ),
                         ),
                         const SizedBox(height: 10),
                         Text(
                           category.hadithReference,
-                          style: const TextStyle(color: Colors.white60, fontSize: 11, height: 1.4),
+                          style: TextStyle(
+                            color: palette.textSecondary,
+                            fontSize: 11,
+                            height: 1.4,
+                          ),
                         ),
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 16),
-
-                  // زر تمرين التنفس الإسلامي إن كان متاحاً
                   if (category.hasBreathingGuide) ...[
                     ElevatedButton.icon(
                       onPressed: () {
                         Navigator.pop(context);
-                        _openBreathingExercise(context, category);
+                        _openBreathingExercise(context, category, palette);
                       },
                       icon: const Icon(Icons.air_rounded, size: 20),
                       label: const Text(
@@ -184,35 +199,38 @@ class _HelpMeScreenState extends State<HelpMeScreen> with SingleTickerProviderSt
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: category.accentColor,
-                        foregroundColor: Colors.black,
+                        backgroundColor: catAccent,
+                        foregroundColor: btnForeground,
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
                   ],
-
                   Text(
                     "خطوات الهدي النبوي العملية:",
-                    style: TextStyle(color: category.accentColor, fontWeight: FontWeight.bold, fontSize: 14),
+                    style: TextStyle(
+                      color: catAccent,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                   ),
                   const SizedBox(height: 10),
-
-                  // الخطوات النبوية العملية
                   ...category.sunnahSteps.map((step) {
                     return Container(
                       margin: const EdgeInsets.only(bottom: 10),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.03),
+                        color: palette.cardColor,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.white10),
+                        border: Border.all(color: palette.dividerColor),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(step.icon, color: category.accentColor, size: 20),
+                          Icon(step.icon, color: catAccent, size: 20),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
@@ -220,12 +238,20 @@ class _HelpMeScreenState extends State<HelpMeScreen> with SingleTickerProviderSt
                               children: [
                                 Text(
                                   step.title,
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                                  style: TextStyle(
+                                    color: palette.textPrimary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   step.description,
-                                  style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.3),
+                                  style: TextStyle(
+                                    color: palette.textSecondary,
+                                    fontSize: 12,
+                                    height: 1.3,
+                                  ),
                                 ),
                               ],
                             ),
@@ -243,17 +269,27 @@ class _HelpMeScreenState extends State<HelpMeScreen> with SingleTickerProviderSt
     );
   }
 
-  void _openBreathingExercise(BuildContext context, HelpMeCategory category) {
+  void _openBreathingExercise(
+    BuildContext context,
+    HelpMeCategory category,
+    ThemePalette palette,
+  ) {
+    final catAccent = _resolveCatAccent(category, palette.isDark);
+    final btnForeground =
+        ThemeData.estimateBrightnessForColor(catAccent) == Brightness.dark
+            ? Colors.white
+            : Colors.black;
+
     showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return Dialog(
-              backgroundColor: const Color(0xFF061814),
+              backgroundColor: palette.scaffoldColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
-                side: BorderSide(color: category.accentColor, width: 1.5),
+                side: BorderSide(color: catAccent, width: 1.5),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(22),
@@ -263,24 +299,23 @@ class _HelpMeScreenState extends State<HelpMeScreen> with SingleTickerProviderSt
                     Text(
                       "مرشد السكينة والتنفس الإيماني",
                       style: TextStyle(
-                        color: category.accentColor,
+                        color: catAccent,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 6),
-                    const Text(
+                    Text(
                       "﴿أَلا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ﴾",
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                      style: TextStyle(color: palette.textSecondary, fontSize: 12),
                     ),
                     const SizedBox(height: 24),
-
-                    // حلقة التنفس البصري المتوسعة والمنكمشة بنعومة
                     AnimatedBuilder(
                       animation: _breathingController,
                       builder: (context, _) {
                         final val = _breathingController.value;
-                        final isInhaling = _breathingController.status == AnimationStatus.forward;
+                        final isInhaling =
+                            _breathingController.status == AnimationStatus.forward;
                         final size = 120.0 + val * 65.0;
 
                         return Container(
@@ -292,11 +327,11 @@ class _HelpMeScreenState extends State<HelpMeScreen> with SingleTickerProviderSt
                             height: size,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: category.accentColor.withOpacity(0.18 + val * 0.15),
-                              border: Border.all(color: category.accentColor, width: 2.5),
+                              color: catAccent.withOpacity(0.18 + val * 0.15),
+                              border: Border.all(color: catAccent, width: 2.5),
                               boxShadow: [
                                 BoxShadow(
-                                  color: category.accentColor.withOpacity(0.35 * val),
+                                  color: catAccent.withOpacity(0.35 * val),
                                   blurRadius: 30,
                                   spreadRadius: 4,
                                 )
@@ -304,15 +339,14 @@ class _HelpMeScreenState extends State<HelpMeScreen> with SingleTickerProviderSt
                             ),
                             child: Center(
                               child: Text(
-                                isInhaling ? "شَهِيق عَمِيق\n(أَسْتَغْفِرُ اللَّه)" : "زَفِير بَطِيء\n(الْحَمْدُ لِلَّه)",
+                                isInhaling
+                                    ? "شَهِيق عَمِيق\n(أَسْتَغْفِرُ اللَّه)"
+                                    : "زَفِير بَطِيء\n(الْحَمْدُ لِلَّه)",
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: palette.textPrimary,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 13,
-                                  shadows: [
-                                    Shadow(color: Colors.black, blurRadius: 10),
-                                  ],
                                 ),
                               ),
                             ),
@@ -320,22 +354,30 @@ class _HelpMeScreenState extends State<HelpMeScreen> with SingleTickerProviderSt
                         );
                       },
                     ),
-
                     const SizedBox(height: 20),
-                    const Text(
+                    Text(
                       "اتبع نبض الدائرة: شهيق هادئ يملأ الرئتين مع الاستغفار، ثم زفير بطيء يطرد التوتر مع الحمد.",
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white70, fontSize: 11, height: 1.4),
+                      style: TextStyle(
+                        color: palette.textSecondary,
+                        fontSize: 11,
+                        height: 1.4,
+                      ),
                     ),
                     const SizedBox(height: 18),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: category.accentColor,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: catAccent,
+                        foregroundColor: btnForeground,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      child: const Text("تم والحمد لله", style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        "تم والحمد لله",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ],
                 ),
@@ -350,15 +392,15 @@ class _HelpMeScreenState extends State<HelpMeScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
-    final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
-    final accentColor = themeOption.accentColor;
+    final isNight = settings.isNightEffective;
+    final palette = IslamicTheme.resolvePalette(settings.selectedTheme, isNight: isNight);
+    final accentColor = palette.accentColor;
 
     return Scaffold(
-      backgroundColor: themeOption.scaffoldColor,
+      backgroundColor: palette.scaffoldColor,
       body: SafeArea(
         child: Column(
           children: [
-            // الشريط العلوي
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Row(
@@ -385,9 +427,9 @@ class _HelpMeScreenState extends State<HelpMeScreen> with SingleTickerProviderSt
                             fontSize: 17,
                           ),
                         ),
-                        const Text(
+                        Text(
                           "علاج القلوب بالهدي النبوي والقرآن الكريم لكل أحوال الإنسان",
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                          style: TextStyle(color: palette.textSecondary, fontSize: 12),
                         ),
                       ],
                     ),
@@ -395,8 +437,6 @@ class _HelpMeScreenState extends State<HelpMeScreen> with SingleTickerProviderSt
                 ],
               ),
             ),
-
-            // قائمة الحالات الإنسانية الروحية
             Expanded(
               child: GridView.builder(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 95),
@@ -409,17 +449,18 @@ class _HelpMeScreenState extends State<HelpMeScreen> with SingleTickerProviderSt
                 itemCount: HelpMeCategory.categories.length,
                 itemBuilder: (context, index) {
                   final cat = HelpMeCategory.categories[index];
+                  final catAccent = _resolveCatAccent(cat, palette.isDark);
                   return GestureDetector(
-                    onTap: () => _showCategoryDetails(context, cat),
+                    onTap: () => _showCategoryDetails(context, cat, palette),
                     child: Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: themeOption.cardColor,
+                        color: palette.cardColor,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: cat.accentColor.withOpacity(0.35), width: 1.2),
+                        border: Border.all(color: catAccent.withOpacity(0.45), width: 1.2),
                         boxShadow: [
                           BoxShadow(
-                            color: cat.primaryColor.withOpacity(0.15),
+                            color: cat.primaryColor.withOpacity(palette.isDark ? 0.16 : 0.10),
                             blurRadius: 12,
                             offset: const Offset(0, 3),
                           )
@@ -431,18 +472,18 @@ class _HelpMeScreenState extends State<HelpMeScreen> with SingleTickerProviderSt
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: cat.primaryColor.withOpacity(0.2),
+                              color: cat.primaryColor.withOpacity(0.18),
                               shape: BoxShape.circle,
-                              border: Border.all(color: cat.accentColor.withOpacity(0.6)),
+                              border: Border.all(color: catAccent.withOpacity(0.7)),
                             ),
-                            child: Icon(cat.icon, color: cat.accentColor, size: 30),
+                            child: Icon(cat.icon, color: catAccent, size: 30),
                           ),
                           const SizedBox(height: 10),
                           Text(
                             cat.title,
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: cat.accentColor,
+                              color: catAccent,
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
                             ),
@@ -453,8 +494,8 @@ class _HelpMeScreenState extends State<HelpMeScreen> with SingleTickerProviderSt
                           Text(
                             cat.subtitle,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white60,
+                            style: TextStyle(
+                              color: palette.textSecondary,
                               fontSize: 10,
                               height: 1.3,
                             ),

@@ -12,14 +12,14 @@ class CalendarScreen extends StatefulWidget {
   State<CalendarScreen> createState() => _CalendarScreenState();
 }
 
-class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProviderStateMixin {
+class _CalendarScreenState extends State<CalendarScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late DateTime _selectedDate;
   late HijriDate _selectedHijri;
   late int _displayYear;
   late int _displayMonth;
 
-  // لحاسبة محول التاريخ
   DateTime _converterGregorianDate = DateTime.now();
   late HijriDate _converterHijriDate;
 
@@ -91,18 +91,21 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
       backgroundColor: Colors.transparent,
       builder: (context) {
         final settings = Provider.of<SettingsProvider>(context, listen: false);
-        final theme = IslamicTheme.getThemeOption(settings.selectedTheme);
-        final accent = theme.accentColor;
+        final isNight = settings.isNightEffective;
+        final palette = IslamicTheme.resolvePalette(settings.selectedTheme, isNight: isNight);
+        final accent = palette.accentColor;
+        final goldBadgeColor = isNight ? const Color(0xFFFBBF24) : const Color(0xFFB45309);
 
         return Container(
           padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
-            color: const Color(0xFF041812),
+            color: palette.scaffoldColor,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border.all(color: accent.withOpacity(0.4), width: 1.5),
+            border: Border.all(color: accent.withOpacity(0.45), width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.85),
+                color: (isNight ? Colors.black : palette.primaryColor)
+                    .withOpacity(isNight ? 0.85 : 0.22),
                 blurRadius: 30,
               )
             ],
@@ -116,7 +119,7 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                   width: 44,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.white24,
+                    color: palette.dividerColor,
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
@@ -148,7 +151,7 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                         ),
                         Text(
                           DateFormat('EEEE, d MMMM yyyy', 'ar').format(greg),
-                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                          style: TextStyle(color: palette.textSecondary, fontSize: 12),
                         ),
                       ],
                     ),
@@ -156,38 +159,40 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                 ],
               ),
               const SizedBox(height: 16),
-
               if (hijri.isWhiteDay)
                 Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFBBF24).withOpacity(0.14),
+                    color: goldBadgeColor.withOpacity(0.14),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFFBBF24).withOpacity(0.4)),
+                    border: Border.all(color: goldBadgeColor.withOpacity(0.45)),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.nightlight_round, color: Color(0xFFFBBF24), size: 20),
-                      SizedBox(width: 10),
+                      Icon(Icons.nightlight_round, color: goldBadgeColor, size: 20),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           "يوم من الأيام البيض المباركة (13، 14، 15) • يُستحب فيه الصيام كصيام الدهر كله.",
-                          style: TextStyle(color: Colors.white, fontSize: 12, height: 1.3),
+                          style: TextStyle(
+                            color: palette.textPrimary,
+                            fontSize: 12,
+                            height: 1.35,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-
               if (occasion.title.isNotEmpty)
                 Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: accent.withOpacity(0.16),
+                    color: accent.withOpacity(0.14),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: accent.withOpacity(0.5)),
+                    border: Border.all(color: accent.withOpacity(0.45)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -196,35 +201,43 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                         children: [
                           Icon(Icons.stars_rounded, color: accent, size: 18),
                           const SizedBox(width: 6),
-                          Text(
-                            occasion.title,
-                            style: TextStyle(color: accent, fontWeight: FontWeight.bold, fontSize: 14),
+                          Expanded(
+                            child: Text(
+                              occasion.title,
+                              style: TextStyle(
+                                color: accent,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
                           ),
-                          const Spacer(),
                           Text(
                             occasion.badge,
-                            style: const TextStyle(color: Colors.white70, fontSize: 11),
+                            style: TextStyle(color: palette.textSecondary, fontSize: 11),
                           ),
                         ],
                       ),
                       const SizedBox(height: 4),
                       Text(
                         occasion.description,
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                        style: TextStyle(color: palette.textPrimary, fontSize: 12),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         occasion.hadithOrVirtue,
-                        style: const TextStyle(color: Colors.white70, fontSize: 11, fontStyle: FontStyle.italic),
+                        style: TextStyle(
+                          color: palette.textSecondary,
+                          fontSize: 11,
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
                     ],
                   ),
                 ),
-
               const SizedBox(height: 6),
               Text(
                 hijri.description,
-                style: const TextStyle(color: Colors.white60, fontSize: 12, height: 1.4),
+                style: TextStyle(color: palette.textSecondary, fontSize: 12, height: 1.4),
               ),
               const SizedBox(height: 16),
             ],
@@ -237,15 +250,16 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
-    final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
-    final accentColor = themeOption.accentColor;
+    final isNight = settings.isNightEffective;
+    final palette = IslamicTheme.resolvePalette(settings.selectedTheme, isNight: isNight);
+    final accentColor = palette.accentColor;
 
     return Scaffold(
-      backgroundColor: themeOption.scaffoldColor,
+      backgroundColor: palette.scaffoldColor,
       body: SafeArea(
         child: Column(
           children: [
-            // 1. الترويسة الرئيسية مع أزرار التبديل
+            // 1. الترويسة الرئيسية
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Row(
@@ -254,7 +268,7 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: accentColor.withOpacity(0.20),
+                      color: accentColor.withOpacity(0.18),
                       border: Border.all(color: accentColor, width: 1.3),
                     ),
                     child: Icon(Icons.event_note_rounded, color: accentColor, size: 22),
@@ -265,7 +279,7 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "التقويم الهجري والمناسبات الإسلامية",
+                          "التقويم الهجري والمناسبات • الفردوس",
                           style: TextStyle(
                             color: accentColor,
                             fontWeight: FontWeight.bold,
@@ -274,7 +288,7 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                         ),
                         Text(
                           "اليوم: ${_selectedHijri.formatFullArabic()}",
-                          style: const TextStyle(color: Colors.white70, fontSize: 11.5),
+                          style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
                         ),
                       ],
                     ),
@@ -283,14 +297,14 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
               ),
             ),
 
-            // 2. شريط التبويب بين التقويم الهجري ومحول التاريخ
+            // 2. شريط التبويب
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               height: 42,
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.35),
+                color: palette.cardColor,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: accentColor.withOpacity(0.25)),
+                border: Border.all(color: accentColor.withOpacity(0.3)),
               ),
               child: TabBar(
                 controller: _tabController,
@@ -301,8 +315,8 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                 ),
                 indicatorSize: TabBarIndicatorSize.tab,
                 labelColor: accentColor,
-                unselectedLabelColor: Colors.white60,
-                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                unselectedLabelColor: palette.textMuted,
+                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
                 tabs: const [
                   Tab(text: "التقويم الهجري الشهري"),
                   Tab(text: "محول التاريخ (هجري / ميلادي)"),
@@ -314,11 +328,8 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  // التبويب 1: شبكة التقويم الهجري مع قائمة المناسبات
-                  _buildMonthlyCalendarTab(accentColor),
-
-                  // التبويب 2: محول التاريخ التفاعلي
-                  _buildDateConverterTab(accentColor),
+                  _buildMonthlyCalendarTab(palette),
+                  _buildDateConverterTab(palette),
                 ],
               ),
             ),
@@ -328,30 +339,38 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildMonthlyCalendarTab(Color accentColor) {
+  Widget _buildMonthlyCalendarTab(ThemePalette palette) {
+    final accentColor = palette.accentColor;
+    final goldBadgeColor = palette.isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309);
     final startOfHijriMonth = HijriDate(year: _displayYear, month: _displayMonth, day: 1);
     final startGreg = startOfHijriMonth.toGregorian();
-    final firstWeekday = startGreg.weekday % 7; // 0 = الأحد، 6 = السبت
+    final firstWeekday = startGreg.weekday % 7;
     final daysInCurrentHijriMonth = startOfHijriMonth.daysInMonth;
 
-    final endOfHijriMonth = HijriDate(year: _displayYear, month: _displayMonth, day: daysInCurrentHijriMonth);
+    final endOfHijriMonth = HijriDate(
+      year: _displayYear,
+      month: _displayMonth,
+      day: daysInCurrentHijriMonth,
+    );
     final endGreg = endOfHijriMonth.toGregorian();
 
-    final gregorianSpan = "${DateFormat('MMMM yyyy', 'ar').format(startGreg)} - ${DateFormat('MMMM yyyy', 'ar').format(endGreg)}";
+    final gregorianSpan =
+        "${DateFormat('MMMM yyyy', 'ar').format(startGreg)} - ${DateFormat('MMMM yyyy', 'ar').format(endGreg)}";
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 95),
       children: [
-        // كرت التقويم الشهري المدمج
+        // كرت التقويم الشهري
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFF041712).withOpacity(0.95),
+            color: palette.cardColor,
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: accentColor.withOpacity(0.4), width: 1.3),
+            border: Border.all(color: accentColor.withOpacity(0.45), width: 1.3),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.6),
+                color: (palette.isDark ? Colors.black : palette.primaryColor)
+                    .withOpacity(palette.isDark ? 0.55 : 0.14),
                 blurRadius: 18,
                 offset: const Offset(0, 4),
               ),
@@ -359,7 +378,6 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
           ),
           child: Column(
             children: [
-              // أزرار التنقل بين الأشهر
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -380,7 +398,7 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                       ),
                       Text(
                         gregorianSpan,
-                        style: const TextStyle(color: Colors.white54, fontSize: 11),
+                        style: TextStyle(color: palette.textMuted, fontSize: 11),
                       ),
                     ],
                   ),
@@ -391,26 +409,20 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                   ),
                 ],
               ),
-
-              const Divider(color: Colors.white12, height: 18),
-
-              // أسماء أيام الأسبوع
-              const Row(
+              Divider(color: palette.dividerColor, height: 18),
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _WeekdayLabel("أحد"),
-                  _WeekdayLabel("إثن"),
-                  _WeekdayLabel("ثلا"),
-                  _WeekdayLabel("أرب"),
-                  _WeekdayLabel("خمي"),
-                  _WeekdayLabel("جمع"),
-                  _WeekdayLabel("سبت"),
+                  _WeekdayLabel("أحد", palette.textMuted),
+                  _WeekdayLabel("إثن", palette.textMuted),
+                  _WeekdayLabel("ثلا", palette.textMuted),
+                  _WeekdayLabel("أرب", palette.textMuted),
+                  _WeekdayLabel("خمي", palette.textMuted),
+                  _WeekdayLabel("جمع", accentColor),
+                  _WeekdayLabel("سبت", palette.textMuted),
                 ],
               ),
-
               const SizedBox(height: 8),
-
-              // شبكة أيام الشهر
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -440,20 +452,20 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                       thisDate.month == _selectedHijri.month &&
                       thisDate.day == _selectedHijri.day;
 
+                  final bool fillAccent = isToday && !isSelected;
+
                   return InkWell(
-                    onTap: () {
-                      _onDaySelected(hijriDay);
-                    },
+                    onTap: () => _onDaySelected(hijriDay),
                     borderRadius: BorderRadius.circular(10),
                     child: Container(
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? accentColor.withOpacity(0.35)
+                            ? accentColor.withOpacity(0.28)
                             : (isToday
                                 ? accentColor
                                 : (isWhiteDay
-                                    ? const Color(0xFFFBBF24).withOpacity(0.18)
-                                    : Colors.white.withOpacity(0.04))),
+                                    ? goldBadgeColor.withOpacity(0.16)
+                                    : palette.elevatedCardColor)),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                           color: isSelected
@@ -461,14 +473,14 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                               : (isToday
                                   ? accentColor
                                   : (isWhiteDay
-                                      ? const Color(0xFFFBBF24).withOpacity(0.5)
-                                      : Colors.white10)),
+                                      ? goldBadgeColor.withOpacity(0.55)
+                                      : palette.dividerColor)),
                           width: isSelected ? 2.2 : (isToday || isWhiteDay ? 1.4 : 0.8),
                         ),
                         boxShadow: isSelected
                             ? [
                                 BoxShadow(
-                                  color: accentColor.withOpacity(0.4),
+                                  color: accentColor.withOpacity(0.35),
                                   blurRadius: 8,
                                 )
                               ]
@@ -480,7 +492,7 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                           Text(
                             "$hijriDay",
                             style: TextStyle(
-                              color: isToday && !isSelected ? const Color(0xFF04120E) : Colors.white,
+                              color: fillAccent ? palette.onAccentColor : palette.textPrimary,
                               fontWeight: FontWeight.bold,
                               fontSize: 13,
                             ),
@@ -488,7 +500,9 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                           Text(
                             "${thisGreg.day}",
                             style: TextStyle(
-                              color: isToday && !isSelected ? const Color(0xFF04120E).withOpacity(0.8) : Colors.white38,
+                              color: fillAccent
+                                  ? palette.onAccentColor.withOpacity(0.85)
+                                  : palette.textMuted,
                               fontSize: 9.5,
                             ),
                           ),
@@ -503,13 +517,9 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
         ),
 
         const SizedBox(height: 14),
-
-        // بطاقة فضائل وأسرار اليوم التفاعلية المباشرة
-        _buildSelectedDayVirtueCard(accentColor),
-
+        _buildSelectedDayVirtueCard(palette),
         const SizedBox(height: 16),
 
-        // قائمة المناسبات الإسلامية والذكريات الشريفة
         Row(
           children: [
             Icon(Icons.stars_rounded, color: accentColor, size: 20),
@@ -524,11 +534,14 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
             ),
           ],
         ),
-
         const SizedBox(height: 10),
 
         ...IslamicOccasion.allOccasions.map((occasion) {
-          final occasionHijri = HijriDate(year: _displayYear, month: occasion.hijriMonth, day: occasion.hijriDay);
+          final occasionHijri = HijriDate(
+            year: _displayYear,
+            month: occasion.hijriMonth,
+            day: occasion.hijriDay,
+          );
           final occasionGreg = occasionHijri.toGregorian();
           final daysLeft = occasionGreg.difference(DateTime.now()).inDays;
 
@@ -536,7 +549,7 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xFF041812).withOpacity(0.92),
+              color: palette.cardColor,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: accentColor.withOpacity(0.35)),
             ),
@@ -563,8 +576,8 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                           Expanded(
                             child: Text(
                               occasion.title,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: palette.textPrimary,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13.5,
                               ),
@@ -573,12 +586,16 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: accentColor.withOpacity(0.2),
+                              color: accentColor.withOpacity(0.18),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               occasion.badge,
-                              style: TextStyle(color: accentColor, fontSize: 10.5, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                color: accentColor,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],
@@ -586,19 +603,19 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                       const SizedBox(height: 4),
                       Text(
                         "${occasion.hijriDay} ${HijriDate.monthNamesArabic[occasion.hijriMonth - 1]} • ${DateFormat('d MMMM yyyy', 'ar').format(occasionGreg)}",
-                        style: TextStyle(color: accentColor.withOpacity(0.9), fontSize: 11),
+                        style: TextStyle(color: accentColor, fontSize: 11),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         occasion.description,
-                        style: const TextStyle(color: Colors.white70, fontSize: 11.5),
+                        style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
                       ),
                       const SizedBox(height: 6),
                       if (daysLeft >= 0)
                         Text(
                           daysLeft == 0 ? "اليوم موعد المناسبة المباركة! ✨" : "المتبقي: $daysLeft يوماً",
                           style: TextStyle(
-                            color: daysLeft <= 10 ? const Color(0xFFFBBF24) : Colors.white54,
+                            color: daysLeft <= 10 ? goldBadgeColor : palette.textMuted,
                             fontSize: 10.5,
                             fontWeight: FontWeight.bold,
                           ),
@@ -614,24 +631,28 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildSelectedDayVirtueCard(Color accentColor) {
+  Widget _buildSelectedDayVirtueCard(ThemePalette palette) {
+    final accentColor = palette.accentColor;
     final virtueInfo = DayVirtueInfo.calculate(_selectedHijri, _selectedDate);
+    final goldBadgeColor = palette.isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309);
+    final sunnahGreen = palette.isDark ? const Color(0xFF34D399) : const Color(0xFF047857);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF041914).withOpacity(0.96),
+        color: palette.cardColor,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: accentColor.withOpacity(0.55), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: accentColor.withOpacity(0.18),
-            blurRadius: 20,
+            color: accentColor.withOpacity(0.15),
+            blurRadius: 18,
             offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.6),
-            blurRadius: 15,
+            color: (palette.isDark ? Colors.black : palette.primaryColor)
+                .withOpacity(palette.isDark ? 0.55 : 0.12),
+            blurRadius: 14,
             offset: const Offset(0, 4),
           ),
         ],
@@ -658,7 +679,6 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                     Text(
                       virtueInfo.dayName,
                       style: TextStyle(
-                        fontFamily: 'Aref Ruqaa',
                         color: accentColor,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -666,7 +686,7 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                     ),
                     Text(
                       "${_selectedHijri.formatFullArabic()} • ${DateFormat('EEEE, d MMMM yyyy', 'ar').format(_selectedDate)}",
-                      style: const TextStyle(color: Colors.white70, fontSize: 11),
+                      style: TextStyle(color: palette.textSecondary, fontSize: 11),
                     ),
                   ],
                 ),
@@ -674,14 +694,13 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.2),
+                  color: accentColor.withOpacity(0.18),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: accentColor.withOpacity(0.4)),
+                  border: Border.all(color: accentColor.withOpacity(0.45)),
                 ),
                 child: Text(
                   virtueInfo.badge,
                   style: TextStyle(
-                    fontFamily: 'Aref Ruqaa',
                     color: accentColor,
                     fontWeight: FontWeight.bold,
                     fontSize: 11.5,
@@ -690,29 +709,26 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
               ),
             ],
           ),
-
           const SizedBox(height: 12),
-
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.35),
+              color: palette.elevatedCardColor,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white10),
+              border: Border.all(color: palette.dividerColor),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.lightbulb_rounded, color: Color(0xFFFBBF24), size: 16),
-                    SizedBox(width: 6),
+                    Icon(Icons.lightbulb_rounded, color: goldBadgeColor, size: 16),
+                    const SizedBox(width: 6),
                     Text(
                       "فضل هذا اليوم المبارك وأسراره:",
                       style: TextStyle(
-                        fontFamily: 'Aref Ruqaa',
-                        color: Color(0xFFFBBF24),
+                        color: goldBadgeColor,
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
                       ),
@@ -722,8 +738,8 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                 const SizedBox(height: 6),
                 Text(
                   virtueInfo.primaryVirtue,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: palette.textPrimary,
                     fontSize: 12.5,
                     height: 1.4,
                   ),
@@ -731,26 +747,22 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
               ],
             ),
           ),
-
           const SizedBox(height: 10),
-
           Text(
             virtueInfo.hadithOrProof,
-            style: const TextStyle(
-              color: Colors.white70,
+            style: TextStyle(
+              color: palette.textSecondary,
               fontSize: 11.5,
               height: 1.4,
               fontStyle: FontStyle.italic,
             ),
           ),
-
           const SizedBox(height: 10),
-
           Row(
             children: [
               Icon(
                 virtueInfo.isFastingSunnah ? Icons.check_circle_rounded : Icons.info_outline_rounded,
-                color: virtueInfo.isFastingSunnah ? const Color(0xFF34D399) : Colors.white60,
+                color: virtueInfo.isFastingSunnah ? sunnahGreen : palette.textMuted,
                 size: 16,
               ),
               const SizedBox(width: 8),
@@ -758,7 +770,7 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                 child: Text(
                   virtueInfo.fastingRecommendation,
                   style: TextStyle(
-                    color: virtueInfo.isFastingSunnah ? const Color(0xFF34D399) : Colors.white70,
+                    color: virtueInfo.isFastingSunnah ? sunnahGreen : palette.textSecondary,
                     fontWeight: FontWeight.bold,
                     fontSize: 11.5,
                   ),
@@ -766,32 +778,29 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
               ),
             ],
           ),
-
           const SizedBox(height: 10),
-
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: accentColor.withOpacity(0.12),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: accentColor.withOpacity(0.3)),
+              border: Border.all(color: accentColor.withOpacity(0.35)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.fingerprint_rounded, color: Colors.white70, size: 18),
+                Icon(Icons.fingerprint_rounded, color: accentColor, size: 18),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         "الذكر والورد المستحب اليوم:",
-                        style: TextStyle(color: Colors.white54, fontSize: 10),
+                        style: TextStyle(color: palette.textMuted, fontSize: 10),
                       ),
                       Text(
                         virtueInfo.recommendedDhikr,
                         style: TextStyle(
-                          fontFamily: 'Aref Ruqaa',
                           color: accentColor,
                           fontWeight: FontWeight.bold,
                           fontSize: 12.5,
@@ -808,19 +817,22 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildDateConverterTab(Color accentColor) {
+  Widget _buildDateConverterTab(ThemePalette palette) {
+    final accentColor = palette.accentColor;
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 95),
       children: [
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: const Color(0xFF041812).withOpacity(0.95),
+            color: palette.cardColor,
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: accentColor.withOpacity(0.4), width: 1.3),
+            border: Border.all(color: accentColor.withOpacity(0.45), width: 1.3),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.6),
+                color: (palette.isDark ? Colors.black : palette.primaryColor)
+                    .withOpacity(palette.isDark ? 0.55 : 0.14),
                 blurRadius: 18,
                 offset: const Offset(0, 4),
               ),
@@ -844,27 +856,32 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                 ],
               ),
               const SizedBox(height: 14),
-
-              // بطاقة التاريخ الميلادي
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.4),
+                  color: palette.elevatedCardColor,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white12),
+                  border: Border.all(color: palette.dividerColor),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.calendar_month_rounded, color: Colors.white60, size: 20),
+                    Icon(Icons.calendar_month_rounded, color: palette.textSecondary, size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("التاريخ الميلادي المحدد:", style: TextStyle(color: Colors.white54, fontSize: 11)),
+                          Text(
+                            "التاريخ الميلادي المحدد:",
+                            style: TextStyle(color: palette.textMuted, fontSize: 11),
+                          ),
                           Text(
                             DateFormat('EEEE, d MMMM yyyy', 'ar').format(_converterGregorianDate),
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                            style: TextStyle(
+                              color: palette.textPrimary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
                           ),
                         ],
                       ),
@@ -889,25 +906,28 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                         foregroundColor: accentColor,
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
-                      child: const Text("تغيير 📅", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        "تغيير 📅",
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ],
                 ),
               ),
-
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Center(
-                  child: Icon(Icons.arrow_downward_rounded, color: Colors.white54, size: 24),
+                  child: Icon(Icons.arrow_downward_rounded, color: palette.textMuted, size: 24),
                 ),
               ),
-
-              // بطاقة النتيجة الهجرية المحولة
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [accentColor.withOpacity(0.25), const Color(0xFF041812)],
+                    colors: [
+                      accentColor.withOpacity(palette.isDark ? 0.25 : 0.16),
+                      palette.elevatedCardColor,
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -922,7 +942,10 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("التاريخ الهجري المطابق (أم القرى):", style: TextStyle(color: Colors.white70, fontSize: 11)),
+                          Text(
+                            "التاريخ الهجري المطابق (أم القرى):",
+                            style: TextStyle(color: palette.textSecondary, fontSize: 11),
+                          ),
                           const SizedBox(height: 2),
                           Text(
                             _converterHijriDate.formatFullArabic(),
@@ -935,7 +958,7 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
                           const SizedBox(height: 4),
                           Text(
                             _converterHijriDate.description,
-                            style: const TextStyle(color: Colors.white70, fontSize: 11),
+                            style: TextStyle(color: palette.textSecondary, fontSize: 11),
                           ),
                         ],
                       ),
@@ -953,7 +976,8 @@ class _CalendarScreenState extends State<CalendarScreen> with SingleTickerProvid
 
 class _WeekdayLabel extends StatelessWidget {
   final String label;
-  const _WeekdayLabel(this.label);
+  final Color color;
+  const _WeekdayLabel(this.label, this.color);
 
   @override
   Widget build(BuildContext context) {
@@ -962,8 +986,8 @@ class _WeekdayLabel extends StatelessWidget {
       child: Center(
         child: Text(
           label,
-          style: const TextStyle(
-            color: Colors.white54,
+          style: TextStyle(
+            color: color,
             fontWeight: FontWeight.bold,
             fontSize: 11.5,
           ),

@@ -14,6 +14,36 @@ enum ThemeParticleType {
   copperGlow, // بريق النحاس الدمشقي العتيق
 }
 
+class ThemePalette {
+  final bool isDark;
+  final Color primaryColor;
+  final Color accentColor;
+  final Color scaffoldColor;
+  final Color cardColor;
+  final Color elevatedCardColor;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color textMuted;
+  final Color dividerColor;
+  final Color onAccentColor;
+  final List<Color> skyGradients;
+
+  const ThemePalette({
+    required this.isDark,
+    required this.primaryColor,
+    required this.accentColor,
+    required this.scaffoldColor,
+    required this.cardColor,
+    required this.elevatedCardColor,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.textMuted,
+    required this.dividerColor,
+    required this.onAccentColor,
+    required this.skyGradients,
+  });
+}
+
 class ThemeOption {
   // 1. المفتاح البرمجي
   final String key;
@@ -27,17 +57,17 @@ class ThemeOption {
   final String landmarkName;
   final IconData landmarkIcon;
 
-  // 6. اللون الأساسي للهوية
+  // 6-10. ألوان الهوية الافتراضية (الوضع الليلي)
   final Color primaryColor;
-  // 7. لون التمييز المشع
   final Color accentColor;
-  // 8. لون الخلفية المعتمة
   final Color scaffoldColor;
-  // 9. لون البطاقات الزجاجية
   final Color cardColor;
-  // 10. هل الثيم ليلي داكن
   final bool isDark;
   final IconData icon;
+
+  // لوحة الوضع النهاري ولوحة الوضع الليلي المخصصتين لكل ثيم من الـ 12 ثيماً
+  final ThemePalette dayPalette;
+  final ThemePalette nightPalette;
 
   // 11. ألوان خرز المسبحة الثلاثي الأبعاد
   final List<Color> beadColors;
@@ -81,6 +111,8 @@ class ThemeOption {
     required this.cardColor,
     required this.isDark,
     required this.icon,
+    required this.dayPalette,
+    required this.nightPalette,
     required this.beadColors,
     required this.markerBeadColors,
     required this.threadColor,
@@ -95,6 +127,8 @@ class ThemeOption {
     required this.badgeHonor,
     required this.landmarkSilhouetteAsset,
   });
+
+  ThemePalette resolve({required bool isNight}) => isNight ? nightPalette : dayPalette;
 }
 
 class IslamicTheme {
@@ -113,6 +147,34 @@ class IslamicTheme {
       cardColor: Color(0xFF0B2921),
       isDark: true,
       icon: Icons.mosque_rounded,
+      nightPalette: ThemePalette(
+        isDark: true,
+        primaryColor: Color(0xFF0F3E32),
+        accentColor: Color(0xFFE5C158),
+        scaffoldColor: Color(0xFF051511),
+        cardColor: Color(0xFF0B2820),
+        elevatedCardColor: Color(0xFF071E18),
+        textPrimary: Colors.white,
+        textSecondary: Color(0xFFD1FAE5),
+        textMuted: Color(0xFF94B5A9),
+        dividerColor: Color(0xFF1D4E40),
+        onAccentColor: Color(0xFF051511),
+        skyGradients: [Color(0xFF0D3B2E), Color(0xFF051511), Color(0xFF010605)],
+      ),
+      dayPalette: ThemePalette(
+        isDark: false,
+        primaryColor: Color(0xFF065F46),
+        accentColor: Color(0xFF047857),
+        scaffoldColor: Color(0xFFF1F7F4),
+        cardColor: Color(0xFFFFFFFF),
+        elevatedCardColor: Color(0xFFE7F2EC),
+        textPrimary: Color(0xFF08221A),
+        textSecondary: Color(0xFF2D5446),
+        textMuted: Color(0xFF5D7C70),
+        dividerColor: Color(0xFFCDE2D7),
+        onAccentColor: Colors.white,
+        skyGradients: [Color(0xFFD9EDE2), Color(0xFFF1F7F4), Color(0xFFFFFFFF)],
+      ),
       beadColors: [Color(0xFF6EE7B7), Color(0xFF059669), Color(0xFF064E3B)],
       markerBeadColors: [Color(0xFFFFFBEB), Color(0xFFFBBF24), Color(0xFF78350F)],
       threadColor: Color(0xFFD4AF37),
@@ -142,6 +204,34 @@ class IslamicTheme {
       cardColor: Color(0xFF161616),
       isDark: true,
       icon: Icons.crop_square_rounded,
+      nightPalette: ThemePalette(
+        isDark: true,
+        primaryColor: Color(0xFF211C15),
+        accentColor: Color(0xFFF5C642),
+        scaffoldColor: Color(0xFF08080A),
+        cardColor: Color(0xFF151417),
+        elevatedCardColor: Color(0xFF100F12),
+        textPrimary: Colors.white,
+        textSecondary: Color(0xFFFEF3C7),
+        textMuted: Color(0xFFA8A29E),
+        dividerColor: Color(0xFF332D22),
+        onAccentColor: Color(0xFF09090B),
+        skyGradients: [Color(0xFF241E14), Color(0xFF0A090B), Color(0xFF000000)],
+      ),
+      dayPalette: ThemePalette(
+        isDark: false,
+        primaryColor: Color(0xFF292524),
+        accentColor: Color(0xFF9A6700),
+        scaffoldColor: Color(0xFFF8F5ED),
+        cardColor: Color(0xFFFFFFFF),
+        elevatedCardColor: Color(0xFFF0EAD9),
+        textPrimary: Color(0xFF1C1917),
+        textSecondary: Color(0xFF575046),
+        textMuted: Color(0xFF78716C),
+        dividerColor: Color(0xFFE4DCC8),
+        onAccentColor: Colors.white,
+        skyGradients: [Color(0xFFEFE6D2), Color(0xFFF8F5ED), Color(0xFFFFFFFF)],
+      ),
       beadColors: [Color(0xFF404040), Color(0xFF1F1F1F), Color(0xFF000000)],
       markerBeadColors: [Color(0xFFFFFBEB), Color(0xFFF3C644), Color(0xFF855A05)],
       threadColor: Color(0xFFF3C644),
@@ -171,6 +261,34 @@ class IslamicTheme {
       cardColor: Color(0xFF103327),
       isDark: true,
       icon: Icons.account_balance_rounded,
+      nightPalette: ThemePalette(
+        isDark: true,
+        primaryColor: Color(0xFF13362A),
+        accentColor: Color(0xFFE5C158),
+        scaffoldColor: Color(0xFF081C15),
+        cardColor: Color(0xFF0F2D23),
+        elevatedCardColor: Color(0xFF0B241C),
+        textPrimary: Colors.white,
+        textSecondary: Color(0xFFE2E8F0),
+        textMuted: Color(0xFF94A3B8),
+        dividerColor: Color(0xFF214A3B),
+        onAccentColor: Color(0xFF081C15),
+        skyGradients: [Color(0xFF153B2E), Color(0xFF081C15), Color(0xFF030B08)],
+      ),
+      dayPalette: ThemePalette(
+        isDark: false,
+        primaryColor: Color(0xFF0F4C3A),
+        accentColor: Color(0xFF8C6200),
+        scaffoldColor: Color(0xFFF6F8F9),
+        cardColor: Color(0xFFFFFFFF),
+        elevatedCardColor: Color(0xFFEBF0F2),
+        textPrimary: Color(0xFF0F241D),
+        textSecondary: Color(0xFF3E564D),
+        textMuted: Color(0xFF6B7F78),
+        dividerColor: Color(0xFFD7E1E4),
+        onAccentColor: Colors.white,
+        skyGradients: [Color(0xFFE4ECEF), Color(0xFFF6F8F9), Color(0xFFFFFFFF)],
+      ),
       beadColors: [Color(0xFFFFFFFF), Color(0xFFE2E8F0), Color(0xFF94A3B8)],
       markerBeadColors: [Color(0xFFFFFBEB), Color(0xFFFBBF24), Color(0xFF78350F)],
       threadColor: Color(0xFFD4AF37),
@@ -200,6 +318,34 @@ class IslamicTheme {
       cardColor: Color(0xFF24101A),
       isDark: true,
       icon: Icons.auto_awesome_rounded,
+      nightPalette: ThemePalette(
+        isDark: true,
+        primaryColor: Color(0xFF361221),
+        accentColor: Color(0xFFF472B6),
+        scaffoldColor: Color(0xFF15070E),
+        cardColor: Color(0xFF250F1B),
+        elevatedCardColor: Color(0xFF1C0B14),
+        textPrimary: Color(0xFFFFF1F2),
+        textSecondary: Color(0xFFFBCFE8),
+        textMuted: Color(0xFFC48FA8),
+        dividerColor: Color(0xFF4B2034),
+        onAccentColor: Color(0xFF15070E),
+        skyGradients: [Color(0xFF3E1426), Color(0xFF15070E), Color(0xFF080205)],
+      ),
+      dayPalette: ThemePalette(
+        isDark: false,
+        primaryColor: Color(0xFF831843),
+        accentColor: Color(0xFFBE185D),
+        scaffoldColor: Color(0xFFFDF4F7),
+        cardColor: Color(0xFFFFFFFF),
+        elevatedCardColor: Color(0xFFFBE7EE),
+        textPrimary: Color(0xFF310A1C),
+        textSecondary: Color(0xFF6E2445),
+        textMuted: Color(0xFF9C5473),
+        dividerColor: Color(0xFFF3CEDD),
+        onAccentColor: Colors.white,
+        skyGradients: [Color(0xFFFBDCE8), Color(0xFFFDF4F7), Color(0xFFFFFFFF)],
+      ),
       beadColors: [Color(0xFFFBCFE8), Color(0xFFDB2777), Color(0xFF500724)],
       markerBeadColors: [Color(0xFFFEF08A), Color(0xFFF59E0B), Color(0xFF78350F)],
       threadColor: Color(0xFFF472B6),
@@ -229,6 +375,34 @@ class IslamicTheme {
       cardColor: Color(0xFF09202E),
       isDark: true,
       icon: Icons.brightness_auto_rounded,
+      nightPalette: ThemePalette(
+        isDark: true,
+        primaryColor: Color(0xFF0B2B3D),
+        accentColor: Color(0xFF22D3EE),
+        scaffoldColor: Color(0xFF03111A),
+        cardColor: Color(0xFF081F2D),
+        elevatedCardColor: Color(0xFF051823),
+        textPrimary: Color(0xFFECFEFF),
+        textSecondary: Color(0xFFBAE6FD),
+        textMuted: Color(0xFF7FA6B8),
+        dividerColor: Color(0xFF174056),
+        onAccentColor: Color(0xFF03111A),
+        skyGradients: [Color(0xFF0C3146), Color(0xFF03111A), Color(0xFF01060A)],
+      ),
+      dayPalette: ThemePalette(
+        isDark: false,
+        primaryColor: Color(0xFF0E7490),
+        accentColor: Color(0xFF0369A1),
+        scaffoldColor: Color(0xFFEFF8FC),
+        cardColor: Color(0xFFFFFFFF),
+        elevatedCardColor: Color(0xFFE0F2FA),
+        textPrimary: Color(0xFF082636),
+        textSecondary: Color(0xFF245269),
+        textMuted: Color(0xFF547D91),
+        dividerColor: Color(0xFFC7E3F0),
+        onAccentColor: Colors.white,
+        skyGradients: [Color(0xFFD2EEF9), Color(0xFFEFF8FC), Color(0xFFFFFFFF)],
+      ),
       beadColors: [Color(0xFF67E8F9), Color(0xFF0891B2), Color(0xFF083344)],
       markerBeadColors: [Color(0xFFE0E7FF), Color(0xFF38BDF8), Color(0xFF0369A1)],
       threadColor: Color(0xFF22D3EE),
@@ -258,6 +432,34 @@ class IslamicTheme {
       cardColor: Color(0xFF0F1A30),
       isDark: true,
       icon: Icons.nights_stay_rounded,
+      nightPalette: ThemePalette(
+        isDark: true,
+        primaryColor: Color(0xFF132240),
+        accentColor: Color(0xFF93C5FD),
+        scaffoldColor: Color(0xFF060B17),
+        cardColor: Color(0xFF0E182D),
+        elevatedCardColor: Color(0xFF0A1223),
+        textPrimary: Color(0xFFF8FAFC),
+        textSecondary: Color(0xFFDBEAFE),
+        textMuted: Color(0xFF8B9DC2),
+        dividerColor: Color(0xFF1F3256),
+        onAccentColor: Color(0xFF060B17),
+        skyGradients: [Color(0xFF142447), Color(0xFF060B17), Color(0xFF02040A)],
+      ),
+      dayPalette: ThemePalette(
+        isDark: false,
+        primaryColor: Color(0xFF1E3A8A),
+        accentColor: Color(0xFF1D4ED8),
+        scaffoldColor: Color(0xFFF2F6FD),
+        cardColor: Color(0xFFFFFFFF),
+        elevatedCardColor: Color(0xFFE3ECFA),
+        textPrimary: Color(0xFF0F172A),
+        textSecondary: Color(0xFF334155),
+        textMuted: Color(0xFF64748B),
+        dividerColor: Color(0xFFCBD8F0),
+        onAccentColor: Colors.white,
+        skyGradients: [Color(0xFFDBE7FA), Color(0xFFF2F6FD), Color(0xFFFFFFFF)],
+      ),
       beadColors: [Color(0xFFBFDBFE), Color(0xFF2563EB), Color(0xFF0A1B3F)],
       markerBeadColors: [Color(0xFFFFFFFF), Color(0xFF93C5FD), Color(0xFF1E3A8A)],
       threadColor: Color(0xFF93C5FD),
@@ -287,6 +489,34 @@ class IslamicTheme {
       cardColor: Color(0xFF1F0D30),
       isDark: true,
       icon: Icons.temple_buddhist_rounded,
+      nightPalette: ThemePalette(
+        isDark: true,
+        primaryColor: Color(0xFF2B1142),
+        accentColor: Color(0xFFFBBF24),
+        scaffoldColor: Color(0xFF10051B),
+        cardColor: Color(0xFF1D0C2E),
+        elevatedCardColor: Color(0xFF160824),
+        textPrimary: Color(0xFFFAF5FF),
+        textSecondary: Color(0xFFE9D5FF),
+        textMuted: Color(0xFFAB90C7),
+        dividerColor: Color(0xFF3E1C5E),
+        onAccentColor: Color(0xFF10051B),
+        skyGradients: [Color(0xFF33144D), Color(0xFF10051B), Color(0xFF06020B)],
+      ),
+      dayPalette: ThemePalette(
+        isDark: false,
+        primaryColor: Color(0xFF581C87),
+        accentColor: Color(0xFF7E22CE),
+        scaffoldColor: Color(0xFFF7F2FC),
+        cardColor: Color(0xFFFFFFFF),
+        elevatedCardColor: Color(0xFFECE2F8),
+        textPrimary: Color(0xFF240A3D),
+        textSecondary: Color(0xFF512975),
+        textMuted: Color(0xFF7D5A9C),
+        dividerColor: Color(0xFFDCCBF0),
+        onAccentColor: Colors.white,
+        skyGradients: [Color(0xFFEBDDF9), Color(0xFFF7F2FC), Color(0xFFFFFFFF)],
+      ),
       beadColors: [Color(0xFFE9D5FF), Color(0xFF7E22CE), Color(0xFF2E0854)],
       markerBeadColors: [Color(0xFFFEF08A), Color(0xFFFBBF24), Color(0xFF78350F)],
       threadColor: Color(0xFFFBBF24),
@@ -316,6 +546,34 @@ class IslamicTheme {
       cardColor: Color(0xFF23130B),
       isDark: true,
       icon: Icons.fireplace_rounded,
+      nightPalette: ThemePalette(
+        isDark: true,
+        primaryColor: Color(0xFF331A0E),
+        accentColor: Color(0xFFFB923C),
+        scaffoldColor: Color(0xFF140905),
+        cardColor: Color(0xFF231109),
+        elevatedCardColor: Color(0xFF1B0C06),
+        textPrimary: Color(0xFFFFF7ED),
+        textSecondary: Color(0xFFFED7AA),
+        textMuted: Color(0xFFB8947C),
+        dividerColor: Color(0xFF472515),
+        onAccentColor: Color(0xFF140905),
+        skyGradients: [Color(0xFF3B1E10), Color(0xFF140905), Color(0xFF070301)],
+      ),
+      dayPalette: ThemePalette(
+        isDark: false,
+        primaryColor: Color(0xFF7C2D12),
+        accentColor: Color(0xFFC2410C),
+        scaffoldColor: Color(0xFFFBF5EF),
+        cardColor: Color(0xFFFFFFFF),
+        elevatedCardColor: Color(0xFFF5E8DC),
+        textPrimary: Color(0xFF2B1207),
+        textSecondary: Color(0xFF63351F),
+        textMuted: Color(0xFF8C5D47),
+        dividerColor: Color(0xFFEAD4C2),
+        onAccentColor: Colors.white,
+        skyGradients: [Color(0xFFF6E2D1), Color(0xFFFBF5EF), Color(0xFFFFFFFF)],
+      ),
       beadColors: [Color(0xFFFED7AA), Color(0xFFC2410C), Color(0xFF431407)],
       markerBeadColors: [Color(0xFFFFFBEB), Color(0xFFF59E0B), Color(0xFF78350F)],
       threadColor: Color(0xFFFB923C),
@@ -345,6 +603,34 @@ class IslamicTheme {
       cardColor: Color(0xFF211607),
       isDark: true,
       icon: Icons.star_rounded,
+      nightPalette: ThemePalette(
+        isDark: true,
+        primaryColor: Color(0xFF332109),
+        accentColor: Color(0xFFF59E0B),
+        scaffoldColor: Color(0xFF120B03),
+        cardColor: Color(0xFF211506),
+        elevatedCardColor: Color(0xFF191004),
+        textPrimary: Color(0xFFFFFBEB),
+        textSecondary: Color(0xFFFDE68A),
+        textMuted: Color(0xFFBA9E6A),
+        dividerColor: Color(0xFF47300F),
+        onAccentColor: Color(0xFF120B03),
+        skyGradients: [Color(0xFF3A260A), Color(0xFF120B03), Color(0xFF060401)],
+      ),
+      dayPalette: ThemePalette(
+        isDark: false,
+        primaryColor: Color(0xFF78350F),
+        accentColor: Color(0xFFB45309),
+        scaffoldColor: Color(0xFFFCF8EC),
+        cardColor: Color(0xFFFFFFFF),
+        elevatedCardColor: Color(0xFFF6ECD4),
+        textPrimary: Color(0xFF291904),
+        textSecondary: Color(0xFF634214),
+        textMuted: Color(0xFF8C6B3C),
+        dividerColor: Color(0xFFEBDCB9),
+        onAccentColor: Colors.white,
+        skyGradients: [Color(0xFFF7E9C8), Color(0xFFFCF8EC), Color(0xFFFFFFFF)],
+      ),
       beadColors: [Color(0xFFFDE68A), Color(0xFFD97706), Color(0xFF451A03)],
       markerBeadColors: [Color(0xFFFFFFFF), Color(0xFFF59E0B), Color(0xFF78350F)],
       threadColor: Color(0xFFF59E0B),
@@ -374,6 +660,34 @@ class IslamicTheme {
       cardColor: Color(0xFF1C1812),
       isDark: true,
       icon: Icons.forest_rounded,
+      nightPalette: ThemePalette(
+        isDark: true,
+        primaryColor: Color(0xFF2A2218),
+        accentColor: Color(0xFFE0C5A2),
+        scaffoldColor: Color(0xFF100D09),
+        cardColor: Color(0xFF1C1711),
+        elevatedCardColor: Color(0xFF15120D),
+        textPrimary: Color(0xFFFAF6F0),
+        textSecondary: Color(0xFFE7D8C5),
+        textMuted: Color(0xFFA89882),
+        dividerColor: Color(0xFF3E3325),
+        onAccentColor: Color(0xFF100D09),
+        skyGradients: [Color(0xFF30271C), Color(0xFF100D09), Color(0xFF050402)],
+      ),
+      dayPalette: ThemePalette(
+        isDark: false,
+        primaryColor: Color(0xFF5C462C),
+        accentColor: Color(0xFF8C6239),
+        scaffoldColor: Color(0xFFFAF6F0),
+        cardColor: Color(0xFFFFFFFF),
+        elevatedCardColor: Color(0xFFF1E8DC),
+        textPrimary: Color(0xFF241B10),
+        textSecondary: Color(0xFF594630),
+        textMuted: Color(0xFF806C54),
+        dividerColor: Color(0xFFE3D5C3),
+        onAccentColor: Colors.white,
+        skyGradients: [Color(0xFFEFE3D3), Color(0xFFFAF6F0), Color(0xFFFFFFFF)],
+      ),
       beadColors: [Color(0xFFF5EBE1), Color(0xFFB89B77), Color(0xFF382E20)],
       markerBeadColors: [Color(0xFFD9F99D), Color(0xFF84CC16), Color(0xFF365314)],
       threadColor: Color(0xFFD4B996),
@@ -403,6 +717,34 @@ class IslamicTheme {
       cardColor: Color(0xFF091E2B),
       isDark: true,
       icon: Icons.water_rounded,
+      nightPalette: ThemePalette(
+        isDark: true,
+        primaryColor: Color(0xFF0D283A),
+        accentColor: Color(0xFF38BDF8),
+        scaffoldColor: Color(0xFF041018),
+        cardColor: Color(0xFF091D2A),
+        elevatedCardColor: Color(0xFF061620),
+        textPrimary: Color(0xFFF0F9FF),
+        textSecondary: Color(0xFFBAE6FD),
+        textMuted: Color(0xFF7CA4BD),
+        dividerColor: Color(0xFF183A50),
+        onAccentColor: Color(0xFF041018),
+        skyGradients: [Color(0xFF0E2D42), Color(0xFF041018), Color(0xFF01060A)],
+      ),
+      dayPalette: ThemePalette(
+        isDark: false,
+        primaryColor: Color(0xFF0C4A6E),
+        accentColor: Color(0xFF0284C7),
+        scaffoldColor: Color(0xFFF0F8FC),
+        cardColor: Color(0xFFFFFFFF),
+        elevatedCardColor: Color(0xFFE0F0F8),
+        textPrimary: Color(0xFF082436),
+        textSecondary: Color(0xFF27516B),
+        textMuted: Color(0xFF587C94),
+        dividerColor: Color(0xFFC9E2F0),
+        onAccentColor: Colors.white,
+        skyGradients: [Color(0xFFD4ECFA), Color(0xFFF0F8FC), Color(0xFFFFFFFF)],
+      ),
       beadColors: [Color(0xFFF0FDF4), Color(0xFFE0F2FE), Color(0xFF0284C7)],
       markerBeadColors: [Color(0xFFFFFFFF), Color(0xFF38BDF8), Color(0xFF0369A1)],
       threadColor: Color(0xFF38BDF8),
@@ -432,6 +774,34 @@ class IslamicTheme {
       cardColor: Color(0xFF062320),
       isDark: true,
       icon: Icons.auto_awesome_rounded,
+      nightPalette: ThemePalette(
+        isDark: true,
+        primaryColor: Color(0xFF05332E),
+        accentColor: Color(0xFF34D399),
+        scaffoldColor: Color(0xFF021412),
+        cardColor: Color(0xFF052320),
+        elevatedCardColor: Color(0xFF031B18),
+        textPrimary: Color(0xFFECFDF5),
+        textSecondary: Color(0xFFA7F3D0),
+        textMuted: Color(0xFF72B09C),
+        dividerColor: Color(0xFF134740),
+        onAccentColor: Color(0xFF021412),
+        skyGradients: [Color(0xFF063B35), Color(0xFF021412), Color(0xFF000706)],
+      ),
+      dayPalette: ThemePalette(
+        isDark: false,
+        primaryColor: Color(0xFF065F46),
+        accentColor: Color(0xFF059669),
+        scaffoldColor: Color(0xFFEFFBF7),
+        cardColor: Color(0xFFFFFFFF),
+        elevatedCardColor: Color(0xFFDEF6EC),
+        textPrimary: Color(0xFF06281E),
+        textSecondary: Color(0xFF215B48),
+        textMuted: Color(0xFF4F8573),
+        dividerColor: Color(0xFFC2EBDC),
+        onAccentColor: Colors.white,
+        skyGradients: [Color(0xFFCFF5E5), Color(0xFFEFFBF7), Color(0xFFFFFFFF)],
+      ),
       beadColors: [Color(0xFFA7F3D0), Color(0xFF10B981), Color(0xFF064E3B)],
       markerBeadColors: [Color(0xFFFFFBEB), Color(0xFF34D399), Color(0xFF047857)],
       threadColor: Color(0xFF34D399),
@@ -449,87 +819,138 @@ class IslamicTheme {
   ];
 
   static ThemeOption getThemeOption(String key) {
+    final normalizedKey = key == 'emerald' ? 'emerald_gold' : key;
     return allThemes.firstWhere(
-      (element) => element.key == key,
+      (element) => element.key == normalizedKey,
       orElse: () => allThemes.first,
     );
   }
 
-  static ThemeData getTheme(String key) {
-    final option = getThemeOption(key);
+  static ThemePalette resolvePalette(String key, {bool isNight = true}) {
+    return getThemeOption(key).resolve(isNight: isNight);
+  }
+
+  static ThemeData getTheme(
+    String key, {
+    bool isNight = true,
+    String fontFamily = 'Aref Ruqaa',
+  }) {
+    final palette = resolvePalette(key, isNight: isNight);
+    const fallbackFonts = [
+      'Cairo',
+      'Amiri',
+      'Noto Naskh Arabic',
+      'Tajawal',
+      'Segoe UI',
+      'sans-serif',
+    ];
+
+    final baseTextTheme =
+        palette.isDark ? Typography.whiteMountainView : Typography.blackMountainView;
+
     return ThemeData(
-      fontFamily: 'Aref Ruqaa',
-      fontFamilyFallback: const ['Aref Ruqaa Ink', 'Cairo', 'Amiri', 'Tajawal', 'Segoe UI', 'sans-serif'],
-      brightness: option.isDark ? Brightness.dark : Brightness.light,
-      primaryColor: option.primaryColor,
-      scaffoldBackgroundColor: option.scaffoldColor,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: option.accentColor,
-        brightness: option.isDark ? Brightness.dark : Brightness.light,
-        primary: option.primaryColor,
-        secondary: option.accentColor,
-        surface: option.cardColor,
+      useMaterial3: true,
+      fontFamily: fontFamily,
+      fontFamilyFallback: fallbackFonts,
+      brightness: palette.isDark ? Brightness.dark : Brightness.light,
+      primaryColor: palette.primaryColor,
+      scaffoldBackgroundColor: palette.scaffoldColor,
+      textTheme: baseTextTheme.apply(
+        fontFamily: fontFamily,
+        fontFamilyFallback: fallbackFonts,
+        bodyColor: palette.textPrimary,
+        displayColor: palette.textPrimary,
       ),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: palette.accentColor,
+        brightness: palette.isDark ? Brightness.dark : Brightness.light,
+        primary: palette.primaryColor,
+        secondary: palette.accentColor,
+        surface: palette.cardColor,
+        onSurface: palette.textPrimary,
+      ),
+      dividerColor: palette.dividerColor,
       appBarTheme: AppBarTheme(
-        backgroundColor: option.primaryColor,
+        backgroundColor: palette.isDark ? palette.primaryColor : palette.cardColor,
+        foregroundColor: palette.textPrimary,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: const TextStyle(
-          fontFamily: 'Aref Ruqaa',
-          color: Colors.white,
+        titleTextStyle: TextStyle(
+          fontFamily: fontFamily,
+          fontFamilyFallback: fallbackFonts,
+          color: palette.textPrimary,
           fontSize: 20,
           fontWeight: FontWeight.bold,
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: palette.textPrimary),
       ),
     );
   }
 
-  static Color getAccentColor(String key) {
-    return getThemeOption(key).accentColor;
+  static Color getAccentColor(String key, {bool isNight = true}) {
+    return resolvePalette(key, isNight: isNight).accentColor;
   }
 
-  static List<Color> getSkyGradients(Prayer prayer, String themeKey) {
-    final theme = getThemeOption(themeKey);
+  static List<Color> getSkyGradients(
+    Prayer prayer,
+    String themeKey, {
+    bool isNight = true,
+  }) {
+    final palette = resolvePalette(themeKey, isNight: isNight);
+
+    if (!isNight) {
+      // تدرجات نهارية مشرقة مخصصة لكل ثيم
+      switch (prayer) {
+        case Prayer.fajr:
+        case Prayer.sunrise:
+          return [
+            palette.skyGradients[0],
+            palette.scaffoldColor,
+            palette.elevatedCardColor,
+          ];
+        case Prayer.maghrib:
+          return [
+            palette.accentColor.withOpacity(0.18),
+            palette.skyGradients[0],
+            palette.scaffoldColor,
+          ];
+        case Prayer.dhuhr:
+        case Prayer.asr:
+        case Prayer.isha:
+        case Prayer.none:
+          return palette.skyGradients;
+      }
+    }
 
     switch (prayer) {
       case Prayer.fajr:
         return [
-          theme.primaryColor.withOpacity(0.95),
-          theme.scaffoldColor,
+          palette.primaryColor.withOpacity(0.95),
+          palette.scaffoldColor,
           const Color(0xFF010609),
         ];
       case Prayer.sunrise:
         return [
-          theme.accentColor.withOpacity(0.60),
-          theme.primaryColor.withOpacity(0.80),
-          theme.scaffoldColor,
+          palette.accentColor.withOpacity(0.35),
+          palette.primaryColor.withOpacity(0.85),
+          palette.scaffoldColor,
         ];
       case Prayer.dhuhr:
-        return [
-          theme.primaryColor.withOpacity(0.50),
-          theme.scaffoldColor.withOpacity(0.90),
-          const Color(0xFF010806),
-        ];
       case Prayer.asr:
         return [
-          theme.accentColor.withOpacity(0.40),
-          theme.primaryColor.withOpacity(0.70),
-          theme.scaffoldColor,
+          palette.primaryColor.withOpacity(0.75),
+          palette.scaffoldColor,
+          palette.skyGradients.last,
         ];
       case Prayer.maghrib:
         return [
-          theme.accentColor.withOpacity(0.50),
-          theme.primaryColor.withOpacity(0.85),
+          palette.accentColor.withOpacity(0.35),
+          palette.primaryColor.withOpacity(0.85),
           const Color(0xFF030A0D),
         ];
       case Prayer.isha:
       case Prayer.none:
-        return [
-          theme.primaryColor.withOpacity(0.40),
-          theme.scaffoldColor,
-          const Color(0xFF000305),
-        ];
+        return palette.skyGradients;
     }
   }
 }

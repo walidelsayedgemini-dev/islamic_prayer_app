@@ -14,21 +14,19 @@ class IslamicPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = color.withOpacity(0.06 + 0.03 * math.sin(animationValue * 2 * math.pi))
+      ..color = color.withOpacity(0.08 + 0.03 * math.sin(animationValue * 2 * math.pi))
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
 
     final center = Offset(size.width / 2, size.height / 2);
     final maxRadius = math.min(size.width, size.height) * 0.45;
 
-    // رسم طبقات النجوم الثمانية المتداخلة مع دوران بطيء
     final rotation = animationValue * 2 * math.pi * 0.05;
 
     _drawIslamicStar(canvas, center, maxRadius * 0.85, paint, rotation);
     _drawIslamicStar(canvas, center, maxRadius * 0.55, paint, -rotation * 1.5);
     _drawIslamicStar(canvas, center, maxRadius * 0.28, paint, rotation * 2);
 
-    // رسم هالات دائرية ناعمة
     canvas.drawCircle(center, maxRadius * 0.95, paint);
     canvas.drawCircle(center, maxRadius * 0.65, paint);
     canvas.drawCircle(center, maxRadius * 0.40, paint);
@@ -61,15 +59,17 @@ class IslamicPatternPainter extends CustomPainter {
   }
 }
 
-/// خلفية متحركة بالزخارف الإسلامية المتلألئة
+/// خلفية متحركة بالزخارف الإسلامية متجاوبة مع الوضع النهاري والليلي
 class AnimatedIslamicBackground extends StatefulWidget {
   final Widget child;
   final Color accentColor;
+  final Color? backgroundColor;
 
   const AnimatedIslamicBackground({
     super.key,
     required this.child,
     required this.accentColor,
+    this.backgroundColor,
   });
 
   @override
@@ -97,18 +97,22 @@ class _AnimatedIslamicBackgroundState extends State<AnimatedIslamicBackground>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return CustomPaint(
-          painter: IslamicPatternPainter(
-            color: widget.accentColor,
-            animationValue: _controller.value,
-          ),
-          child: child,
-        );
-      },
-      child: widget.child,
+    final bgColor = widget.backgroundColor ?? Theme.of(context).scaffoldBackgroundColor;
+    return Container(
+      color: bgColor,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return CustomPaint(
+            painter: IslamicPatternPainter(
+              color: widget.accentColor,
+              animationValue: _controller.value,
+            ),
+            child: child,
+          );
+        },
+        child: widget.child,
+      ),
     );
   }
 }

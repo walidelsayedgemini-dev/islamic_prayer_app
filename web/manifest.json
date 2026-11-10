@@ -1,11 +1,11 @@
 {
-    "name": "islamic_prayer_app",
-    "short_name": "islamic_prayer_app",
+    "name": "الفردوس",
+    "short_name": "الفردوس",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#061814",
+    "theme_color": "#0F3E32",
+    "description": "تطبيق الفردوس الإسلامي الشامل: مواقيت الصلاة، القبلة الذكية، السبحة والتحديات، التقويم الهجري، والقرآن والأذكار.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

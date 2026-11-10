@@ -6,6 +6,7 @@ import '../theme/islamic_theme.dart';
 
 class IslamicSideDrawer extends StatefulWidget {
   final ThemeOption themeOption;
+  final bool isNightMode;
   final VoidCallback? onOpenQuranAzkarSheet;
   final VoidCallback? onOpenGreetingCards;
   final VoidCallback? onOpenBooks;
@@ -13,6 +14,7 @@ class IslamicSideDrawer extends StatefulWidget {
   const IslamicSideDrawer({
     super.key,
     required this.themeOption,
+    this.isNightMode = true,
     this.onOpenQuranAzkarSheet,
     this.onOpenGreetingCards,
     this.onOpenBooks,
@@ -45,20 +47,19 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
   @override
   Widget build(BuildContext context) {
     final player = Provider.of<AudioPlayerProvider>(context);
-    final accent = widget.themeOption.accentColor;
-    final scaffoldBg = widget.themeOption.scaffoldColor;
-    final cardBg = widget.themeOption.cardColor;
+    final palette = widget.themeOption.resolve(isNight: widget.isNightMode);
+    final accent = palette.accentColor;
 
     return Drawer(
-      backgroundColor: scaffoldBg,
+      backgroundColor: palette.scaffoldColor,
       child: SafeArea(
         child: Column(
           children: [
-            // 1. رأس القائمة الفاخر: عنوان القائمة، الزخرفة، وزر الإغلاق X (مطابق للصورة 2 و 3)
+            // 1. رأس القائمة الفاخر مع اسم التطبيق "الفردوس"
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: cardBg.withOpacity(0.92),
+                color: palette.cardColor.withOpacity(0.95),
                 border: Border(bottom: BorderSide(color: accent.withOpacity(0.35))),
               ),
               child: Row(
@@ -68,7 +69,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                     decoration: BoxDecoration(
                       color: accent.withOpacity(0.18),
                       shape: BoxShape.circle,
-                      border: Border.all(color: accent.withOpacity(0.6)),
+                      border: Border.all(color: accent.withOpacity(0.65)),
                     ),
                     child: Icon(Icons.menu_book_rounded, color: accent, size: 20),
                   ),
@@ -77,19 +78,18 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          "المكتبة الصوتية الشاملة",
+                        Text(
+                          "الفردوس • المكتبة الصوتية",
                           style: TextStyle(
-                            fontFamily: 'Aref Ruqaa',
-                            color: Colors.white,
-                            fontSize: 18,
+                            color: palette.textPrimary,
+                            fontSize: 17,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         Text(
                           "قرآن كريم • رقية شرعية • إبتهالات وتفاسير",
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
+                            color: palette.textSecondary,
                             fontSize: 11,
                           ),
                         ),
@@ -100,11 +100,11 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                     icon: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.white10,
+                        color: palette.elevatedCardColor,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white24),
+                        border: Border.all(color: palette.dividerColor),
                       ),
-                      child: const Icon(Icons.close_rounded, color: Colors.white70, size: 18),
+                      child: Icon(Icons.close_rounded, color: palette.textSecondary, size: 18),
                     ),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
@@ -112,7 +112,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
               ),
             ),
 
-            // 2. تصنيفات القائمة العلوية بشكل أزرار دائرية/بيضاوية (مطابق لأعلى الصورتين 2 و 3)
+            // 2. تصنيفات القائمة العلوية
             Container(
               padding: const EdgeInsets.symmetric(vertical: 10),
               child: SingleChildScrollView(
@@ -142,16 +142,16 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                           duration: const Duration(milliseconds: 250),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(
-                            color: isSel ? accent : cardBg.withOpacity(0.8),
+                            color: isSel ? accent : palette.cardColor,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: isSel ? accent : Colors.white24,
+                              color: isSel ? accent : palette.dividerColor,
                               width: isSel ? 1.5 : 1.0,
                             ),
                             boxShadow: isSel
                                 ? [
                                     BoxShadow(
-                                      color: accent.withOpacity(0.4),
+                                      color: accent.withOpacity(0.35),
                                       blurRadius: 10,
                                       spreadRadius: 1,
                                     )
@@ -161,8 +161,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                           child: Text(
                             _categories[idx],
                             style: TextStyle(
-                              fontFamily: 'Aref Ruqaa',
-                              color: isSel ? Colors.black87 : Colors.white,
+                              color: isSel ? palette.onAccentColor : palette.textPrimary,
                               fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
                               fontSize: 13,
                             ),
@@ -175,7 +174,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
               ),
             ),
 
-            // 3. شريط اختيار القارئ (عند اختيار القرآن الكريم)
+            // 3. شريط اختيار القارئ
             if (_selectedCategoryIndex == 0) ...[
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
@@ -183,16 +182,20 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                   children: [
                     Icon(Icons.record_voice_over_rounded, color: accent, size: 16),
                     const SizedBox(width: 6),
-                    const Text(
+                    Text(
                       "القارئ:",
-                      style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: palette.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         decoration: BoxDecoration(
-                          color: cardBg,
+                          color: palette.cardColor,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: accent.withOpacity(0.4)),
                         ),
@@ -200,16 +203,15 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                           child: DropdownButton<ReciterInfo>(
                             value: player.selectedReciter,
                             isExpanded: true,
-                            dropdownColor: cardBg,
+                            dropdownColor: palette.cardColor,
                             icon: Icon(Icons.arrow_drop_down, color: accent),
                             items: IslamicAudioLibrary.reciters.map((reciter) {
                               return DropdownMenuItem(
                                 value: reciter,
                                 child: Text(
                                   reciter.name,
-                                  style: const TextStyle(
-                                    fontFamily: 'Aref Ruqaa',
-                                    color: Colors.white,
+                                  style: TextStyle(
+                                    color: palette.textPrimary,
                                     fontSize: 13,
                                   ),
                                   overflow: TextOverflow.ellipsis,
@@ -232,15 +234,15 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 child: TextField(
                   controller: _searchController,
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  style: TextStyle(color: palette.textPrimary, fontSize: 13),
                   onChanged: (val) => setState(() => _searchQuery = val.trim()),
                   decoration: InputDecoration(
                     hintText: "ابحث عن اسم السورة أو رقمها...",
-                    hintStyle: const TextStyle(color: Colors.white38, fontSize: 12),
+                    hintStyle: TextStyle(color: palette.textMuted, fontSize: 12),
                     prefixIcon: Icon(Icons.search_rounded, color: accent, size: 18),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, color: Colors.white54, size: 16),
+                            icon: Icon(Icons.clear, color: palette.textMuted, size: 16),
                             onPressed: () {
                               _searchController.clear();
                               setState(() => _searchQuery = "");
@@ -249,15 +251,15 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                         : null,
                     isDense: true,
                     filled: true,
-                    fillColor: cardBg.withOpacity(0.6),
+                    fillColor: palette.cardColor.withOpacity(0.75),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: Colors.white24),
+                      borderSide: BorderSide(color: palette.dividerColor),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: Colors.white12),
+                      borderSide: BorderSide(color: palette.dividerColor),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -270,7 +272,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
 
             // 4. المحتوى المتغير حسب التصنيف المختار
             Expanded(
-              child: _buildCategoryContent(player, accent, cardBg),
+              child: _buildCategoryContent(player, palette),
             ),
           ],
         ),
@@ -278,20 +280,20 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
     );
   }
 
-  Widget _buildCategoryContent(AudioPlayerProvider player, Color accent, Color cardBg) {
+  Widget _buildCategoryContent(AudioPlayerProvider player, ThemePalette palette) {
     if (_selectedCategoryIndex == 0) {
-      return _buildQuranSurahsList(player, accent, cardBg);
+      return _buildQuranSurahsList(player, palette);
     } else if (_selectedCategoryIndex == 1) {
-      return _buildRuqyahList(player, accent, cardBg);
+      return _buildRuqyahList(player, palette);
     } else if (_selectedCategoryIndex == 2) {
-      return _buildIbtihalatList(player, accent, cardBg);
+      return _buildIbtihalatList(player, palette);
     } else {
-      return _buildQuickShortcutsList(accent, cardBg);
+      return _buildQuickShortcutsList(palette);
     }
   }
 
-  // قائمة سور القرآن الكريم (114 سورة)
-  Widget _buildQuranSurahsList(AudioPlayerProvider player, Color accent, Color cardBg) {
+  Widget _buildQuranSurahsList(AudioPlayerProvider player, ThemePalette palette) {
+    final accent = palette.accentColor;
     final surahs = IslamicAudioLibrary.allSurahs.where((s) {
       if (_searchQuery.isEmpty) return true;
       return s.nameArabic.contains(_searchQuery) ||
@@ -311,10 +313,12 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
         return Container(
           margin: const EdgeInsets.only(bottom: 6),
           decoration: BoxDecoration(
-            color: isCurrent ? accent.withOpacity(0.18) : cardBg.withOpacity(0.55),
+            color: isCurrent
+                ? accent.withOpacity(palette.isDark ? 0.18 : 0.14)
+                : palette.cardColor.withOpacity(0.85),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: isCurrent ? accent : Colors.white10,
+              color: isCurrent ? accent : palette.dividerColor,
               width: isCurrent ? 1.4 : 0.8,
             ),
           ),
@@ -325,15 +329,14 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
               height: 36,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: isCurrent ? accent : Colors.white24),
-                color: isCurrent ? accent.withOpacity(0.2) : Colors.black26,
+                border: Border.all(color: isCurrent ? accent : palette.dividerColor),
+                color: isCurrent ? accent.withOpacity(0.2) : palette.elevatedCardColor,
               ),
               child: Center(
                 child: Text(
                   "${surah.number}",
                   style: TextStyle(
-                    fontFamily: 'Aref Ruqaa',
-                    color: isCurrent ? accent : Colors.white70,
+                    color: isCurrent ? accent : palette.textSecondary,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
@@ -343,8 +346,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
             title: Text(
               "سورة ${surah.nameArabic}",
               style: TextStyle(
-                fontFamily: 'Aref Ruqaa',
-                color: isCurrent ? accent : Colors.white,
+                color: isCurrent ? accent : palette.textPrimary,
                 fontWeight: FontWeight.bold,
                 fontSize: 15,
               ),
@@ -352,7 +354,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
             subtitle: Text(
               "${surah.isMakki ? 'مكية' : 'مدنية'} • ${surah.versesCount} آيات • ${surah.defaultDuration}",
               style: TextStyle(
-                color: Colors.white.withOpacity(0.65),
+                color: palette.textSecondary,
                 fontSize: 11,
               ),
             ),
@@ -374,7 +376,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                 ),
                 child: Icon(
                   isPlayingThis ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                  color: isPlayingThis ? Colors.black87 : accent,
+                  color: isPlayingThis ? palette.onAccentColor : accent,
                   size: 22,
                 ),
               ),
@@ -385,8 +387,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
     );
   }
 
-  // قائمة الرقية الشرعية المعتمدة
-  Widget _buildRuqyahList(AudioPlayerProvider player, Color accent, Color cardBg) {
+  Widget _buildRuqyahList(AudioPlayerProvider player, ThemePalette palette) {
+    final accent = palette.accentColor;
     const ruqyahItems = IslamicAudioLibrary.allRuqyah;
 
     return ListView.builder(
@@ -402,10 +404,12 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isCurrent ? accent.withOpacity(0.18) : cardBg.withOpacity(0.65),
+            color: isCurrent
+                ? accent.withOpacity(palette.isDark ? 0.18 : 0.14)
+                : palette.cardColor.withOpacity(0.90),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isCurrent ? accent : Colors.white12,
+              color: isCurrent ? accent : palette.dividerColor,
               width: isCurrent ? 1.5 : 1.0,
             ),
           ),
@@ -431,15 +435,14 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                         Text(
                           item.title,
                           style: TextStyle(
-                            fontFamily: 'Aref Ruqaa',
-                            color: isCurrent ? accent : Colors.white,
+                            color: isCurrent ? accent : palette.textPrimary,
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         Text(
                           "${item.reciter} • ${item.duration}",
-                          style: const TextStyle(color: Colors.white70, fontSize: 11),
+                          style: TextStyle(color: palette.textSecondary, fontSize: 11),
                         ),
                       ],
                     ),
@@ -456,13 +459,13 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: isPlayingThis ? accent : accent.withOpacity(0.2),
+                        color: isPlayingThis ? accent : accent.withOpacity(0.18),
                         shape: BoxShape.circle,
                         border: Border.all(color: accent),
                       ),
                       child: Icon(
                         isPlayingThis ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                        color: isPlayingThis ? Colors.black87 : accent,
+                        color: isPlayingThis ? palette.onAccentColor : accent,
                         size: 22,
                       ),
                     ),
@@ -473,12 +476,16 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.black26,
+                  color: palette.elevatedCardColor,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   item.purpose,
-                  style: const TextStyle(color: Color(0xFFFDE68A), fontSize: 11),
+                  style: TextStyle(
+                    color: palette.isDark ? const Color(0xFFFDE68A) : palette.primaryColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -488,8 +495,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
     );
   }
 
-  // قائمة الإبتهالات والأدعية النبوية
-  Widget _buildIbtihalatList(AudioPlayerProvider player, Color accent, Color cardBg) {
+  Widget _buildIbtihalatList(AudioPlayerProvider player, ThemePalette palette) {
+    final accent = palette.accentColor;
     const ibtihalat = IslamicAudioLibrary.allIbtihalat;
 
     return ListView.builder(
@@ -504,28 +511,29 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
         return Container(
           margin: const EdgeInsets.only(bottom: 8),
           decoration: BoxDecoration(
-            color: isCurrent ? accent.withOpacity(0.18) : cardBg.withOpacity(0.55),
+            color: isCurrent
+                ? accent.withOpacity(palette.isDark ? 0.18 : 0.14)
+                : palette.cardColor.withOpacity(0.88),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: isCurrent ? accent : Colors.white10,
+              color: isCurrent ? accent : palette.dividerColor,
               width: isCurrent ? 1.4 : 0.8,
             ),
           ),
           child: ListTile(
             dense: true,
-            leading: Icon(Icons.music_note_rounded, color: isCurrent ? accent : Colors.white70),
+            leading: Icon(Icons.music_note_rounded, color: isCurrent ? accent : palette.textSecondary),
             title: Text(
               item.title,
               style: TextStyle(
-                fontFamily: 'Aref Ruqaa',
-                color: isCurrent ? accent : Colors.white,
+                color: isCurrent ? accent : palette.textPrimary,
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
               ),
             ),
             subtitle: Text(
               "${item.reciter} • ${item.maqam} • ${item.duration}",
-              style: TextStyle(color: Colors.white.withOpacity(0.65), fontSize: 11),
+              style: TextStyle(color: palette.textSecondary, fontSize: 11),
             ),
             trailing: GestureDetector(
               onTap: () {
@@ -545,7 +553,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                 ),
                 child: Icon(
                   isPlayingThis ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                  color: isPlayingThis ? Colors.black87 : accent,
+                  color: isPlayingThis ? palette.onAccentColor : accent,
                   size: 20,
                 ),
               ),
@@ -556,8 +564,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
     );
   }
 
-  // اختصارات إسلامية سريعة
-  Widget _buildQuickShortcutsList(Color accent, Color cardBg) {
+  Widget _buildQuickShortcutsList(ThemePalette palette) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -565,33 +572,30 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
           icon: Icons.wb_sunny_rounded,
           title: "أذكار الصباح والمساء المصورة",
           subtitle: "الحصن الحصين لكل مسلم صباحاً ومساءً",
-          accent: accent,
-          cardBg: cardBg,
+          palette: palette,
           onTap: () {
             Navigator.of(context).pop();
-            if (widget.onOpenQuranAzkarSheet != null) widget.onOpenQuranAzkarSheet!();
+            widget.onOpenQuranAzkarSheet?.call();
           },
         ),
         _buildShortcutTile(
           icon: Icons.menu_book_rounded,
           title: "الأربعين النووية ورياض الصالحين",
           subtitle: "شروح الأحاديث النبوية الشريفة وأبواب الخير",
-          accent: accent,
-          cardBg: cardBg,
+          palette: palette,
           onTap: () {
             Navigator.of(context).pop();
-            if (widget.onOpenBooks != null) widget.onOpenBooks!();
+            widget.onOpenBooks?.call();
           },
         ),
         _buildShortcutTile(
           icon: Icons.mark_email_read_rounded,
           title: "كروت تهنئة إسلامية جاهزة",
           subtitle: "بطاقات الجمعة المباركة والأعياد لمشاركتها",
-          accent: accent,
-          cardBg: cardBg,
+          palette: palette,
           onTap: () {
             Navigator.of(context).pop();
-            if (widget.onOpenGreetingCards != null) widget.onOpenGreetingCards!();
+            widget.onOpenGreetingCards?.call();
           },
         ),
       ],
@@ -602,14 +606,14 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
     required IconData icon,
     required String title,
     required String subtitle,
-    required Color accent,
-    required Color cardBg,
+    required ThemePalette palette,
     required VoidCallback onTap,
   }) {
+    final accent = palette.accentColor;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: cardBg.withOpacity(0.75),
+        color: palette.cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: accent.withOpacity(0.35)),
       ),
@@ -626,16 +630,15 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
         ),
         title: Text(
           title,
-          style: const TextStyle(
-            fontFamily: 'Aref Ruqaa',
-            color: Colors.white,
+          style: TextStyle(
+            color: palette.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 14,
           ),
         ),
         subtitle: Text(
           subtitle,
-          style: const TextStyle(color: Colors.white60, fontSize: 11),
+          style: TextStyle(color: palette.textSecondary, fontSize: 11),
         ),
         trailing: Icon(Icons.arrow_forward_ios_rounded, color: accent, size: 14),
       ),

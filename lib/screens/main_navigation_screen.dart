@@ -56,8 +56,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
-    final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
-    final accentColor = themeOption.accentColor;
+    final isNight = settings.isNightEffective;
+    final palette = IslamicTheme.resolvePalette(settings.selectedTheme, isNight: isNight);
+    final accentColor = palette.accentColor;
+
+    final calAccent = isNight ? const Color(0xFF34D399) : const Color(0xFF047857);
+    final jannaAccent = isNight ? const Color(0xFFFBBF24) : const Color(0xFFB45309);
+    final helpAccent = isNight ? const Color(0xFF38BDF8) : const Color(0xFF0369A1);
 
     return Scaffold(
       extendBody: true,
@@ -72,23 +77,24 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       bottomNavigationBar: Container(
         margin: const EdgeInsets.fromLTRB(8, 0, 8, 12),
         decoration: BoxDecoration(
-          color: const Color(0xFF03140F).withOpacity(0.96),
+          color: palette.cardColor.withOpacity(0.96),
           borderRadius: BorderRadius.circular(26),
           border: Border.all(
-            color: accentColor.withOpacity(0.35),
+            color: accentColor.withOpacity(isNight ? 0.35 : 0.45),
             width: 1.3,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.7),
-              blurRadius: 28,
-              offset: const Offset(0, 10),
+              color: (isNight ? Colors.black : palette.primaryColor)
+                  .withOpacity(isNight ? 0.7 : 0.18),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
             ),
             BoxShadow(
               color: accentColor.withOpacity(0.12),
               blurRadius: 15,
               spreadRadius: 1,
-            )
+            ),
           ],
         ),
         child: ClipRRect(
@@ -98,13 +104,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildNavItem(0, Icons.access_time_filled_rounded, "المواقيت", accentColor),
-                _buildNavItem(1, Icons.explore_rounded, "القبلة", accentColor),
-                _buildNavItem(2, Icons.calendar_month_rounded, "التقويم", const Color(0xFF34D399)),
-                _buildNavItem(3, Icons.fingerprint_rounded, "السبحة", accentColor),
-                _buildNavItem(4, Icons.workspace_premium_rounded, "جَنَّتِي", const Color(0xFFFBBF24)),
-                _buildNavItem(5, Icons.favorite_rounded, "سَاعِدْنِي", const Color(0xFF38BDF8)),
-                _buildNavItem(6, Icons.tune_rounded, "الإعدادات", accentColor),
+                _buildNavItem(0, Icons.access_time_filled_rounded, "المواقيت", accentColor, palette),
+                _buildNavItem(1, Icons.explore_rounded, "القبلة", accentColor, palette),
+                _buildNavItem(2, Icons.calendar_month_rounded, "التقويم", calAccent, palette),
+                _buildNavItem(3, Icons.fingerprint_rounded, "السبحة", accentColor, palette),
+                _buildNavItem(4, Icons.workspace_premium_rounded, "جَنَّتِي", jannaAccent, palette),
+                _buildNavItem(5, Icons.favorite_rounded, "سَاعِدْنِي", helpAccent, palette),
+                _buildNavItem(6, Icons.tune_rounded, "الإعدادات", accentColor, palette),
               ],
             ),
           ),
@@ -113,8 +119,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, String label, Color accentColor) {
+  Widget _buildNavItem(
+    int index,
+    IconData icon,
+    String label,
+    Color activeColor,
+    ThemePalette palette,
+  ) {
     final isSelected = _currentIndex == index;
+    final inactiveColor = palette.textMuted;
 
     return GestureDetector(
       onTap: () => _onTabTapped(index),
@@ -124,10 +137,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         curve: Curves.easeOutCubic,
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         decoration: BoxDecoration(
-          color: isSelected ? accentColor.withOpacity(0.18) : Colors.transparent,
+          color: isSelected ? activeColor.withOpacity(palette.isDark ? 0.18 : 0.14) : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? accentColor.withOpacity(0.55) : Colors.transparent,
+            color: isSelected ? activeColor.withOpacity(0.55) : Colors.transparent,
             width: 1.0,
           ),
         ),
@@ -139,7 +152,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               duration: const Duration(milliseconds: 200),
               child: Icon(
                 icon,
-                color: isSelected ? accentColor : Colors.white38,
+                color: isSelected ? activeColor : inactiveColor,
                 size: 19,
               ),
             ),
@@ -147,8 +160,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             Text(
               label,
               style: TextStyle(
-                fontFamily: 'Cairo',
-                color: isSelected ? accentColor : Colors.white38,
+                color: isSelected ? activeColor : inactiveColor,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 fontSize: 9.5,
               ),

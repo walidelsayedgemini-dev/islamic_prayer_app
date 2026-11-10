@@ -42,10 +42,15 @@ class IslamicPrayerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<SettingsProvider>(
       builder: (context, settings, _) {
+        final isNight = settings.isNightEffective;
         return MaterialApp(
-          title: 'مواقيت الصلاة والقبلة',
+          title: 'الفردوس',
           debugShowCheckedModeBanner: false,
-          theme: IslamicTheme.getTheme(settings.selectedTheme),
+          theme: IslamicTheme.getTheme(
+            settings.selectedTheme,
+            isNight: isNight,
+            fontFamily: settings.selectedFont,
+          ),
           locale: const Locale('ar', 'SA'),
           supportedLocales: const [
             Locale('ar', 'SA'),

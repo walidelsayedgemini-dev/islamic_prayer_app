@@ -5,11 +5,13 @@ import '../theme/islamic_theme.dart';
 class IslamicThemeEffectsCanvas extends StatefulWidget {
   final ThemeOption themeOption;
   final bool isInteractive;
+  final bool isNightMode;
 
   const IslamicThemeEffectsCanvas({
     super.key,
     required this.themeOption,
     this.isInteractive = true,
+    this.isNightMode = true,
   });
 
   @override
@@ -75,6 +77,7 @@ class _IslamicThemeEffectsCanvasState extends State<IslamicThemeEffectsCanvas>
             themeOption: widget.themeOption,
             progress: _animController.value,
             particles: _particles,
+            isNightMode: widget.isNightMode,
           ),
         );
       },
@@ -126,11 +129,13 @@ class _IslamicThemeMasterPainter extends CustomPainter {
   final ThemeOption themeOption;
   final double progress;
   final List<_EffectParticle> particles;
+  final bool isNightMode;
 
   _IslamicThemeMasterPainter({
     required this.themeOption,
     required this.progress,
     required this.particles,
+    required this.isNightMode,
   });
 
   @override
@@ -267,15 +272,20 @@ class _IslamicThemeMasterPainter extends CustomPainter {
   void _paintKiswaBlackGoldEffects(Canvas canvas, Size size) {
     final t = progress * math.pi * 2;
 
-    // تموجات نسيج الحرير الأسود للكسوة
+    // تموجات نسيج الحرير للكسوة (تتكيف مع الوضع الليلي والنهاري)
     final silkPaint = Paint()
       ..shader = RadialGradient(
         center: Alignment.center,
         radius: 1.1,
-        colors: [
-          const Color(0xFF1E293B).withOpacity(0.35),
-          Colors.black.withOpacity(0.85),
-        ],
+        colors: isNightMode
+            ? [
+                const Color(0xFF1E293B).withOpacity(0.30),
+                Colors.black.withOpacity(0.65),
+              ]
+            : [
+                const Color(0xFFD4AF37).withOpacity(0.08),
+                Colors.transparent,
+              ],
       ).createShader(Offset.zero & size);
     canvas.drawRect(Offset.zero & size, silkPaint);
 
@@ -573,7 +583,7 @@ class _IslamicThemeMasterPainter extends CustomPainter {
     }
   }
 
-  // 10. الأرجوان الأندلسي الملكي (مطابق لروح الصورة 1 تماماً!)
+  // 10. الأرجوان الأندلسي الملكي (متكيف للوضعين الليلي والنهاري)
   void _paintAndalusianRoyalPurpleEffects(Canvas canvas, Size size) {
     final t = progress * math.pi * 2;
 
@@ -582,11 +592,16 @@ class _IslamicThemeMasterPainter extends CustomPainter {
       ..shader = RadialGradient(
         center: const Alignment(0.0, -0.4),
         radius: 0.95,
-        colors: [
-          const Color(0xFF701A75).withOpacity(0.35 + 0.05 * math.sin(t)),
-          const Color(0xFF3B0764).withOpacity(0.20),
-          Colors.transparent,
-        ],
+        colors: isNightMode
+            ? [
+                const Color(0xFF701A75).withOpacity(0.30 + 0.05 * math.sin(t)),
+                const Color(0xFF3B0764).withOpacity(0.16),
+                Colors.transparent,
+              ]
+            : [
+                const Color(0xFF7E22CE).withOpacity(0.08 + 0.03 * math.sin(t)),
+                Colors.transparent,
+              ],
       ).createShader(Offset.zero & size);
     canvas.drawRect(Offset.zero & size, royalGlow);
 
@@ -627,7 +642,8 @@ class _IslamicThemeMasterPainter extends CustomPainter {
         center: const Alignment(0.0, -0.5),
         radius: 0.9,
         colors: [
-          const Color(0xFF1E1B4B).withOpacity(0.40),
+          (isNightMode ? const Color(0xFF1E1B4B) : const Color(0xFF2563EB))
+              .withOpacity(isNightMode ? 0.35 : 0.08),
           Colors.transparent,
         ],
       ).createShader(Offset.zero & size);

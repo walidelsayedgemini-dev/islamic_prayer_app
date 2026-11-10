@@ -55,9 +55,14 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     return "${twoDigits(duration.inHours)}:${twoDigits(duration.inMinutes.remainder(60))}:${twoDigits(duration.inSeconds.remainder(60))}";
   }
 
-  void _showPrayerDetails(BuildContext context, String prayerKey, Color accentColor) {
+  void _showPrayerDetails(
+    BuildContext context,
+    String prayerKey,
+    ThemePalette palette,
+  ) {
     final info = PrayerInfo.data[prayerKey];
     if (info == null) return;
+    final accentColor = palette.accentColor;
 
     showModalBottomSheet(
       context: context,
@@ -67,12 +72,13 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
         return Container(
           padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
-            color: const Color(0xFF071913),
+            color: palette.scaffoldColor,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border.all(color: accentColor.withOpacity(0.4), width: 1.5),
+            border: Border.all(color: accentColor.withOpacity(0.45), width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.85),
+                color: (palette.isDark ? Colors.black : palette.primaryColor)
+                    .withOpacity(palette.isDark ? 0.85 : 0.22),
                 blurRadius: 30,
                 offset: const Offset(0, -5),
               ),
@@ -87,7 +93,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                   width: 45,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.white24,
+                    color: palette.dividerColor,
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
@@ -120,20 +126,35 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 ],
               ),
               const SizedBox(height: 18),
-              const Divider(color: Colors.white12),
+              Divider(color: palette.dividerColor),
               const SizedBox(height: 10),
-              _buildDetailRow(Icons.check_circle_outline_rounded, "الصلوات والركعات", info.rakats, accentColor),
+              _buildDetailRow(
+                Icons.check_circle_outline_rounded,
+                "الصلوات والركعات",
+                info.rakats,
+                palette,
+              ),
               const SizedBox(height: 10),
-              _buildDetailRow(Icons.auto_awesome_outlined, "السنن والرواتب", info.sunnah, accentColor),
+              _buildDetailRow(
+                Icons.auto_awesome_outlined,
+                "السنن والرواتب",
+                info.sunnah,
+                palette,
+              ),
               const SizedBox(height: 10),
-              _buildDetailRow(Icons.access_time_rounded, "وقت الأداء", info.timing, accentColor),
+              _buildDetailRow(
+                Icons.access_time_rounded,
+                "وقت الأداء",
+                info.timing,
+                palette,
+              ),
               const SizedBox(height: 14),
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.04),
+                  color: palette.cardColor,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: accentColor.withOpacity(0.2)),
+                  border: Border.all(color: accentColor.withOpacity(0.25)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,8 +176,8 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                     const SizedBox(height: 6),
                     Text(
                       info.hadith,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: palette.textPrimary,
                         fontSize: 13,
                         height: 1.5,
                       ),
@@ -164,8 +185,8 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                     const SizedBox(height: 8),
                     Text(
                       info.virtue,
-                      style: const TextStyle(
-                        color: Colors.white70,
+                      style: TextStyle(
+                        color: palette.textSecondary,
                         fontSize: 12,
                         height: 1.4,
                       ),
@@ -178,7 +199,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 child: TextButton.icon(
                   style: TextButton.styleFrom(
                     foregroundColor: accentColor,
-                    backgroundColor: accentColor.withOpacity(0.12),
+                    backgroundColor: accentColor.withOpacity(0.14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                   ),
@@ -194,23 +215,32 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String label, String value, Color accentColor) {
+  Widget _buildDetailRow(
+    IconData icon,
+    String label,
+    String value,
+    ThemePalette palette,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: accentColor, size: 18),
+        Icon(icon, color: palette.accentColor, size: 18),
         const SizedBox(width: 10),
         SizedBox(
           width: 105,
           child: Text(
             label,
-            style: const TextStyle(color: Colors.white54, fontSize: 13),
+            style: TextStyle(color: palette.textMuted, fontSize: 13),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       ],
@@ -220,8 +250,10 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
+    final isNight = settings.isNightEffective;
     final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
-    final accentColor = themeOption.accentColor;
+    final palette = themeOption.resolve(isNight: isNight);
+    final accentColor = palette.accentColor;
 
     final prayerData = AdvancedPrayerTimes.calculate(
       latitude: settings.latitude,
@@ -236,19 +268,27 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
 
     final nextTime = prayerData.prayerTimes.timeForPrayer(nextPrayer) ?? DateTime.now();
     final remaining = nextTime.difference(DateTime.now());
-    final skyColors = IslamicTheme.getSkyGradients(currentPrayer, settings.selectedTheme);
+    final skyColors = IslamicTheme.getSkyGradients(
+      currentPrayer,
+      settings.selectedTheme,
+      isNight: isNight,
+    );
 
     return Scaffold(
       key: _scaffoldKey,
       endDrawer: IslamicSideDrawer(
         themeOption: themeOption,
+        isNightMode: isNight,
         onOpenQuranAzkarSheet: () => QuranAzkarSheet.showAzkarReader(context, accentColor),
         onOpenGreetingCards: () {
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,
-            builder: (_) => IslamicGreetingCardsSheet(themeOption: themeOption),
+            builder: (_) => IslamicGreetingCardsSheet(
+              themeOption: themeOption,
+              isNightMode: isNight,
+            ),
           );
         },
         onOpenBooks: () {
@@ -256,12 +296,15 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
             context: context,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,
-            builder: (_) => IslamicBooksSheet(themeOption: themeOption),
+            builder: (_) => IslamicBooksSheet(
+              themeOption: themeOption,
+              isNightMode: isNight,
+            ),
           );
         },
       ),
       body: AnimatedContainer(
-        duration: const Duration(seconds: 2),
+        duration: const Duration(milliseconds: 900),
         curve: Curves.easeInOut,
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -272,76 +315,97 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
         ),
         child: Stack(
           children: [
-            // 0. خلفية المسجد النبوي الشريف الواقعية بالصور الحقيقية والتنفس الحي
+            // 0. خلفية المسجد النبوي الشريف الواقعية (نهارياً وليلياً)
             Positioned.fill(
               child: RealMosqueBackground(
                 currentPrayer: currentPrayer,
                 themeOption: themeOption,
+                isNightMode: isNight,
               ),
             ),
 
-            // 1. مؤثرات إسلامية حصرية لكل ثيم (حذف الشمس نهائياً واستبدالها بمؤثرات إسلامية عريقة)
+            // 1. مؤثرات إسلامية حصرية لكل ثيم
             Positioned.fill(
               child: IslamicThemeEffectsCanvas(
                 themeOption: themeOption,
+                isNightMode: isNight,
               ),
             ),
 
-            // 2. المحتوى الرئيسي: الرأس الزخرفي، بطاقة الصلاة الكبرى وشبكة الأزرار الستة
+            // 2. المحتوى الرئيسي: شريط الهوية "الفردوس" + بطاقة الصلاة
             SafeArea(
               child: Column(
                 children: [
                   const SizedBox(height: 4),
 
-                  // شريط الموقع والتاريخ مع زر القائمة الجانبية وزر المشاركة (مطابق للصورة 1)
+                  // شريط الموقع والتاريخ وزر تبديل النهار والليل
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.45),
+                        color: palette.cardColor.withOpacity(isNight ? 0.72 : 0.90),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: accentColor.withOpacity(0.35)),
+                        border: Border.all(color: accentColor.withOpacity(0.45)),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.4),
-                            blurRadius: 10,
+                            color: (isNight ? Colors.black : palette.primaryColor)
+                                .withOpacity(isNight ? 0.45 : 0.14),
+                            blurRadius: 12,
                           ),
                         ],
                       ),
                       child: Row(
                         children: [
-                          // زر فتح القائمة الجانبية بتصميم دائري مذهب (مطابق لأعلى الصورتين 1 و 3)
+                          // زر فتح القائمة الجانبية
                           GestureDetector(
                             onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
                             child: Container(
                               padding: const EdgeInsets.all(7),
                               decoration: BoxDecoration(
-                                color: accentColor.withOpacity(0.20),
+                                color: accentColor.withOpacity(0.18),
                                 shape: BoxShape.circle,
                                 border: Border.all(color: accentColor, width: 1.4),
                               ),
                               child: Icon(Icons.menu_rounded, color: accentColor, size: 20),
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: 8),
 
-                          // بيانات الموقع والتاريخ الهجري والميلادي
+                          // علامة الفردوس والموقع والتاريخ
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
                                   children: [
-                                    Icon(Icons.location_on_rounded, color: accentColor, size: 15),
-                                    const SizedBox(width: 4),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 7,
+                                        vertical: 1.5,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: accentColor,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        "الفردوس",
+                                        style: TextStyle(
+                                          color: palette.onAccentColor,
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Icon(Icons.location_on_rounded, color: accentColor, size: 14),
+                                    const SizedBox(width: 3),
                                     Expanded(
                                       child: Text(
                                         "${settings.cityName} • ${HijriDate.fromGregorian(DateTime.now()).formatFullArabic()}",
-                                        style: const TextStyle(
-                                          fontFamily: 'Aref Ruqaa',
-                                          color: Colors.white,
-                                          fontSize: 13,
+                                        style: TextStyle(
+                                          color: palette.textPrimary,
+                                          fontSize: 12.5,
                                           fontWeight: FontWeight.bold,
                                         ),
                                         maxLines: 1,
@@ -352,7 +416,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                                 ),
                                 Text(
                                   DateFormat('EEEE, d MMMM yyyy', 'ar').format(DateTime.now()),
-                                  style: const TextStyle(color: Colors.white70, fontSize: 10.5),
+                                  style: TextStyle(color: palette.textSecondary, fontSize: 10.5),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -360,15 +424,30 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                             ),
                           ),
 
-                          // زر مشاركة مواقيت الصلاة (مطابق لأعلى الصورة 1)
+                          // زر التبديل السريع بين الوضع الليلي والنهاري
                           IconButton(
                             constraints: const BoxConstraints(),
                             padding: const EdgeInsets.all(6),
-                            icon: Icon(Icons.share_rounded, color: accentColor, size: 20),
+                            icon: Icon(
+                              isNight ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                              color: accentColor,
+                              size: 20,
+                            ),
+                            tooltip: isNight ? "التحويل إلى الوضع النهاري ☀️" : "التحويل إلى الوضع الليلي 🌙",
+                            onPressed: () {
+                              settings.toggleDayNight();
+                            },
+                          ),
+
+                          // زر مشاركة مواقيت الصلاة
+                          IconButton(
+                            constraints: const BoxConstraints(),
+                            padding: const EdgeInsets.all(6),
+                            icon: Icon(Icons.share_rounded, color: accentColor, size: 19),
                             tooltip: "مشاركة مواقيت الصلاة",
                             onPressed: () {
                               final fmt = DateFormat.jm('ar');
-                              final text = "مواقيت الصلاة اليوم في ${settings.cityName}:\n"
+                              final text = "تطبيق الفردوس — مواقيت الصلاة اليوم في ${settings.cityName}:\n"
                                   "الفجر: ${fmt.format(prayerData.prayerTimes.fajr)}\n"
                                   "الشروق: ${fmt.format(prayerData.prayerTimes.sunrise)}\n"
                                   "الظهر: ${fmt.format(prayerData.prayerTimes.dhuhr)}\n"
@@ -378,9 +457,13 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                                   "متبقي على الأذان القادم: ${_formatDuration(remaining.isNegative ? Duration.zero : remaining)}";
                               Clipboard.setData(ClipboardData(text: text));
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("تم نسخ جدول مواقيت اليوم لمشاركته! ✨"),
-                                  duration: Duration(seconds: 2),
+                                SnackBar(
+                                  backgroundColor: palette.cardColor,
+                                  content: Text(
+                                    "تم نسخ جدول مواقيت اليوم لمشاركته! ✨",
+                                    style: TextStyle(color: palette.textPrimary),
+                                  ),
+                                  duration: const Duration(seconds: 2),
                                 ),
                               );
                             },
@@ -390,13 +473,17 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                           IconButton(
                             constraints: const BoxConstraints(),
                             padding: const EdgeInsets.all(6),
-                            icon: const Icon(Icons.my_location_rounded, color: Colors.white70, size: 20),
+                            icon: Icon(Icons.my_location_rounded, color: palette.textSecondary, size: 19),
                             tooltip: "تحديث الموقع عبر GPS",
                             onPressed: () async {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("جاري تحديد موقعك الجغرافي..."),
-                                  duration: Duration(seconds: 1),
+                                SnackBar(
+                                  backgroundColor: palette.cardColor,
+                                  content: Text(
+                                    "جاري تحديد موقعك الجغرافي...",
+                                    style: TextStyle(color: palette.textPrimary),
+                                  ),
+                                  duration: const Duration(seconds: 1),
                                 ),
                               );
                               await settings.refreshCurrentLocation();
@@ -407,7 +494,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                     ),
                   ),
 
-                  // عرض بطاقة الصلاة الأندلسية وشبكة الأزرار الستة (مطابق تماماً للصورة 1)
+                  // عرض بطاقة الصلاة وشبكة الأزرار الستة
                   Expanded(
                     child: SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
@@ -416,6 +503,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                           IslamicPrayerCardView(
                             prayerTimes: prayerData.prayerTimes,
                             themeOption: themeOption,
+                            isNightMode: isNight,
                             remaining: remaining,
                             currentPrayer: currentPrayer,
                             nextPrayer: nextPrayer,
@@ -428,8 +516,10 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                                 builder: (_) => Container(
                                   height: MediaQuery.of(context).size.height * 0.90,
                                   decoration: BoxDecoration(
-                                    color: themeOption.scaffoldColor,
-                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                                    color: palette.scaffoldColor,
+                                    borderRadius: const BorderRadius.vertical(
+                                      top: Radius.circular(28),
+                                    ),
                                     border: Border.all(color: accentColor.withOpacity(0.5)),
                                   ),
                                   child: const QiblaScreen(),
@@ -442,7 +532,10 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                                 context: context,
                                 isScrollControlled: true,
                                 backgroundColor: Colors.transparent,
-                                builder: (_) => IslamicGreetingCardsSheet(themeOption: themeOption),
+                                builder: (_) => IslamicGreetingCardsSheet(
+                                  themeOption: themeOption,
+                                  isNightMode: isNight,
+                                ),
                               );
                             },
                             onOpenBooks: () {
@@ -450,7 +543,10 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                                 context: context,
                                 isScrollControlled: true,
                                 backgroundColor: Colors.transparent,
-                                builder: (_) => IslamicBooksSheet(themeOption: themeOption),
+                                builder: (_) => IslamicBooksSheet(
+                                  themeOption: themeOption,
+                                  isNightMode: isNight,
+                                ),
                               );
                             },
                             onOpenHelpMe: () {
@@ -461,14 +557,16 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                                 builder: (_) => Container(
                                   height: MediaQuery.of(context).size.height * 0.90,
                                   decoration: BoxDecoration(
-                                    color: themeOption.scaffoldColor,
-                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                                    color: palette.scaffoldColor,
+                                    borderRadius: const BorderRadius.vertical(
+                                      top: Radius.circular(28),
+                                    ),
                                   ),
                                   child: const HelpMeScreen(),
                                 ),
                               );
                             },
-                            onPrayerTap: (prayerKey) => _showPrayerDetails(context, prayerKey, accentColor),
+                            onPrayerTap: (prayerKey) => _showPrayerDetails(context, prayerKey, palette),
                           ),
                           const SizedBox(height: 120),
                         ],
@@ -492,7 +590,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF041410).withOpacity(0.96),
+                      color: palette.scaffoldColor.withOpacity(0.97),
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                       border: Border.all(
                         color: accentColor.withOpacity(0.45),
@@ -500,8 +598,9 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.90),
-                          blurRadius: 32,
+                          color: (isNight ? Colors.black : palette.primaryColor)
+                              .withOpacity(isNight ? 0.90 : 0.22),
+                          blurRadius: 30,
                           offset: const Offset(0, -10),
                         ),
                         BoxShadow(
@@ -515,7 +614,6 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                       controller: scrollController,
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 95),
                       children: [
-                        // مقبض السحب الذهبي الملكي القابل للنقر للتوسيع والطي
                         GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: () {
@@ -570,7 +668,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                           ),
                         ),
 
-                        // شريط المعاينة الأفقية السريعة لجميع مواقيت الصلوات الخمس والشروق
+                        // شريط المعاينة الأفقية السريعة
                         Container(
                           height: 48,
                           margin: const EdgeInsets.symmetric(vertical: 8),
@@ -578,17 +676,17 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                             scrollDirection: Axis.horizontal,
                             physics: const BouncingScrollPhysics(),
                             children: [
-                              _buildQuickPrayerChip("الفجر", prayerData.prayerTimes.fajr, currentPrayer == Prayer.fajr, accentColor),
-                              _buildQuickPrayerChip("الشروق", prayerData.prayerTimes.sunrise, currentPrayer == Prayer.sunrise, accentColor),
-                              _buildQuickPrayerChip("الظهر", prayerData.prayerTimes.dhuhr, currentPrayer == Prayer.dhuhr, accentColor),
-                              _buildQuickPrayerChip("العصر", prayerData.prayerTimes.asr, currentPrayer == Prayer.asr, accentColor),
-                              _buildQuickPrayerChip("المغرب", prayerData.prayerTimes.maghrib, currentPrayer == Prayer.maghrib, accentColor),
-                              _buildQuickPrayerChip("العشاء", prayerData.prayerTimes.isha, currentPrayer == Prayer.isha, accentColor),
+                              _buildQuickPrayerChip("الفجر", prayerData.prayerTimes.fajr, currentPrayer == Prayer.fajr, palette),
+                              _buildQuickPrayerChip("الشروق", prayerData.prayerTimes.sunrise, currentPrayer == Prayer.sunrise, palette),
+                              _buildQuickPrayerChip("الظهر", prayerData.prayerTimes.dhuhr, currentPrayer == Prayer.dhuhr, palette),
+                              _buildQuickPrayerChip("العصر", prayerData.prayerTimes.asr, currentPrayer == Prayer.asr, palette),
+                              _buildQuickPrayerChip("المغرب", prayerData.prayerTimes.maghrib, currentPrayer == Prayer.maghrib, palette),
+                              _buildQuickPrayerChip("العشاء", prayerData.prayerTimes.isha, currentPrayer == Prayer.isha, palette),
                             ],
                           ),
                         ),
 
-                        // شريط عنوان الشيت مع زر التصغير السريع
+                        // شريط عنوان الشيت
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 6),
                           child: Row(
@@ -610,10 +708,13 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                                     curve: Curves.easeInCubic,
                                   );
                                 },
-                                icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Colors.white70),
-                                label: const Text("طي الجدول", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                                icon: Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: palette.textSecondary),
+                                label: Text(
+                                  "طي الجدول",
+                                  style: TextStyle(color: palette.textSecondary, fontSize: 12),
+                                ),
                                 style: TextButton.styleFrom(
-                                  backgroundColor: Colors.white.withOpacity(0.08),
+                                  backgroundColor: palette.cardColor,
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                 ),
@@ -622,84 +723,24 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                           ),
                         ),
 
-                        // 1. شريط حقيبة المسلم للخدمات الإسلامية السريعة
-                        _buildMuslimHubQuickActions(context, accentColor),
-
-                        // 2. بطاقة آية اليوم المباركة بخط عربي أصيل وتفسير
-                        _buildDailyVerseCard(accentColor),
-
-                        // 3. بطاقة دعاء اليوم المأثور لحفظ المسلم
-                        _buildDailyDuaCard(accentColor),
-
+                        _buildMuslimHubQuickActions(context, palette),
+                        _buildDailyVerseCard(palette),
+                        _buildDailyDuaCard(palette),
                         const SizedBox(height: 6),
 
-                        // بطاقات الصلوات الخمس والشروق
-                        _buildPrayerCard(
-                          "الفجر",
-                          prayerData.prayerTimes.fajr,
-                          Prayer.fajr,
-                          currentPrayer,
-                          accentColor,
-                        ),
-                        _buildPrayerCard(
-                          "الشروق",
-                          prayerData.prayerTimes.sunrise,
-                          Prayer.sunrise,
-                          currentPrayer,
-                          accentColor,
-                          isSunnah: true,
-                        ),
-                        _buildPrayerCard(
-                          "الظهر",
-                          prayerData.prayerTimes.dhuhr,
-                          Prayer.dhuhr,
-                          currentPrayer,
-                          accentColor,
-                        ),
-                        _buildPrayerCard(
-                          "العصر",
-                          prayerData.prayerTimes.asr,
-                          Prayer.asr,
-                          currentPrayer,
-                          accentColor,
-                        ),
-                        _buildPrayerCard(
-                          "المغرب",
-                          prayerData.prayerTimes.maghrib,
-                          Prayer.maghrib,
-                          currentPrayer,
-                          accentColor,
-                        ),
-                        _buildPrayerCard(
-                          "العشاء",
-                          prayerData.prayerTimes.isha,
-                          Prayer.isha,
-                          currentPrayer,
-                          accentColor,
-                        ),
+                        _buildPrayerCard("الفجر", prayerData.prayerTimes.fajr, Prayer.fajr, currentPrayer, palette),
+                        _buildPrayerCard("الشروق", prayerData.prayerTimes.sunrise, Prayer.sunrise, currentPrayer, palette, isSunnah: true),
+                        _buildPrayerCard("الظهر", prayerData.prayerTimes.dhuhr, Prayer.dhuhr, currentPrayer, palette),
+                        _buildPrayerCard("العصر", prayerData.prayerTimes.asr, Prayer.asr, currentPrayer, palette),
+                        _buildPrayerCard("المغرب", prayerData.prayerTimes.maghrib, Prayer.maghrib, currentPrayer, palette),
+                        _buildPrayerCard("العشاء", prayerData.prayerTimes.isha, Prayer.isha, currentPrayer, palette),
 
                         const SizedBox(height: 10),
-                        const Divider(color: Colors.white24, height: 20),
+                        Divider(color: palette.dividerColor, height: 20),
 
-                        // الأوقات المسنونة وقيام الليل
-                        _buildSpecialTimeCard(
-                          "صلاة الضحى (صلاة الأوابين)",
-                          prayerData.duhaStart,
-                          Icons.wb_sunny_outlined,
-                          accentColor,
-                        ),
-                        _buildSpecialTimeCard(
-                          "منتصف الليل الشرعي",
-                          prayerData.islamicMidnight,
-                          Icons.dark_mode_outlined,
-                          accentColor,
-                        ),
-                        _buildSpecialTimeCard(
-                          "ثلث الليل الأخير (قيام الليل)",
-                          prayerData.qiyamStart,
-                          Icons.nights_stay_outlined,
-                          accentColor,
-                        ),
+                        _buildSpecialTimeCard("صلاة الضحى (صلاة الأوابين)", prayerData.duhaStart, Icons.wb_sunny_outlined, palette),
+                        _buildSpecialTimeCard("منتصف الليل الشرعي", prayerData.islamicMidnight, Icons.dark_mode_outlined, palette),
+                        _buildSpecialTimeCard("ثلث الليل الأخير (قيام الليل)", prayerData.qiyamStart, Icons.nights_stay_outlined, palette),
                       ],
                     ),
                   ),
@@ -707,7 +748,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
               },
             ),
 
-            // 4. زر القائمة الجانبية الدائري العائم على حافة الشاشة (مطابق تماماً للصورة 2 و 3)
+            // 4. زر القائمة الجانبية الدائري العائم
             Positioned(
               top: MediaQuery.of(context).size.height * 0.16,
               left: 10,
@@ -717,35 +758,37 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF581C87).withOpacity(0.92),
+                    color: palette.cardColor.withOpacity(0.95),
                     shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFFFBBF24), width: 1.8),
+                    border: Border.all(color: accentColor, width: 1.8),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.55),
+                        color: (isNight ? Colors.black : palette.primaryColor)
+                            .withOpacity(isNight ? 0.55 : 0.2),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
                       BoxShadow(
-                        color: const Color(0xFFFBBF24).withOpacity(0.3),
+                        color: accentColor.withOpacity(0.28),
                         blurRadius: 8,
                       ),
                     ],
                   ),
-                  child: const Center(
-                    child: Icon(Icons.menu_rounded, color: Color(0xFFFBBF24), size: 22),
+                  child: Center(
+                    child: Icon(Icons.menu_rounded, color: accentColor, size: 22),
                   ),
                 ),
               ),
             ),
 
-            // 5. شريط المشغل الصوتي العائم في الأسفل عند تشغيل أي تلاوة أو رقية (مطابق للصورة 2 و 3)
+            // 5. شريط المشغل الصوتي العائم
             Positioned(
               left: 0,
               right: 0,
               bottom: 88,
               child: PersistentAudioPlayerBar(
                 themeOption: themeOption,
+                isNightMode: isNight,
                 onOpenDrawer: () => _scaffoldKey.currentState?.openEndDrawer(),
               ),
             ),
@@ -760,10 +803,11 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     DateTime time,
     Prayer prayerType,
     Prayer currentPrayer,
-    Color accentColor, {
+    ThemePalette palette, {
     bool isSunnah = false,
   }) {
     final isCurrent = currentPrayer == prayerType;
+    final accentColor = palette.accentColor;
     final info = PrayerInfo.data[name];
 
     Widget cardContent = Material(
@@ -775,10 +819,12 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
           margin: const EdgeInsets.symmetric(vertical: 4),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
           decoration: BoxDecoration(
-            color: isCurrent ? accentColor.withOpacity(0.24) : Colors.black26,
+            color: isCurrent
+                ? accentColor.withOpacity(palette.isDark ? 0.24 : 0.16)
+                : palette.cardColor,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isCurrent ? accentColor : Colors.white12,
+              color: isCurrent ? accentColor : palette.dividerColor,
               width: isCurrent ? 2.0 : 1.0,
             ),
           ),
@@ -791,7 +837,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                   isCurrent
                       ? Icons.volume_up_rounded
                       : (isSunnah ? Icons.wb_sunny_rounded : Icons.access_time_rounded),
-                  color: isCurrent ? accentColor : Colors.white54,
+                  color: isCurrent ? accentColor : palette.textMuted,
                   size: 22,
                 ),
               ),
@@ -808,7 +854,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: isCurrent ? FontWeight.bold : FontWeight.w600,
-                              color: isCurrent ? Colors.white : Colors.white70,
+                              color: isCurrent ? palette.textPrimary : palette.textSecondary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -820,12 +866,12 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                               decoration: BoxDecoration(
-                                color: Colors.white12,
+                                color: palette.elevatedCardColor,
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: const Text(
+                              child: Text(
                                 "شروق",
-                                style: TextStyle(fontSize: 10, color: Colors.white70),
+                                style: TextStyle(fontSize: 10, color: palette.textSecondary),
                               ),
                             ),
                           ),
@@ -838,7 +884,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                           info.summary,
                           style: TextStyle(
                             fontSize: 11,
-                            color: isCurrent ? accentColor.withOpacity(0.9) : Colors.white54,
+                            color: isCurrent ? accentColor : palette.textMuted,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -858,7 +904,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: isCurrent ? accentColor : Colors.white,
+                        color: isCurrent ? accentColor : palette.textPrimary,
                       ),
                     ),
                   ),
@@ -866,7 +912,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: accentColor.withOpacity(0.18),
+                      color: accentColor.withOpacity(0.16),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: accentColor.withOpacity(0.45), width: 0.8),
                     ),
@@ -905,15 +951,23 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     return cardContent;
   }
 
-  Widget _buildQuickPrayerChip(String name, DateTime time, bool isCurrent, Color accentColor) {
+  Widget _buildQuickPrayerChip(
+    String name,
+    DateTime time,
+    bool isCurrent,
+    ThemePalette palette,
+  ) {
+    final accentColor = palette.accentColor;
     return Container(
       margin: const EdgeInsets.only(left: 8),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: isCurrent ? accentColor.withOpacity(0.25) : Colors.white.withOpacity(0.06),
+        color: isCurrent
+            ? accentColor.withOpacity(palette.isDark ? 0.25 : 0.16)
+            : palette.cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isCurrent ? accentColor : Colors.white12,
+          color: isCurrent ? accentColor : palette.dividerColor,
           width: isCurrent ? 1.5 : 1.0,
         ),
       ),
@@ -922,14 +976,14 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
         children: [
           Icon(
             isCurrent ? Icons.access_time_filled_rounded : Icons.access_time_rounded,
-            color: isCurrent ? accentColor : Colors.white60,
+            color: isCurrent ? accentColor : palette.textMuted,
             size: 14,
           ),
           const SizedBox(width: 5),
           Text(
             name,
             style: TextStyle(
-              color: isCurrent ? accentColor : Colors.white70,
+              color: isCurrent ? accentColor : palette.textSecondary,
               fontSize: 11,
               fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
             ),
@@ -938,7 +992,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
           Text(
             DateFormat('hh:mm a').format(time),
             style: TextStyle(
-              color: isCurrent ? Colors.white : Colors.white54,
+              color: isCurrent ? palette.textPrimary : palette.textMuted,
               fontSize: 11,
               fontWeight: FontWeight.bold,
             ),
@@ -948,21 +1002,27 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     );
   }
 
-  Widget _buildSpecialTimeCard(String name, DateTime time, IconData icon, Color accentColor) {
+  Widget _buildSpecialTimeCard(
+    String name,
+    DateTime time,
+    IconData icon,
+    ThemePalette palette,
+  ) {
+    final accentColor = palette.accentColor;
     final info = PrayerInfo.data[name];
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => _showPrayerDetails(context, name, accentColor),
+        onTap: () => _showPrayerDetails(context, name, palette),
         borderRadius: BorderRadius.circular(12),
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 3),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.06),
+            color: palette.cardColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white10),
+            border: Border.all(color: palette.dividerColor),
           ),
           child: Row(
             children: [
@@ -974,8 +1034,8 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                   children: [
                     Text(
                       name,
-                      style: const TextStyle(
-                        color: Colors.white70,
+                      style: TextStyle(
+                        color: palette.textPrimary,
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
@@ -985,7 +1045,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                     if (info != null)
                       Text(
                         info.summary,
-                        style: const TextStyle(color: Colors.white38, fontSize: 10),
+                        style: TextStyle(color: palette.textMuted, fontSize: 10),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -997,15 +1057,15 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 fit: BoxFit.scaleDown,
                 child: Text(
                   DateFormat('hh:mm a').format(time),
-                  style: const TextStyle(
-                    color: Colors.white60,
+                  style: TextStyle(
+                    color: palette.textSecondary,
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
               const SizedBox(width: 4),
-              Icon(Icons.chevron_left_rounded, size: 14, color: accentColor.withOpacity(0.6)),
+              Icon(Icons.chevron_left_rounded, size: 14, color: accentColor.withOpacity(0.7)),
             ],
           ),
         ),
@@ -1013,12 +1073,15 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     );
   }
 
-  Widget _buildMuslimHubQuickActions(BuildContext context, Color accentColor) {
+  Widget _buildMuslimHubQuickActions(BuildContext context, ThemePalette palette) {
+    final accentColor = palette.accentColor;
+    final isDark = palette.isDark;
+
     return Container(
       margin: const EdgeInsets.only(top: 4, bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.04),
+        color: palette.cardColor,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: accentColor.withOpacity(0.35)),
       ),
@@ -1030,9 +1093,8 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
               Icon(Icons.widgets_rounded, color: accentColor, size: 16),
               const SizedBox(width: 8),
               Text(
-                "حقيبة المسلم • خدمات إسلامية شاملة",
+                "حقيبة الفردوس • خدمات إسلامية شاملة",
                 style: TextStyle(
-                  fontFamily: 'Cairo',
                   color: accentColor,
                   fontWeight: FontWeight.bold,
                   fontSize: 12.5,
@@ -1047,29 +1109,32 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
               _buildHubActionItem(
                 icon: Icons.menu_book_rounded,
                 label: "القرآن الكريم",
-                color: const Color(0xFFFBBF24),
+                color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309),
+                palette: palette,
                 onTap: () => QuranAzkarSheet.showQuranReader(context, accentColor),
               ),
               _buildHubActionItem(
                 icon: Icons.volunteer_activism_rounded,
                 label: "أذكار المسلم",
-                color: const Color(0xFF34D399),
+                color: isDark ? const Color(0xFF34D399) : const Color(0xFF047857),
+                palette: palette,
                 onTap: () => QuranAzkarSheet.showAzkarReader(context, accentColor),
               ),
               _buildHubActionItem(
                 icon: Icons.calendar_month_rounded,
                 label: "التقويم الهجري",
-                color: const Color(0xFF38BDF8),
+                color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0369A1),
+                palette: palette,
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      backgroundColor: Color(0xFF041812),
+                    SnackBar(
+                      backgroundColor: palette.cardColor,
                       behavior: SnackBarBehavior.floating,
                       content: Text(
                         "افتح تبويب التقويم الهجري والمناسبات الإسلامية من الشريط السفلي 📅",
-                        style: TextStyle(fontFamily: 'Cairo', color: Colors.white, fontSize: 12),
+                        style: TextStyle(color: palette.textPrimary, fontSize: 12),
                       ),
-                      duration: Duration(seconds: 2),
+                      duration: const Duration(seconds: 2),
                     ),
                   );
                 },
@@ -1077,17 +1142,21 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
               _buildHubActionItem(
                 icon: Icons.explore_rounded,
                 label: "القبلة الذكية",
-                color: const Color(0xFFF472B6),
+                color: isDark ? const Color(0xFFF472B6) : const Color(0xFFBE185D),
+                palette: palette,
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      backgroundColor: Color(0xFF041812),
-                      behavior: SnackBarBehavior.floating,
-                      content: Text(
-                        "افتح بوصلة القبلة الذكية من الشريط السفلي 🧭",
-                        style: TextStyle(fontFamily: 'Cairo', color: Colors.white, fontSize: 12),
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => Container(
+                      height: MediaQuery.of(context).size.height * 0.90,
+                      decoration: BoxDecoration(
+                        color: palette.scaffoldColor,
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                        border: Border.all(color: accentColor.withOpacity(0.5)),
                       ),
-                      duration: Duration(seconds: 2),
+                      child: const QiblaScreen(),
                     ),
                   );
                 },
@@ -1103,6 +1172,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     required IconData icon,
     required String label,
     required Color color,
+    required ThemePalette palette,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -1116,7 +1186,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
               padding: const EdgeInsets.all(9),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: color.withOpacity(0.18),
+                color: color.withOpacity(0.16),
                 border: Border.all(color: color.withOpacity(0.6), width: 1.2),
               ),
               child: Icon(icon, color: color, size: 20),
@@ -1124,9 +1194,8 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
             const SizedBox(height: 5),
             Text(
               label,
-              style: const TextStyle(
-                fontFamily: 'Cairo',
-                color: Colors.white,
+              style: TextStyle(
+                color: palette.textPrimary,
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
               ),
@@ -1137,20 +1206,23 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     );
   }
 
-  Widget _buildDailyVerseCard(Color accentColor) {
+  Widget _buildDailyVerseCard(ThemePalette palette) {
     final verse = DailyVerse.getTodayVerse();
+    final accentColor = palette.accentColor;
+    final headerColor = palette.isDark ? const Color(0xFFFBBF24) : palette.primaryColor;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF041914).withOpacity(0.95),
+        color: palette.cardColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: accentColor.withOpacity(0.4), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
-            blurRadius: 15,
+            color: (palette.isDark ? Colors.black : palette.primaryColor)
+                .withOpacity(palette.isDark ? 0.45 : 0.10),
+            blurRadius: 14,
             offset: const Offset(0, 3),
           )
         ],
@@ -1161,15 +1233,14 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.menu_book_rounded, color: Color(0xFFFBBF24), size: 18),
-                  SizedBox(width: 8),
+                  Icon(Icons.menu_book_rounded, color: headerColor, size: 18),
+                  const SizedBox(width: 8),
                   Text(
                     "آيَــةُ اليَــوْمِ المُبَارَكَــة",
                     style: TextStyle(
-                      fontFamily: 'Cairo',
-                      color: Color(0xFFFBBF24),
+                      color: headerColor,
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                     ),
@@ -1179,16 +1250,19 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
               IconButton(
                 constraints: const BoxConstraints(),
                 padding: EdgeInsets.zero,
-                icon: const Icon(Icons.copy_rounded, color: Colors.white60, size: 18),
+                icon: Icon(Icons.copy_rounded, color: palette.textMuted, size: 18),
                 tooltip: "نسخ الآية الكريمة",
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: "${verse.arabicText}\n${verse.surahAndAyah}"));
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      backgroundColor: Color(0xFF041812),
+                    SnackBar(
+                      backgroundColor: palette.cardColor,
                       behavior: SnackBarBehavior.floating,
-                      content: Text("تم نسخ الآية الكريمة بنجاح 📋✨", style: TextStyle(fontFamily: 'Cairo', color: Colors.white, fontSize: 12)),
-                      duration: Duration(seconds: 2),
+                      content: Text(
+                        "تم نسخ الآية الكريمة بنجاح 📋✨",
+                        style: TextStyle(color: palette.textPrimary, fontSize: 12),
+                      ),
+                      duration: const Duration(seconds: 2),
                     ),
                   );
                 },
@@ -1200,15 +1274,14 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.35),
+              color: palette.elevatedCardColor,
               borderRadius: BorderRadius.circular(14),
             ),
             child: Text(
               verse.arabicText,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontFamily: 'Amiri',
-                color: Color(0xFFFDE68A),
+              style: TextStyle(
+                color: palette.isDark ? const Color(0xFFFDE68A) : palette.primaryColor,
                 fontSize: 17,
                 height: 1.8,
                 fontWeight: FontWeight.w600,
@@ -1216,26 +1289,19 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                verse.surahAndAyah,
-                style: TextStyle(
-                  fontFamily: 'Cairo',
-                  color: accentColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
-                ),
-              ),
-            ],
+          Text(
+            verse.surahAndAyah,
+            style: TextStyle(
+              color: accentColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 11,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             verse.reflection,
-            style: const TextStyle(
-              fontFamily: 'Cairo',
-              color: Colors.white70,
+            style: TextStyle(
+              color: palette.textSecondary,
               fontSize: 11,
               height: 1.3,
             ),
@@ -1245,20 +1311,22 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     );
   }
 
-  Widget _buildDailyDuaCard(Color accentColor) {
+  Widget _buildDailyDuaCard(ThemePalette palette) {
     final dua = DailyDua.getTodayDua();
+    final headerColor = palette.isDark ? const Color(0xFF34D399) : const Color(0xFF047857);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF041914).withOpacity(0.95),
+        color: palette.cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF34D399).withOpacity(0.4), width: 1.2),
+        border: Border.all(color: headerColor.withOpacity(0.45), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
-            blurRadius: 15,
+            color: (palette.isDark ? Colors.black : palette.primaryColor)
+                .withOpacity(palette.isDark ? 0.45 : 0.10),
+            blurRadius: 14,
             offset: const Offset(0, 3),
           )
         ],
@@ -1269,15 +1337,14 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.volunteer_activism_rounded, color: Color(0xFF34D399), size: 18),
-                  SizedBox(width: 8),
+                  Icon(Icons.volunteer_activism_rounded, color: headerColor, size: 18),
+                  const SizedBox(width: 8),
                   Text(
                     "دُعَــاءُ اليَــوْمِ المَأْثُــور",
                     style: TextStyle(
-                      fontFamily: 'Cairo',
-                      color: Color(0xFF34D399),
+                      color: headerColor,
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                     ),
@@ -1287,16 +1354,19 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
               IconButton(
                 constraints: const BoxConstraints(),
                 padding: EdgeInsets.zero,
-                icon: const Icon(Icons.copy_rounded, color: Colors.white60, size: 18),
+                icon: Icon(Icons.copy_rounded, color: palette.textMuted, size: 18),
                 tooltip: "نسخ الدعاء",
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: "${dua.textArabic}\n(${dua.source})"));
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      backgroundColor: Color(0xFF041812),
+                    SnackBar(
+                      backgroundColor: palette.cardColor,
                       behavior: SnackBarBehavior.floating,
-                      content: Text("تم نسخ الدعاء المأثور بنجاح 🤲✨", style: TextStyle(fontFamily: 'Cairo', color: Colors.white, fontSize: 12)),
-                      duration: Duration(seconds: 2),
+                      content: Text(
+                        "تم نسخ الدعاء المأثور بنجاح 🤲✨",
+                        style: TextStyle(color: palette.textPrimary, fontSize: 12),
+                      ),
+                      duration: const Duration(seconds: 2),
                     ),
                   );
                 },
@@ -1306,9 +1376,8 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
           const SizedBox(height: 8),
           Text(
             dua.textArabic,
-            style: const TextStyle(
-              fontFamily: 'Amiri',
-              color: Colors.white,
+            style: TextStyle(
+              color: palette.textPrimary,
               fontSize: 15.5,
               height: 1.6,
               fontWeight: FontWeight.w600,
@@ -1317,9 +1386,8 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
           const SizedBox(height: 6),
           Text(
             "${dua.source} • ${dua.benefit}",
-            style: const TextStyle(
-              fontFamily: 'Cairo',
-              color: Colors.white54,
+            style: TextStyle(
+              color: palette.textSecondary,
               fontSize: 10.5,
               height: 1.3,
             ),

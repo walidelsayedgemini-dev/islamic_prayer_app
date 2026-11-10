@@ -1,5 +1,5 @@
 name: islamic_prayer_app
-description: "A comprehensive Islamic Flutter application with Prayer Times, Qibla Compass, Smart Tasbih, and Adhan Reminders."
+description: "تطبيق الفردوس الإسلامي الشامل: مواقيت الصلاة، القبلة الذكية، السبحة والتحديات، التقويم الهجري، والقرآن والأذكار."
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -46,18 +46,119 @@ flutter:
   assets:
     - assets/images/
   fonts:
+    # 1. عارف رقعة
     - family: Aref Ruqaa
       fonts:
         - asset: assets/fonts/ArefRuqaa-Regular.ttf
         - asset: assets/fonts/ArefRuqaa-Bold.ttf
           weight: 700
+    # 2. الأميري المصحفي
     - family: Amiri
       fonts:
         - asset: assets/fonts/Amiri-Regular.ttf
         - asset: assets/fonts/Amiri-Bold.ttf
           weight: 700
+    # 3. القاهرة العصري
     - family: Cairo
       fonts:
         - asset: assets/fonts/Cairo-Regular.ttf
         - asset: assets/fonts/Cairo-Bold.ttf
+          weight: 700
+    # 4. تجوال
+    - family: Tajawal
+      fonts:
+        - asset: assets/fonts/Tajawal-Regular.ttf
+        - asset: assets/fonts/Tajawal-Bold.ttf
+          weight: 700
+    # 5. ريم كوفي
+    - family: Reem Kufi
+      fonts:
+        - asset: assets/fonts/ReemKufi-Regular.ttf
+        - asset: assets/fonts/ReemKufi-Bold.ttf
+          weight: 700
+    # 6. شهرزاد المصحفي
+    - family: Scheherazade New
+      fonts:
+        - asset: assets/fonts/ScheherazadeNew-Regular.ttf
+        - asset: assets/fonts/ScheherazadeNew-Bold.ttf
+          weight: 700
+    # 7. لطيف الشامي
+    - family: Lateef
+      fonts:
+        - asset: assets/fonts/Lateef-Regular.ttf
+        - asset: assets/fonts/Lateef-Bold.ttf
+          weight: 700
+    # 8. المسيري الملكي
+    - family: El Messiri
+      fonts:
+        - asset: assets/fonts/ElMessiri-Regular.ttf
+        - asset: assets/fonts/ElMessiri-Bold.ttf
+          weight: 700
+    # 9. المراعي الهندسي
+    - family: Almarai
+      fonts:
+        - asset: assets/fonts/Almarai-Regular.ttf
+        - asset: assets/fonts/Almarai-Bold.ttf
+          weight: 700
+    # 10. تشانجا القوي
+    - family: Changa
+      fonts:
+        - asset: assets/fonts/Changa-Regular.ttf
+        - asset: assets/fonts/Changa-Bold.ttf
+          weight: 700
+    # 11. نوتو نسخ عربي
+    - family: Noto Naskh Arabic
+      fonts:
+        - asset: assets/fonts/NotoNaskhArabic-Regular.ttf
+        - asset: assets/fonts/NotoNaskhArabic-Bold.ttf
+          weight: 700
+    # 12. نوتو كوفي عربي
+    - family: Noto Kufi Arabic
+      fonts:
+        - asset: assets/fonts/NotoKufiArabic-Regular.ttf
+        - asset: assets/fonts/NotoKufiArabic-Bold.ttf
+          weight: 700
+    # 13. مركزي
+    - family: Markazi Text
+      fonts:
+        - asset: assets/fonts/MarkaziText-Regular.ttf
+        - asset: assets/fonts/MarkaziText-Bold.ttf
+          weight: 700
+    # 14. مدى
+    - family: Mada
+      fonts:
+        - asset: assets/fonts/Mada-Regular.ttf
+        - asset: assets/fonts/Mada-Bold.ttf
+          weight: 700
+    # 15. ليمونادا
+    - family: Lemonada
+      fonts:
+        - asset: assets/fonts/Lemonada-Regular.ttf
+        - asset: assets/fonts/Lemonada-Bold.ttf
+          weight: 700
+    # 16. لالزار
+    - family: Lalezar
+      fonts:
+        - asset: assets/fonts/Lalezar-Regular.ttf
+    # 17. رقاص الديواني
+    - family: Rakkas
+      fonts:
+        - asset: assets/fonts/Rakkas-Regular.ttf
+    # 18. كوفام
+    - family: Kufam
+      fonts:
+        - asset: assets/fonts/Kufam-Regular.ttf
+        - asset: assets/fonts/Kufam-Bold.ttf
+          weight: 700
+    # 19. ريدكس برو
+    - family: Readex Pro
+      fonts:
+        - asset: assets/fonts/ReadexPro-Regular.ttf
+        - asset: assets/fonts/ReadexPro-Bold.ttf
+          weight: 700
+    # 20. آي بي إم بلكس العربي
+    - family: IBM Plex Sans Arabic
+      fonts:
+        - asset: assets/fonts/IBMPlexSansArabic-Regular.ttf
+        - asset: assets/fonts/IBMPlexSansArabic-Bold.ttf
           weight: 700

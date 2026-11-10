@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:adhan/adhan.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/font_catalog.dart';
 import '../models/prayer_model.dart';
 import '../services/location_service.dart';
 import '../services/notification_service.dart';
@@ -8,10 +9,12 @@ import '../services/notification_service.dart';
 class SettingsProvider extends ChangeNotifier {
   SharedPreferences? _prefs;
 
-  // القيم الافتراضية
+  // القيم الافتراضية لتطبيق الفردوس
   CalculationMethod _calculationMethod = CalculationMethod.umm_al_qura;
   Madhab _madhab = Madhab.shafi;
-  String _selectedTheme = 'emerald';
+  String _selectedTheme = 'emerald_gold';
+  String _selectedFont = 'Aref Ruqaa';
+  String _brightnessMode = 'night'; // 'night', 'day', 'auto'
   String _adhanVoice = 'madinah';
   bool _isAutoLocation = true;
   double _latitude = 24.7136; // افتراضي: الرياض
@@ -32,6 +35,8 @@ class SettingsProvider extends ChangeNotifier {
   CalculationMethod get calculationMethod => _calculationMethod;
   Madhab get madhab => _madhab;
   String get selectedTheme => _selectedTheme;
+  String get selectedFont => _selectedFont;
+  String get brightnessMode => _brightnessMode;
   String get adhanVoice => _adhanVoice;
   bool get isAutoLocation => _isAutoLocation;
   double get latitude => _latitude;
@@ -40,6 +45,30 @@ class SettingsProvider extends ChangeNotifier {
   bool get playPreAdhanReminder => _playPreAdhanReminder;
   bool get autoMuteDuringPrayer => _autoMuteDuringPrayer;
   Map<String, int> get offsets => _offsets;
+
+  /// تحديد ما إذا كان الوضع الليلي مفعلاً حالياً (يدوياً أو تلقائياً مع المغرب والفجر)
+  bool get isNightEffective {
+    if (_brightnessMode == 'night') return true;
+    if (_brightnessMode == 'day') return false;
+
+    try {
+      final todayPrayers = AdvancedPrayerTimes.calculate(
+        latitude: _latitude,
+        longitude: _longitude,
+        method: _calculationMethod,
+        madhab: _madhab,
+        offsets: _offsets,
+      ).prayerTimes;
+      final current = todayPrayers.currentPrayer();
+      return current == Prayer.maghrib ||
+          current == Prayer.isha ||
+          current == Prayer.fajr ||
+          current == Prayer.none;
+    } catch (_) {
+      final h = DateTime.now().hour;
+      return h >= 18 || h < 6;
+    }
+  }
 
   Future<void> init() async {
     try {
@@ -67,7 +96,17 @@ class SettingsProvider extends ChangeNotifier {
       _madhab = Madhab.shafi;
     }
 
-    _selectedTheme = _prefs!.getString('theme') ?? 'emerald';
+    final savedTheme = _prefs!.getString('theme') ?? 'emerald_gold';
+    _selectedTheme = savedTheme == 'emerald' ? 'emerald_gold' : savedTheme;
+
+    final savedFont = _prefs!.getString('app_font') ?? 'Aref Ruqaa';
+    _selectedFont = FontCatalog.getByFamily(savedFont).family;
+
+    final savedBrightness = _prefs!.getString('brightness_mode') ?? 'night';
+    if (savedBrightness == 'day' || savedBrightness == 'night' || savedBrightness == 'auto') {
+      _brightnessMode = savedBrightness;
+    }
+
     _adhanVoice = _prefs!.getString('adhan_voice') ?? 'madinah';
     _isAutoLocation = _prefs!.getBool('auto_loc') ?? true;
     _latitude = _prefs!.getDouble('lat') ?? 24.7136;
@@ -120,6 +159,23 @@ class SettingsProvider extends ChangeNotifier {
     _selectedTheme = themeKey;
     _prefs?.setString('theme', themeKey);
     notifyListeners();
+  }
+
+  void setFont(String fontFamily) {
+    _selectedFont = FontCatalog.getByFamily(fontFamily).family;
+    _prefs?.setString('app_font', _selectedFont);
+    notifyListeners();
+  }
+
+  void setBrightnessMode(String mode) {
+    if (mode != 'night' && mode != 'day' && mode != 'auto') return;
+    _brightnessMode = mode;
+    _prefs?.setString('brightness_mode', mode);
+    notifyListeners();
+  }
+
+  void toggleDayNight() {
+    setBrightnessMode(isNightEffective ? 'day' : 'night');
   }
 
   void setAdhanVoice(String voice) {

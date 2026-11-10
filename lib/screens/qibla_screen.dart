@@ -10,9 +10,9 @@ import '../theme/islamic_theme.dart';
 import '../utils/compass_utils.dart';
 
 enum CompassSkinStyle {
-  whiteSmartDial, // الأبيض الناصع الذكي (المطابق للصورة)
+  whiteSmartDial, // الأبيض الناصع الذكي
   emeraldClassic, // الأخضر النبوي الكلاسيكي
-  windroseMariner, // البحري بالوردة النجمية الثمانية
+  windroseMariner, // البحري بالوردة النجمية
   vintageOttoman, // العثماني التراثي النحاسي
   darkMinimalKaaba, // الأسود والذهب الكعبة الملكي
 }
@@ -39,10 +39,10 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
     super.initState();
     _glowController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1100),
     )..repeat(reverse: true);
 
-    _glowAnimation = Tween<double>(begin: 0.35, end: 0.95).animate(
+    _glowAnimation = Tween<double>(begin: 0.35, end: 1.0).animate(
       CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
   }
@@ -56,27 +56,30 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
-    final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
-    final accentColor = themeOption.accentColor;
+    final isNight = settings.isNightEffective;
+    final palette = IslamicTheme.resolvePalette(settings.selectedTheme, isNight: isNight);
+    final accentColor = palette.accentColor;
 
-    // حساب زاوية القبلة الدقيقة من موقع المستخدم نحو الكعبة المشرفة
     final myLocation = Coordinates(settings.latitude, settings.longitude);
     final qiblaDirection = Qibla(myLocation).direction;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF061814),
+      backgroundColor: palette.scaffoldColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF041812),
+        backgroundColor: isNight ? palette.primaryColor : palette.cardColor,
         elevation: 0,
         centerTitle: true,
         title: const Text(
-          "محدد قبلة ذكي • أينما كنت",
-          style: TextStyle(fontFamily: 'Aref Ruqaa', fontWeight: FontWeight.bold, fontSize: 18),
+          "بوصلة القبلة الذكية • الفردوس",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         actions: [
           if (kIsWeb)
             IconButton(
-              icon: Icon(_useManualSimulation ? Icons.screen_rotation : Icons.sensors, color: accentColor),
+              icon: Icon(
+                _useManualSimulation ? Icons.screen_rotation : Icons.sensors,
+                color: accentColor,
+              ),
               tooltip: "محاكاة تدوير البوصلة باليد",
               onPressed: () {
                 setState(() => _useManualSimulation = !_useManualSimulation);
@@ -88,8 +91,8 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
           ? _buildCompassView(
               heading: _manualHeading,
               qiblaDirection: qiblaDirection,
-              accentColor: accentColor,
-              themeOption: themeOption,
+              palette: palette,
+              fontFamily: settings.selectedFont,
               isSimulated: true,
             )
           : StreamBuilder<CompassEvent>(
@@ -104,17 +107,24 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
                         children: [
                           CircularProgressIndicator(color: accentColor),
                           const SizedBox(height: 18),
-                          const Text(
-                            "جاري الاتصال بمستشعر البوصلة الجيروسكوبي...",
-                            style: TextStyle(fontFamily: 'Aref Ruqaa', color: Colors.white70, fontSize: 16),
+                          Text(
+                            "جاري معايرة مستشعر البوصلة المغناطيسية...",
+                            style: TextStyle(color: palette.textSecondary, fontSize: 16),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 16),
-                          TextButton.icon(
-                            icon: const Icon(Icons.touch_app_rounded, color: Colors.amber),
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.touch_app_rounded),
                             label: const Text(
                               "تشغيل التدوير التفاعلي باليد",
-                              style: TextStyle(fontFamily: 'Aref Ruqaa', color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 15),
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: accentColor,
+                              foregroundColor: palette.onAccentColor,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                             ),
                             onPressed: () {
                               setState(() => _useManualSimulation = true);
@@ -127,13 +137,13 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
                 }
 
                 final rawHeading = snapshot.data!.heading!;
-                _filteredHeading = smoothHeading(_filteredHeading, rawHeading, 0.20);
+                _filteredHeading = smoothHeading(_filteredHeading, rawHeading, 0.22);
 
                 return _buildCompassView(
                   heading: _filteredHeading,
                   qiblaDirection: qiblaDirection,
-                  accentColor: accentColor,
-                  themeOption: themeOption,
+                  palette: palette,
+                  fontFamily: settings.selectedFont,
                   isSimulated: false,
                 );
               },
@@ -144,14 +154,16 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
   Widget _buildCompassView({
     required double heading,
     required double qiblaDirection,
-    required Color accentColor,
-    required ThemeOption themeOption,
+    required ThemePalette palette,
+    required String fontFamily,
     required bool isSimulated,
   }) {
-    double diff = (qiblaDirection - heading).abs();
-    if (diff > 180) diff = 360 - diff;
+    final accentColor = palette.accentColor;
 
-    final isFacingMecca = diff <= 3.5;
+    // الفرق الموجّه (-180..+180): موجب = أدر يميناً، سالب = أدر يساراً
+    final double signedDiff = ((qiblaDirection - heading + 540) % 360) - 180;
+    final double absDiff = signedDiff.abs();
+    final bool isFacingMecca = absDiff <= 3.5;
 
     if (isFacingMecca && !_isAligned) {
       _isAligned = true;
@@ -160,153 +172,150 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
       _isAligned = false;
     }
 
-    // زاوية دوران قرص البوصلة بناءً على اتجاه الهاتف
+    final screenWidth = MediaQuery.of(context).size.width;
+    final double outerSize = math.min(screenWidth - 16, 376.0);
+    final double dialSize = outerSize - 26;
+
     final dialAngle = (heading * (math.pi / 180) * -1);
+    final qiblaRelativeAngle = (qiblaDirection - heading) * (math.pi / 180);
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 95),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 95),
       child: Column(
         children: [
-          // 1. خريطة المسار الذكي المباشر نحو الكعبة (مطابقة للصورة المرجعية)
-          _buildMapTrajectoryHeader(qiblaDirection, heading, accentColor),
+          // 1. بطاقة الإحداثيات والتوجيه العلوي الواضح
+          _buildDirectionStatsHeader(
+            qiblaDirection: qiblaDirection,
+            heading: heading,
+            signedDiff: signedDiff,
+            isFacingMecca: isFacingMecca,
+            palette: palette,
+          ),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
-          // 2. قرص البوصلة الواقعي مع الإبرة المجسمة 3D
-          Stack(
-            alignment: Alignment.center,
+          // 2. شارة السهم العلوي الإرشادية الصريحة ("سهم للسهولة")
+          _buildTurnGuidanceBanner(
+            signedDiff: signedDiff,
+            isFacingMecca: isFacingMecca,
+            palette: palette,
+          ),
+
+          const SizedBox(height: 10),
+
+          // 3. مؤشر رأس الهاتف الثابت أعلى البوصلة
+          Column(
             children: [
-              // الهالة الخارجية عند مواجهة مكة
-              AnimatedBuilder(
-                animation: _glowAnimation,
-                builder: (context, child) {
-                  return Container(
-                    width: 310,
-                    height: 310,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: isFacingMecca
-                          ? [
-                              BoxShadow(
-                                color: const Color(0xFF10B981).withOpacity(_glowAnimation.value * 0.75),
-                                blurRadius: 45,
-                                spreadRadius: 10,
-                              ),
-                            ]
-                          : [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.55),
-                                blurRadius: 25,
-                              )
-                            ],
-                    ),
-                  );
-                },
-              ),
-
-              // قرص البوصلة الذي يدور بناءً على حركة الهاتف
-              Transform.rotate(
-                angle: dialAngle,
-                child: CustomPaint(
-                  size: const Size(295, 295),
-                  painter: _ReferenceQiblaPainter(
-                    skin: _selectedSkin,
-                    qiblaAngle: qiblaDirection * (math.pi / 180),
-                    isFacingMecca: isFacingMecca,
-                  ),
+              Text(
+                isFacingMecca ? "اتجاه الكعبة مطابق ✓" : "أمام الهاتف ▲",
+                style: TextStyle(
+                  color: isFacingMecca ? const Color(0xFF10B981) : accentColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-
-              // شارة الكعبة المشرفة الدائرية الخضراء في مسار القبلة الدقيق
-              Transform.rotate(
-                angle: (qiblaDirection - heading) * (math.pi / 180),
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: Container(
-                    margin: const EdgeInsets.only(top: 8),
-                    padding: const EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: const Color(0xFF047857),
-                      border: Border.all(color: const Color(0xFF34D399), width: 2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF10B981).withOpacity(0.6),
-                          blurRadius: 10,
-                        )
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.mosque_rounded,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  ),
-                ),
+              const SizedBox(height: 2),
+              Icon(
+                Icons.change_history_rounded,
+                size: 24,
+                color: isFacingMecca ? const Color(0xFF10B981) : accentColor,
               ),
             ],
           ),
 
-          const SizedBox(height: 14),
-
-          // 3. عبارة التوجيه المطابقة للصورة: "أنت الآن تواجه مكة"
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
-            decoration: BoxDecoration(
-              color: isFacingMecca ? const Color(0xFF10B981) : Colors.black.withOpacity(0.40),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(
-                color: isFacingMecca ? const Color(0xFF34D399) : Colors.white24,
-                width: isFacingMecca ? 1.5 : 1.0,
-              ),
-              boxShadow: isFacingMecca
-                  ? [
-                      BoxShadow(
-                        color: const Color(0xFF10B981).withOpacity(0.5),
-                        blurRadius: 16,
-                        spreadRadius: 2,
-                      )
-                    ]
-                  : null,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+          // 4. البوصلة المكبّرة + سهم القبلة الكبير + أسهم الدوران المنحنية حول الإطار
+          SizedBox(
+            width: outerSize,
+            height: outerSize,
+            child: Stack(
+              alignment: Alignment.center,
               children: [
-                Icon(
-                  isFacingMecca ? Icons.check_circle_rounded : Icons.explore_outlined,
-                  color: isFacingMecca ? Colors.white : Colors.white70,
-                  size: 19,
+                // هالة الإشعاع عند مواجهة القبلة
+                AnimatedBuilder(
+                  animation: _glowAnimation,
+                  builder: (context, _) {
+                    return Container(
+                      width: dialSize + 14,
+                      height: dialSize + 14,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: isFacingMecca
+                            ? [
+                                BoxShadow(
+                                  color: const Color(0xFF10B981)
+                                      .withOpacity(_glowAnimation.value * 0.72),
+                                  blurRadius: 42,
+                                  spreadRadius: 10,
+                                ),
+                              ]
+                            : [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(palette.isDark ? 0.55 : 0.16),
+                                  blurRadius: 22,
+                                ),
+                              ],
+                      ),
+                    );
+                  },
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  isFacingMecca
-                      ? "أنت الآن تواجه مكة"
-                      : "أدر الهاتف حتى تتجه الإبرة الخضراء نحو الكعبة",
-                  style: TextStyle(
-                    fontFamily: 'Aref Ruqaa',
-                    color: isFacingMecca ? Colors.white : Colors.white70,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14.5,
+
+                // أسهم التوجيه المنحنية الخارجية (يميناً أو يساراً) حول الإطار
+                if (!isFacingMecca)
+                  AnimatedBuilder(
+                    animation: _glowAnimation,
+                    builder: (context, _) {
+                      return CustomPaint(
+                        size: Size(outerSize, outerSize),
+                        painter: _CurvedTurnGuidePainter(
+                          turnRight: signedDiff > 0,
+                          color: const Color(0xFF10B981),
+                          pulse: _glowAnimation.value,
+                        ),
+                      );
+                    },
+                  ),
+
+                // قرص البوصلة الدوّار بالمقاسات الكبيرة والواضحة والدرجات
+                Transform.rotate(
+                  angle: dialAngle,
+                  child: CustomPaint(
+                    size: Size(dialSize, dialSize),
+                    painter: _LargeDialPainter(
+                      skin: _selectedSkin,
+                      fontFamily: fontFamily,
+                    ),
+                  ),
+                ),
+
+                // سهم القبلة الكبير ثلاثي الأبعاد + أيقونة الكعبة المشرفة المتجه مباشرةً نحو مكة
+                Transform.rotate(
+                  angle: qiblaRelativeAngle,
+                  child: CustomPaint(
+                    size: Size(dialSize, dialSize),
+                    painter: _BigQiblaArrowPainter(
+                      isFacingMecca: isFacingMecca,
+                      accentColor: accentColor,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
-          // 4. شريط اختيار قوالب وأشكال البوصلة الواقعية الخمسة (مطابق تماماً لأسفل الصورة)
+          // 5. شريط أشكال البوصلة الخمسة
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFFE2E8F0).withOpacity(0.92),
-              borderRadius: BorderRadius.circular(30),
+              color: palette.cardColor,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: palette.dividerColor),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.4),
-                  blurRadius: 15,
+                  color: Colors.black.withOpacity(palette.isDark ? 0.45 : 0.10),
+                  blurRadius: 14,
                   offset: const Offset(0, 4),
                 )
               ],
@@ -314,24 +323,50 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildSkinIconPreview(CompassSkinStyle.emeraldClassic, const Color(0xFF047857), Icons.explore_rounded),
-                _buildSkinIconPreview(CompassSkinStyle.windroseMariner, const Color(0xFFEF4444), Icons.navigation_rounded),
-                _buildSkinIconPreview(CompassSkinStyle.whiteSmartDial, Colors.white, Icons.radio_button_checked_rounded, isCenterFeatured: true),
-                _buildSkinIconPreview(CompassSkinStyle.vintageOttoman, const Color(0xFFB45309), Icons.grain_rounded),
-                _buildSkinIconPreview(CompassSkinStyle.darkMinimalKaaba, const Color(0xFF0F172A), Icons.brightness_1_rounded),
+                _buildSkinIconPreview(
+                  CompassSkinStyle.emeraldClassic,
+                  const Color(0xFF047857),
+                  Icons.explore_rounded,
+                  palette,
+                ),
+                _buildSkinIconPreview(
+                  CompassSkinStyle.windroseMariner,
+                  const Color(0xFFEF4444),
+                  Icons.navigation_rounded,
+                  palette,
+                ),
+                _buildSkinIconPreview(
+                  CompassSkinStyle.whiteSmartDial,
+                  Colors.white,
+                  Icons.radio_button_checked_rounded,
+                  palette,
+                  isCenterFeatured: true,
+                ),
+                _buildSkinIconPreview(
+                  CompassSkinStyle.vintageOttoman,
+                  const Color(0xFFB45309),
+                  Icons.grain_rounded,
+                  palette,
+                ),
+                _buildSkinIconPreview(
+                  CompassSkinStyle.darkMinimalKaaba,
+                  const Color(0xFF0F172A),
+                  Icons.brightness_1_rounded,
+                  palette,
+                ),
               ],
             ),
           ),
 
-          // 5. محاكي التدوير اليدوي في الويب
+          // 6. محاكي التدوير اليدوي (مفيد في الويب والمعاينة)
           if (isSimulated) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.4),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: accentColor.withOpacity(0.3)),
+                color: palette.cardColor,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: accentColor.withOpacity(0.4)),
               ),
               child: Column(
                 children: [
@@ -339,12 +374,19 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "محاكاة تدوير الهاتف باليد:",
-                        style: TextStyle(fontFamily: 'Aref Ruqaa', color: accentColor, fontSize: 13, fontWeight: FontWeight.bold),
+                        "جرّب تدوير الهاتف (معاينة البوصلة والسهم):",
+                        style: TextStyle(
+                          color: accentColor,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Text(
                         "${_manualHeading.toInt()}°",
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: palette.textPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -353,7 +395,7 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
                     min: 0,
                     max: 360,
                     activeColor: const Color(0xFF10B981),
-                    inactiveColor: Colors.white24,
+                    inactiveColor: palette.dividerColor,
                     onChanged: (val) => setState(() => _manualHeading = val),
                   ),
                 ],
@@ -365,65 +407,181 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildMapTrajectoryHeader(double qiblaDirection, double heading, Color accentColor) {
+  Widget _buildDirectionStatsHeader({
+    required double qiblaDirection,
+    required double heading,
+    required double signedDiff,
+    required bool isFacingMecca,
+    required ThemePalette palette,
+  }) {
     return Container(
       width: double.infinity,
-      height: 110,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A2E22),
+        color: palette.cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF10B981).withOpacity(0.4), width: 1.2),
+        border: Border.all(
+          color: (isFacingMecca ? const Color(0xFF10B981) : palette.accentColor)
+              .withOpacity(0.45),
+          width: 1.4,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
-            blurRadius: 15,
+            color: Colors.black.withOpacity(palette.isDark ? 0.45 : 0.08),
+            blurRadius: 12,
             offset: const Offset(0, 3),
           )
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Stack(
-          children: [
-            // خلفية خريطة العالم الجغرافية باللون الأخضر المائي
-            Positioned.fill(
-              child: CustomPaint(
-                painter: _WorldMapTrajectoryPainter(),
-              ),
-            ),
-
-            // البيانات التوجيهية في الأعلى
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on_rounded, color: Color(0xFF34D399), size: 18),
-                      const SizedBox(width: 6),
-                      Text(
-                        "القبلة: ${qiblaDirection.toStringAsFixed(0)}°",
-                        style: const TextStyle(
-                          fontFamily: 'Aref Ruqaa',
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF34D399), size: 16),
-                ],
-              ),
-            ),
-          ],
-        ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildStatPill(
+            label: "زاوية القبلة",
+            value: "${qiblaDirection.toStringAsFixed(1)}°",
+            icon: Icons.mosque_rounded,
+            color: palette.accentColor,
+            palette: palette,
+          ),
+          Container(width: 1, height: 34, color: palette.dividerColor),
+          _buildStatPill(
+            label: "اتجاه الهاتف",
+            value: "${((heading % 360) + 360) % 360 ~/ 1}°",
+            icon: Icons.explore_rounded,
+            color: palette.textPrimary,
+            palette: palette,
+          ),
+          Container(width: 1, height: 34, color: palette.dividerColor),
+          _buildStatPill(
+            label: "زاوية الدوران",
+            value: "${signedDiff.abs().round()}°",
+            icon: isFacingMecca ? Icons.verified_rounded : Icons.rotate_right_rounded,
+            color: isFacingMecca ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+            palette: palette,
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSkinIconPreview(CompassSkinStyle style, Color color, IconData icon, {bool isCenterFeatured = false}) {
+  Widget _buildStatPill({
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color color,
+    required ThemePalette palette,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 15),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(color: palette.textMuted, fontSize: 11),
+            ),
+          ],
+        ),
+        const SizedBox(height: 3),
+        Text(
+          value,
+          style: TextStyle(
+            color: color,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTurnGuidanceBanner({
+    required double signedDiff,
+    required bool isFacingMecca,
+    required ThemePalette palette,
+  }) {
+    final bool turnRight = signedDiff > 0;
+    final int deg = signedDiff.abs().round();
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: isFacingMecca
+            ? const Color(0xFF10B981)
+            : palette.accentColor.withOpacity(palette.isDark ? 0.16 : 0.12),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isFacingMecca ? const Color(0xFF34D399) : palette.accentColor,
+          width: 1.6,
+        ),
+        boxShadow: isFacingMecca
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF10B981).withOpacity(0.45),
+                  blurRadius: 16,
+                  spreadRadius: 1,
+                ),
+              ]
+            : null,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (!isFacingMecca && !turnRight)
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Icon(
+                Icons.arrow_circle_left_rounded,
+                color: palette.accentColor,
+                size: 28,
+              ),
+            ),
+          if (isFacingMecca)
+            const Padding(
+              padding: EdgeInsets.only(left: 8),
+              child: Icon(Icons.check_circle_rounded, color: Colors.white, size: 24),
+            ),
+          Flexible(
+            child: Text(
+              isFacingMecca
+                  ? "أنت الآن تواجه الكعبة المشرفة مباشرة 🕋"
+                  : (turnRight
+                      ? "أدر الهاتف لليمين بمقدار $deg° نحو السهم الأخضر"
+                      : "أدر الهاتف لليسار بمقدار $deg° نحو السهم الأخضر"),
+              style: TextStyle(
+                color: isFacingMecca ? Colors.white : palette.textPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          if (!isFacingMecca && turnRight)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Icon(
+                Icons.arrow_circle_right_rounded,
+                color: palette.accentColor,
+                size: 28,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSkinIconPreview(
+    CompassSkinStyle style,
+    Color color,
+    IconData icon,
+    ThemePalette palette, {
+    bool isCenterFeatured = false,
+  }) {
     final isSelected = _selectedSkin == style;
 
     return GestureDetector(
@@ -439,12 +597,14 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
           shape: BoxShape.circle,
           color: color,
           border: Border.all(
-            color: isSelected ? const Color(0xFF10B981) : Colors.black26,
-            width: isSelected ? 3.0 : 1.2,
+            color: isSelected ? const Color(0xFF10B981) : palette.dividerColor,
+            width: isSelected ? 3.2 : 1.4,
           ),
           boxShadow: [
             BoxShadow(
-              color: isSelected ? const Color(0xFF10B981).withOpacity(0.6) : Colors.black.withOpacity(0.2),
+              color: isSelected
+                  ? const Color(0xFF10B981).withOpacity(0.55)
+                  : Colors.black.withOpacity(0.18),
               blurRadius: isSelected ? 10 : 4,
               offset: const Offset(0, 2),
             )
@@ -460,16 +620,14 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
   }
 }
 
-/// راسم قرص البوصلة الواقعي المطابق للصورة تماماً
-class _ReferenceQiblaPainter extends CustomPainter {
+/// قرص البوصلة الدوّار الكبير والواضح بالدرجات الكاملة والجهات الأربع
+class _LargeDialPainter extends CustomPainter {
   final CompassSkinStyle skin;
-  final double qiblaAngle;
-  final bool isFacingMecca;
+  final String fontFamily;
 
-  _ReferenceQiblaPainter({
+  _LargeDialPainter({
     required this.skin,
-    required this.qiblaAngle,
-    required this.isFacingMecca,
+    required this.fontFamily,
   });
 
   @override
@@ -478,62 +636,87 @@ class _ReferenceQiblaPainter extends CustomPainter {
     final radius = size.width / 2;
 
     Color dialBg;
+    Color rimColor;
     Color tickColor;
     Color cardinalColor;
+    Color subtleRingColor;
 
     switch (skin) {
       case CompassSkinStyle.whiteSmartDial:
         dialBg = Colors.white;
-        tickColor = Colors.black87;
-        cardinalColor = Colors.black;
+        rimColor = const Color(0xFFCBD5E1);
+        tickColor = const Color(0xFF1E293B);
+        cardinalColor = const Color(0xFF0F172A);
+        subtleRingColor = const Color(0xFFE2E8F0);
         break;
       case CompassSkinStyle.emeraldClassic:
         dialBg = const Color(0xFF04241B);
+        rimColor = const Color(0xFF10B981);
         tickColor = const Color(0xFF6EE7B7);
         cardinalColor = Colors.white;
+        subtleRingColor = const Color(0xFF065F46);
         break;
       case CompassSkinStyle.windroseMariner:
         dialBg = const Color(0xFFF8FAFC);
+        rimColor = const Color(0xFF0284C7);
         tickColor = const Color(0xFF1E293B);
         cardinalColor = const Color(0xFF0F172A);
+        subtleRingColor = const Color(0xFFBAE6FD);
         break;
       case CompassSkinStyle.vintageOttoman:
         dialBg = const Color(0xFF26180B);
+        rimColor = const Color(0xFFD4AF37);
         tickColor = const Color(0xFFFDE68A);
         cardinalColor = const Color(0xFFFBBF24);
+        subtleRingColor = const Color(0xFF78350F);
         break;
       case CompassSkinStyle.darkMinimalKaaba:
         dialBg = const Color(0xFF0F172A);
+        rimColor = const Color(0xFFFBBF24);
         tickColor = Colors.white70;
         cardinalColor = Colors.white;
+        subtleRingColor = const Color(0xFF1E293B);
         break;
     }
 
-    // 1. رسم إطار البوصلة الخارجي والظل
-    final shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.35)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
-    canvas.drawCircle(center, radius - 2, shadowPaint);
+    // الإطار والوجه
+    canvas.drawCircle(center, radius - 2, Paint()..color = dialBg);
+    canvas.drawCircle(
+      center,
+      radius - 2,
+      Paint()
+        ..color = rimColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4.5,
+    );
 
-    final borderPaint = Paint()
-      ..color = const Color(0xFFCBD5E1)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.5;
-    canvas.drawCircle(center, radius - 2, borderPaint);
+    // حلقات مساعدة داخلية للوضوح
+    canvas.drawCircle(
+      center,
+      radius * 0.72,
+      Paint()
+        ..color = subtleRingColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.4,
+    );
+    canvas.drawCircle(
+      center,
+      radius * 0.45,
+      Paint()
+        ..color = subtleRingColor.withOpacity(0.7)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0,
+    );
 
-    // 2. رسم وجه القرص
-    final dialPaint = Paint()..color = dialBg;
-    canvas.drawCircle(center, radius - 4, dialPaint);
-
-    // 3. رسم تدريجات الـ 360 درجة المحيطية
+    // علامات + أرقام الزوايا الواضحة كل 30 درجة
     for (int i = 0; i < 360; i += 2) {
       final rad = i * math.pi / 180;
       final isMajor = (i % 30 == 0);
       final isMedium = (i % 10 == 0);
-      final tickLen = isMajor ? 14.0 : (isMedium ? 9.0 : 5.0);
-      final tickW = isMajor ? 2.0 : (isMedium ? 1.4 : 0.8);
+      final tickLen = isMajor ? 16.0 : (isMedium ? 10.0 : 5.5);
+      final tickW = isMajor ? 2.4 : (isMedium ? 1.5 : 0.9);
       final isNorth = (i == 0);
-      final currentTickColor = isNorth ? const Color(0xFFEF4444) : tickColor;
+      final currentColor = isNorth ? const Color(0xFFEF4444) : tickColor;
 
       final p1 = Offset(
         center.dx + (radius - 8) * math.sin(rad),
@@ -544,122 +727,227 @@ class _ReferenceQiblaPainter extends CustomPainter {
         center.dy - (radius - 8 - tickLen) * math.cos(rad),
       );
 
-      canvas.drawLine(p1, p2, Paint()..color = currentTickColor..strokeWidth = tickW);
+      canvas.drawLine(p1, p2, Paint()..color = currentColor..strokeWidth = tickW);
+
+      if (isMajor && i % 90 != 0) {
+        final labelPos = Offset(
+          center.dx + (radius - 34) * math.sin(rad),
+          center.dy - (radius - 34) * math.cos(rad),
+        );
+        _drawText(canvas, '$i°', labelPos, cardinalColor.withOpacity(0.75), 10.5);
+      }
     }
 
-    // 4. رسم الاتجاهات الأربعة N, E, S, W
-    _drawCardinalLabel(canvas, "N", Offset(center.dx, center.dy - radius + 32), const Color(0xFFEF4444));
-    _drawCardinalLabel(canvas, "E", Offset(center.dx + radius - 32, center.dy), cardinalColor);
-    _drawCardinalLabel(canvas, "S", Offset(center.dx, center.dy + radius - 32), cardinalColor);
-    _drawCardinalLabel(canvas, "W", Offset(center.dx - radius + 32, center.dy), cardinalColor);
-
-    // 5. رسم الإبرة المجسمة الثلاثية الأبعاد ذات الشطف المزدوج (Dual-Tone 3D Bevel Needle)
-    final needleLength = radius * 0.74;
-    const needleWidth = 14.0;
-
-    // النصف العلوي المتجه للشمال (أخضر زمردي مشطوف 3D)
-    final northLeft = Path()
-      ..moveTo(center.dx, center.dy)
-      ..lineTo(center.dx - needleWidth, center.dy - 6)
-      ..lineTo(center.dx, center.dy - needleLength)
-      ..close();
-    canvas.drawPath(northLeft, Paint()..color = const Color(0xFF22C55E));
-
-    final northRight = Path()
-      ..moveTo(center.dx, center.dy)
-      ..lineTo(center.dx + needleWidth, center.dy - 6)
-      ..lineTo(center.dx, center.dy - needleLength)
-      ..close();
-    canvas.drawPath(northRight, Paint()..color = const Color(0xFF047857));
-
-    // النصف السفلي المتجه للجنوب (فضي مشطوف 3D)
-    final southLeft = Path()
-      ..moveTo(center.dx, center.dy)
-      ..lineTo(center.dx - (needleWidth * 0.85), center.dy + 6)
-      ..lineTo(center.dx, center.dy + (needleLength * 0.72))
-      ..close();
-    canvas.drawPath(southLeft, Paint()..color = const Color(0xFFF1F5F9));
-
-    final southRight = Path()
-      ..moveTo(center.dx, center.dy)
-      ..lineTo(center.dx + (needleWidth * 0.85), center.dy + 6)
-      ..lineTo(center.dx, center.dy + (needleLength * 0.72))
-      ..close();
-    canvas.drawPath(southRight, Paint()..color = const Color(0xFF94A3B8));
-
-    // محور ارتكاز الإبرة المركزي
-    canvas.drawCircle(center, 7, Paint()..color = const Color(0xFF0F172A));
-    canvas.drawCircle(center, 4, Paint()..color = Colors.white);
+    // رسم الاتجاهات الأربعة بشكل أكبر وأوضح
+    _drawText(
+      canvas,
+      "N",
+      Offset(center.dx, center.dy - radius + 34),
+      const Color(0xFFEF4444),
+      20,
+      bold: true,
+    );
+    _drawText(
+      canvas,
+      "E",
+      Offset(center.dx + radius - 34, center.dy),
+      cardinalColor,
+      18,
+      bold: true,
+    );
+    _drawText(
+      canvas,
+      "S",
+      Offset(center.dx, center.dy + radius - 34),
+      cardinalColor,
+      18,
+      bold: true,
+    );
+    _drawText(
+      canvas,
+      "W",
+      Offset(center.dx - radius + 34, center.dy),
+      cardinalColor,
+      18,
+      bold: true,
+    );
   }
 
-  void _drawCardinalLabel(Canvas canvas, String text, Offset pos, Color color) {
-    final textPainter = TextPainter(
+  void _drawText(
+    Canvas canvas,
+    String text,
+    Offset pos,
+    Color color,
+    double fontSize, {
+    bool bold = false,
+  }) {
+    final tp = TextPainter(
       text: TextSpan(
         text: text,
         style: TextStyle(
           color: color,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'Aref Ruqaa',
+          fontSize: fontSize,
+          fontWeight: bold ? FontWeight.w900 : FontWeight.bold,
+          fontFamily: fontFamily,
         ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-
-    textPainter.paint(
-      canvas,
-      Offset(pos.dx - textPainter.width / 2, pos.dy - textPainter.height / 2),
-    );
+    tp.paint(canvas, Offset(pos.dx - tp.width / 2, pos.dy - tp.height / 2));
   }
 
   @override
-  bool shouldRepaint(covariant _ReferenceQiblaPainter oldDelegate) {
-    return oldDelegate.skin != skin ||
-        oldDelegate.qiblaAngle != qiblaAngle ||
-        oldDelegate.isFacingMecca != isFacingMecca;
+  bool shouldRepaint(covariant _LargeDialPainter oldDelegate) {
+    return oldDelegate.skin != skin || oldDelegate.fontFamily != fontFamily;
   }
 }
 
-/// راسم مسار الخريطة والخط المنقط نحو الكعبة
-class _WorldMapTrajectoryPainter extends CustomPainter {
+/// سهم القبلة الكبير ثلاثي الأبعاد مع مجسم الكعبة المشرفة
+class _BigQiblaArrowPainter extends CustomPainter {
+  final bool isFacingMecca;
+  final Color accentColor;
+
+  _BigQiblaArrowPainter({
+    required this.isFacingMecca,
+    required this.accentColor,
+  });
+
   @override
   void paint(Canvas canvas, Size size) {
-    // رسم منحنى المسار المنقط الأخضر من موقع الهاتف إلى مكة
-    final p1 = Offset(size.width * 0.20, size.height * 0.70);
-    final p2 = Offset(size.width * 0.78, size.height * 0.35);
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
 
-    final linePaint = Paint()
-      ..color = const Color(0xFF34D399)
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
+    final Color arrowMain = isFacingMecca ? const Color(0xFF10B981) : accentColor;
+    final Color arrowBright = isFacingMecca ? const Color(0xFF34D399) : const Color(0xFFFDE047);
+    final Color arrowDark = isFacingMecca ? const Color(0xFF047857) : const Color(0xFF9A6700);
 
-    // مسار منقط
-    const double dashWidth = 5.0;
-    const double dashSpace = 4.0;
-    final double dx = p2.dx - p1.dx;
-    final double dy = p2.dy - p1.dy;
-    final double distance = math.sqrt(dx * dx + dy * dy);
-    final double unitDx = dx / distance;
-    final double unitDy = dy / distance;
+    // ظل السهم الكبير للوضوح فوق أي خلفية
+    final tipY = center.dy - radius * 0.78;
+    final tailY = center.dy + radius * 0.42;
 
-    double currentDist = 0.0;
-    while (currentDist < distance) {
-      final start = Offset(p1.dx + unitDx * currentDist, p1.dy + unitDy * currentDist);
-      final nextDist = math.min(currentDist + dashWidth, distance);
-      final end = Offset(p1.dx + unitDx * nextDist, p1.dy + unitDy * nextDist);
-      canvas.drawLine(start, end, linePaint);
-      currentDist += dashWidth + dashSpace;
-    }
+    // جسم السهم العريض 3D (نصف أيسر مضيء ونصف أيمن داكن)
+    final leftHalf = Path()
+      ..moveTo(center.dx, tipY)
+      ..lineTo(center.dx - 24, tipY + 38)
+      ..lineTo(center.dx - 9, tipY + 34)
+      ..lineTo(center.dx - 7, tailY)
+      ..lineTo(center.dx, tailY - 12)
+      ..close();
 
-    // نقطة بداية المستخدم
-    canvas.drawCircle(p1, 5, Paint()..color = const Color(0xFF34D399));
-    canvas.drawCircle(p1, 2.5, Paint()..color = Colors.white);
+    final rightHalf = Path()
+      ..moveTo(center.dx, tipY)
+      ..lineTo(center.dx + 24, tipY + 38)
+      ..lineTo(center.dx + 9, tipY + 34)
+      ..lineTo(center.dx + 7, tailY)
+      ..lineTo(center.dx, tailY - 12)
+      ..close();
 
-    // شارة الكعبة في نهاية المسار
-    canvas.drawCircle(p2, 10, Paint()..color = const Color(0xFF047857));
-    canvas.drawCircle(p2, 8, Paint()..color = const Color(0xFF10B981));
+    // هالة ناعمة خلف السهم
+    canvas.drawPath(
+      leftHalf,
+      Paint()
+        ..color = arrowMain.withOpacity(0.35)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+    );
+    canvas.drawPath(
+      rightHalf,
+      Paint()
+        ..color = arrowMain.withOpacity(0.35)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+    );
+
+    canvas.drawPath(leftHalf, Paint()..color = arrowBright);
+    canvas.drawPath(rightHalf, Paint()..color = arrowDark);
+
+    // رسم شارة الكعبة المشرفة أعلى السهم مباشرةً لتوجيه سهل وفوري
+    final kaabaCenter = Offset(center.dx, center.dy - radius * 0.87);
+    canvas.drawCircle(kaabaCenter, 16, Paint()..color = const Color(0xFF065F46));
+    canvas.drawCircle(
+      kaabaCenter,
+      16,
+      Paint()
+        ..color = const Color(0xFF34D399)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2,
+    );
+
+    // مكعب الكعبة الأسود مع حزام الذهب
+    final cubeRect = Rect.fromCenter(center: kaabaCenter, width: 15, height: 15);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(cubeRect, const Radius.circular(2.5)),
+      Paint()..color = const Color(0xFF111827),
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(cubeRect.left, cubeRect.top + 3.5, cubeRect.width, 3.0),
+      Paint()..color = const Color(0xFFFBBF24),
+    );
+
+    // محور ارتكاز السهم الوسطي
+    canvas.drawCircle(center, 11, Paint()..color = arrowDark);
+    canvas.drawCircle(center, 6.5, Paint()..color = Colors.white);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _BigQiblaArrowPainter oldDelegate) {
+    return oldDelegate.isFacingMecca != isFacingMecca || oldDelegate.accentColor != accentColor;
+  }
+}
+
+/// أسهم التوجيه المنحنية الخارجية لبيان جهة الدوران (يمين أو يسار) بسهولة
+class _CurvedTurnGuidePainter extends CustomPainter {
+  final bool turnRight;
+  final Color color;
+  final double pulse;
+
+  _CurvedTurnGuidePainter({
+    required this.turnRight,
+    required this.color,
+    required this.pulse,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final arcRadius = size.width / 2 - 4;
+    final rect = Rect.fromCircle(center: center, radius: arcRadius);
+
+    final startAngle = turnRight ? -math.pi * 0.25 : -math.pi * 0.75;
+    final sweepAngle = turnRight ? math.pi * 0.22 : -math.pi * 0.22;
+
+    final arcPaint = Paint()
+      ..color = color.withOpacity(0.55 + 0.40 * pulse)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4.5
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawArc(rect, startAngle, sweepAngle, false, arcPaint);
+
+    // رأس السهم عند نهاية القوس
+    final endAngle = startAngle + sweepAngle;
+    final tip = Offset(
+      center.dx + arcRadius * math.cos(endAngle),
+      center.dy + arcRadius * math.sin(endAngle),
+    );
+    final tangentAngle = endAngle + (turnRight ? math.pi / 2 : -math.pi / 2);
+
+    final headPath = Path()
+      ..moveTo(tip.dx + math.cos(tangentAngle) * 10, tip.dy + math.sin(tangentAngle) * 10)
+      ..lineTo(
+        tip.dx + math.cos(tangentAngle + 2.4) * 11,
+        tip.dy + math.sin(tangentAngle + 2.4) * 11,
+      )
+      ..lineTo(
+        tip.dx + math.cos(tangentAngle - 2.4) * 11,
+        tip.dy + math.sin(tangentAngle - 2.4) * 11,
+      )
+      ..close();
+    canvas.drawPath(headPath, Paint()..color = color.withOpacity(0.95));
+  }
+
+  @override
+  bool shouldRepaint(covariant _CurvedTurnGuidePainter oldDelegate) {
+    return oldDelegate.turnRight != turnRight ||
+        oldDelegate.pulse != pulse ||
+        oldDelegate.color != color;
+  }
 }
