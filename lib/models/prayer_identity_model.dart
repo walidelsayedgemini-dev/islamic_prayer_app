@@ -1,0 +1,207 @@
+import 'package:flutter/material.dart';
+import 'package:adhan/adhan.dart';
+
+class Prayer22Distinctions {
+  final Prayer prayer;
+  final String arabicName;
+  final String subtitle;
+  final String astronomicalDefinition;
+  final String skyAuraDescription;
+  final String quranAyah;
+  final String hadithVirtue;
+  final String rakatsDetail;
+  final String angelWitnessRole;
+  final String spiritualFeeling;
+  final String healthBenefit;
+  final String specificDhikr;
+  final String funChildFact;
+  final String adhanFeature;
+  final String istijabahMoment;
+  final String recommendedSurahs;
+  final int streakPoints;
+  final String celebrationBadge;
+  final String congregationVirtue;
+  final String sunnahRawatib;
+  final String historicalEvent;
+  final IconData visualIcon;
+  final Color primaryTint;
+
+  const Prayer22Distinctions({
+    required this.prayer,
+    required this.arabicName,
+    required this.subtitle,
+    required this.astronomicalDefinition,
+    required this.skyAuraDescription,
+    required this.quranAyah,
+    required this.hadithVirtue,
+    required this.rakatsDetail,
+    required this.angelWitnessRole,
+    required this.spiritualFeeling,
+    required this.healthBenefit,
+    required this.specificDhikr,
+    required this.funChildFact,
+    required this.adhanFeature,
+    required this.istijabahMoment,
+    required this.recommendedSurahs,
+    required this.streakPoints,
+    required this.celebrationBadge,
+    required this.congregationVirtue,
+    required this.sunnahRawatib,
+    required this.historicalEvent,
+    required this.visualIcon,
+    required this.primaryTint,
+  });
+
+  static const Map<Prayer, Prayer22Distinctions> data = {
+    Prayer.fajr: Prayer22Distinctions(
+      prayer: Prayer.fajr,
+      arabicName: 'صلاة الفجر',
+      subtitle: 'مطلع الأنوار، ذمة الله الكبرى، ومشهودة ملائكة الليل والنهار',
+      astronomicalDefinition: 'انبلاج الفجر الصادق (خيط الضوء الأبيض المستطير في الأفق الشرقي)',
+      skyAuraDescription: 'غسق نيلي عميق يمتزج بالأزرق الملكي وخيوط فضية تسبق انبثاق الشمس',
+      quranAyah: '﴿إِنَّ قُرْآنَ الْفَجْرِ كَانَ مَشْهُودًا﴾ [الإسراء: 78]',
+      hadithVirtue: '«مَنْ صَلَّى الصُّبْحَ فَهُوَ فِي ذِمَّةِ اللَّهِ، فَلا يَطْلُبَنَّكُمُ اللَّهُ مِنْ ذِمَّتِهِ بِشَيْءٍ»',
+      rakatsDetail: 'ركعتان جهريتان مفروضتان + ركعتا سنة الفجر القبلية المؤكدة',
+      angelWitnessRole: 'تتعاقب فيكم ملائكة بالليل وملائكة بالنهار، ويجتمعون في صلاة الفجر وصلاة العصر',
+      spiritualFeeling: 'انشراح لا مثيل له، سكينة تملأ الصدر، وطاقة بركة تفيض على اليوم كاملاً',
+      healthBenefit: 'تنقية الرئتين بغاز الأوزون النقي المتوفر فجراً، وتنشيط الدورة الدموية ومقاومة الجلطات',
+      specificDhikr: '«لا إِلَهَ إِلاَّ اللَّهُ وَحْدَهُ لا شَرِيكَ لَهُ...» 10 مرات قبل أن يثني رجليه',
+      funChildFact: 'ركعتا سنة الفجر فقط خير من الدنيا وما فيها وكل ألعابها وكنوزها مجتمعة!',
+      adhanFeature: 'يزاد في أذانها نداء الشرف: «الصَّلاةُ خَيْرٌ مِنَ النَّوْمِ» مرتين',
+      istijabahMoment: 'الدعاء في سحر ما قبل الفجر وبين الأذان والإقامة لا يُرد',
+      recommendedSurahs: 'طوال المفصل كالحجرات، الواقعة، ق، والرحمن',
+      streakPoints: 100,
+      celebrationBadge: 'وسام ذمة الرحمن النوراني 🌟',
+      congregationVirtue: 'من صلى الصبح في جماعة فكأنما صلى الليل كله',
+      sunnahRawatib: 'ركعتان قبل الفريضة خفيفتان يقرأ فيهما بالكافرون والإخلاص',
+      historicalEvent: 'هجرة النبي ﷺ وبداية تأسيس دولة الإسلام في المدينة المنورة فجراً',
+      visualIcon: Icons.wb_twilight_rounded,
+      primaryTint: Color(0xFF6366F1),
+    ),
+    Prayer.sunrise: Prayer22Distinctions(
+      prayer: Prayer.sunrise,
+      arabicName: 'شروق الشمس',
+      subtitle: 'إشراق الأرض بنور ربها، وقت جلسة الضحى وحجة وعمرة تامة',
+      astronomicalDefinition: 'بزوغ أول حاجب من قرص الشمس فوق خط الأفق الشرقي',
+      skyAuraDescription: 'أشعة ذهبية برتقالية تذيب ظلال الليل وتملأ السماء وهجاً دافئاً',
+      quranAyah: '﴿وَالصُّبْحِ إِذَا تَنَفَّسَ﴾ [التكوير: 18]',
+      hadithVirtue: '«مَنْ صَلَّى الْغَدَاةَ فِي جَمَاعَةٍ ثُمَّ قَعَدَ يَذْكُرُ اللَّهَ حَتَّى تَطْلُعَ الشَّمْسُ... كَانَتْ لَهُ كَأَجْرِ حَجَّةٍ وَعُمْرَةٍ تَامَّةٍ تَامَّةٍ»',
+      rakatsDetail: 'وقت كراهة الصلاة حتى ترتفع الشمس قيد رمح (نحو 15 دقيقة بعد الشروق)',
+      angelWitnessRole: 'الملائكة تكتب للمستغفرين الذاكرين في مصلاهم صلاة وتسبيحاً',
+      spiritualFeeling: 'استبشار بيوم جديد وتجدد الأمل بنور الخالق الذي يبدد كل ظلام',
+      healthBenefit: 'التعرض لأشعة الشمس المبكرة لتحفيز فيتامين (د) ورفع مناعة الجسم والمزاج',
+      specificDhikr: 'أذكار الصباح كاملة: «أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ رَبِّ الْعَالَمِينَ»',
+      funChildFact: 'الشمس تشرق كل يوم بأمر الله وتسجد تحت العرش ثم تستأذن في الشروق فتشرق!',
+      adhanFeature: 'لا أذان للشروق؛ بل هو علامة انتهاء وقت الفجر واستقبال النهار',
+      istijabahMoment: 'جلسة الذكر حتى طلوع الشمس وارتفاعها',
+      recommendedSurahs: 'تلاوة آيات سورة يس، والضحى، والانشراح',
+      streakPoints: 60,
+      celebrationBadge: 'تاج الحجة والعمرة التامة ☀️',
+      congregationVirtue: 'البقاء في المسجد حتى الشروق من أعظم القربات النبوية',
+      sunnahRawatib: 'ركعتا الإشراق بعد ارتفاع الشمس بنحو ربع ساعة',
+      historicalEvent: 'انتصار الحق في يوم الفرقان وتلألؤ نور النصر المؤزر',
+      visualIcon: Icons.wb_sunny_rounded,
+      primaryTint: Color(0xFFF59E0B),
+    ),
+    Prayer.dhuhr: Prayer22Distinctions(
+      prayer: Prayer.dhuhr,
+      arabicName: 'صلاة الظهر',
+      subtitle: 'أول صلاة صلاها جبريل عليه السلام بالنبي ﷺ، وقت فتح أبواب السماء',
+      astronomicalDefinition: 'زوال الشمس عن كبد السماء وميلها جهة الغرب وظهور أول زيادة بالظل',
+      skyAuraDescription: 'أوج الزرقة الصافية وسطوع قرص الشمس المشع في قبة الفلك',
+      quranAyah: '﴿أَقِمِ الصَّلَاةَ لِدُلُوكِ الشَّمْسِ إِلَىٰ غَسَقِ اللَّيْلِ﴾ [الإسراء: 78]',
+      hadithVirtue: '«إِنَّهَا سَاعَةٌ تُفْتَحُ فِيهَا أَبْوَابُ السَّمَاءِ، وَأُحِبُّ أَنْ يَصْعَدَ لِي فِيهَا عَمَلٌ صَالِحٌ»',
+      rakatsDetail: '4 ركعات سرية مفروضة + 4 سنن قبلية + ركعتان بعدية',
+      angelWitnessRole: 'تصعد أعمال العباد الصالحة من تسبيح وصلاة عبر أبواب السماء المفتوحة',
+      spiritualFeeling: 'استراحة روحية مقدسة تفصل بين عناء العمل والركض في شؤون الدنيا',
+      healthBenefit: 'تخفيف إجهاد منتصف اليوم وتجديد التركيز الذهني والنشاط البدني',
+      specificDhikr: 'التسبيح والتحميد والتكبير 33 وقراءة آية الكرسي',
+      funChildFact: 'الظهر هي أول صلاة في تاريخ الإسلام علمها جبريل للنبي عند الكعبة المشرفة!',
+      adhanFeature: 'أذان النداء للراحة والسكينة بعد ساعات العمل والجد',
+      istijabahMoment: 'الركعات الأربع القبلية وقت فتح أبواب السماء',
+      recommendedSurahs: 'أوساط المفصل كالطارق والأعلى والشمس',
+      streakPoints: 80,
+      celebrationBadge: 'مفتاح أبواب السماء المفتوحة 🗝️',
+      congregationVirtue: 'صلاة الظهر جماعة تحط الخطايا كما تحط الشجرة ورقها',
+      sunnahRawatib: '4 ركعات قبل الظهر وركعتان بعدها (ومن حافظ على 4 بعدها حرمه الله على النار)',
+      historicalEvent: 'تعليم جبريل مواقيت الصلاة للنبي ﷺ بجوار باب الكعبة',
+      visualIcon: Icons.brightness_high_rounded,
+      primaryTint: Color(0xFFEAB308),
+    ),
+    Prayer.asr: Prayer22Distinctions(
+      prayer: Prayer.asr,
+      arabicName: 'صلاة العصر',
+      subtitle: 'الصلاة الوسطى المباركة التي أقسم الله بوقتها وحذر من فواتها',
+      astronomicalDefinition: 'أن يصير ظل كل شيء مثله مضافاً إليه ظل الزوال',
+      skyAuraDescription: 'الساعة الذهبية الدافئة وميل أشعة الشمس نحو حمرة الغروب الساحرة',
+      quranAyah: '﴿حَافِظُوا عَلَى الصَّلَوَاتِ وَالصَّلَاةِ الْوُسْطَىٰ وَقُومُوا لِلَّهِ قَانِتِينَ﴾ [البقرة: 238]',
+      hadithVirtue: '«مَنْ صَلَّى الْبَرْدَيْنِ دَخَلَ الْجَنَّةَ» (الفجر والعصر)',
+      rakatsDetail: '4 ركعات سرية مفروضة + 4 ركعات قبلية غير مؤكدة (رحم الله امرأً صلى قبل العصر أربعاً)',
+      angelWitnessRole: 'تصعد ملائكة النهار وتسألهم ربهم: كيف تركتم عبادي؟ فيقولون: أتيناهم وهم يصلون وتركناهم وهم يصلون',
+      spiritualFeeling: 'حفظ للأوقات وطمأنينة تقي الإنسان من خسران الزمان وأهواله',
+      healthBenefit: 'تنشيط الجسم بعد ساعات الخمول المسائي وتحفيز تدفق الدم للمفاصل',
+      specificDhikr: 'أذكار المساء: «أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ...»',
+      funChildFact: 'من فاتته صلاة العصر فكأنما وُتِر أهله وماله، لذلك سماها الصحابة جوهرة الصلوات!',
+      adhanFeature: 'إعلان اقتراب نهاية النهار ودخول وقت الإياب والذكر',
+      istijabahMoment: 'آخر ساعة من عصر يوم الجمعة لا يوافقها عبد مسلم يدعو إلا استجيب له',
+      recommendedSurahs: 'سورة العصر والتين والقارعة والبلد',
+      streakPoints: 95,
+      celebrationBadge: 'وسام الصلاة الوسطى والبردين 🛡️',
+      congregationVirtue: 'براءة من النفاق ومرافقة الملائكة في صعودها لعرش الرحمن',
+      sunnahRawatib: '4 ركعات قبلها مستحبة لنيل دعوة النبي ﷺ بالرحمة',
+      historicalEvent: 'غزوة الخندق ودعاء النبي ﷺ بالحفظ حين شغله المشركون عنها',
+      visualIcon: Icons.brightness_medium_rounded,
+      primaryTint: Color(0xFFF97316),
+    ),
+    Prayer.maghrib: Prayer22Distinctions(
+      prayer: Prayer.maghrib,
+      arabicName: 'صلاة المغرب',
+      subtitle: 'إقبال الليل وإدبار النهار، وتر النهار، وساعة استجابة الصائمين',
+      astronomicalDefinition: 'سقوط حاجب الشمس الغربي كاملاً وتواري القرص تحت الأفق',
+      skyAuraDescription: 'أفق أرجواني متوهج يمتزج بالشفق الأحمر القرمزي في لوحة فنية إلهية بديعة',
+      quranAyah: '﴿وَسَبِّحْ بِحَمْدِ رَبِّكَ قَبْلَ طُلُوعِ الشَّمْسِ وَقَبْلَ غُرُوبِهَا﴾ [طه: 130]',
+      hadithVirtue: '«لا تَزَالُ أُمَّتِي بِخَيْرٍ مَا لَمْ يُؤَخِّرُوا الْمَغْرِبَ حَتَّى تَشْتَبِكَ النُّجُومُ»',
+      rakatsDetail: '3 ركعات (الأولى والثانية جهريتان، والثالثة سرية) + ركعتان بعدية مؤكدة',
+      angelWitnessRole: 'تغلق صحائف عمل النهار وتفتح صحائف عمل الليل بالصلاة والذكر',
+      spiritualFeeling: 'خشوع عظيم وشعور بالسكينة عند اختتام النهار وبدء أوقات العبادة الهادئة',
+      healthBenefit: 'تهيئة المعدة للإفطار وتناول الطعام بانتظام وهدوء دون تلبك معوي',
+      specificDhikr: '«اللَّهُمَّ هَذَا إِقْبَالُ لَيْلِكَ، وَإِدْبَارُ نَهَارِكَ، وَأَصْوَاتُ دُعَاتِكَ، فَاغْفِرْ لِي»',
+      funChildFact: 'المغرب هي صلاة الوتر لصلوات النهار، لأنها 3 ركعات فردية لا زوجية!',
+      adhanFeature: 'أعذب وأحب أذان للقلوب يؤذن للصائمين بالإفطار وللعباد بالصلاة',
+      istijabahMoment: 'دعوة الصائم عند فطره ودعاء ما بين أذان المغرب وإقامته',
+      recommendedSurahs: 'قصار المفصل أو الأعراف والطور في بعض الأحيان',
+      streakPoints: 85,
+      celebrationBadge: 'وسام وتر النهار واستجابة الدعاء 🌅',
+      congregationVirtue: 'المسارعة لصلاة المغرب تنفي الفقر وتثبت القدم على الصراط',
+      sunnahRawatib: 'ركعتان بعد المغرب مؤكدتان يسن أداؤهما في البيت',
+      historicalEvent: 'نزول النبي ﷺ بمسجد قباء ولقاء الأنصار المبتهجين بقدومه الشريف',
+      visualIcon: Icons.wb_twilight_rounded,
+      primaryTint: Color(0xFFEC4899),
+    ),
+    Prayer.isha: Prayer22Distinctions(
+      prayer: Prayer.isha,
+      arabicName: 'صلاة العشاء',
+      subtitle: 'خاتمة الفرائض، صلاة قيام الليل، وبراءة من النفاق وظلمات القبر',
+      astronomicalDefinition: 'مغيب الشفق الأحمر بالكامل وظهور ظلام الليل الدامس بالنجوم',
+      skyAuraDescription: 'سماء كحلية مرصعة بالنجوم اللامعة مع هلال الشهر المنير',
+      quranAyah: '﴿وَمِنَ اللَّيْلِ فَسَبِّحْهُ وَإِدْبَارَ النُّجُومِ﴾ [الطور: 49]',
+      hadithVirtue: '«وَلَوْ يَعْلَمُونَ مَا فِي الْعَتَمَةِ وَالصُّبْحِ لأَتَوْهُمَا وَلَوْ حَبْوًا» (متفق عليه)',
+      rakatsDetail: '4 ركعات (الأولى والثانية جهريتان) + ركعتان بعدية مؤكدة + صلاة الوتر',
+      angelWitnessRole: 'تبيت الملائكة تحرس العبد الذي صلى العشاء وبات على طهارة وذكر',
+      spiritualFeeling: 'راحة تامة من أثقال الدنيا، واستعداد لنوم هانئ بقلب سليم معلق بالله',
+      healthBenefit: 'تخفيض ضغط الدم ومستويات التوتر لتمهيد الجسم للنوم الصحي العميق',
+      specificDhikr: 'قراءة الآيتين من آخر سورة البقرة، وسورة الملك المنجية من عذاب القبر',
+      funChildFact: 'إذا صليت العشاء في جماعة، كأنك سهرت تصلي نصف الليل كله وأنت نائم!',
+      adhanFeature: 'أطول وقت للصلاة يمتد حتى نصف الليل الشرعي برحمة ويسر',
+      istijabahMoment: 'وقت السجود في قيام الليل والوتر بعد العشاء',
+      recommendedSurahs: 'سورة البروج، الانشقاق، والغاشية',
+      streakPoints: 90,
+      celebrationBadge: 'وسام قيام نصف الليل ونور الظلمات 🌌',
+      congregationVirtue: 'صلاة العشاء في جماعة نور تام يوم القيامة على الصراط',
+      sunnahRawatib: 'ركعتان مؤكدتان بعد العشاء تعقبهما صلاة الشفع والوتر',
+      historicalEvent: 'فرض الصلوات الخمس ليلة الإسراء والمعراج في سدرة المنتهى',
+      visualIcon: Icons.nights_stay_rounded,
+      primaryTint: Color(0xFF8B5CF6),
+    ),
+  };
+}

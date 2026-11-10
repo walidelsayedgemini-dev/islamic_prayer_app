@@ -1,0 +1,163 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'prayer_home_screen.dart';
+import 'qibla_screen.dart';
+import 'calendar_screen.dart';
+import 'tasbih_screen.dart';
+import 'jannati_screen.dart';
+import 'help_me_screen.dart';
+import 'settings_screen.dart';
+import '../providers/settings_provider.dart';
+import '../theme/islamic_theme.dart';
+
+class MainNavigationScreen extends StatefulWidget {
+  const MainNavigationScreen({super.key});
+
+  @override
+  State<MainNavigationScreen> createState() => _MainNavigationScreenState();
+}
+
+class _MainNavigationScreenState extends State<MainNavigationScreen> {
+  int _currentIndex = 0;
+  late PageController _pageController;
+
+  final List<Widget> _screens = const [
+    PrayerHomeScreen(),
+    QiblaScreen(),
+    CalendarScreen(),
+    TasbihScreen(),
+    JannatiScreen(),
+    HelpMeScreen(),
+    SettingsScreen(),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: _currentIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _onTabTapped(int index) {
+    if (index == _currentIndex) return;
+    setState(() => _currentIndex = index);
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = Provider.of<SettingsProvider>(context);
+    final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
+    final accentColor = themeOption.accentColor;
+
+    return Scaffold(
+      extendBody: true,
+      body: PageView(
+        controller: _pageController,
+        physics: const BouncingScrollPhysics(),
+        onPageChanged: (index) {
+          setState(() => _currentIndex = index);
+        },
+        children: _screens,
+      ),
+      bottomNavigationBar: Container(
+        margin: const EdgeInsets.fromLTRB(8, 0, 8, 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF03140F).withOpacity(0.96),
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(
+            color: accentColor.withOpacity(0.35),
+            width: 1.3,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.7),
+              blurRadius: 28,
+              offset: const Offset(0, 10),
+            ),
+            BoxShadow(
+              color: accentColor.withOpacity(0.12),
+              blurRadius: 15,
+              spreadRadius: 1,
+            )
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(26),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(0, Icons.access_time_filled_rounded, "المواقيت", accentColor),
+                _buildNavItem(1, Icons.explore_rounded, "القبلة", accentColor),
+                _buildNavItem(2, Icons.calendar_month_rounded, "التقويم", const Color(0xFF34D399)),
+                _buildNavItem(3, Icons.fingerprint_rounded, "السبحة", accentColor),
+                _buildNavItem(4, Icons.workspace_premium_rounded, "جَنَّتِي", const Color(0xFFFBBF24)),
+                _buildNavItem(5, Icons.favorite_rounded, "سَاعِدْنِي", const Color(0xFF38BDF8)),
+                _buildNavItem(6, Icons.tune_rounded, "الإعدادات", accentColor),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData icon, String label, Color accentColor) {
+    final isSelected = _currentIndex == index;
+
+    return GestureDetector(
+      onTap: () => _onTabTapped(index),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? accentColor.withOpacity(0.18) : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected ? accentColor.withOpacity(0.55) : Colors.transparent,
+            width: 1.0,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedScale(
+              scale: isSelected ? 1.15 : 1.0,
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                icon,
+                color: isSelected ? accentColor : Colors.white38,
+                size: 19,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                color: isSelected ? accentColor : Colors.white38,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 9.5,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

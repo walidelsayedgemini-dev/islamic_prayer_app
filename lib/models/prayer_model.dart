@@ -1,0 +1,59 @@
+import 'package:adhan/adhan.dart';
+
+class AdvancedPrayerTimes {
+  final PrayerTimes prayerTimes;
+  final DateTime qiyamStart;
+  final DateTime islamicMidnight;
+  final DateTime duhaStart;
+
+  AdvancedPrayerTimes({
+    required this.prayerTimes,
+    required this.qiyamStart,
+    required this.islamicMidnight,
+    required this.duhaStart,
+  });
+
+  factory AdvancedPrayerTimes.calculate({
+    required double latitude,
+    required double longitude,
+    required CalculationMethod method,
+    required Madhab madhab,
+    Map<String, int>? offsets, // تعديلات الدقائق اليدوية
+  }) {
+    final coordinates = Coordinates(latitude, longitude);
+    final params = method.getParameters();
+    params.madhab = madhab;
+
+    // تطبيق التعديل اليدوي بالدقائق إن وجد
+    if (offsets != null) {
+      params.adjustments.fajr = offsets['fajr'] ?? 0;
+      params.adjustments.dhuhr = offsets['dhuhr'] ?? 0;
+      params.adjustments.asr = offsets['asr'] ?? 0;
+      params.adjustments.maghrib = offsets['maghrib'] ?? 0;
+      params.adjustments.isha = offsets['isha'] ?? 0;
+    }
+
+    final today = DateComponents.from(DateTime.now());
+    final current = PrayerTimes(coordinates, today, params);
+
+    // حساب صلوات اليوم التالي لمعرفة وقت فجر الغد بدقة
+    final tomorrow = DateComponents.from(DateTime.now().add(const Duration(days: 1)));
+    final nextDayTimes = PrayerTimes(coordinates, tomorrow, params);
+
+    // حساب مدة الليل الشرعي (من المغرب إلى فجر الغد)
+    final nightDuration = nextDayTimes.fajr.difference(current.maghrib);
+
+    final midnight = current.maghrib.add(nightDuration ~/ 2);
+    final qiyam = current.maghrib.add(
+      Duration(milliseconds: (nightDuration.inMilliseconds * (2 / 3)).round()),
+    );
+    final duha = current.sunrise.add(const Duration(minutes: 20)); // خروج وقت الكراهة
+
+    return AdvancedPrayerTimes(
+      prayerTimes: current,
+      qiyamStart: qiyam,
+      islamicMidnight: midnight,
+      duhaStart: duha,
+    );
+  }
+}
