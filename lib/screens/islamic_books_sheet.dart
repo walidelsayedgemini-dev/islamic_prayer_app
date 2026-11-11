@@ -291,7 +291,7 @@ class _IslamicBooksSheetState extends State<IslamicBooksSheet> {
                       Text(
                         "الشرح والفوائد: ${ch.explanation}",
                         style: TextStyle(
-                          color: palette.isDark ? const Color(0xFFFDE68A) : palette.primaryColor,
+                          color: palette.isDark ? const Color(0xFFE2E8F0) : palette.primaryColor,
                           fontSize: 12.5,
                           height: 1.5,
                           fontWeight: FontWeight.w500,

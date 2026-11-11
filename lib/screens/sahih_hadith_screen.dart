@@ -5,6 +5,7 @@ import '../models/sahih_hadith_data.dart';
 import '../providers/jannati_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
+import '../widgets/firdaws_brand_logo.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/real_mosque_background.dart';
 import 'quran_reader_screen.dart';
@@ -402,18 +403,16 @@ class _SahihHadithScreenState extends State<SahihHadithScreen> {
                       ),
                     );
                   },
-                  icon: ClipOval(
-                    child: Image.asset(
-                      'assets/images/palace_jannah_logo.png',
-                      width: 20,
-                      height: 20,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          const Icon(Icons.menu_book_rounded, size: 18),
-                    ),
+                  icon: FirdawsBrandLogo(
+                    size: 22,
+                    borderColor: palette.onAccentColor,
+                    borderWidth: 1.0,
+                    fallbackIcon: Icons.menu_book_rounded,
                   ),
                   label: Text(
                     'فتح الآية المرتبطة في المصحف الشريف 📖 (${h.linkedSurah}:${h.linkedAyah ?? 1})',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,

@@ -4,12 +4,20 @@ import '../models/islamic_audio_data.dart';
 import '../providers/audio_player_provider.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../screens/about_me_screen.dart';
+import '../screens/arena_hub_screen.dart';
+import '../screens/events_missions_screen.dart';
+import '../screens/family_challenge_screen.dart';
+import '../screens/hasanat_store_screen.dart';
 import '../screens/islamic_stories_screen.dart';
 import '../screens/main_navigation_screen.dart';
+import '../screens/millionaire_quiz_screen.dart';
 import '../screens/quran_reader_screen.dart';
 import '../screens/sahih_hadith_screen.dart';
 import '../theme/islamic_theme.dart';
 import 'audio_download_manager_sheet.dart';
+import 'firdaws_3d_ui.dart';
+import 'firdaws_brand_logo.dart';
+import 'unified_theme_hub.dart';
 import 'user_profile_editor_sheet.dart';
 
 class IslamicSideDrawer extends StatefulWidget {
@@ -57,7 +65,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
     final player = Provider.of<AudioPlayerProvider>(context);
     final userProv = Provider.of<FirdawsUserProvider>(context);
     final palette = widget.themeOption.resolve(isNight: widget.isNightMode);
-    final accent = palette.accentColor;
+    final accent = firdawsModernAccent(palette);
     final avatarBytes = userProv.avatarBytes;
 
     return Drawer(
@@ -76,44 +84,16 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                 children: [
                   Row(
                     children: [
-                      GestureDetector(
+                      FirdawsBrandLogo(
+                        size: 48,
+                        borderColor: accent,
+                        borderWidth: 1.8,
+                        userAvatarBytes: avatarBytes,
+                        fallbackIcon: Icons.menu_book_rounded,
                         onTap: () {
                           Navigator.of(context).pop();
                           UserProfileEditorSheet.show(context);
                         },
-                        child: Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: accent, width: 1.8),
-                            boxShadow: [
-                              BoxShadow(
-                                color: accent.withOpacity(0.32),
-                                blurRadius: 10,
-                              ),
-                            ],
-                          ),
-                          child: ClipOval(
-                            child: avatarBytes != null
-                                ? Image.memory(
-                                    avatarBytes,
-                                    width: 48,
-                                    height: 48,
-                                    fit: BoxFit.cover,
-                                  )
-                                : Image.asset(
-                                    'assets/images/palace_jannah_logo.png',
-                                    width: 48,
-                                    height: 48,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Container(
-                                      color: accent.withOpacity(0.18),
-                                      child: Icon(Icons.menu_book_rounded, color: accent, size: 22),
-                                    ),
-                                  ),
-                          ),
-                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -170,6 +150,85 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
+                        _drawerShortcutChip(
+                          label: '🎨 الثيمات (٥٢) 3D',
+                          icon: Icons.palette_rounded,
+                          accent: accent,
+                          palette: palette,
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            ThemeHubSheet.show(context);
+                          },
+                        ),
+                        _drawerShortcutChip(
+                          label: '💎 من سيربح المليون',
+                          icon: Icons.quiz_rounded,
+                          accent: const Color(0xFF38BDF8),
+                          palette: palette,
+                          onTap: () {
+                            final nav = Navigator.of(context);
+                            nav.pop();
+                            nav.push(
+                              MaterialPageRoute(builder: (_) => const MillionaireQuizScreen()),
+                            );
+                          },
+                        ),
+                        _drawerShortcutChip(
+                          label: '🎮 ٣٠ لعبة 3D',
+                          icon: Icons.sports_esports_rounded,
+                          accent: const Color(0xFF8B5CF6),
+                          palette: palette,
+                          onTap: () {
+                            final nav = Navigator.of(context);
+                            nav.pop();
+                            nav.push(
+                              MaterialPageRoute(builder: (_) => const ArenaHubScreen()),
+                            );
+                          },
+                        ),
+                        _drawerShortcutChip(
+                          label: '🛍️ متجر السكنات',
+                          icon: Icons.storefront_rounded,
+                          accent: const Color(0xFFF59E0B),
+                          palette: palette,
+                          onTap: () {
+                            final nav = Navigator.of(context);
+                            nav.pop();
+                            nav.push(
+                              MaterialPageRoute(
+                                builder: (_) => const HasanatStoreScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        _drawerShortcutChip(
+                          label: '⚡ المهام والأحداث',
+                          icon: Icons.bolt_rounded,
+                          accent: const Color(0xFF38BDF8),
+                          palette: palette,
+                          onTap: () {
+                            final nav = Navigator.of(context);
+                            nav.pop();
+                            nav.push(
+                              MaterialPageRoute(
+                                builder: (_) => const EventsMissionsScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        _drawerShortcutChip(
+                          label: '🏆 تحدي العائلة',
+                          icon: Icons.emoji_events_rounded,
+                          accent: const Color(0xFF10B981),
+                          palette: palette,
+                          onTap: () {
+                            final nav = Navigator.of(context);
+                            nav.pop();
+                            nav.push(
+                              MaterialPageRoute(builder: (_) => const FamilyChallengeScreen()),
+                            );
+                          },
+                        ),
                         _drawerShortcutChip(
                           label: 'سجل الصلوات',
                           icon: Icons.fact_check_rounded,
@@ -948,7 +1007,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                 child: Text(
                   item.purpose,
                   style: TextStyle(
-                    color: palette.isDark ? const Color(0xFFFDE68A) : palette.primaryColor,
+                    color: palette.isDark ? const Color(0xFFE2E8F0) : palette.primaryColor,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1104,6 +1163,49 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
       padding: const EdgeInsets.all(16),
       children: [
         _buildShortcutTile(
+          icon: Icons.palette_rounded,
+          title: "🎨 بوابة الثيمات الموحدة 3D (٥٢ ثيماً + ٢٠ خطاً)",
+          subtitle: "تحكم كامل في كل الألوان والوضع الليلي العصري والخطوط من مكان واحد",
+          palette: palette,
+          onTap: () {
+            Navigator.of(context).pop();
+            ThemeHubSheet.show(context);
+          },
+        ),
+        _buildShortcutTile(
+          icon: Icons.quiz_rounded,
+          title: "💎 مسابقة من سيربح المليون (١٠٠٠ سؤال)",
+          subtitle: "١٥ مرحلة وسلّم المليون و٤ وسائل مساعدة ومنافسون افتراضيون ومشاركة ٢ لاعبين",
+          palette: palette,
+          onTap: () {
+            final nav = Navigator.of(context);
+            nav.pop();
+            nav.push(MaterialPageRoute(builder: (_) => const MillionaireQuizScreen()));
+          },
+        ),
+        _buildShortcutTile(
+          icon: Icons.sports_esports_rounded,
+          title: "🎮 صالة الـ ٣٠ لعبة التنافسية 3D",
+          subtitle: "٩٠ عالماً • ٩٠ بطلاً • ٣٠ زعيماً شريراً • ٤ مستويات صعوبة • مشاركة ٢ لاعبين",
+          palette: palette,
+          onTap: () {
+            final nav = Navigator.of(context);
+            nav.pop();
+            nav.push(MaterialPageRoute(builder: (_) => const ArenaHubScreen()));
+          },
+        ),
+        _buildShortcutTile(
+          icon: Icons.emoji_events_rounded,
+          title: "🏆 تحدي العائلة والصحبة (مين سبّح / مين بطل أكتر)",
+          subtitle: "سباق التسبيح الجماعي + لوحة الأبطال + ٨٠٠ عبارة تحفيز عند الفوز والخسارة",
+          palette: palette,
+          onTap: () {
+            final nav = Navigator.of(context);
+            nav.pop();
+            nav.push(MaterialPageRoute(builder: (_) => const FamilyChallengeScreen()));
+          },
+        ),
+        _buildShortcutTile(
           icon: Icons.auto_stories_rounded,
           title: "📖 المصحف الشريف الكامل (١١٤ سورة)",
           subtitle: "مراجعة Quran.com • التفسير الميسر • القفز المباشر لأي آية",
@@ -1198,38 +1300,43 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
     required ThemePalette palette,
     required VoidCallback onTap,
   }) {
-    final accent = palette.accentColor;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: palette.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accent.withOpacity(0.35)),
-      ),
-      child: ListTile(
-        onTap: onTap,
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: accent.withOpacity(0.2),
-            shape: BoxShape.circle,
-            border: Border.all(color: accent),
+    final accent = firdawsModernAccent(palette);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Firdaws3DCard(
+        palette: palette,
+        glowColor: accent,
+        padding: EdgeInsets.zero,
+        borderRadius: 16,
+        depth: 4.0,
+        child: ListTile(
+          onTap: onTap,
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: accent.withOpacity(0.2),
+              shape: BoxShape.circle,
+              border: Border.all(color: accent),
+            ),
+            child: Icon(icon, color: accent, size: 20),
           ),
-          child: Icon(icon, color: accent, size: 20),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: palette.textPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
+          title: Text(
+            title,
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
           ),
+          subtitle: Text(
+            subtitle,
+            style: TextStyle(
+              color: firdawsCrispSecondaryText(palette),
+              fontSize: 11,
+            ),
+          ),
+          trailing: Icon(Icons.arrow_forward_ios_rounded, color: accent, size: 14),
         ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(color: palette.textSecondary, fontSize: 11),
-        ),
-        trailing: Icon(Icons.arrow_forward_ios_rounded, color: accent, size: 14),
       ),
     );
   }

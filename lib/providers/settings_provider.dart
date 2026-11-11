@@ -3,9 +3,11 @@ import 'package:adhan/adhan.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/font_catalog.dart';
 import '../models/prayer_model.dart';
+import '../services/arena_sfx_service.dart';
 import '../services/firdaws_native_service.dart';
 import '../services/location_service.dart';
 import '../services/notification_service.dart';
+import '../theme/islamic_theme.dart';
 
 class SettingsProvider extends ChangeNotifier {
   SharedPreferences? _prefs;
@@ -14,8 +16,11 @@ class SettingsProvider extends ChangeNotifier {
   CalculationMethod _calculationMethod = CalculationMethod.umm_al_qura;
   Madhab _madhab = Madhab.shafi;
   String _selectedTheme = 'emerald_gold';
-  String _selectedFont = 'Aref Ruqaa';
+  String _selectedFont = 'Cairo';
   String _brightnessMode = 'night'; // 'night', 'day', 'auto'
+  String? _selectedAppWallpaperAsset;
+  String? _selectedGardenWallpaperAsset;
+  bool _gameSfxEnabled = true;
   String _adhanVoice = 'madinah';
   bool _isAutoLocation = true;
   double _latitude = 24.7136; // افتراضي: الرياض
@@ -48,6 +53,9 @@ class SettingsProvider extends ChangeNotifier {
   String get selectedTheme => _selectedTheme;
   String get selectedFont => _selectedFont;
   String get brightnessMode => _brightnessMode;
+  String? get selectedAppWallpaperAsset => _selectedAppWallpaperAsset;
+  String? get selectedGardenWallpaperAsset => _selectedGardenWallpaperAsset;
+  bool get gameSfxEnabled => _gameSfxEnabled;
   String get adhanVoice => _adhanVoice;
   bool get isAutoLocation => _isAutoLocation;
   double get latitude => _latitude;
@@ -64,6 +72,9 @@ class SettingsProvider extends ChangeNotifier {
   bool get salawatOverlayEnabled => _salawatOverlayEnabled;
   int get salawatIntervalMinutes => _salawatIntervalMinutes;
   List<String> get salawatCustomTimes => List.unmodifiable(_salawatCustomTimes);
+
+  ThemePalette get currentPalette =>
+      IslamicTheme.resolvePalette(_selectedTheme, isNight: isNightEffective);
 
   /// تحديد ما إذا كان الوضع الليلي مفعلاً حالياً (يدوياً أو تلقائياً مع المغرب والفجر)
   bool get isNightEffective {
@@ -118,8 +129,21 @@ class SettingsProvider extends ChangeNotifier {
     final savedTheme = _prefs!.getString('theme') ?? 'emerald_gold';
     _selectedTheme = savedTheme == 'emerald' ? 'emerald_gold' : savedTheme;
 
-    final savedFont = _prefs!.getString('app_font') ?? 'Aref Ruqaa';
+    final savedFont = _prefs!.getString('app_font') ?? 'Cairo';
     _selectedFont = FontCatalog.getByFamily(savedFont).family;
+
+    final savedAppWp = _prefs!.getString('app_wallpaper_4k');
+    _selectedAppWallpaperAsset =
+        (savedAppWp != null && savedAppWp.trim().isNotEmpty) ? savedAppWp : null;
+
+    final savedGardenWp = _prefs!.getString('garden_wallpaper_4k');
+    _selectedGardenWallpaperAsset =
+        (savedGardenWp != null && savedGardenWp.trim().isNotEmpty)
+            ? savedGardenWp
+            : null;
+
+    _gameSfxEnabled = _prefs!.getBool('game_sfx_enabled') ?? true;
+    ArenaSfxService.instance.setEnabled(_gameSfxEnabled);
 
     final savedBrightness = _prefs!.getString('brightness_mode') ?? 'night';
     if (savedBrightness == 'day' || savedBrightness == 'night' || savedBrightness == 'auto') {
@@ -256,6 +280,54 @@ class SettingsProvider extends ChangeNotifier {
   void setFont(String fontFamily) {
     _selectedFont = FontCatalog.getByFamily(fontFamily).family;
     _prefs?.setString('app_font', _selectedFont);
+    notifyListeners();
+  }
+
+  void setAppWallpaper(String? assetPath) {
+    final clean =
+        (assetPath != null && assetPath.trim().isNotEmpty) ? assetPath : null;
+    _selectedAppWallpaperAsset = clean;
+    if (clean == null) {
+      _prefs?.remove('app_wallpaper_4k');
+    } else {
+      _prefs?.setString('app_wallpaper_4k', clean);
+    }
+    notifyListeners();
+  }
+
+  void setGardenWallpaper(String? assetPath) {
+    final clean =
+        (assetPath != null && assetPath.trim().isNotEmpty) ? assetPath : null;
+    _selectedGardenWallpaperAsset = clean;
+    if (clean == null) {
+      _prefs?.remove('garden_wallpaper_4k');
+    } else {
+      _prefs?.setString('garden_wallpaper_4k', clean);
+    }
+    notifyListeners();
+  }
+
+  void setBothWallpapers(String? assetPath) {
+    final clean =
+        (assetPath != null && assetPath.trim().isNotEmpty) ? assetPath : null;
+    _selectedAppWallpaperAsset = clean;
+    _selectedGardenWallpaperAsset = clean;
+    if (clean == null) {
+      _prefs?.remove('app_wallpaper_4k');
+      _prefs?.remove('garden_wallpaper_4k');
+    } else {
+      _prefs?.setString('app_wallpaper_4k', clean);
+      _prefs?.setString('garden_wallpaper_4k', clean);
+    }
+    notifyListeners();
+  }
+
+  void clearWallpapers() => setBothWallpapers(null);
+
+  void setGameSfxEnabled(bool enabled) {
+    _gameSfxEnabled = enabled;
+    ArenaSfxService.instance.setEnabled(enabled);
+    _prefs?.setBool('game_sfx_enabled', enabled);
     notifyListeners();
   }
 

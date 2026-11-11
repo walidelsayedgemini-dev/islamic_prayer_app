@@ -2,18 +2,27 @@ import 'package:adhan/adhan.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../models/events_missions_catalog.dart';
+import '../models/hasanat_store_catalog.dart';
 import '../models/islamic_qa_500.dart';
 import '../models/jannati_encyclopedia_data.dart';
 import '../providers/firdaws_user_provider.dart';
+import '../providers/hasanat_provider.dart';
 import '../providers/jannati_provider.dart';
+import '../providers/family_challenge_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
+import '../widgets/firdaws_brand_logo.dart';
 import '../widgets/islamic_qa_explorer_widget.dart';
+import 'events_missions_screen.dart';
+import 'hasanat_store_screen.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/jannati_atlas_and_covenant_views.dart';
 import '../widgets/jannati_garden_canvas.dart';
 import '../widgets/real_mosque_background.dart';
 import '../widgets/sacred_reference_widgets.dart';
+import '../widgets/firdaws_3d_ui.dart';
+import '../widgets/wallpaper_70_picker_sheet.dart';
 
 /// واحة الفردوس الأعلى التفاعلية الشاملة («جنتي» + ٥٠٠ سؤال وجواب):
 /// 5 تبويبات متكاملة:
@@ -39,8 +48,6 @@ class _JannatiScreenState extends State<JannatiScreen>
   int _activeTab = 0;
   bool _showAll14TreasuryMetrics = false;
   String _deedCategoryFilter = 'all'; // all, dhikr, salah, sunnah, sadaqah
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
 
   static const List<({String label, IconData icon})> _tabSpecs = [
     (label: 'بُستاني التفاعلي', icon: Icons.park_rounded),
@@ -74,7 +81,7 @@ class _JannatiScreenState extends State<JannatiScreen>
           'اللَّهُمَّ إِنِّي أَسْأَلُكَ إِيمَانًا لَا يَرْتَدُّ، وَنَعِيمًا لَا يَنْفَدُ، وَمُرَافَقَةَ نَبِيِّنَا مُحَمَّدٍ ﷺ فِي أَعْلَى جَنَّةِ الْخُلْدِ',
       source: 'مسند أحمد وصحيح ابن حبان (حديث ابن مسعود رضي الله عنه)',
       reflection:
-          'كان عبد الله بن مسعود يدعو بهذا الدعاء كلما خلَا بربه، فأمّرنا النبي ﷺ أن نُؤمّن على مثله.',
+          'كان عبد الله بن مسعود يدعو بهذا الدعاء كلما خلَا بربه، وأمَرَنا النبي ﷺ أن نعلو بهممنا في الدعاء ونسأل الله الفردوس الأعلى.',
     ),
     (
       title: 'دعاء لذة النظر إلى وجه الله والشوق إلى لقائه',
@@ -97,13 +104,6 @@ class _JannatiScreenState extends State<JannatiScreen>
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 240),
-    );
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.12).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeOutBack),
-    );
     widget.tabRequestNotifier?.addListener(_consumeTabRequest);
     _consumeTabRequest();
   }
@@ -135,14 +135,11 @@ class _JannatiScreenState extends State<JannatiScreen>
   @override
   void dispose() {
     widget.tabRequestNotifier?.removeListener(_consumeTabRequest);
-    _pulseController.dispose();
     super.dispose();
   }
 
   void _triggerPulse() {
-    _pulseController.forward().then((_) {
-      if (mounted) _pulseController.reverse();
-    });
+    // تمت إزالة تحريك شريط الإحصاءات للحفاظ على ثبات الواجهة عند التسبيح والاستغفار.
   }
 
   Future<void> _handleInvestmentTap(
@@ -153,6 +150,19 @@ class _JannatiScreenState extends State<JannatiScreen>
     final userProv = Provider.of<FirdawsUserProvider>(context, listen: false);
     final outcome = await jannati.performInvestmentTap(inv.id);
     if (!mounted) return;
+
+    try {
+      final hasanat = Provider.of<HasanatProvider>(context, listen: false);
+      final delta = outcome.completedCycle
+          ? inv.pointsPerCompletion.clamp(6, 40)
+          : inv.pointsPerTap.clamp(2, 12);
+      hasanat.earnHasanat(
+        delta,
+        reason: 'غراس جنتي: ${inv.shortLabel}',
+        sourceTag: 'جنتي',
+      );
+      hasanat.recordMetric(EventMissionMetric.jannahDeedsCount, delta: 1);
+    } catch (_) {}
 
     _triggerPulse();
     if (outcome.completedCycle) {
@@ -413,7 +423,7 @@ class _JannatiScreenState extends State<JannatiScreen>
                       inv.dhikrOrAction,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: palette.isDark ? const Color(0xFFFDE68A) : palette.primaryColor,
+                        color: palette.isDark ? const Color(0xFFF1F5F9) : palette.primaryColor,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         height: 1.5,
@@ -719,19 +729,31 @@ class _JannatiScreenState extends State<JannatiScreen>
                                   style: TextStyle(
                                     color: river.riverColor,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 14,
+                                    fontSize: 14.5,
                                   ),
                                 ),
                               ),
-                              Text(
-                                river.sourcePlace,
-                                style: TextStyle(
-                                  color: palette.textMuted,
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
                             ],
+                          ),
+                          const SizedBox(height: 5),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 9, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: river.riverColor.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: river.riverColor.withOpacity(0.32),
+                              ),
+                            ),
+                            child: Text(
+                              '📍 ${river.sourcePlace}',
+                              style: TextStyle(
+                                color: palette.textSecondary,
+                                fontSize: 10.8,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                           const SizedBox(height: 6),
                           Text(
@@ -887,55 +909,20 @@ class _JannatiScreenState extends State<JannatiScreen>
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
-      child: Container(
+      child: Firdaws3DCard(
+        palette: palette,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: palette.cardColor.withOpacity(palette.isDark ? 0.84 : 0.92),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: accent.withOpacity(0.48), width: 1.4),
-          boxShadow: [
-            BoxShadow(
-              color: (palette.isDark ? Colors.black : palette.primaryColor)
-                  .withOpacity(palette.isDark ? 0.45 : 0.12),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+        borderRadius: 22,
+        depth: 5,
         child: Column(
           children: [
             Row(
               children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: accent, width: 2.0),
-                    boxShadow: [
-                      BoxShadow(
-                        color: accent.withOpacity(0.38),
-                        blurRadius: 12,
-                      ),
-                    ],
-                  ),
-                  child: ClipOval(
-                    child: userProv.avatarBytes != null
-                        ? Image.memory(
-                            userProv.avatarBytes!,
-                            width: 46,
-                            height: 46,
-                            fit: BoxFit.cover,
-                          )
-                        : Image.asset(
-                            'assets/images/palace_jannah_logo.png',
-                            width: 46,
-                            height: 46,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
-                                Icon(Icons.castle_rounded, color: accent, size: 24),
-                          ),
-                  ),
+                FirdawsBrandLogo(
+                  size: 46,
+                  borderColor: accent,
+                  glowColor: accent,
+                  userAvatarBytes: userProv.avatarBytes,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -945,7 +932,7 @@ class _JannatiScreenState extends State<JannatiScreen>
                       Text(
                         userProv.profile.hasCustomName
                             ? '${themeOption.primaryEmoji} جَنَّةُ ${userProv.displayName} • مَوْسُوعَةُ الفِرْدَوْس'
-                            : '${themeOption.primaryEmoji} جَنَّتِي الأَعْلَى • مَوْسُوعَةُ الفِرْدَوْس',
+                            : '${themeOption.primaryEmoji} جَنَّتِي • الْفِرْدَوْسُ الْأَعْلَى 3D',
                         style: TextStyle(
                           color: accent,
                           fontWeight: FontWeight.bold,
@@ -1022,83 +1009,75 @@ class _JannatiScreenState extends State<JannatiScreen>
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  nextRank != null
-                      ? 'التالي: ${nextRank.arabicTitle} (${nextRank.minPoints - jannati.totalJannahPoints})'
-                      : 'بلغت أعلى مقام في جنتي 👑',
-                  style: TextStyle(
-                    color: rankColor,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+                Flexible(
+                  fit: FlexFit.loose,
+                  child: Text(
+                    nextRank != null
+                        ? 'التالي: ${nextRank.arabicTitle} (${nextRank.minPoints - jannati.totalJannahPoints})'
+                        : 'بلغت أعلى مقام في جنتي 👑',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: rankColor,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            // شريط الإحصائيات الحركي: يتحرك وينبض كلما قُرئ حديث أو زُرعت غرسة في الجنة!
-            TweenAnimationBuilder<double>(
-              key: ValueKey<int>(jannati.statsKineticTick),
-              tween: Tween<double>(begin: 1.0, end: 0.0),
-              duration: const Duration(milliseconds: 650),
-              curve: Curves.easeOutBack,
-              builder: (context, pulse, _) {
-                final scale = 1.0 + (pulse * 0.045).clamp(-0.02, 0.06);
-                final glowOpacity = (0.14 + pulse * 0.42).clamp(0.14, 0.60);
-                return Transform.scale(
-                  scale: scale,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: palette.elevatedCardColor,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: accent.withOpacity(glowOpacity),
-                        width: pulse > 0.1 ? 1.5 : 1.0,
-                      ),
-                      boxShadow: [
-                        if (pulse > 0.05)
-                          BoxShadow(
-                            color: accent.withOpacity((pulse * 0.35).clamp(0.0, 0.4)),
-                            blurRadius: 12,
-                          ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _kineticMiniStat(
-                          '🌴',
-                          '${jannati.palmsCount}',
-                          'نخلة',
-                          const Color(0xFF10B981),
-                          palette,
-                        ),
-                        _kineticMiniStat(
-                          '🏰',
-                          '${jannati.palacesCount}',
-                          'قصور',
-                          const Color(0xFFF59E0B),
-                          palette,
-                        ),
-                        _kineticMiniStat(
-                          '💎',
-                          '${jannati.treasuresCount}',
-                          'كنز',
-                          const Color(0xFF8B5CF6),
-                          palette,
-                        ),
-                        _kineticMiniStat(
-                          '📖',
-                          '${jannati.hadithsReadCount}',
-                          'حديث مقروء',
-                          const Color(0xFF38BDF8),
-                          palette,
-                        ),
-                      ],
+            // شريط إحصائيات ثابت 100% لا يهتز ولا يتحرك عند الضغط على الاستغفار أو التسبيح
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+              decoration: BoxDecoration(
+                color: palette.elevatedCardColor,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: accent.withOpacity(0.28),
+                  width: 1.1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _staticMiniStat(
+                      '🌳',
+                      '${jannati.totalGardenTrees}',
+                      'شجرة',
+                      const Color(0xFF10B981),
+                      palette,
                     ),
                   ),
-                );
-              },
+                  Expanded(
+                    child: _staticMiniStat(
+                      '🏰',
+                      '${jannati.palacesCount}',
+                      'قصر',
+                      const Color(0xFF38BDF8),
+                      palette,
+                    ),
+                  ),
+                  Expanded(
+                    child: _staticMiniStat(
+                      '💎',
+                      '${jannati.treasuresCount}',
+                      'كنز',
+                      const Color(0xFF8B5CF6),
+                      palette,
+                    ),
+                  ),
+                  Expanded(
+                    child: _staticMiniStat(
+                      '📖',
+                      '${jannati.hadithsReadCount}',
+                      'حديث',
+                      const Color(0xFF2DD4BF),
+                      palette,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -1106,44 +1085,50 @@ class _JannatiScreenState extends State<JannatiScreen>
     );
   }
 
-  Widget _kineticMiniStat(
+  Widget _staticMiniStat(
     String emoji,
     String value,
     String label,
     Color color,
     ThemePalette palette,
   ) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(emoji, style: const TextStyle(fontSize: 13)),
-        const SizedBox(width: 4),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 280),
-              child: Text(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 13)),
+          const SizedBox(width: 4),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
                 value,
-                key: ValueKey<String>('$label-$value'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: color,
                   fontWeight: FontWeight.w900,
                   fontSize: 12,
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
-            ),
-            Text(
-              label,
-              style: TextStyle(
-                color: palette.textMuted,
-                fontSize: 8.8,
-                fontWeight: FontWeight.w600,
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: palette.textMuted,
+                  fontSize: 9.2,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -1293,7 +1278,7 @@ class _JannatiScreenState extends State<JannatiScreen>
       padding: const EdgeInsets.fromLTRB(14, 2, 14, 105),
       physics: const BouncingScrollPhysics(),
       children: [
-        // 1. لوحة الجنة البصرية الحية (القصور، النخيل، الأنهار الأربعة، العصافير الخضر)
+        // 1. لوحة الجنة البصرية الحية 3D (القصور، النخيل، بستان التسبيح، الأنهار الأربعة)
         JannatiGardenCanvas(
           palette: palette,
           palmsCount: jannati.palmsCount,
@@ -1302,6 +1287,23 @@ class _JannatiScreenState extends State<JannatiScreen>
           treasuresCount: jannati.treasuresCount,
           grovesCount: jannati.grovesCount,
           vibrancy: jannati.gardenVibrancy,
+          tasbihOrchardTrees: jannati.tasbihOrchardTrees,
+          lastTasbihTreeName: jannati.lastTasbihTreeName,
+          orchardStageTitle: jannati.orchardStageTitle,
+          onQuickTasbih: () {
+            jannati.recordTasbihForGarden('سُبْحَانَ اللَّهِ وَبِحَمْدِهِ', count: 1);
+            try {
+              Provider.of<FamilyChallengeProvider>(context, listen: false)
+                  .recordUserTasbih(1);
+            } catch (_) {}
+            try {
+              final hasanat = Provider.of<HasanatProvider>(context, listen: false);
+              hasanat.earnHasanat(2, reason: 'غرس شجرة تسبيح في جنتي 🌴', sourceTag: 'جنتي');
+              hasanat.recordMetric(EventMissionMetric.tasbihCount, delta: 1);
+              hasanat.recordMetric(EventMissionMetric.jannahDeedsCount, delta: 1);
+            } catch (_) {}
+            _triggerPulse();
+          },
           onTapPalaces: () => _openCanvasFocusSheet(
             title: 'قُصُورُكَ وَبُيُوتُكَ فِي الفِرْدَوْس 🏰',
             subtitle: 'اختر سبباً نبوياً لتشييد قصر أو بيت الآن',
@@ -1340,6 +1342,79 @@ class _JannatiScreenState extends State<JannatiScreen>
           ),
         ),
 
+        const SizedBox(height: 10),
+        Builder(
+          builder: (ctx) {
+            int bal = 220;
+            String skinName = 'روضة النخيل';
+            try {
+              final hp = ctx.watch<HasanatProvider>();
+              bal = hp.hasanatBalance;
+              skinName = hp.equippedSkin(StoreItemCategory.gardenSkin).name;
+            } catch (_) {}
+            return Firdaws3DCard(
+              palette: palette,
+              glowColor: const Color(0xFFF59E0B),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              borderRadius: 18,
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Firdaws3DPill(
+                    icon: Icons.monetization_on_rounded,
+                    label: '$bal حسنة 🪙',
+                    accentColor: const Color(0xFFF59E0B),
+                    palette: palette,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const HasanatStoreScreen(
+                          initialCategory: StoreItemCategory.gardenSkin,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Firdaws3DPill(
+                    icon: Icons.park_rounded,
+                    label: 'سكنات البستان: $skinName',
+                    accentColor: const Color(0xFF10B981),
+                    palette: palette,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const HasanatStoreScreen(
+                          initialCategory: StoreItemCategory.gardenSkin,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Firdaws3DPill(
+                    icon: Icons.photo_library_rounded,
+                    label: 'خلفيات الجنة 4K (٧٠ صورة)',
+                    accentColor: accent,
+                    palette: palette,
+                    onTap: () => Wallpaper70PickerSheet.show(
+                      context,
+                      initialTarget: WallpaperTarget.garden,
+                    ),
+                  ),
+                  Firdaws3DPill(
+                    icon: Icons.flash_on_rounded,
+                    label: 'المهام والأحداث ⚡',
+                    accentColor: const Color(0xFF38BDF8),
+                    palette: palette,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const EventsMissionsScreen(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
         const SizedBox(height: 12),
 
         // 2. صرح خزائن الفردوس (4 كبرى + توسعة إلى الـ 14 ذخر كاملة)
@@ -1374,9 +1449,19 @@ class _JannatiScreenState extends State<JannatiScreen>
                 ),
               ),
             ),
-            Text(
-              '${filteredQuickDeeds.length} أبواب',
-              style: TextStyle(color: palette.textMuted, fontSize: 11.5),
+            Flexible(
+              child: Text(
+                firdawsCountLabel(
+                  filteredQuickDeeds.length,
+                  singular: 'باب',
+                  dual: 'بابان',
+                  plural3To10: 'أبواب',
+                  singular11Plus: 'باباً',
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: palette.textMuted, fontSize: 11.5),
+              ),
             ),
           ],
         ),
@@ -1520,33 +1605,65 @@ class _JannatiScreenState extends State<JannatiScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildTreasuryMedallion(
-                '${jannati.palmsCount} نخلة',
-                'جذع من ذهب',
-                Icons.forest_rounded,
-                emeraldColor,
-                palette,
+              Expanded(
+                child: _buildTreasuryMedallion(
+                  firdawsCountLabel(
+                    jannati.totalGardenTrees,
+                    singular: 'شجرة',
+                    dual: 'شجرتان',
+                    plural3To10: 'شجرات',
+                    singular11Plus: 'شجرة',
+                  ),
+                  'بستان التشجير 3D',
+                  Icons.forest_rounded,
+                  emeraldColor,
+                  palette,
+                ),
               ),
-              _buildTreasuryMedallion(
-                '${jannati.palacesCount} قصور',
-                'لؤلؤ وياقوت',
-                Icons.castle_rounded,
-                goldColor,
-                palette,
+              Expanded(
+                child: _buildTreasuryMedallion(
+                  firdawsCountLabel(
+                    jannati.palacesCount,
+                    singular: 'قصر',
+                    dual: 'قصران',
+                    plural3To10: 'قصور',
+                    singular11Plus: 'قصراً',
+                  ),
+                  'لؤلؤ وياقوت',
+                  Icons.castle_rounded,
+                  goldColor,
+                  palette,
+                ),
               ),
-              _buildTreasuryMedallion(
-                '${jannati.treasuresCount} كنزاً',
-                'تحت العرش',
-                Icons.diamond_rounded,
-                violetColor,
-                palette,
+              Expanded(
+                child: _buildTreasuryMedallion(
+                  firdawsCountLabel(
+                    jannati.treasuresCount,
+                    singular: 'كنز',
+                    dual: 'كنزان',
+                    plural3To10: 'كنوز',
+                    singular11Plus: 'كنزاً',
+                  ),
+                  'تحت العرش',
+                  Icons.diamond_rounded,
+                  violetColor,
+                  palette,
+                ),
               ),
-              _buildTreasuryMedallion(
-                '${jannati.housesCount + jannati.grovesCount} روضة',
-                'بيوت وغراس',
-                Icons.spa_rounded,
-                cyanColor,
-                palette,
+              Expanded(
+                child: _buildTreasuryMedallion(
+                  firdawsCountLabel(
+                    jannati.housesCount + jannati.grovesCount,
+                    singular: 'روضة',
+                    dual: 'روضتان',
+                    plural3To10: 'روضات',
+                    singular11Plus: 'روضة',
+                  ),
+                  'بيوت وغراس',
+                  Icons.spa_rounded,
+                  cyanColor,
+                  palette,
+                ),
               ),
             ],
           ),
@@ -1610,40 +1727,44 @@ class _JannatiScreenState extends State<JannatiScreen>
     Color color,
     ThemePalette palette,
   ) {
-    return ScaleTransition(
-      scale: _pulseAnimation,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [color.withOpacity(0.35), color.withOpacity(0.08)],
-              ),
-              border: Border.all(color: color.withOpacity(0.75), width: 1.5),
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [color.withOpacity(0.35), color.withOpacity(0.08)],
             ),
-            child: Icon(icon, color: color, size: 21),
+            border: Border.all(color: color.withOpacity(0.75), width: 1.5),
           ),
-          const SizedBox(height: 5),
-          Text(
-            title,
-            style: TextStyle(
-              color: palette.textPrimary,
-              fontSize: 11.5,
-              fontWeight: FontWeight.bold,
-            ),
+          child: Icon(icon, color: color, size: 21),
+        ),
+        const SizedBox(height: 5),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: palette.textPrimary,
+            fontSize: 11.5,
+            fontWeight: FontWeight.bold,
+            fontFeatures: const [FontFeature.tabularFigures()],
           ),
-          Text(
-            subtitle,
-            style: TextStyle(
-              color: color,
-              fontSize: 9.5,
-              fontWeight: FontWeight.w600,
-            ),
+        ),
+        Text(
+          subtitle,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: color,
+            fontSize: 9.5,
+            fontWeight: FontWeight.w600,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -1804,17 +1925,17 @@ class _JannatiScreenState extends State<JannatiScreen>
           const SizedBox(height: 10),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: palette.elevatedCardColor,
+              color: firdaws3DElevatedSurfaceColor(palette),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: c.withOpacity(0.3)),
+              border: Border.all(color: c.withOpacity(0.35)),
             ),
             child: Text(
               inv.dhikrOrAction,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: palette.isDark ? const Color(0xFFFDE68A) : palette.primaryColor,
+                color: palette.isDark ? const Color(0xFFF1F5F9) : palette.primaryColor,
                 fontWeight: FontWeight.bold,
                 fontSize: 14.5,
                 height: 1.4,
@@ -1870,7 +1991,7 @@ class _JannatiScreenState extends State<JannatiScreen>
             ),
             const SizedBox(height: 4),
             Text(
-              'التقدم لبناء ${inv.unitSingular} جديدة: $cycle من ${inv.cycleTarget}',
+              'التقدّم نحو ثمرة (${inv.unitSingular}): $cycle من ${inv.cycleTarget}',
               style: TextStyle(color: c, fontSize: 10.5, fontWeight: FontWeight.bold),
             ),
           ],
@@ -1942,12 +2063,14 @@ class _JannatiScreenState extends State<JannatiScreen>
             children: [
               Icon(Icons.history_edu_rounded, color: accent, size: 18),
               const SizedBox(width: 8),
-              Text(
-                'سِجِلُّ البَاقِيَاتِ الصَّالِحَاتِ الأَخِيرَة',
-                style: TextStyle(
-                  color: accent,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13.5,
+              Expanded(
+                child: Text(
+                  'أَحْدَثُ سِجِلٍّ لِلْبَاقِيَاتِ الصَّالِحَاتِ',
+                  style: TextStyle(
+                    color: accent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13.5,
+                  ),
                 ),
               ),
             ],
@@ -2030,12 +2153,14 @@ class _JannatiScreenState extends State<JannatiScreen>
             children: [
               Icon(Icons.auto_awesome_rounded, color: accent, size: 18),
               const SizedBox(width: 8),
-              Text(
-                'أَدْعِيَةُ طَلَبِ الفِرْدَوْسِ الأَعْلَى (لَكَ يَا ${userProv.displayName})',
-                style: TextStyle(
-                  color: accent,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
+              Expanded(
+                child: Text(
+                  'أَدْعِيَةُ طَلَبِ الفِرْدَوْسِ الأَعْلَى (لَكَ يَا ${userProv.displayName})',
+                  style: TextStyle(
+                    color: accent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                 ),
               ),
             ],

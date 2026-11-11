@@ -4,14 +4,21 @@ import 'package:flutter/services.dart';
 import 'package:adhan/adhan.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/events_missions_catalog.dart';
 import '../models/tasbih_3d_phrases_200.dart';
 import '../models/tasbih_challenge.dart';
 import '../providers/firdaws_user_provider.dart';
+import '../providers/hasanat_provider.dart';
+import '../providers/jannati_provider.dart';
+import 'hasanat_store_screen.dart';
+import '../providers/family_challenge_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
+import '../widgets/firdaws_3d_ui.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/real_mosque_background.dart';
 import '../widgets/tasbih_goal_effects.dart';
+import 'main_navigation_screen.dart';
 
 class TasbihScreen extends StatefulWidget {
   const TasbihScreen({super.key});
@@ -261,6 +268,25 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
         );
       }
     });
+
+    // تشجير بستان «جنتي» ثلاثي الأبعاد + تحديث تحدي العائلة «مين سبّح أكتر» مع كل تسبيحة!
+    try {
+      Provider.of<JannatiProvider>(context, listen: false)
+          .recordTasbihForGarden(activeDhikrText, count: 1);
+    } catch (_) {}
+    try {
+      Provider.of<FamilyChallengeProvider>(context, listen: false)
+          .recordUserTasbih(1);
+    } catch (_) {}
+    try {
+      final hasanat = Provider.of<HasanatProvider>(context, listen: false);
+      hasanat.earnHasanat(
+        shouldTriggerEffect ? 20 : 1,
+        reason: shouldTriggerEffect ? 'إتمام ورد السبحة ✨' : 'تسبيحة في المسبحة',
+        sourceTag: 'السبحة',
+      );
+      hasanat.recordMetric(EventMissionMetric.tasbihCount, delta: 1);
+    } catch (_) {}
 
     if (shouldTriggerEffect) {
       HapticFeedback.heavyImpact();
@@ -749,7 +775,7 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                         crossAxisCount: 2,
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
-                        childAspectRatio: 1.32,
+                        childAspectRatio: 1.08,
                       ),
                       itemCount: TasbihGoalEffectsCatalog.allEffects.length,
                       itemBuilder: (context, idx) {
@@ -874,26 +900,55 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
       appBar: AppBar(
         backgroundColor: palette.cardColor.withOpacity(isNight ? 0.78 : 0.88),
         elevation: 0,
-        title: Text("📿 مسبحة الفردوس ${themeOption.primaryEmoji}"),
-        actions: [
-          TextButton.icon(
-            onPressed: _open3dPhrasesCatalog,
-            icon: Icon(Icons.auto_stories_rounded, color: accentColor, size: 17),
-            label: Text(
-              "200 عبارة 3D ✨",
-              style: TextStyle(color: accentColor, fontSize: 11.5, fontWeight: FontWeight.bold),
+        titleSpacing: 10,
+        title: Row(
+          children: [
+            Flexible(
+              child: Text(
+                "📿 مسبحة الفردوس ${themeOption.primaryEmoji}",
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
+          ],
+        ),
+        actions: [
+          Builder(
+            builder: (ctx) {
+              int balance = 0;
+              try {
+                balance = ctx.watch<HasanatProvider>().hasanatBalance;
+              } catch (_) {}
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: Firdaws3DPill(
+                    label: '$balance 🪙',
+                    accentColor: const Color(0xFFF59E0B),
+                    palette: palette,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const HasanatStoreScreen(),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
-          TextButton.icon(
+          IconButton(
+            tooltip: '200 عبارة 3D ✨',
+            onPressed: _open3dPhrasesCatalog,
+            icon: Icon(Icons.auto_stories_rounded, color: accentColor, size: 20),
+          ),
+          IconButton(
+            tooltip: 'معاينة التأثير 🎆',
             onPressed: () => _triggerGoalEffect(
               message:
                   "معاينة التأثير #${TasbihGoalEffectsCatalog.getByIndex(_selectedEffectIndex).number}/20 ✨🎆",
             ),
-            icon: Icon(Icons.auto_awesome_rounded, color: accentColor, size: 18),
-            label: Text(
-              "معاينة 🎆",
-              style: TextStyle(color: accentColor, fontSize: 11.5, fontWeight: FontWeight.bold),
-            ),
+            icon: Icon(Icons.auto_awesome_rounded, color: accentColor, size: 20),
           ),
         ],
       ),
@@ -1091,14 +1146,19 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(
-                                        activeChallenge.badge,
-                                        style: TextStyle(
-                                          color: accentColor,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
+                                      Flexible(
+                                        child: Text(
+                                          activeChallenge.badge,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: accentColor,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                          ),
                                         ),
                                       ),
+                                      const SizedBox(width: 8),
                                       Text(
                                         "المتبقي: ${(activeChallenge.targetCount - _counter).clamp(0, activeChallenge.targetCount)}",
                                         style: TextStyle(
@@ -1123,7 +1183,88 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                               ),
                             ),
 
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
+
+                          // شارة النمو الفوري لبستان جنتي 3D مع كل تسبيحة
+                          Builder(
+                            builder: (ctx) {
+                              int trees = 0;
+                              String treeName = 'نخلة التوحيد الذهبية';
+                              try {
+                                final jp = Provider.of<JannatiProvider>(ctx);
+                                trees = jp.totalGardenTrees;
+                                treeName = jp.lastTasbihTreeName;
+                              } catch (_) {}
+                              return Firdaws3DCard(
+                                palette: palette,
+                                glowColor: const Color(0xFF10B981),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                                borderRadius: 16,
+                                depth: 3.5,
+                                onTap: () => FirdawsNavBridge.jumpTo(5, jannatiTab: 0),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF10B981).withOpacity(0.20),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                            color: const Color(0xFF34D399)),
+                                      ),
+                                      child: const Icon(Icons.forest_rounded,
+                                          color: Color(0xFF34D399), size: 17),
+                                    ),
+                                    const SizedBox(width: 9),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'بستان جنتي 3D يزدان بكل تسبيحة: $trees شجرة 🌳',
+                                            style: TextStyle(
+                                              color: palette.textPrimary,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 11.5,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          Text(
+                                            treeName,
+                                            style: const TextStyle(
+                                              color: Color(0xFF34D399),
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Flexible(
+                                      fit: FlexFit.loose,
+                                      child: Text(
+                                        'شاهد البستان ⬅️',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: Color(0xFF38BDF8),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 10.5,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+
+                          const SizedBox(height: 8),
 
                           // 3. نص الذكر الحالي
                           Padding(

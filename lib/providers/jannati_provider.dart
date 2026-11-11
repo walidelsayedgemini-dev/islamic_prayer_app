@@ -74,6 +74,9 @@ class JannatiProvider extends ChangeNotifier {
   static const String _kBonusPtsKey = 'jannati_bonus_points_v1';
   static const String _kHadithReadsCountKey = 'jannati_hadith_reads_count_v1';
   static const String _kHadithReadIdsKey = 'jannati_hadith_read_ids_v1';
+  static const String _kTasbihOrchardTreesKey = 'jannati_tasbih_orchard_trees_v1';
+  static const String _kTasbihGrowthStreakKey = 'jannati_tasbih_growth_v1';
+  static const String _kLastTasbihTreeNameKey = 'jannati_last_tasbih_tree_v1';
 
   final Map<String, int> _counts = {
     for (final inv in JannatiCatalog.investments) inv.id: 0,
@@ -95,12 +98,18 @@ class JannatiProvider extends ChangeNotifier {
   int _bonusPoints = 0;
   int _hadithsReadCount = 0;
   int _statsKineticTick = 0;
+  int _tasbihOrchardTrees = 0;
+  int _tasbihGrowthStreak = 0;
+  String _lastTasbihTreeName = 'نخلة التوحيد الذهبية';
 
   bool get isInitialized => _initialized;
   int get hadithsReadCount => _hadithsReadCount;
   Set<String> get readJannahHadithIds =>
       Set<String>.unmodifiable(_readJannahHadithIds);
   int get statsKineticTick => _statsKineticTick;
+  int get tasbihOrchardTrees => _tasbihOrchardTrees;
+  int get tasbihGrowthStreak => _tasbihGrowthStreak;
+  String get lastTasbihTreeName => _lastTasbihTreeName;
 
   int countFor(String investmentId) => _counts[investmentId] ?? 0;
 
@@ -114,6 +123,17 @@ class JannatiProvider extends ChangeNotifier {
   int get grovesCount => countFor('ibrahim_groves') + countFor('tuba_groves');
   int get charityCount => countFor('charity_pavilions') + countFor('parents_crowns');
   int get salawatCount => countFor('salawat_kawthar') + countFor('wudu_gates');
+  int get totalGardenTrees => palmsCount + grovesCount + _tasbihOrchardTrees;
+
+  String get orchardStageTitle {
+    final total = totalGardenTrees;
+    if (total == 0) return 'روضة مهيّأة للغراس 3D';
+    if (total < 15) return 'بستان شتلات متفتّح 3D';
+    if (total < 60) return 'جنينة وارفة الظلال 3D';
+    if (total < 150) return 'بساتين نخيل وأنهار جارية 3D';
+    if (total < 400) return 'رياض الفردوس العامرة بالثمر 3D';
+    return 'جنة الفردوس الكبرى ذات الغراس الوفيرة 3D 👑';
+  }
 
   Set<String> get dailyCheckedIds => Set<String>.unmodifiable(_dailyCheckedIds);
   Set<String> get bookmarkedQaIds => Set<String>.unmodifiable(_bookmarkedQaIds);
@@ -142,9 +162,9 @@ class JannatiProvider extends ChangeNotifier {
 
   /// درجة ازدهار الحديقة التفاعلية (0.0..1.0)
   double get gardenVibrancy {
-    final pts = totalJannahPoints;
-    if (pts <= 0) return 0.12;
-    return (0.15 + math.min(0.85, pts / 4500.0)).clamp(0.15, 1.0);
+    final pts = totalJannahPoints + (_tasbihOrchardTrees * 8);
+    if (pts <= 0) return 0.14;
+    return (0.16 + math.min(0.84, pts / 4200.0)).clamp(0.16, 1.0);
   }
 
   JannahRankTier get currentRank => _rankForPoints(totalJannahPoints);
@@ -247,6 +267,10 @@ class JannatiProvider extends ChangeNotifier {
     _quizzesCompleted = prefs.getInt(_kQuizCountKey) ?? 0;
     _bonusPoints = prefs.getInt(_kBonusPtsKey) ?? 0;
     _hadithsReadCount = prefs.getInt(_kHadithReadsCountKey) ?? 0;
+    _tasbihOrchardTrees = prefs.getInt(_kTasbihOrchardTreesKey) ?? 0;
+    _tasbihGrowthStreak = prefs.getInt(_kTasbihGrowthStreakKey) ?? 0;
+    _lastTasbihTreeName =
+        prefs.getString(_kLastTasbihTreeNameKey) ?? 'نخلة التوحيد الذهبية';
     final savedHadithIds = prefs.getStringList(_kHadithReadIdsKey);
     if (savedHadithIds != null) {
       _readJannahHadithIds
@@ -489,6 +513,92 @@ class JannatiProvider extends ChangeNotifier {
   Future<void> _persistCountsAndLogs() async {
     await _prefs?.setString(_kCountsKey, jsonEncode(_counts));
     await _prefs?.setString(_kCyclesKey, jsonEncode(_cycleProgress));
+    await _prefs?.setInt(_kBonusPtsKey, _bonusPoints);
+    await _prefs?.setInt(_kTasbihOrchardTreesKey, _tasbihOrchardTrees);
+    await _prefs?.setInt(_kTasbihGrowthStreakKey, _tasbihGrowthStreak);
+    await _prefs?.setString(_kLastTasbihTreeNameKey, _lastTasbihTreeName);
+    await _prefs?.setString(
+      _kLogsKey,
+      jsonEncode(_recentLogs.map((l) => l.toJson()).toList()),
+    );
+  }
+
+  /// تغرس شجرة أو فسيلة جديدة في بستان «جنتي» ثلاثي الأبعاد مع كل تسبيحة!
+  Future<void> recordTasbihForGarden(String dhikrText, {int count = 1}) async {
+    if (count <= 0) return;
+    _tasbihOrchardTrees += count;
+    _tasbihGrowthStreak += count;
+    _bonusPoints += count * 2;
+    _statsKineticTick++;
+
+    if (dhikrText.contains('الحمد')) {
+      _lastTasbihTreeName = 'شجرة الرمان الوارفة بالحمد 🌳';
+    } else if (dhikrText.contains('أكبر')) {
+      _lastTasbihTreeName = 'نخلة التاج الذهبية السامقة 🌴';
+    } else if (dhikrText.contains('لا إله إلا الله')) {
+      _lastTasbihTreeName = 'روضات الإخلاص وشجر الياسمين 🌿';
+    } else if (dhikrText.contains('صل')) {
+      _lastTasbihTreeName = 'سدرة المحبة والكوثر الزاهرة 🌸';
+    } else if (dhikrText.contains('استغفر') || dhikrText.contains('أستغفر')) {
+      _lastTasbihTreeName = 'بستان المغفرة والأنهار الصافية 🌲';
+    } else {
+      _lastTasbihTreeName = 'غِراسُ سبحان الله في البستان 🌴';
+    }
+
+    if (_tasbihOrchardTrees == 1 ||
+        _tasbihOrchardTrees % 10 == 0 ||
+        count >= 5) {
+      _recentLogs.insert(
+        0,
+        JannahDeedLogItem(
+          investmentId: 'tasbih_orchard',
+          title:
+              'تشجير البستان بالتسبيح (+$count • الإجمالي: $_tasbihOrchardTrees شجرة)',
+          timestampIso: DateTime.now().toIso8601String(),
+          pointsEarned: count * 2,
+          completedCycle: true,
+        ),
+      );
+      if (_recentLogs.length > 40) {
+        _recentLogs.removeRange(40, _recentLogs.length);
+      }
+    }
+
+    notifyListeners();
+    await _prefs?.setInt(_kTasbihOrchardTreesKey, _tasbihOrchardTrees);
+    await _prefs?.setInt(_kTasbihGrowthStreakKey, _tasbihGrowthStreak);
+    await _prefs?.setString(_kLastTasbihTreeNameKey, _lastTasbihTreeName);
+    await _prefs?.setInt(_kBonusPtsKey, _bonusPoints);
+    if (_tasbihOrchardTrees == 1 ||
+        _tasbihOrchardTrees % 10 == 0 ||
+        count >= 5) {
+      await _prefs?.setString(
+        _kLogsKey,
+        jsonEncode(_recentLogs.map((l) => l.toJson()).toList()),
+      );
+    }
+  }
+
+  /// يضيف ثواباً ومكافأة نقاط في خزينة «جنتي» عند الفوز في المسابقات أو تحديات المعرفة.
+  Future<void> recordArenaKnowledgeReward(String title, int points) async {
+    if (points <= 0) return;
+    _bonusPoints += points;
+    _statsKineticTick++;
+    _recentLogs.insert(
+      0,
+      JannahDeedLogItem(
+        investmentId: 'arena_reward',
+        title: title,
+        timestampIso: DateTime.now().toIso8601String(),
+        pointsEarned: points,
+        completedCycle: true,
+      ),
+    );
+    if (_recentLogs.length > 40) {
+      _recentLogs.removeRange(40, _recentLogs.length);
+    }
+    notifyListeners();
+    await _prefs?.setInt(_kBonusPtsKey, _bonusPoints);
     await _prefs?.setString(
       _kLogsKey,
       jsonEncode(_recentLogs.map((l) => l.toJson()).toList()),

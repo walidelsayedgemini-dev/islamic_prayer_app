@@ -440,14 +440,19 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        "جرّب تدوير الهاتف (معاينة البوصلة والسهم):",
-                        style: TextStyle(
-                          color: accentColor,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: Text(
+                          "جرّب تدوير الهاتف (معاينة البوصلة والسهم):",
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: accentColor,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Text(
                         "${_manualHeading.toInt()}°",
                         style: TextStyle(

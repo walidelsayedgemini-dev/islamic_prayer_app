@@ -54,8 +54,12 @@ flutter:
   assets:
     - assets/images/
     - assets/images/themes/
+    - assets/images/characters/
+    - assets/images/garden/
+    - assets/images/games/
     - assets/data/
     - assets/audio/
+    - assets/audio/sfx/
   fonts:
     # 1. عارف رقعة
     - family: Aref Ruqaa

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:adhan/adhan.dart';
+import 'package:provider/provider.dart';
+import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 
 class RealMosqueBackground extends StatefulWidget {
@@ -7,6 +9,8 @@ class RealMosqueBackground extends StatefulWidget {
   final ThemeOption themeOption;
   final bool isNightMode;
   final double? simulatedHour;
+  final String? customAssetOverride;
+  final double dimFactor;
 
   const RealMosqueBackground({
     super.key,
@@ -14,6 +18,8 @@ class RealMosqueBackground extends StatefulWidget {
     required this.themeOption,
     this.isNightMode = true,
     this.simulatedHour,
+    this.customAssetOverride,
+    this.dimFactor = 1.0,
   });
 
   @override
@@ -29,7 +35,7 @@ class _RealMosqueBackgroundState extends State<RealMosqueBackground>
     super.initState();
     _breathingController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 20),
+      duration: const Duration(seconds: 22),
     )..repeat(reverse: true);
   }
 
@@ -39,7 +45,19 @@ class _RealMosqueBackgroundState extends State<RealMosqueBackground>
     super.dispose();
   }
 
-  String _getPhotoAsset() {
+  String _getPhotoAsset(BuildContext context) {
+    final override = widget.customAssetOverride;
+    if (override != null && override.trim().isNotEmpty) {
+      return override.trim();
+    }
+    try {
+      final chosen =
+          Provider.of<SettingsProvider>(context).selectedAppWallpaperAsset;
+      if (chosen != null && chosen.trim().isNotEmpty) {
+        return chosen.trim();
+      }
+    } catch (_) {}
+
     final key = widget.themeOption.key;
     if (key.isNotEmpty) {
       return 'assets/images/themes/$key.jpg';
@@ -49,26 +67,29 @@ class _RealMosqueBackgroundState extends State<RealMosqueBackground>
 
   @override
   Widget build(BuildContext context) {
-    final assetPath = _getPhotoAsset();
+    final assetPath = _getPhotoAsset(context);
     final palette = widget.themeOption.resolve(isNight: widget.isNightMode);
+    final dim = widget.dimFactor.clamp(0.4, 1.25);
+
+    double op(double base) => (base * dim).clamp(0.02, 0.92);
 
     return Stack(
       fit: StackFit.expand,
       children: [
-        // 1. الصورة الحقيقية لكل ثيم مع حركة الزوم الهادئة
+        // 1. الصورة الفوتوغرافية 4K الحقيقية مع حركة تنفس هادئة
         AnimatedBuilder(
           animation: _breathingController,
           builder: (context, child) {
-            final scale = 1.0 + _breathingController.value * 0.05;
+            final scale = 1.0 + _breathingController.value * 0.045;
             return Transform.scale(
               scale: scale,
               child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 800),
+                duration: const Duration(milliseconds: 700),
                 child: Image.asset(
                   assetPath,
-                  key: ValueKey<String>("${assetPath}_${widget.isNightMode}"),
+                  key: ValueKey<String>('${assetPath}_${widget.isNightMode}'),
                   fit: BoxFit.cover,
-                  filterQuality: FilterQuality.high,
+                  filterQuality: FilterQuality.medium,
                   width: double.infinity,
                   height: double.infinity,
                   errorBuilder: (context, error, stackTrace) {
@@ -80,7 +101,7 @@ class _RealMosqueBackgroundState extends State<RealMosqueBackground>
           },
         ),
 
-        // 2. طبقة التدرج المتكيفة تماماً مع الوضع الليلي أو النهاري لضمان وضوح الخلفية 4K وتباين النصوص
+        // 2. غلاف تباين مخفف بعناية ليبرز وضوح الـ 4K مع قراءة واضحة للنصوص
         Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -88,25 +109,26 @@ class _RealMosqueBackgroundState extends State<RealMosqueBackground>
               end: Alignment.bottomCenter,
               colors: widget.isNightMode
                   ? [
-                      palette.scaffoldColor.withOpacity(0.56),
-                      Colors.black.withOpacity(0.16),
-                      palette.scaffoldColor.withOpacity(0.52),
-                      palette.scaffoldColor.withOpacity(0.84),
+                      palette.scaffoldColor.withOpacity(op(0.28)),
+                      Colors.black.withOpacity(op(0.06)),
+                      palette.scaffoldColor.withOpacity(op(0.34)),
+                      palette.scaffoldColor.withOpacity(op(0.70)),
                     ]
                   : [
-                      palette.scaffoldColor.withOpacity(0.54),
-                      palette.scaffoldColor.withOpacity(0.18),
-                      palette.scaffoldColor.withOpacity(0.50),
-                      palette.scaffoldColor.withOpacity(0.82),
+                      palette.scaffoldColor.withOpacity(op(0.24)),
+                      palette.scaffoldColor.withOpacity(op(0.05)),
+                      palette.scaffoldColor.withOpacity(op(0.30)),
+                      palette.scaffoldColor.withOpacity(op(0.66)),
                     ],
               stops: const [0.0, 0.36, 0.72, 1.0],
             ),
           ),
         ),
 
-        // 3. مسحة لونية خفيفة من الثيم المختار لتوحيد الهوية البصرية
+        // 3. مسحة لونية رقيقة من الثيم المختار لتوحيد الهوية البصرية دون طمس الصورة
         Container(
-          color: palette.primaryColor.withOpacity(widget.isNightMode ? 0.14 : 0.05),
+          color: palette.primaryColor
+              .withOpacity(widget.isNightMode ? op(0.08) : op(0.04)),
         ),
       ],
     );

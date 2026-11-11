@@ -128,7 +128,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final calAccent =
         isNight ? const Color(0xFF38BDF8) : const Color(0xFF0369A1);
     final jannaAccent =
-        isNight ? const Color(0xFFFBBF24) : const Color(0xFFB45309);
+        isNight ? const Color(0xFF10B981) : const Color(0xFF059669);
     final helpAccent =
         isNight ? const Color(0xFFF472B6) : const Color(0xFFBE185D);
 
@@ -204,30 +204,50 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       bottomNavigationBar: Container(
         margin: const EdgeInsets.fromLTRB(8, 0, 8, 12),
         decoration: BoxDecoration(
-          color: palette.cardColor.withOpacity(0.96),
-          borderRadius: BorderRadius.circular(26),
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: isNight
+                ? [
+                    const Color(0xFF172236).withOpacity(0.96),
+                    const Color(0xFF0A101D).withOpacity(0.98),
+                  ]
+                : [
+                    Colors.white.withOpacity(0.98),
+                    palette.elevatedCardColor.withOpacity(0.95),
+                  ],
+          ),
+          borderRadius: BorderRadius.circular(28),
           border: Border.all(
-            color: accentColor.withOpacity(isNight ? 0.35 : 0.45),
+            color: (isNight ? Colors.white : accentColor).withOpacity(isNight ? 0.16 : 0.35),
             width: 1.3,
           ),
           boxShadow: [
+            // قاعدة 3D صلبة تمنح الشريط ارتفاعاً مجسماً
             BoxShadow(
-              color: (isNight ? Colors.black : palette.primaryColor)
-                  .withOpacity(isNight ? 0.7 : 0.18),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
+              color: isNight
+                  ? Colors.black.withOpacity(0.85)
+                  : palette.primaryColor.withOpacity(0.24),
+              offset: const Offset(0, 6),
+              blurRadius: 0,
             ),
             BoxShadow(
-              color: accentColor.withOpacity(0.12),
-              blurRadius: 15,
+              color: (isNight ? Colors.black : palette.primaryColor)
+                  .withOpacity(isNight ? 0.65 : 0.22),
+              blurRadius: 24,
+              offset: const Offset(0, 12),
+            ),
+            BoxShadow(
+              color: accentColor.withOpacity(isNight ? 0.14 : 0.10),
+              blurRadius: 16,
               spreadRadius: 1,
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(26),
+          borderRadius: BorderRadius.circular(28),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
             child: LayoutBuilder(
               builder: (context, constraints) {
                 if (constraints.maxWidth >= 460) {
@@ -271,26 +291,42 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       onTap: () => _onTabTapped(index),
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
+        duration: const Duration(milliseconds: 240),
         curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
         decoration: BoxDecoration(
-          color: isSelected
-              ? activeColor.withOpacity(palette.isDark ? 0.18 : 0.14)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
+          gradient: isSelected
+              ? LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    activeColor.withOpacity(palette.isDark ? 0.28 : 0.20),
+                    activeColor.withOpacity(palette.isDark ? 0.12 : 0.08),
+                  ],
+                )
+              : null,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
-                ? activeColor.withOpacity(0.55)
+                ? activeColor.withOpacity(0.65)
                 : Colors.transparent,
-            width: 1.0,
+            width: 1.1,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: activeColor.withOpacity(0.28),
+                    offset: const Offset(0, 3),
+                    blurRadius: 8,
+                  ),
+                ]
+              : const [],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             AnimatedScale(
-              scale: isSelected ? 1.15 : 1.0,
+              scale: isSelected ? 1.16 : 1.0,
               duration: const Duration(milliseconds: 200),
               child: Icon(
                 icon,
@@ -305,6 +341,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 color: isSelected ? activeColor : inactiveColor,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 fontSize: 9.5,
+                height: 1.1,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

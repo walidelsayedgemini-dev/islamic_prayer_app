@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../models/islamic_audio_data.dart';
+import '../providers/settings_provider.dart';
 import '../services/firdaws_native_service.dart';
 
 /// شاشة منبه الأذان المتواصل بصوت المؤذن المختار
@@ -130,16 +132,26 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen>
           body: Stack(
             fit: StackFit.expand,
             children: [
-              // خلفية الحرمين الدافئة
-              Image.asset(
-                widget.voiceId == 'makkah'
-                    ? 'assets/images/themes/kaaba_black_gold.jpg'
-                    : (widget.voiceId == 'aqsa'
-                        ? 'assets/images/themes/dome_of_rock.jpg'
-                        : 'assets/images/themes/emerald_gold.jpg'),
-                fit: BoxFit.cover,
-                color: Colors.black.withOpacity(0.62),
-                colorBlendMode: BlendMode.darken,
+              // خلفية الحرمين الدافئة (أو خلفية المستخدم المختارة 4K)
+              Builder(
+                builder: (ctx) {
+                  String? userWp;
+                  try {
+                    userWp = ctx.watch<SettingsProvider>().selectedAppWallpaperAsset;
+                  } catch (_) {}
+                  final fallback = widget.voiceId == 'makkah'
+                      ? 'assets/images/themes/kaaba_black_gold.jpg'
+                      : (widget.voiceId == 'aqsa'
+                          ? 'assets/images/themes/dome_of_rock.jpg'
+                          : 'assets/images/nabawi_dome_minaret.jpg');
+                  return Image.asset(
+                    userWp ?? fallback,
+                    fit: BoxFit.cover,
+                    filterQuality: FilterQuality.medium,
+                    color: Colors.black.withOpacity(0.32),
+                    colorBlendMode: BlendMode.darken,
+                  );
+                },
               ),
               Container(
                 decoration: BoxDecoration(
@@ -147,9 +159,9 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen>
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      const Color(0xFF03120E).withOpacity(0.75),
-                      const Color(0xFF06251C).withOpacity(0.82),
-                      const Color(0xFF020907).withOpacity(0.95),
+                      const Color(0xFF03120E).withOpacity(0.45),
+                      const Color(0xFF06251C).withOpacity(0.40),
+                      const Color(0xFF020907).withOpacity(0.76),
                     ],
                   ),
                 ),
@@ -169,16 +181,16 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen>
                           vertical: 7,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFD4AF37).withOpacity(0.18),
+                          color: const Color(0xFF38BDF8).withOpacity(0.16),
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
-                            color: const Color(0xFFD4AF37).withOpacity(0.55),
+                            color: const Color(0xFF38BDF8).withOpacity(0.45),
                           ),
                         ),
                         child: const Text(
                           '🕌 منبه الأذان المتواصل • حيّ على الفلاح',
                           style: TextStyle(
-                            color: Color(0xFFFEF08A),
+                            color: Color(0xFFE0F2FE),
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
                           ),
@@ -258,7 +270,7 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen>
                           _statusBanner,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            color: Color(0xFFFDE68A),
+                            color: Color(0xFFE2E8F0),
                             fontSize: 13,
                           ),
                         ),
@@ -302,7 +314,7 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen>
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(Icons.swipe_rounded,
-                                    color: Color(0xFFFEF08A)),
+                                    color: Color(0xFF38BDF8)),
                                 SizedBox(width: 10),
                                 Flexible(
                                   child: Text(

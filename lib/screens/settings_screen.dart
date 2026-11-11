@@ -12,7 +12,11 @@ import '../widgets/audio_download_manager_sheet.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/prayer_time_effects_canvas.dart';
 import '../widgets/real_mosque_background.dart';
+import '../widgets/firdaws_3d_ui.dart';
+import '../widgets/firdaws_brand_logo.dart';
+import '../widgets/unified_theme_hub.dart';
 import '../widgets/user_profile_editor_sheet.dart';
+import '../widgets/wallpaper_70_picker_sheet.dart';
 import 'about_me_screen.dart';
 import 'adhan_alarm_screen.dart';
 import 'main_navigation_screen.dart';
@@ -25,16 +29,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  ThemeCategory? _selectedThemeCategory;
-  String _themeSearchQuery = '';
-  final TextEditingController _themeSearchController = TextEditingController();
-
-  @override
-  void dispose() {
-    _themeSearchController.dispose();
-    super.dispose();
-  }
-
   void _showTouchEffectsCatalogSheet(BuildContext context, ThemePalette palette) {
     TouchEffectCategory? activeCat;
     String query = '';
@@ -343,7 +337,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "مكتبة خطوط الفردوس (20 خطاً عربياً)",
+                                    "مكتبة خطوط الفردوس الصافية (٣ خطوط واضحة)",
                                     style: TextStyle(
                                       color: accent,
                                       fontSize: 16,
@@ -533,300 +527,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showTheme22Details(BuildContext context, ThemeOption theme, bool isNight) {
-    final previewPalette = theme.resolve(isNight: isNight);
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.85,
-          minChildSize: 0.50,
-          maxChildSize: 0.95,
-          builder: (context, scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                color: previewPalette.scaffoldColor,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-                border: Border.all(color: previewPalette.accentColor.withOpacity(0.55), width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isNight ? 0.85 : 0.25),
-                    blurRadius: 30,
-                    offset: const Offset(0, -6),
-                  ),
-                ],
-              ),
-              child: ListView(
-                controller: scrollController,
-                padding: const EdgeInsets.all(20),
-                children: [
-                  Center(
-                    child: Container(
-                      width: 45,
-                      height: 4.5,
-                      decoration: BoxDecoration(
-                        color: previewPalette.dividerColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: previewPalette.accentColor.withOpacity(0.2),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: previewPalette.accentColor, width: 2),
-                        ),
-                        child: Icon(theme.icon, color: previewPalette.accentColor, size: 28),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              theme.name,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: previewPalette.accentColor,
-                              ),
-                            ),
-                            Text(
-                              theme.badgeHonor,
-                              style: TextStyle(
-                                color: previewPalette.isDark
-                                    ? const Color(0xFFFBBF24)
-                                    : previewPalette.primaryColor,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    theme.subtitle,
-                    style: TextStyle(
-                      color: previewPalette.textSecondary,
-                      fontSize: 13,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: previewPalette.cardColor,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: previewPalette.accentColor.withOpacity(0.3)),
-                    ),
-                    child: Text(
-                      theme.historicalStory,
-                      style: TextStyle(
-                        color: previewPalette.textPrimary,
-                        fontSize: 12,
-                        height: 1.45,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-                  // معاينة الوضع النهاري والليلي للثيم
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildDualPaletteChip(
-                          label: "الوضع النهاري ☀️",
-                          palette: theme.dayPalette,
-                          activeBorder: !isNight,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _buildDualPaletteChip(
-                          label: "الوضع الليلي 🌙",
-                          palette: theme.nightPalette,
-                          activeBorder: isNight,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 14),
-                  Divider(color: previewPalette.dividerColor),
-                  const SizedBox(height: 10),
-                  _buildThemeDetailRow(
-                    Icons.mosque_rounded,
-                    "المعلم والصرح التاريخي",
-                    theme.landmarkName,
-                    previewPalette,
-                  ),
-                  _buildThemeDetailRow(
-                    Icons.fingerprint_rounded,
-                    "خامة خرزات السبحة",
-                    theme.beadMaterialName,
-                    previewPalette,
-                  ),
-                  _buildThemeDetailRow(
-                    Icons.spa_rounded,
-                    "الزخرفة الإسلامية الحصرية",
-                    theme.motifName,
-                    previewPalette,
-                  ),
-                  _buildThemeDetailRow(
-                    Icons.air_rounded,
-                    "أجواء الجسيمات الطافية بالسماء",
-                    theme.particleType.toString().split('.').last,
-                    previewPalette,
-                  ),
-                  _buildThemeDetailRow(
-                    Icons.hearing_rounded,
-                    "نبرة الأذان والترتيل",
-                    theme.soundAmbienceName,
-                    previewPalette,
-                  ),
-                  _buildThemeDetailRow(
-                    Icons.chat_bubble_outline_rounded,
-                    "رسالة الترحيب الروحية",
-                    theme.spiritualGreeting,
-                    previewPalette,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      Provider.of<SettingsProvider>(context, listen: false).setTheme(theme.key);
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          backgroundColor: previewPalette.cardColor,
-                          behavior: SnackBarBehavior.floating,
-                          content: Text(
-                            "تم تفعيل ثيم ${theme.name} بنجاح ✨",
-                            style: TextStyle(color: previewPalette.textPrimary),
-                          ),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: previewPalette.accentColor,
-                      foregroundColor: previewPalette.onAccentColor,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    child: const Text(
-                      "تفعيل هذا الثيم والعيش في أجوائه الآن",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildDualPaletteChip({
-    required String label,
-    required ThemePalette palette,
-    required bool activeBorder,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: palette.scaffoldColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: activeBorder ? palette.accentColor : palette.dividerColor,
-          width: activeBorder ? 2.0 : 1.0,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: palette.cardColor,
-              border: Border.all(color: palette.accentColor, width: 2),
-            ),
-            child: Center(
-              child: Container(
-                width: 9,
-                height: 9,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: palette.accentColor,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: palette.textPrimary,
-                fontWeight: FontWeight.bold,
-                fontSize: 11.5,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildThemeDetailRow(
-    IconData icon,
-    String label,
-    String value,
-    ThemePalette palette,
-  ) {
-    final accentColor = palette.accentColor;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: accentColor, size: 18),
-          const SizedBox(width: 10),
-          SizedBox(
-            width: 130,
-            child: Text(
-              label,
-              style: TextStyle(
-                color: palette.isDark ? accentColor.withOpacity(0.9) : palette.primaryColor,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(color: palette.textPrimary, fontSize: 12, height: 1.3),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
@@ -877,39 +577,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       child: Row(
                         children: [
-                          GestureDetector(
+                          FirdawsBrandLogo(
+                            size: 54,
+                            borderColor: accentColor,
+                            borderWidth: 2.0,
+                            userAvatarBytes: avatarBytes,
                             onTap: () => UserProfileEditorSheet.show(context),
-                            child: Container(
-                              width: 54,
-                              height: 54,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: accentColor, width: 2.0),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: accentColor.withOpacity(0.35),
-                                    blurRadius: 12,
-                                  ),
-                                ],
-                              ),
-                              child: ClipOval(
-                                child: avatarBytes != null
-                                    ? Image.memory(
-                                        avatarBytes,
-                                        width: 54,
-                                        height: 54,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : Image.asset(
-                                        'assets/images/palace_jannah_logo.png',
-                                        width: 54,
-                                        height: 54,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) =>
-                                            Icon(Icons.castle_rounded, color: accentColor, size: 26),
-                                      ),
-                              ),
-                            ),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
@@ -918,6 +591,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               children: [
                                 Text(
                                   "${themeOption.primaryEmoji} تطبيق الفردوس الإسلامي الشامل",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     color: accentColor,
                                     fontWeight: FontWeight.bold,
@@ -927,6 +602,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 const SizedBox(height: 2),
                                 Text(
                                   "الثيم: ${themeOption.name} ${themeOption.emojiStrip} • ${isNight ? '🌙 ليلي' : '☀️ نهاري'}",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
                                 ),
                               ],
@@ -1041,62 +718,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
 
-                // 0. الوضع الليلي والنهاري لجميع الثيمات الـ 52
-            _buildSectionHeader("الإضاءة والمظهر (ليلي / نهاري لكل الثيمات الـ 52)", accentColor),
+                // 0. بوابة الثيم الموحدة 3D + مكتبة الخلفيات الـ 70 فائقة الدقة 4K
+            _buildSectionHeader("المظهر والثيمات وخلفيات 4K", accentColor),
+            const UnifiedThemePillButton(),
+            const SizedBox(height: 10),
             _buildCard(palette, [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "يدعم كل ثيم من الثيمات الـ 52 وضعاً نهارياً مضيئاً ووضعاً ليلياً مريحاً للعين:",
-                      style: TextStyle(color: palette.textSecondary, fontSize: 12.5),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CircleAvatar(
+                  backgroundColor: accentColor.withOpacity(0.16),
+                  child: Icon(Icons.photo_library_rounded, color: accentColor),
+                ),
+                title: Text(
+                  "مكتبة الخلفيات الـ ٧٠ فائقة الدقة 4K 🖼️",
+                  style: TextStyle(
+                    color: palette.textPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13.5,
+                  ),
+                ),
+                subtitle: Text(
+                  settings.selectedAppWallpaperAsset != null ||
+                          settings.selectedGardenWallpaperAsset != null
+                      ? "تم تخصيص خلفية 4K مختارة للتطبيق أو جنتي"
+                      : "تصفح ٧٠ لقطة حقيقية للمساجد والبساتين وعوالم التحدي",
+                  style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
+                ),
+                trailing: ElevatedButton(
+                  onPressed: () => Wallpaper70PickerSheet.show(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: accentColor,
+                    foregroundColor: palette.onAccentColor,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildBrightnessOption(
-                            label: "ليلي",
-                            subtitle: "داكن ومريح",
-                            icon: Icons.dark_mode_rounded,
-                            isSelected: settings.brightnessMode == 'night',
-                            palette: palette,
-                            onTap: () => settings.setBrightnessMode('night'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _buildBrightnessOption(
-                            label: "نهاري",
-                            subtitle: "رخامي مشرق",
-                            icon: Icons.light_mode_rounded,
-                            isSelected: settings.brightnessMode == 'day',
-                            palette: palette,
-                            onTap: () => settings.setBrightnessMode('day'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _buildBrightnessOption(
-                            label: "تلقائي",
-                            subtitle: "حسب الشمس",
-                            icon: Icons.brightness_auto_rounded,
-                            isSelected: settings.brightnessMode == 'auto',
-                            palette: palette,
-                            onTap: () => settings.setBrightnessMode('auto'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                  ),
+                  child: const Text(
+                    'اختيار 4K',
+                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ]),
 
-            // 1. اختيار خط التطبيق من أصل 20 خطاً
-            _buildSectionHeader("خط التطبيق والزخرفة الكتابية (20 خطاً عربياً)", accentColor),
+            // 1. اختيار خط التطبيق من ٣ خطوط صافية ومريحة للعين
+            _buildSectionHeader("خط التطبيق الواضح (٣ خطوط هادئة)", accentColor),
             _buildCard(palette, [
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
@@ -1128,7 +795,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                               ),
                               Text(
-                                "${currentFont.category} • (${FontCatalog.allFonts.length} خطاً متاحاً)",
+                                "${currentFont.category} • (${FontCatalog.allFonts.length} خطوط صافية)",
                                 style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
                               ),
                             ],
@@ -1138,7 +805,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           onPressed: () => _showAllFontsPickerSheet(context, palette),
                           icon: Icon(Icons.grid_view_rounded, color: accentColor, size: 17),
                           label: Text(
-                            "الـ 20 خطاً",
+                            "معاينة",
                             style: TextStyle(
                               color: accentColor,
                               fontWeight: FontWeight.bold,
@@ -1187,7 +854,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    // شريط اختيار سريع للـ 20 خطاً
+                    // شريط اختيار سريع للخطوط الصافية الثلاثة
                     SizedBox(
                       height: 44,
                       child: ListView.builder(
@@ -1228,362 +895,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         },
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ]),
-
-            // 2. المظهر والألوان الإسلامية (52 ثيم إسلامي فاخر بخلفيات 4K)
-            _buildSectionHeader(
-              "المظهر والألوان الإسلامية (${IslamicTheme.allThemes.length} ثيماً بخلفية 4K)",
-              accentColor,
-            ),
-            _buildCard(palette, [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "اختر طابعك الروحي المفضل من ${IslamicTheme.allThemes.length} ثيماً حقيقياً (يتحول تلقائياً بين الليل والنهار):",
-                      style: TextStyle(color: palette.textSecondary, fontSize: 12.5),
-                    ),
-                    const SizedBox(height: 10),
-                    // شريط البحث داخل الـ 52 ثيماً
-                    TextField(
-                      controller: _themeSearchController,
-                      style: TextStyle(color: palette.textPrimary, fontSize: 13),
-                      onChanged: (val) => setState(() => _themeSearchQuery = val.trim()),
-                      decoration: InputDecoration(
-                        hintText: "ابحث باسم الثيم أو المسجد أو المدينة (مثال: الأقصى، أذربيجان، فجر)...",
-                        hintStyle: TextStyle(color: palette.textMuted, fontSize: 11.5),
-                        prefixIcon: Icon(Icons.search_rounded, color: accentColor, size: 18),
-                        suffixIcon: _themeSearchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: Icon(Icons.clear_rounded, color: palette.textMuted, size: 17),
-                                onPressed: () {
-                                  _themeSearchController.clear();
-                                  setState(() => _themeSearchQuery = '');
-                                },
-                              )
-                            : null,
-                        isDense: true,
-                        filled: true,
-                        fillColor: palette.elevatedCardColor,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(color: palette.dividerColor),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(color: palette.dividerColor),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(color: accentColor, width: 1.5),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    // أزرار تصفية تصنيفات الثيمات الأربعة + الكل
-                    SizedBox(
-                      height: 36,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(left: 6),
-                            child: ChoiceChip(
-                              label: Text(
-                                "الكل (${IslamicTheme.allThemes.length})",
-                                style: TextStyle(
-                                  color: _selectedThemeCategory == null
-                                      ? palette.onAccentColor
-                                      : palette.textPrimary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11.5,
-                                ),
-                              ),
-                              selected: _selectedThemeCategory == null,
-                              selectedColor: accentColor,
-                              backgroundColor: palette.elevatedCardColor,
-                              side: BorderSide(
-                                color: _selectedThemeCategory == null
-                                    ? accentColor
-                                    : palette.dividerColor,
-                              ),
-                              onSelected: (_) => setState(() => _selectedThemeCategory = null),
-                            ),
-                          ),
-                          ...ThemeCategory.values.map((cat) {
-                            final isCatSelected = _selectedThemeCategory == cat;
-                            final catCount = IslamicTheme.themesByCategory(cat).length;
-                            return Padding(
-                              padding: const EdgeInsets.only(left: 6),
-                              child: ChoiceChip(
-                                avatar: Icon(
-                                  cat.icon,
-                                  size: 14,
-                                  color: isCatSelected ? palette.onAccentColor : accentColor,
-                                ),
-                                label: Text(
-                                  "${cat.shortLabel} ($catCount)",
-                                  style: TextStyle(
-                                    color: isCatSelected
-                                        ? palette.onAccentColor
-                                        : palette.textPrimary,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 11.5,
-                                  ),
-                                ),
-                                selected: isCatSelected,
-                                selectedColor: accentColor,
-                                backgroundColor: palette.elevatedCardColor,
-                                side: BorderSide(
-                                  color: isCatSelected ? accentColor : palette.dividerColor,
-                                ),
-                                onSelected: (_) => setState(() {
-                                  _selectedThemeCategory = isCatSelected ? null : cat;
-                                }),
-                              ),
-                            );
-                          }),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ...(() {
-                      final byCat = IslamicTheme.themesByCategory(_selectedThemeCategory);
-                      final q = _themeSearchQuery.toLowerCase();
-                      final filtered = q.isEmpty
-                          ? byCat
-                          : byCat
-                              .where((t) =>
-                                  t.name.toLowerCase().contains(q) ||
-                                  t.subtitle.toLowerCase().contains(q) ||
-                                  t.landmarkName.toLowerCase().contains(q) ||
-                                  t.key.toLowerCase().contains(q))
-                              .toList();
-
-                      if (filtered.isEmpty) {
-                        return <Widget>[
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            child: Center(
-                              child: Text(
-                                "لا توجد ثيمات مطابقة لكلمة «$_themeSearchQuery» — جرّب مسح البحث.",
-                                style: TextStyle(color: palette.textMuted, fontSize: 12.5),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                        ];
-                      }
-
-                      return filtered.map((theme) {
-                        final isSelected = settings.selectedTheme == theme.key;
-                        final itemPalette = theme.resolve(isNight: isNight);
-
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: InkWell(
-                            onTap: () => settings.setTheme(theme.key),
-                            borderRadius: BorderRadius.circular(14),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? itemPalette.accentColor.withOpacity(isNight ? 0.18 : 0.14)
-                                    : palette.elevatedCardColor.withOpacity(0.78),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? itemPalette.accentColor
-                                      : palette.dividerColor,
-                                  width: isSelected ? 2.0 : 1.0,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  // صورة معاينة مصغرة 4K حقيقية للثيم
-                                  Stack(
-                                    children: [
-                                      Container(
-                                        width: 50,
-                                        height: 50,
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(
-                                            color: itemPalette.accentColor,
-                                            width: isSelected ? 2.0 : 1.3,
-                                          ),
-                                          boxShadow: isSelected
-                                              ? [
-                                                  BoxShadow(
-                                                    color:
-                                                        itemPalette.accentColor.withOpacity(0.35),
-                                                    blurRadius: 10,
-                                                  )
-                                                ]
-                                              : [],
-                                        ),
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(10),
-                                          child: Image.asset(
-                                            'assets/images/themes/${theme.key}.jpg',
-                                            width: 50,
-                                            height: 50,
-                                            cacheWidth: 240,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) => Container(
-                                              color: itemPalette.scaffoldColor,
-                                              child: Icon(
-                                                theme.icon,
-                                                color: itemPalette.accentColor,
-                                                size: 20,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        left: 2,
-                                        bottom: 2,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 4,
-                                            vertical: 1,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.black.withOpacity(0.72),
-                                            borderRadius: BorderRadius.circular(5),
-                                          ),
-                                          child: const Text(
-                                            '4K',
-                                            style: TextStyle(
-                                              color: Color(0xFFFBBF24),
-                                              fontSize: 7.5,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Flexible(
-                                              child: Text(
-                                                theme.primaryEmoji.isNotEmpty
-                                                    ? '${theme.primaryEmoji} ${theme.name}'
-                                                    : theme.name,
-                                                style: TextStyle(
-                                                  color: isSelected
-                                                      ? itemPalette.accentColor
-                                                      : palette.textPrimary,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 13.5,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 5),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 5,
-                                                vertical: 1.5,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: itemPalette.accentColor.withOpacity(0.14),
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: Text(
-                                                theme.category.shortLabel,
-                                                style: TextStyle(
-                                                  color: itemPalette.accentColor,
-                                                  fontSize: 9,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          theme.subtitle,
-                                          style: TextStyle(
-                                            color: palette.textSecondary,
-                                            fontSize: 11,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  // دوائر معاينة النهاري والليلي للثيم
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        width: 13,
-                                        height: 13,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: theme.dayPalette.scaffoldColor,
-                                          border: Border.all(
-                                            color: theme.dayPalette.accentColor,
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 3),
-                                      Container(
-                                        width: 13,
-                                        height: 13,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: theme.nightPalette.scaffoldColor,
-                                          border: Border.all(
-                                            color: theme.nightPalette.accentColor,
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  IconButton(
-                                    icon: Icon(
-                                      Icons.info_outline_rounded,
-                                      color: isSelected
-                                          ? itemPalette.accentColor
-                                          : palette.textMuted,
-                                      size: 18,
-                                    ),
-                                    tooltip: "معاينة خصائص وأجواء الثيم الـ 22",
-                                    onPressed: () => _showTheme22Details(context, theme, isNight),
-                                  ),
-                                  if (isSelected)
-                                    Icon(
-                                      Icons.check_circle_rounded,
-                                      color: itemPalette.accentColor,
-                                      size: 21,
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList();
-                    })(),
                   ],
                 ),
               ),
@@ -1776,6 +1087,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ],
                 ),
+              ),
+              Divider(color: palette.dividerColor),
+              SwitchListTile(
+                title: Text(
+                  "🔊 المؤثرات الصوتية في الألعاب والمسابقات",
+                  style: TextStyle(color: palette.textPrimary, fontSize: 14),
+                ),
+                subtitle: Text(
+                  "أصوات النقاط والمضاعفات والصناديق والفوز والخسارة",
+                  style: TextStyle(color: palette.textSecondary, fontSize: 12),
+                ),
+                value: settings.gameSfxEnabled,
+                activeTrackColor: accentColor,
+                onChanged: (val) => settings.setGameSfxEnabled(val),
               ),
               Divider(color: palette.dividerColor),
               SwitchListTile(
@@ -2090,62 +1415,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 );
   }
 
-  Widget _buildBrightnessOption({
-    required String label,
-    required String subtitle,
-    required IconData icon,
-    required bool isSelected,
-    required ThemePalette palette,
-    required VoidCallback onTap,
-  }) {
-    final accent = palette.accentColor;
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? accent.withOpacity(palette.isDark ? 0.22 : 0.16)
-              : palette.elevatedCardColor,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isSelected ? accent : palette.dividerColor,
-            width: isSelected ? 1.8 : 1.0,
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? accent : palette.textSecondary,
-              size: 22,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? accent : palette.textPrimary,
-                fontWeight: FontWeight.bold,
-                fontSize: 12.5,
-              ),
-            ),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: palette.textMuted,
-                fontSize: 9.5,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildSectionHeader(String title, Color accentColor) {
     return Padding(
       padding: const EdgeInsets.only(top: 18, bottom: 8, right: 6),
@@ -2157,20 +1426,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildCard(ThemePalette palette, List<Widget> children) {
-    return Container(
-      decoration: BoxDecoration(
-        color: palette.cardColor.withOpacity(palette.isDark ? 0.85 : 0.90),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: palette.dividerColor),
-        boxShadow: [
-          BoxShadow(
-            color: (palette.isDark ? Colors.black : palette.primaryColor)
-                .withOpacity(palette.isDark ? 0.35 : 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
+    return Firdaws3DCard(
+      palette: palette,
+      borderRadius: 20,
+      depth: 4.5,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

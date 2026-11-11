@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:adhan/adhan.dart';
 import '../theme/islamic_theme.dart';
+import 'firdaws_3d_ui.dart';
 
 class IslamicPrayerCardView extends StatefulWidget {
   final PrayerTimes prayerTimes;
@@ -131,7 +132,7 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
   @override
   Widget build(BuildContext context) {
     final palette = widget.themeOption.resolve(isNight: widget.isNightMode);
-    final accent = palette.accentColor;
+    final accent = firdawsModernAccent(palette);
 
     final targetPrayer = widget.nextPrayer == Prayer.none ? Prayer.fajr : widget.nextPrayer;
     final prevPrayer = _getPrevPrayer(targetPrayer);
@@ -283,41 +284,48 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
   }
 
   Widget _buildTopArabesqueHeader(ThemePalette palette) {
-    final accent = palette.accentColor;
+    final accent = firdawsModernAccent(palette);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       child: Center(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Expanded(child: Divider(color: accent.withOpacity(0.45), thickness: 1.2)),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Icon(Icons.star_rounded, color: accent, size: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Icon(Icons.star_rounded, color: accent, size: 15),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-              decoration: BoxDecoration(
-                color: palette.cardColor.withOpacity(palette.isDark ? 0.55 : 0.85),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: accent.withOpacity(0.4)),
-              ),
-              child: Text(
-                "حيّ على الصلاة • حيّ على الفلاح",
-                style: TextStyle(
-                  color: palette.isDark ? accent : palette.primaryColor,
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.bold,
-                  shadows: palette.isDark
-                      ? [Shadow(color: accent.withOpacity(0.45), blurRadius: 8)]
-                      : null,
+            Flexible(
+              flex: 4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 3),
+                decoration: BoxDecoration(
+                  color: palette.cardColor.withOpacity(palette.isDark ? 0.55 : 0.85),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: accent.withOpacity(0.4)),
+                ),
+                child: Text(
+                  "حيّ على الصلاة • حيّ على الفلاح",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: palette.isDark ? accent : palette.primaryColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    shadows: palette.isDark
+                        ? [Shadow(color: accent.withOpacity(0.45), blurRadius: 8)]
+                        : null,
+                  ),
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Icon(Icons.star_rounded, color: accent, size: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Icon(Icons.star_rounded, color: accent, size: 15),
             ),
             Expanded(child: Divider(color: accent.withOpacity(0.45), thickness: 1.2)),
           ],
@@ -332,9 +340,9 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
     required Duration remaining,
     required ThemePalette palette,
   }) {
-    final accent = palette.accentColor;
-    final cardBg = palette.cardColor;
-    final elevatedBg = palette.elevatedCardColor;
+    final accent = firdawsModernAccent(palette);
+    final topSurface = firdaws3DElevatedSurfaceColor(palette, opacity: 0.96);
+    final botSurface = firdaws3DSurfaceColor(palette, opacity: 0.98);
 
     return AnimatedBuilder(
       animation: _glowController,
@@ -346,29 +354,37 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  cardBg.withOpacity(0.95),
-                  elevatedBg.withOpacity(0.92),
-                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [topSurface, botSurface],
               ),
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: accent.withOpacity(0.72 + 0.28 * glowVal),
-                width: 2.2,
+                color: accent.withOpacity(0.65 + 0.25 * glowVal),
+                width: 2.0,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: accent.withOpacity((palette.isDark ? 0.25 : 0.16) + 0.12 * glowVal),
-                  blurRadius: 18,
-                  spreadRadius: 2,
+                  color: Colors.white.withOpacity(palette.isDark ? 0.10 : 0.8),
+                  blurRadius: 0,
+                  offset: const Offset(0, -1.2),
                 ),
                 BoxShadow(
-                  color: (palette.isDark ? Colors.black : palette.primaryColor)
-                      .withOpacity(palette.isDark ? 0.6 : 0.16),
-                  blurRadius: 15,
+                  color: Color.lerp(Colors.black, accent, 0.22)!
+                      .withOpacity(palette.isDark ? 0.85 : 0.25),
+                  blurRadius: 0,
                   offset: const Offset(0, 6),
+                ),
+                BoxShadow(
+                  color: accent.withOpacity(
+                      (palette.isDark ? 0.22 : 0.14) + 0.10 * glowVal),
+                  blurRadius: 22,
+                  spreadRadius: 1,
+                ),
+                BoxShadow(
+                  color: Colors.black.withOpacity(palette.isDark ? 0.65 : 0.16),
+                  blurRadius: 20,
+                  offset: const Offset(0, 12),
                 ),
               ],
             ),
@@ -409,21 +425,26 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
                 ),
                 const SizedBox(height: 4),
 
-                // مؤقت العد التنازلي
+                // مؤقت العد التنازلي بلون عصري واضح (غير أصفر فاقع)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: palette.isDark
-                        ? Colors.black38
+                        ? accent.withOpacity(0.16)
                         : palette.primaryColor.withOpacity(0.10),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: accent.withOpacity(0.35)),
                   ),
-                  child: Text(
-                    "بعد ${_formatDuration(remaining)}",
-                    style: TextStyle(
-                      color: palette.isDark ? const Color(0xFFFDE68A) : palette.primaryColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      "بعد ${_formatDuration(remaining)}",
+                      maxLines: 1,
+                      style: TextStyle(
+                        color: palette.isDark ? const Color(0xFFE0F2FE) : palette.primaryColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -431,7 +452,7 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
                 Text(
                   "اضغط لتفاصيلها وسننها",
                   style: TextStyle(
-                    color: palette.textSecondary,
+                    color: firdawsCrispSecondaryText(palette),
                     fontSize: 9.5,
                     fontWeight: FontWeight.w600,
                   ),
@@ -451,77 +472,67 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
     required ThemePalette palette,
     required String statusLabel,
   }) {
-    final accent = palette.accentColor;
-    final cardBg = palette.cardColor;
+    final accent = firdawsModernAccent(palette);
 
-    return GestureDetector(
+    return Firdaws3DCard(
+      palette: palette,
+      glowColor: accent,
+      borderRadius: 20,
+      depth: 5.0,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
       onTap: () => widget.onPrayerTap(prayer.name.toLowerCase()),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
-        decoration: BoxDecoration(
-          color: cardBg.withOpacity(palette.isDark ? 0.78 : 0.92),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: accent.withOpacity(0.45), width: 1.4),
-          boxShadow: [
-            BoxShadow(
-              color: (palette.isDark ? Colors.black : palette.primaryColor)
-                  .withOpacity(palette.isDark ? 0.42 : 0.14),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  accent.withOpacity(palette.isDark ? 0.35 : 0.22),
+                  accent.withOpacity(0.08),
+                ],
+              ),
+              border: Border.all(color: accent.withOpacity(0.8), width: 1.5),
             ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    accent.withOpacity(palette.isDark ? 0.35 : 0.22),
-                    accent.withOpacity(0.08),
-                  ],
+            child: Center(
+              child: Text(
+                _prayerNameArabic(prayer),
+                style: TextStyle(
+                  color: palette.textPrimary,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.bold,
                 ),
-                border: Border.all(color: accent.withOpacity(0.8), width: 1.5),
-              ),
-              child: Center(
-                child: Text(
-                  _prayerNameArabic(prayer),
-                  style: TextStyle(
-                    color: palette.textPrimary,
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
+                textAlign: TextAlign.center,
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              _formatTime(time),
-              style: TextStyle(
-                color: accent,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            _formatTime(time),
+            style: TextStyle(
+              color: accent,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
             ),
-            const SizedBox(height: 3),
-            Text(
-              statusLabel,
-              style: TextStyle(
-                color: palette.textSecondary,
-                fontSize: 9,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 3),
+          Text(
+            statusLabel,
+            style: TextStyle(
+              color: firdawsCrispSecondaryText(palette),
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
             ),
-          ],
-        ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }
@@ -533,90 +544,73 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
     required ThemePalette palette,
     required VoidCallback onTap,
   }) {
-    final primaryDark = palette.isDark
-        ? const Color(0xFF4C1D95)
-        : palette.primaryColor;
-    final subColor = palette.isDark
-        ? const Color(0xFF6B21A8).withOpacity(0.85)
-        : palette.primaryColor.withOpacity(0.78);
+    final accent = firdawsModernAccent(palette);
+    final isDark = palette.isDark;
+    final titleColor = isDark ? Colors.white : palette.primaryColor;
+    final subColor = isDark
+        ? firdawsCrispSecondaryText(palette).withOpacity(0.88)
+        : palette.primaryColor.withOpacity(0.76);
 
-    return GestureDetector(
+    return Firdaws3DCard(
+      palette: palette,
+      glowColor: accent,
+      borderRadius: 18,
+      depth: 5.0,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
-        decoration: BoxDecoration(
-          gradient: palette.isDark
-              ? const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFFFEF3C7),
-                    Color(0xFFFDE68A),
-                    Color(0xFFFBBF24),
-                  ],
-                )
-              : LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    palette.cardColor,
-                    palette.elevatedCardColor,
-                  ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  accent.withOpacity(isDark ? 0.30 : 0.22),
+                  accent.withOpacity(isDark ? 0.12 : 0.08),
+                ],
+              ),
+              border: Border.all(
+                color: accent.withOpacity(isDark ? 0.65 : 0.45),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: accent.withOpacity(0.24),
+                  blurRadius: 10,
                 ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: palette.isDark ? const Color(0xFFD97706) : palette.accentColor,
-            width: 1.4,
+              ],
+            ),
+            child: Icon(icon, color: accent, size: 21),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: (palette.isDark ? Colors.black : palette.primaryColor)
-                  .withOpacity(palette.isDark ? 0.35 : 0.14),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+          const SizedBox(height: 6),
+          Text(
+            title,
+            style: TextStyle(
+              color: titleColor,
+              fontSize: 12.2,
+              fontWeight: FontWeight.bold,
             ),
-            BoxShadow(
-              color: palette.accentColor.withOpacity(palette.isDark ? 0.25 : 0.12),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 1),
+          Text(
+            subtitle,
+            style: TextStyle(
+              color: subColor,
+              fontSize: 9.5,
+              fontWeight: FontWeight.w600,
             ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(
-                color: primaryDark.withOpacity(0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: primaryDark, size: 22),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: TextStyle(
-                color: primaryDark,
-                fontSize: 12.5,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: subColor,
-                fontSize: 9.5,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }

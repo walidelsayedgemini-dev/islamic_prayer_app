@@ -7,6 +7,7 @@ import '../providers/settings_provider.dart';
 import '../screens/quran_reader_screen.dart';
 import '../screens/sahih_hadith_screen.dart';
 import '../theme/islamic_theme.dart';
+import 'firdaws_brand_logo.dart';
 
 class SacredNavigator {
   /// يفتح المصحف الشريف مباشرةً عند السورة والآية المحددة مع التمرير والتظليل + فتح التفسير الموثق اختيارياً
@@ -197,18 +198,16 @@ class SacredNavigator {
                               ayahNumber: resolved.linkedAyah ?? 1,
                             );
                           },
-                          icon: ClipOval(
-                            child: Image.asset(
-                              'assets/images/palace_jannah_logo.png',
-                              width: 18,
-                              height: 18,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) =>
-                                  const Icon(Icons.menu_book_rounded, size: 16),
-                            ),
+                          icon: FirdawsBrandLogo(
+                            size: 19,
+                            borderColor: palette.onAccentColor,
+                            borderWidth: 1.0,
+                            fallbackIcon: Icons.menu_book_rounded,
                           ),
                           label: Text(
                             'المصحف (${resolved.linkedSurah}:${resolved.linkedAyah ?? 1}) 📖',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.bold,
@@ -311,23 +310,23 @@ class QuranRefBadge extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ClipOval(
-              child: Image.asset(
-                'assets/images/palace_jannah_logo.png',
-                width: 17,
-                height: 17,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                    Icon(Icons.menu_book_rounded, color: accent, size: 15),
-              ),
+            FirdawsBrandLogo(
+              size: 18,
+              borderColor: accent,
+              borderWidth: 1.0,
+              fallbackIcon: Icons.menu_book_rounded,
             ),
             const SizedBox(width: 5),
-            Text(
-              customLabel ?? '📖 $surahName: $ayahNumber',
-              style: TextStyle(
-                color: accent,
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
+            Flexible(
+              child: Text(
+                customLabel ?? '📖 $surahName: $ayahNumber',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: accent,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],

@@ -942,8 +942,8 @@ class _Tasbih3DMotivationBannerState extends State<Tasbih3DMotivationBanner>
             end: Alignment.bottomCenter,
             colors: [
               Colors.white,
-              Color(0xFFFEF08A),
-              Color(0xFFFBBF24),
+              Color(0xFFE2E8F0),
+              Color(0xFF38BDF8),
             ],
           ).createShader(bounds),
           child: Text(
@@ -1031,8 +1031,8 @@ class _Tasbih3DMotivationBannerState extends State<Tasbih3DMotivationBanner>
               ],
             ),
             border: Border.all(
-              color: const Color(0xFFFEF08A).withOpacity(0.85),
-              width: 2.0,
+              color: const Color(0xFF38BDF8).withOpacity(0.55),
+              width: 1.8,
             ),
           ),
           child: Padding(
@@ -1048,16 +1048,16 @@ class _Tasbih3DMotivationBannerState extends State<Tasbih3DMotivationBanner>
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.28),
+                        color: Colors.black.withOpacity(0.32),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: const Color(0xFFFEF08A).withOpacity(0.55),
+                          color: Colors.white.withOpacity(0.28),
                         ),
                       ),
                       child: Text(
                         '${p.emoji} ${p.badgeTitle} • 3D',
                         style: const TextStyle(
-                          color: Color(0xFFFEF08A),
+                          color: Color(0xFFE2E8F0),
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
@@ -1070,13 +1070,13 @@ class _Tasbih3DMotivationBannerState extends State<Tasbih3DMotivationBanner>
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFBBF24),
+                        color: const Color(0xFF0EA5E9),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         '🎯 ${widget.achievedCount}',
                         style: const TextStyle(
-                          color: Colors.black,
+                          color: Colors.white,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
@@ -1118,8 +1118,8 @@ class _Tasbih3DMotivationBannerState extends State<Tasbih3DMotivationBanner>
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFEF08A),
-                        foregroundColor: const Color(0xFF1E293B),
+                        backgroundColor: const Color(0xFFE2E8F0),
+                        foregroundColor: const Color(0xFF0F172A),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 6,
@@ -1142,7 +1142,7 @@ class _Tasbih3DMotivationBannerState extends State<Tasbih3DMotivationBanner>
                       ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white,
-                        side: const BorderSide(color: Color(0xFFFEF08A)),
+                        side: BorderSide(color: Colors.white.withOpacity(0.45)),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
                           vertical: 6,
@@ -1193,7 +1193,7 @@ void showTasbih200PhrasesExplorerSheet(
               color: Color(0xFF0A1624),
               borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
               border: Border(
-                top: BorderSide(color: Color(0xFFFBBF24), width: 1.6),
+                top: BorderSide(color: Color(0xFF38BDF8), width: 1.6),
               ),
             ),
             child: Column(
@@ -1238,7 +1238,7 @@ void showTasbih200PhrasesExplorerSheet(
                     decoration: InputDecoration(
                       hintText: 'ابحث في 200 جملة تحفيزية أو برقم الجملة...',
                       hintStyle: const TextStyle(color: Colors.white54, fontSize: 12),
-                      prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFFFBBF24)),
+                      prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF38BDF8)),
                       filled: true,
                       fillColor: Colors.white.withOpacity(0.07),
                       border: OutlineInputBorder(
@@ -1274,7 +1274,7 @@ void showTasbih200PhrasesExplorerSheet(
                             ),
                             border: Border.all(
                               color: isSel
-                                  ? const Color(0xFFFEF08A)
+                                  ? const Color(0xFF38BDF8)
                                   : Colors.white.withOpacity(0.18),
                               width: isSel ? 1.8 : 1.0,
                             ),
@@ -1297,7 +1297,7 @@ void showTasbih200PhrasesExplorerSheet(
                                     Text(
                                       item.badgeTitle,
                                       style: const TextStyle(
-                                        color: Color(0xFFFEF08A),
+                                        color: Color(0xFFBAE6FD),
                                         fontSize: 11,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -1324,7 +1324,7 @@ void showTasbih200PhrasesExplorerSheet(
                               ),
                               Icon(
                                 isSel ? Icons.check_circle_rounded : Icons.view_in_ar_rounded,
-                                color: const Color(0xFFFEF08A),
+                                color: const Color(0xFFE2E8F0),
                                 size: 20,
                               ),
                             ],

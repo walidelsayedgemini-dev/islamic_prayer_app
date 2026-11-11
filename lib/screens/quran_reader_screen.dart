@@ -11,6 +11,7 @@ import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/audio_download_manager_sheet.dart';
+import '../widgets/firdaws_brand_logo.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/persistent_audio_player_bar.dart';
 import '../widgets/real_mosque_background.dart';
@@ -288,15 +289,11 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
             },
           ),
           const SizedBox(width: 6),
-          ClipOval(
-            child: Image.asset(
-              'assets/images/palace_jannah_logo.png',
-              width: 28,
-              height: 28,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) =>
-                  Icon(Icons.menu_book_rounded, color: accent, size: 22),
-            ),
+          FirdawsBrandLogo(
+            size: 30,
+            borderColor: accent,
+            borderWidth: 1.4,
+            fallbackIcon: Icons.menu_book_rounded,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -1018,7 +1015,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: readerFont,
-                color: palette.isDark ? const Color(0xFFFDE68A) : palette.primaryColor,
+                color: palette.isDark ? const Color(0xFFE2E8F0) : palette.primaryColor,
                 fontSize: (_fontSize + 2).clamp(20.0, 38.0),
                 fontWeight: FontWeight.bold,
               ),
@@ -1318,15 +1315,11 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                     child: Row(
                       children: [
-                        ClipOval(
-                          child: Image.asset(
-                            'assets/images/palace_jannah_logo.png',
-                            width: 28,
-                            height: 28,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
-                                Icon(Icons.menu_book_rounded, color: accent),
-                          ),
+                        FirdawsBrandLogo(
+                          size: 30,
+                          borderColor: accent,
+                          borderWidth: 1.4,
+                          fallbackIcon: Icons.menu_book_rounded,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -1335,6 +1328,8 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                             children: [
                               Text(
                                 'تفسير سورة ${surah.cleanName} • الآية ${toArabicIndicDigits(activeAyah.number)} 📖',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   color: palette.textPrimary,
                                   fontSize: 15,
@@ -1343,6 +1338,8 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                               ),
                               Text(
                                 'مراجعة ومطابقة Quran.com • الجزء ${toArabicIndicDigits(activeAyah.juz)} • ص ${toArabicIndicDigits(activeAyah.page)}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   color: palette.textSecondary,
                                   fontSize: 10.5,

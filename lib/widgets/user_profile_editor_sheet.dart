@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
+import 'firdaws_brand_logo.dart';
 
 class UserProfileEditorSheet extends StatefulWidget {
   const UserProfileEditorSheet({super.key});
@@ -171,27 +172,13 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                   padding: const EdgeInsets.fromLTRB(18, 12, 18, 8),
                   child: Row(
                     children: [
-                      GestureDetector(
+                      FirdawsBrandLogo(
+                        size: 48,
+                        borderColor: accent,
+                        borderWidth: 1.8,
+                        userAvatarBytes: avatarBytes,
+                        fallbackIcon: Icons.person_rounded,
                         onTap: () => _pickAvatarFromGallery(palette),
-                        child: Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: accent.withOpacity(0.18),
-                            border: Border.all(color: accent, width: 1.8),
-                          ),
-                          child: ClipOval(
-                            child: avatarBytes != null
-                                ? Image.memory(avatarBytes, fit: BoxFit.cover)
-                                : Image.asset(
-                                    'assets/images/palace_jannah_logo.png',
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) =>
-                                        Icon(Icons.person_rounded, color: accent, size: 22),
-                                  ),
-                          ),
-                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -243,32 +230,12 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                           children: [
                             Stack(
                               children: [
-                                Container(
-                                  width: 72,
-                                  height: 72,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: accent, width: 2.2),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: accent.withOpacity(0.28),
-                                        blurRadius: 12,
-                                      ),
-                                    ],
-                                  ),
-                                  child: ClipOval(
-                                    child: avatarBytes != null
-                                        ? Image.memory(avatarBytes, fit: BoxFit.cover)
-                                        : Image.asset(
-                                            'assets/images/palace_jannah_logo.png',
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) => Icon(
-                                              Icons.person_rounded,
-                                              color: accent,
-                                              size: 36,
-                                            ),
-                                          ),
-                                  ),
+                                FirdawsBrandLogo(
+                                  size: 72,
+                                  borderColor: accent,
+                                  borderWidth: 2.2,
+                                  userAvatarBytes: avatarBytes,
+                                  fallbackIcon: Icons.person_rounded,
                                 ),
                                 Positioned(
                                   bottom: 0,

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
+import '../widgets/firdaws_brand_logo.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/real_mosque_background.dart';
 
@@ -296,14 +297,12 @@ class _AboutMeScreenState extends State<AboutMeScreen>
                                       ),
                                       child: child,
                                     ),
-                                    child: CircleAvatar(
-                                      radius: 52,
-                                      backgroundColor: palette.elevatedCardColor,
-                                      backgroundImage: avatarBytes != null
-                                          ? MemoryImage(avatarBytes)
-                                          : const AssetImage(
-                                              'assets/images/palace_jannah_logo.png',
-                                            ) as ImageProvider,
+                                    child: FirdawsBrandLogo(
+                                      size: 104,
+                                      borderColor: accent,
+                                      borderWidth: 2.2,
+                                      userAvatarBytes: avatarBytes,
+                                      fallbackIcon: Icons.person_rounded,
                                     ),
                                   ),
                                   GestureDetector(

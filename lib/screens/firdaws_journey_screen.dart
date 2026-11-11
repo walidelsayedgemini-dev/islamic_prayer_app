@@ -4,13 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:provider/provider.dart';
+import '../models/events_missions_catalog.dart';
 import '../models/hijri_calendar_model.dart';
 import '../models/islamic_missions_data.dart';
 import '../models/islamic_titles_200.dart';
 import '../models/motivational_phrases_500.dart';
 import '../providers/firdaws_user_provider.dart';
+import '../providers/hasanat_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
+import '../widgets/firdaws_brand_logo.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/real_mosque_background.dart';
 import '../widgets/user_profile_editor_sheet.dart';
@@ -228,7 +231,7 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                 // 2. شريط التنقل الرباعي داخل الميدان
                 Container(
                   margin: const EdgeInsets.fromLTRB(12, 4, 12, 6),
-                  height: 44,
+                  height: 46,
                   decoration: BoxDecoration(
                     color: palette.cardColor.withOpacity(isNight ? 0.86 : 0.92),
                     borderRadius: BorderRadius.circular(14),
@@ -236,7 +239,8 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                   ),
                   child: TabBar(
                     controller: _tabController,
-                    isScrollable: false,
+                    isScrollable: true,
+                    tabAlignment: TabAlignment.start,
                     indicator: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       color: accent.withOpacity(0.22),
@@ -245,10 +249,10 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                     indicatorSize: TabBarIndicatorSize.tab,
                     labelColor: accent,
                     unselectedLabelColor: palette.textMuted,
-                    labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                    labelPadding: const EdgeInsets.symmetric(horizontal: 14),
                     labelStyle: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 11,
+                      fontSize: 12,
                     ),
                     tabs: const [
                       Tab(text: 'سجل الصلوات'),
@@ -314,36 +318,11 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                 onTap: () => UserProfileEditorSheet.show(context),
                 child: Stack(
                   children: [
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: titleColor, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: titleColor.withOpacity(0.32),
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: avatarBytes != null
-                            ? Image.memory(
-                                avatarBytes,
-                                width: 50,
-                                height: 50,
-                                fit: BoxFit.cover,
-                              )
-                            : Image.asset(
-                                'assets/images/palace_jannah_logo.png',
-                                width: 50,
-                                height: 50,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) =>
-                                    Icon(Icons.person_rounded, color: accent, size: 24),
-                              ),
-                      ),
+                    FirdawsBrandLogo(
+                      size: 50,
+                      borderColor: titleColor,
+                      glowColor: titleColor,
+                      userAvatarBytes: avatarBytes,
                     ),
                     Positioned(
                       bottom: 0,
@@ -370,23 +349,23 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Flexible(
-                          child: Text(
-                            p.hasCustomName
-                                ? '🌟 مرحباً يا ${userProv.displayName} ${themeOption.primaryEmoji}'
-                                : '✨ أهلاً بك في ميدان الفردوس ${themeOption.primaryEmoji}',
-                            style: TextStyle(
-                              color: palette.textPrimary,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                        Text(
+                          p.hasCustomName
+                              ? '🌟 مرحباً يا ${userProv.displayName} ${themeOption.primaryEmoji}'
+                              : '✨ أهلاً بك في ميدان الفردوس ${themeOption.primaryEmoji}',
+                          style: TextStyle(
+                            color: palette.textPrimary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13.5,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 7,
@@ -655,15 +634,19 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                                   size: 16,
                                 ),
                                 const SizedBox(width: 6),
-                                Text(
-                                  isToday
-                                      ? 'سجل اليوم • ${DateFormat('EEEE d MMM', 'ar').format(_selectedLogDate)}'
-                                      : DateFormat('EEEE d MMMM yyyy', 'ar')
-                                          .format(_selectedLogDate),
-                                  style: TextStyle(
-                                    color: palette.textPrimary,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13.5,
+                                Flexible(
+                                  child: Text(
+                                    isToday
+                                        ? 'سجل اليوم • ${DateFormat('EEEE d MMM', 'ar').format(_selectedLogDate)}'
+                                        : DateFormat('EEEE d MMMM yyyy', 'ar')
+                                            .format(_selectedLogDate),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: palette.textPrimary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13.5,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -717,7 +700,7 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
               const SizedBox(height: 8),
               // شريط آخر 14 يوماً بالسرعة والوضوح
               SizedBox(
-                height: 64,
+                height: 74,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: 14,
@@ -730,11 +713,11 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                       onTap: () => setState(() => _selectedLogDate = date),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
-                        width: 56,
+                        width: 58,
                         margin: const EdgeInsets.only(left: 6),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 4,
-                          vertical: 5,
+                          vertical: 4,
                         ),
                         decoration: BoxDecoration(
                           color: isSel
@@ -746,49 +729,55 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                             width: isSel ? 1.8 : 1.0,
                           ),
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              idx == 0
-                                  ? 'اليوم'
-                                  : DateFormat('E', 'ar').format(date),
-                              style: TextStyle(
-                                color: isSel ? accent : palette.textSecondary,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                idx == 0
+                                    ? 'اليوم'
+                                    : DateFormat('E', 'ar').format(date),
+                                style: TextStyle(
+                                  color: isSel ? accent : palette.textSecondary,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  height: 1.15,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              '${date.day}/${date.month}',
-                              style: TextStyle(
-                                color: palette.textPrimary,
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.bold,
+                              Text(
+                                '${date.day}/${date.month}',
+                                style: TextStyle(
+                                  color: palette.textPrimary,
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.bold,
+                                  height: 1.15,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 3),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: FirdawsUserProvider.obligatoryPrayerKeys
-                                  .map((pk) {
-                                final st = dayRec.statusFor(pk);
-                                return Container(
-                                  width: 6,
-                                  height: 6,
-                                  margin: const EdgeInsets.symmetric(
-                                    horizontal: 1,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: st.statusColor(palette.isDark),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ],
+                              const SizedBox(height: 3),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: FirdawsUserProvider.obligatoryPrayerKeys
+                                    .map((pk) {
+                                  final st = dayRec.statusFor(pk);
+                                  return Container(
+                                    width: 6,
+                                    height: 6,
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 1,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: st.statusColor(palette.isDark),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
@@ -929,6 +918,23 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                           pKey,
                           isSel ? PrayerLogStatus.none : st,
                         );
+                        if (!isSel && st.isCompleted && context.mounted) {
+                          try {
+                            final hasanat = Provider.of<HasanatProvider>(
+                              context,
+                              listen: false,
+                            );
+                            hasanat.earnHasanat(
+                              st == PrayerLogStatus.prayedInGroup ? 20 : 15,
+                              reason: 'تسجيل صلاة $pName',
+                              sourceTag: 'الصلوات',
+                            );
+                            hasanat.recordMetric(
+                              EventMissionMetric.prayersLogged,
+                              delta: 1,
+                            );
+                          } catch (_) {}
+                        }
                         if (!context.mounted) return;
                         if (unlocked.isNotEmpty) {
                           _showUnlockSnackbarsIfAny(
@@ -1006,12 +1012,16 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                 children: [
                   Icon(Icons.auto_awesome_rounded, color: accent, size: 18),
                   const SizedBox(width: 8),
-                  Text(
-                    'السنن والنوافل لهذا اليوم',
-                    style: TextStyle(
-                      color: accent,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13.5,
+                  Expanded(
+                    child: Text(
+                      'السنن والنوافل لهذا اليوم',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: accent,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13.5,
+                      ),
                     ),
                   ),
                 ],
@@ -1249,6 +1259,23 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                               entry.prayerKey,
                               PrayerLogStatus.prayedQada,
                             );
+                            if (context.mounted) {
+                              try {
+                                final hasanat = Provider.of<HasanatProvider>(
+                                  context,
+                                  listen: false,
+                                );
+                                hasanat.earnHasanat(
+                                  12,
+                                  reason: 'قضاء صلاة ${entry.prayerArabicName}',
+                                  sourceTag: 'الصلوات',
+                                );
+                                hasanat.recordMetric(
+                                  EventMissionMetric.prayersLogged,
+                                  delta: 1,
+                                );
+                              } catch (_) {}
+                            }
                             if (!context.mounted) return;
                             _showUnlockSnackbarsIfAny(
                               context,
@@ -1490,7 +1517,11 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Row(
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      alignment: WrapAlignment.spaceBetween,
+                      spacing: 6,
+                      runSpacing: 6,
                       children: [
                         Text(
                           '$prog / ${m.targetCount} • +${m.rewardPoints} نقطة',
@@ -1502,127 +1533,131 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                             fontSize: 11.5,
                           ),
                         ),
-                        const Spacer(),
-                        if (!isDone) ...[
-                          OutlinedButton(
-                            onPressed: () async {
-                              HapticFeedback.lightImpact();
-                              final unlocked = await userProv.advanceMission(
-                                m.id,
-                                amount: 1,
-                              );
-                              if (context.mounted) {
-                                _showUnlockSnackbarsIfAny(
-                                  context,
-                                  userProv,
-                                  unlocked,
-                                  palette,
-                                );
-                              }
-                            },
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: catColor),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
+                        if (!isDone)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              OutlinedButton(
+                                onPressed: () async {
+                                  HapticFeedback.lightImpact();
+                                  final unlocked = await userProv.advanceMission(
+                                    m.id,
+                                    amount: 1,
+                                  );
+                                  if (context.mounted) {
+                                    _showUnlockSnackbarsIfAny(
+                                      context,
+                                      userProv,
+                                      unlocked,
+                                      palette,
+                                    );
+                                  }
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(color: catColor),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  minimumSize: Size.zero,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: Text(
+                                  '+1',
+                                  style: TextStyle(
+                                    color: catColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
                               ),
-                              minimumSize: Size.zero,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: Text(
-                              '+1',
-                              style: TextStyle(
-                                color: catColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                          if (m.targetCount >= 20) ...[
-                            const SizedBox(width: 6),
-                            OutlinedButton(
-                              onPressed: () async {
-                                HapticFeedback.lightImpact();
-                                final unlocked = await userProv.advanceMission(
-                                  m.id,
-                                  amount: 10,
-                                );
-                                if (context.mounted) {
+                              if (m.targetCount >= 20) ...[
+                                const SizedBox(width: 6),
+                                OutlinedButton(
+                                  onPressed: () async {
+                                    HapticFeedback.lightImpact();
+                                    final unlocked = await userProv.advanceMission(
+                                      m.id,
+                                      amount: 10,
+                                    );
+                                    if (context.mounted) {
+                                      _showUnlockSnackbarsIfAny(
+                                        context,
+                                        userProv,
+                                        unlocked,
+                                        palette,
+                                      );
+                                    }
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(color: catColor),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
+                                    ),
+                                    minimumSize: Size.zero,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '+10',
+                                    style: TextStyle(
+                                      color: catColor,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(width: 6),
+                              ElevatedButton(
+                                onPressed: () async {
+                                  HapticFeedback.mediumImpact();
+                                  final unlocked = await userProv.advanceMission(
+                                    m.id,
+                                    amount: m.targetCount - prog,
+                                  );
+                                  if (!context.mounted) return;
                                   _showUnlockSnackbarsIfAny(
                                     context,
                                     userProv,
                                     unlocked,
                                     palette,
                                   );
-                                }
-                              },
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: catColor),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
+                                  if (unlocked.isEmpty) {
+                                    _showSimpleToast(
+                                      context,
+                                      'أحسنت يا ${userProv.displayName}! أتممت «${m.islamicTitle}» (+${m.rewardPoints} نقطة) 🌟',
+                                      palette,
+                                    );
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: catColor,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  minimumSize: Size.zero,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                 ),
-                                minimumSize: Size.zero,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
+                                child: const Text(
+                                  'إتمام',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 11.5,
+                                  ),
                                 ),
                               ),
-                              child: Text(
-                                '+10',
-                                style: TextStyle(
-                                  color: catColor,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ],
-                          const SizedBox(width: 6),
-                          ElevatedButton(
-                            onPressed: () async {
-                              HapticFeedback.mediumImpact();
-                              final unlocked = await userProv.advanceMission(
-                                m.id,
-                                amount: m.targetCount - prog,
-                              );
-                              if (!context.mounted) return;
-                              _showUnlockSnackbarsIfAny(
-                                context,
-                                userProv,
-                                unlocked,
-                                palette,
-                              );
-                              if (unlocked.isEmpty) {
-                                _showSimpleToast(
-                                  context,
-                                  'أحسنت يا ${userProv.displayName}! أتممت «${m.islamicTitle}» (+${m.rewardPoints} نقطة) 🌟',
-                                  palette,
-                                );
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: catColor,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              minimumSize: Size.zero,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: const Text(
-                              'إتمام',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11.5,
-                              ),
-                            ),
-                          ),
-                        ] else ...[
+                            ],
+                          )
+                        else
                           TextButton.icon(
                             onPressed: () => userProv.resetMission(m.id),
                             icon: const Icon(Icons.refresh_rounded, size: 15),
@@ -1634,7 +1669,6 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                               ),
                             ),
                           ),
-                        ],
                       ],
                     ),
                   ],
@@ -1982,7 +2016,7 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isEquipped
-                    ? const Color(0xFFFBBF24)
+                    ? const Color(0xFF38BDF8)
                     : (isUnlocked ? t.badgeColor : palette.dividerColor),
                 width: isEquipped ? 2.0 : (isUnlocked ? 1.4 : 1.0),
               ),
@@ -2158,6 +2192,8 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                   label: Center(
                     child: Text(
                       'مذكرتي وملاحظاتي (${userProv.journalEntries.length})',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: !_showPhrasesSection
                             ? palette.onAccentColor
@@ -2179,6 +2215,8 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                   label: Center(
                     child: Text(
                       'بستان الـ 500 عبارة باسمي',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: _showPhrasesSection
                             ? palette.onAccentColor
@@ -2933,7 +2971,7 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                   side: BorderSide(
-                    color: won ? const Color(0xFFFBBF24) : accent,
+                    color: won ? const Color(0xFF34D399) : accent,
                     width: 1.8,
                   ),
                 ),
@@ -2941,7 +2979,7 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                   children: [
                     Icon(
                       won ? Icons.emoji_events_rounded : Icons.school_rounded,
-                      color: won ? const Color(0xFFFBBF24) : accent,
+                      color: won ? const Color(0xFF34D399) : accent,
                       size: 30,
                     ),
                     const SizedBox(width: 8),
@@ -2951,7 +2989,7 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                             ? 'مبارك الفوز يا ${userProv.displayName}!'
                             : 'جولة طيبة ومعلومات قيّمة',
                         style: TextStyle(
-                          color: won ? const Color(0xFFFBBF24) : accent,
+                          color: won ? const Color(0xFF34D399) : accent,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),

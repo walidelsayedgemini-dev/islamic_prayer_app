@@ -261,7 +261,7 @@ class _IslamicGreetingCardsSheetState extends State<IslamicGreetingCardsSheet> {
                             selectedCard.hadithOrDua,
                             style: TextStyle(
                               color: palette.isDark
-                                  ? const Color(0xFFFDE68A)
+                                  ? const Color(0xFFE2E8F0)
                                   : palette.primaryColor,
                               fontSize: 13,
                               height: 1.5,

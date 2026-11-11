@@ -6,6 +6,9 @@ import 'providers/settings_provider.dart';
 import 'providers/audio_player_provider.dart';
 import 'providers/firdaws_user_provider.dart';
 import 'providers/jannati_provider.dart';
+import 'providers/family_challenge_provider.dart';
+import 'providers/hasanat_provider.dart';
+import 'models/events_missions_catalog.dart';
 import 'screens/adhan_alarm_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'services/firdaws_native_service.dart';
@@ -23,6 +26,8 @@ void main() async {
   final audioPlayerProvider = AudioPlayerProvider();
   final firdawsUserProvider = FirdawsUserProvider();
   final jannatiProvider = JannatiProvider();
+  final familyChallengeProvider = FamilyChallengeProvider();
+  final hasanatProvider = HasanatProvider();
 
   // تشغيل التطبيق فوراً دون انتظار عمليات الحساسات أو التنبيهات
   runApp(
@@ -34,6 +39,9 @@ void main() async {
         ChangeNotifierProvider<FirdawsUserProvider>.value(
             value: firdawsUserProvider),
         ChangeNotifierProvider<JannatiProvider>.value(value: jannatiProvider),
+        ChangeNotifierProvider<FamilyChallengeProvider>.value(
+            value: familyChallengeProvider),
+        ChangeNotifierProvider<HasanatProvider>.value(value: hasanatProvider),
       ],
       child: const IslamicPrayerApp(),
     ),
@@ -45,6 +53,8 @@ void main() async {
       await settingsProvider.init();
       await firdawsUserProvider.init();
       await jannatiProvider.init();
+      await familyChallengeProvider.init();
+      await hasanatProvider.init();
       await NotificationService().initialize();
       await FirdawsNativeService().initialize();
       settingsProvider.syncAllNotifications();
@@ -124,10 +134,27 @@ class _IslamicPrayerAppState extends State<IslamicPrayerApp>
           await Future<void>.delayed(const Duration(milliseconds: 350));
         }
         if (mounted) {
+          HasanatProvider? hasanat;
+          try {
+            hasanat = Provider.of<HasanatProvider>(context, listen: false);
+          } catch (_) {}
           await userProv.recordDhikrByText(
             'اللهم صل وسلم على نبينا محمد',
             count: taps,
           );
+          if (hasanat != null) {
+            try {
+              await hasanat.earnHasanat(
+                taps * 2,
+                reason: 'صلاة على النبي ($taps)',
+                sourceTag: 'الذكر',
+              );
+              await hasanat.recordMetric(
+                EventMissionMetric.tasbihCount,
+                delta: taps,
+              );
+            } catch (_) {}
+          }
         }
       }
 
@@ -218,6 +245,9 @@ class _IslamicPrayerAppState extends State<IslamicPrayerApp>
     try {
       Provider.of<FirdawsUserProvider>(context, listen: false)
           .recordDhikrByText('اللهم صل وسلم على نبينا محمد');
+      final hasanat = Provider.of<HasanatProvider>(context, listen: false);
+      hasanat.earnHasanat(3, reason: 'الصلاة على النبي ﷺ', sourceTag: 'نفحة نبوية');
+      hasanat.recordMetric(EventMissionMetric.tasbihCount, delta: 1);
     } catch (_) {}
   }
 

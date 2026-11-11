@@ -56,11 +56,11 @@ void main() {
     expect(smoothed, anyOf(0.0, 360.0));
   });
 
-  test('Al-Firdaws provides exactly 20 unique bundled Arabic fonts', () {
-    expect(FontCatalog.allFonts.length, 20);
+  test('Al-Firdaws provides 3 calm readable Arabic fonts defaulting to Cairo', () {
+    expect(FontCatalog.allFonts.length, 3);
     final uniqueFamilies = FontCatalog.allFonts.map((f) => f.family).toSet();
-    expect(uniqueFamilies.length, 20);
-    expect(FontCatalog.getByFamily('non_existent_font').family, 'Aref Ruqaa');
+    expect(uniqueFamilies.length, 3);
+    expect(FontCatalog.getByFamily('non_existent_font').family, 'Cairo');
   });
 
   test('Tasbih provides 20 distinct goal completion effects & challenges', () {

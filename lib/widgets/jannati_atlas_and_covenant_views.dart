@@ -4,6 +4,7 @@ import '../models/jannati_encyclopedia_data.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/jannati_provider.dart';
 import '../theme/islamic_theme.dart';
+import 'firdaws_3d_ui.dart';
 import 'sacred_reference_widgets.dart';
 
 /// التبويب الثاني في جنتي: مهندس الجنة اليومي (جدول الـ ١٦ ورداً + الـ ١٤ استثماراً نبوياً)
@@ -146,7 +147,7 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
         // 3. جدول اليوم (١٦ ورداً يومياً محفوظاً)
         if (_filterMode == 'all' || _filterMode == 'checklist') ...[
           _sectionTitle(
-            'أَوْلاً: جَدْوَلُ مُهَنْدِسِ الْجَنَّةِ الْيَوْمِيِّ (١٦ وَرْداً)',
+            'أَوَّلًا: جَدْوَلُ مُهَنْدِسِ الْجَنَّةِ الْيَوْمِيِّ (١٦ وَرْداً)',
             Icons.checklist_rtl_rounded,
             accent,
           ),
@@ -375,17 +376,24 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
           const SizedBox(height: 10),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: palette.elevatedCardColor,
-              borderRadius: BorderRadius.circular(13),
-              border: Border.all(color: invColor.withOpacity(0.32)),
+              color: firdaws3DElevatedSurfaceColor(palette),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: invColor.withOpacity(0.38)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(palette.isDark ? 0.32 : 0.06),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
             child: Text(
               inv.dhikrOrAction,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: palette.isDark ? const Color(0xFFFDE68A) : palette.primaryColor,
+                color: palette.isDark ? const Color(0xFFF1F5F9) : palette.primaryColor,
                 fontWeight: FontWeight.bold,
                 fontSize: 13.5,
                 height: 1.45,
@@ -433,7 +441,7 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
             ),
             const SizedBox(height: 4),
             Text(
-              'التقدم الحالي: $cycleProg / ${inv.cycleTarget} لإتمام ${inv.unitSingular} جديدة',
+              'التقدّم الحالي: $cycleProg من ${inv.cycleTarget} لنيل ثمرة (${inv.unitSingular})',
               style: TextStyle(color: invColor, fontSize: 10.5, fontWeight: FontWeight.bold),
             ),
           ],
@@ -849,18 +857,22 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                       ),
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: col.withOpacity(0.16),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      d.categoryBadge,
-                      style: TextStyle(
-                        color: col,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: col.withOpacity(0.16),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        d.categoryBadge,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: col,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -1239,7 +1251,7 @@ class _JannatiCovenantAndQuizTabViewState
                       padding: const EdgeInsets.only(left: 6),
                       child: ActionChip(
                         label: Text(
-                          '+ ${tpl.length > 26 ? '${tpl.substring(0, 26)}...' : tpl}',
+                          '+ ${truncateArabicSafe(tpl, 26)}',
                           style: TextStyle(color: palette.textPrimary, fontSize: 10.5),
                         ),
                         backgroundColor: palette.elevatedCardColor,
@@ -1320,12 +1332,16 @@ class _JannatiCovenantAndQuizTabViewState
                       ),
                     ),
                   ),
-                  Text(
-                    'رصيدك: ${widget.jannati.totalJannahPoints}',
-                    style: TextStyle(
-                      color: palette.textSecondary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 11.5,
+                  Flexible(
+                    child: Text(
+                      'رصيدك: ${widget.jannati.totalJannahPoints}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: palette.textSecondary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11.5,
+                      ),
                     ),
                   ),
                 ],
@@ -1376,12 +1392,16 @@ class _JannatiCovenantAndQuizTabViewState
                           ],
                         ),
                       ),
-                      Text(
-                        '${tier.minPoints} ن',
-                        style: TextStyle(
-                          color: unlocked ? tier.badgeColor : palette.textMuted,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11,
+                      Flexible(
+                        child: Text(
+                          '${tier.minPoints} ن',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: unlocked ? tier.badgeColor : palette.textMuted,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                          ),
                         ),
                       ),
                       if (isCurrent)
