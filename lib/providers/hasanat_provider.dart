@@ -66,6 +66,7 @@ class HasanatProvider extends ChangeNotifier {
   static const String _kUnlockedEventsKey = 'hasanat_unlocked_events_v1';
   static const String _kActiveEventKey = 'hasanat_active_event_v1';
   static const String _kLedgerKey = 'hasanat_ledger_v1';
+  static const String _kBackupSnapshotKey = 'hasanat_snapshot_backup_v2';
 
   SharedPreferences? _prefs;
   bool _initialized = false;
@@ -151,12 +152,41 @@ class HasanatProvider extends ChangeNotifier {
     final prefs = _prefs;
     if (prefs == null) return;
 
-    _hasanatBalance = prefs.getInt(_kBalanceKey) ?? 220;
-    _lifetimeHasanat = prefs.getInt(_kLifetimeKey) ?? _hasanatBalance;
+    // استرجاع تلقائي من النسخة الاحتياطية عند غياب المفاتيح الأساسية
+    if (!prefs.containsKey(_kBalanceKey) &&
+        prefs.containsKey(_kBackupSnapshotKey)) {
+      final rawSnap = prefs.getString(_kBackupSnapshotKey);
+      if (rawSnap != null && rawSnap.isNotEmpty) {
+        try {
+          final snap = jsonDecode(rawSnap) as Map<String, dynamic>;
+          _hasanatBalance = (snap['balance'] as num?)?.toInt() ?? 220;
+          _lifetimeHasanat =
+              (snap['lifetime'] as num?)?.toInt() ?? _hasanatBalance;
+          final ownedSnap = (snap['owned'] as List?)?.cast<String>() ?? const [];
+          _ownedSkinIds.addAll(
+            ownedSnap.map((e) => e == 'frame_cyber_halo' ? 'frame_noor_halo' : e),
+          );
+          final claimedSnap =
+              (snap['claimed'] as List?)?.cast<String>() ?? const [];
+          _claimedMissionIds.addAll(claimedSnap);
+          final eventsSnap =
+              (snap['events'] as List?)?.cast<String>() ?? const [];
+          _unlockedEventIds.addAll(eventsSnap);
+        } catch (_) {}
+      }
+    }
+
+    _hasanatBalance = prefs.getInt(_kBalanceKey) ?? _hasanatBalance;
+    _lifetimeHasanat = prefs.getInt(_kLifetimeKey) ?? _lifetimeHasanat;
+    if (_lifetimeHasanat < _hasanatBalance) {
+      _lifetimeHasanat = _hasanatBalance;
+    }
 
     final owned = prefs.getStringList(_kOwnedSkinsKey);
     if (owned != null) {
-      _ownedSkinIds.addAll(owned);
+      _ownedSkinIds.addAll(
+        owned.map((e) => e == 'frame_cyber_halo' ? 'frame_noor_halo' : e),
+      );
     }
 
     final equippedRaw = prefs.getString(_kEquippedSkinsKey);
@@ -168,7 +198,8 @@ class HasanatProvider extends ChangeNotifier {
             (c) => c.name == entry.key,
             orElse: () => StoreItemCategory.craftSkin,
           );
-          final skinId = entry.value?.toString() ?? '';
+          var skinId = entry.value?.toString() ?? '';
+          if (skinId == 'frame_cyber_halo') skinId = 'frame_noor_halo';
           if (skinId.isNotEmpty && _ownedSkinIds.contains(skinId)) {
             _equippedSkins[cat] = skinId;
           }
@@ -251,6 +282,16 @@ class HasanatProvider extends ChangeNotifier {
       await prefs.setString(
         _kLedgerKey,
         jsonEncode(_ledger.map((e) => e.toJson()).toList()),
+      );
+      await prefs.setString(
+        _kBackupSnapshotKey,
+        jsonEncode({
+          'balance': _hasanatBalance,
+          'lifetime': _lifetimeHasanat,
+          'owned': _ownedSkinIds.toList(),
+          'claimed': _claimedMissionIds.toList(),
+          'events': _unlockedEventIds.toList(),
+        }),
       );
     } catch (_) {}
   }

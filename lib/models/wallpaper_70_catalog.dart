@@ -14,7 +14,7 @@ class Wallpaper70Item {
   });
 }
 
-/// مكتبة الـ ٧٠ خلفية فوتوغرافية فائقة الدقة (4K) للاختيار الحر في التطبيق وبستان جنتي.
+/// مكتبة الـ ٧٠ خلفية فوتوغرافية فائقة الدقة (4K) للاختيار الحر في التطبيق ومشاهد جنتي.
 class Wallpaper70Catalog {
   Wallpaper70Catalog._();
 
@@ -277,12 +277,12 @@ class Wallpaper70Catalog {
       category: catArchitecture,
     ),
 
-    // === 3. بساتين وأنهار الجنة (11) ===
+    // === 3. رياض وأنهار الجنة (11) ===
     Wallpaper70Item(
       id: 'wp_35',
       assetPath: 'assets/images/garden/garden_day_paradise.jpg',
-      title: 'بستان الفردوس النهاري المشرق',
-      subtitle: 'نخيل وبساتين وأنهار صافية 4K',
+      title: 'روضة الفردوس النهارية المشرقة',
+      subtitle: 'نخيل ورياض وأنهار صافية 4K',
       category: catGardens,
     ),
     Wallpaper70Item(
@@ -303,14 +303,14 @@ class Wallpaper70Catalog {
       id: 'wp_38',
       assetPath: 'assets/images/garden/garden_sidrat_sunbeams.jpg',
       title: 'أشعة سدرة المنتهى الذهبية',
-      subtitle: 'بستان نوراني تحت ظلال النخيل 4K',
+      subtitle: 'روضة نورانية تحت ظلال النخيل 4K',
       category: catGardens,
     ),
     Wallpaper70Item(
       id: 'wp_39',
       assetPath: 'assets/images/garden/garden_sunset_eden.jpg',
       title: 'غروب جنات عدن الذهبي',
-      subtitle: 'انعكاس الشفق على مياه البستان 4K',
+      subtitle: 'انعكاس الشفق على أنهار الجنة 4K',
       category: catGardens,
     ),
     Wallpaper70Item(
@@ -480,9 +480,9 @@ class Wallpaper70Catalog {
     ),
     Wallpaper70Item(
       id: 'wp_63',
-      assetPath: 'assets/images/games/arena_silkroad_racing.jpg',
-      title: 'طريق الحرير وسباق الأبطال',
-      subtitle: 'وديان ذهبية وقوافل تاريخية 4K',
+      assetPath: 'assets/images/games/arena_snow_firdaws.jpg',
+      title: 'وادي الثلج النقي وقصور الفردوس',
+      subtitle: 'قصور رخامية بيضاء وشلالات متجمدة مضيئة 4K',
       category: catArenas,
     ),
     Wallpaper70Item(
@@ -494,16 +494,16 @@ class Wallpaper70Catalog {
     ),
     Wallpaper70Item(
       id: 'wp_65',
-      assetPath: 'assets/images/games/arena_cosmic_observatory.jpg',
-      title: 'المرصد الفلكي والإسطرلاب الكوني',
-      subtitle: 'كواكب ومدارات علم الفلك العربي 4K',
+      assetPath: 'assets/images/games/arena_astronomer_dome.jpg',
+      title: 'قبة الفلك والأسطرلاب النبيل',
+      subtitle: 'قباب الحكمة ونجوم المجرة 4K',
       category: catArenas,
     ),
     Wallpaper70Item(
       id: 'wp_66',
-      assetPath: 'assets/images/games/arena_abyssal_reef.jpg',
-      title: 'أعماق اللآلئ والشعاب المرجانية',
-      subtitle: 'كنوز البحار والزبرجد الأزرق 4K',
+      assetPath: 'assets/images/games/arena_crystal_waters.jpg',
+      title: 'أنهار الكوثر واللؤلؤ الصافي',
+      subtitle: 'جداول فيروزية وأزهار ندية 4K',
       category: catArenas,
     ),
     Wallpaper70Item(
@@ -515,16 +515,16 @@ class Wallpaper70Catalog {
     ),
     Wallpaper70Item(
       id: 'wp_68',
-      assetPath: 'assets/images/games/arena_cyber_garden.jpg',
-      title: 'حدائق المستقبل المضيئة',
-      subtitle: 'طبيعة ساحرة وإضاءة ثلاثية الأبعاد 4K',
+      assetPath: 'assets/images/games/arena_sky_sanctuary.jpg',
+      title: 'شرفات الفردوس فوق السحاب',
+      subtitle: 'قصور من الدر والمياه السماوية 4K',
       category: catArenas,
     ),
     Wallpaper70Item(
       id: 'wp_69',
-      assetPath: 'assets/images/games/arena_royal_stadium.jpg',
-      title: 'الاستاد الملكي الكبير',
-      subtitle: 'مسرح البطولات والجماهير 4K',
+      assetPath: 'assets/images/marble/marble_emerald_dark.jpg',
+      title: 'الرخام الملكي الزمردي المذهب',
+      subtitle: 'عروق ذهبية نفيسة على رخام داكن فخم 4K',
       category: catArenas,
     ),
     Wallpaper70Item(

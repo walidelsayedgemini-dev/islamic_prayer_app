@@ -77,6 +77,7 @@ class JannatiProvider extends ChangeNotifier {
   static const String _kTasbihOrchardTreesKey = 'jannati_tasbih_orchard_trees_v1';
   static const String _kTasbihGrowthStreakKey = 'jannati_tasbih_growth_v1';
   static const String _kLastTasbihTreeNameKey = 'jannati_last_tasbih_tree_v1';
+  static const String _kJannatiBackupKey = 'jannati_snapshot_backup_v2';
 
   final Map<String, int> _counts = {
     for (final inv in JannatiCatalog.investments) inv.id: 0,
@@ -127,12 +128,12 @@ class JannatiProvider extends ChangeNotifier {
 
   String get orchardStageTitle {
     final total = totalGardenTrees;
-    if (total == 0) return 'روضة مهيّأة للغراس 3D';
-    if (total < 15) return 'بستان شتلات متفتّح 3D';
-    if (total < 60) return 'جنينة وارفة الظلال 3D';
-    if (total < 150) return 'بساتين نخيل وأنهار جارية 3D';
-    if (total < 400) return 'رياض الفردوس العامرة بالثمر 3D';
-    return 'جنة الفردوس الكبرى ذات الغراس الوفيرة 3D 👑';
+    if (total == 0) return 'روضة الفردوس مهيّأة للغِراس ✨';
+    if (total < 15) return 'واحة شتلات النور المتفتّحة 🌿';
+    if (total < 60) return 'روضة وارفة الظلال في الجنة 🌸';
+    if (total < 150) return 'رياض نخيلٍ وأنهارٍ جارية 🌴';
+    if (total < 400) return 'رياض الفردوس العامرة بالثمر ✨';
+    return 'جنة الفردوس الكبرى ذات الغراس الوفيرة 👑';
   }
 
   Set<String> get dailyCheckedIds => Set<String>.unmodifiable(_dailyCheckedIds);
@@ -277,6 +278,43 @@ class JannatiProvider extends ChangeNotifier {
         ..clear()
         ..addAll(savedHadithIds);
     }
+
+    // استرجاع النسخة الاحتياطية الثانية لضمان عدم ضياع أي نقطة أو غِراس أبداً
+    final backupRaw = prefs.getString(_kJannatiBackupKey);
+    if (backupRaw != null && backupRaw.isNotEmpty) {
+      try {
+        final bk = jsonDecode(backupRaw) as Map<String, dynamic>;
+        final bkCounts = bk['counts'];
+        if (bkCounts is Map) {
+          for (final e in bkCounts.entries) {
+            final key = e.key.toString();
+            final val = (e.value as num?)?.toInt() ?? 0;
+            if (val > (_counts[key] ?? 0)) _counts[key] = val;
+          }
+        }
+        final bkBestQuiz = (bk['bestQuiz'] as num?)?.toInt() ?? 0;
+        if (bkBestQuiz > _bestQuizScore) _bestQuizScore = bkBestQuiz;
+        final bkQuizzes = (bk['quizzesCompleted'] as num?)?.toInt() ?? 0;
+        if (bkQuizzes > _quizzesCompleted) _quizzesCompleted = bkQuizzes;
+        final bkBonus = (bk['bonusPoints'] as num?)?.toInt() ?? 0;
+        if (bkBonus > _bonusPoints) _bonusPoints = bkBonus;
+        final bkHadiths = (bk['hadithsReadCount'] as num?)?.toInt() ?? 0;
+        if (bkHadiths > _hadithsReadCount) _hadithsReadCount = bkHadiths;
+        final bkTrees = (bk['tasbihOrchardTrees'] as num?)?.toInt() ?? 0;
+        if (bkTrees > _tasbihOrchardTrees) _tasbihOrchardTrees = bkTrees;
+        final bkStreak = (bk['tasbihGrowthStreak'] as num?)?.toInt() ?? 0;
+        if (bkStreak > _tasbihGrowthStreak) _tasbihGrowthStreak = bkStreak;
+        final bkHadithIds = bk['readHadithIds'];
+        if (bkHadithIds is List) {
+          _readJannahHadithIds.addAll(bkHadithIds.map((e) => e.toString()));
+        }
+        final bkBookmarks = bk['bookmarks'];
+        if (bkBookmarks is List) {
+          _bookmarkedQaIds.addAll(bkBookmarks.map((e) => e.toString()));
+        }
+      } catch (_) {}
+    }
+    _saveBackupSnapshot();
 
     final logsRaw = prefs.getString(_kLogsKey);
     if (logsRaw != null && logsRaw.isNotEmpty) {
@@ -443,6 +481,7 @@ class JannatiProvider extends ChangeNotifier {
       _kLogsKey,
       jsonEncode(_recentLogs.map((l) => l.toJson()).toList()),
     );
+    await _saveBackupSnapshot();
     notifyListeners();
     return isFirstTime;
   }
@@ -455,6 +494,7 @@ class JannatiProvider extends ChangeNotifier {
       _bookmarkedQaIds.remove(qaId);
     }
     await _prefs?.setStringList(_kBookmarksKey, _bookmarkedQaIds.toList());
+    await _saveBackupSnapshot();
     notifyListeners();
     return added;
   }
@@ -506,8 +546,29 @@ class JannatiProvider extends ChangeNotifier {
       _kLogsKey,
       jsonEncode(_recentLogs.map((l) => l.toJson()).toList()),
     );
+    await _saveBackupSnapshot();
     _statsKineticTick++;
     notifyListeners();
+  }
+
+  Future<void> _saveBackupSnapshot() async {
+    try {
+      await _prefs?.setString(
+        _kJannatiBackupKey,
+        jsonEncode({
+          'counts': _counts,
+          'cycles': _cycleProgress,
+          'bestQuiz': _bestQuizScore,
+          'quizzesCompleted': _quizzesCompleted,
+          'bonusPoints': _bonusPoints,
+          'hadithsReadCount': _hadithsReadCount,
+          'tasbihOrchardTrees': _tasbihOrchardTrees,
+          'tasbihGrowthStreak': _tasbihGrowthStreak,
+          'readHadithIds': _readJannahHadithIds.toList(),
+          'bookmarks': _bookmarkedQaIds.toList(),
+        }),
+      );
+    } catch (_) {}
   }
 
   Future<void> _persistCountsAndLogs() async {
@@ -521,9 +582,10 @@ class JannatiProvider extends ChangeNotifier {
       _kLogsKey,
       jsonEncode(_recentLogs.map((l) => l.toJson()).toList()),
     );
+    await _saveBackupSnapshot();
   }
 
-  /// تغرس شجرة أو فسيلة جديدة في بستان «جنتي» ثلاثي الأبعاد مع كل تسبيحة!
+  /// تغرس شجرة أو فسيلة جديدة في رياض «جنتي» بالفردوس مع كل تسبيحة!
   Future<void> recordTasbihForGarden(String dhikrText, {int count = 1}) async {
     if (count <= 0) return;
     _tasbihOrchardTrees += count;
@@ -540,9 +602,9 @@ class JannatiProvider extends ChangeNotifier {
     } else if (dhikrText.contains('صل')) {
       _lastTasbihTreeName = 'سدرة المحبة والكوثر الزاهرة 🌸';
     } else if (dhikrText.contains('استغفر') || dhikrText.contains('أستغفر')) {
-      _lastTasbihTreeName = 'بستان المغفرة والأنهار الصافية 🌲';
+      _lastTasbihTreeName = 'روضة المغفرة والأنهار الصافية 🌲';
     } else {
-      _lastTasbihTreeName = 'غِراسُ سبحان الله في البستان 🌴';
+      _lastTasbihTreeName = 'غِراسُ سبحان الله في الفردوس 🌴';
     }
 
     if (_tasbihOrchardTrees == 1 ||
@@ -553,7 +615,7 @@ class JannatiProvider extends ChangeNotifier {
         JannahDeedLogItem(
           investmentId: 'tasbih_orchard',
           title:
-              'تشجير البستان بالتسبيح (+$count • الإجمالي: $_tasbihOrchardTrees شجرة)',
+              'غِراس الفردوس بالتسبيح (+$count • الإجمالي: $_tasbihOrchardTrees نخلة)',
           timestampIso: DateTime.now().toIso8601String(),
           pointsEarned: count * 2,
           completedCycle: true,
@@ -577,6 +639,7 @@ class JannatiProvider extends ChangeNotifier {
         jsonEncode(_recentLogs.map((l) => l.toJson()).toList()),
       );
     }
+    await _saveBackupSnapshot();
   }
 
   /// يضيف ثواباً ومكافأة نقاط في خزينة «جنتي» عند الفوز في المسابقات أو تحديات المعرفة.
@@ -603,5 +666,6 @@ class JannatiProvider extends ChangeNotifier {
       _kLogsKey,
       jsonEncode(_recentLogs.map((l) => l.toJson()).toList()),
     );
+    await _saveBackupSnapshot();
   }
 }

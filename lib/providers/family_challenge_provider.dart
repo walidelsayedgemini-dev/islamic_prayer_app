@@ -190,6 +190,7 @@ class DualPlayerPhraseOutcome {
 
 class FamilyChallengeProvider with ChangeNotifier {
   static const _storageKey = 'firdaws_family_challenge_v1';
+  static const _storageBackupKey = 'firdaws_family_challenge_backup_v2';
 
   bool _isInitialized = false;
   int _userTasbihCount = 0;
@@ -237,7 +238,7 @@ class FamilyChallengeProvider with ChangeNotifier {
         name: 'والدي الحبيب',
         group: ChallengerGroup.family,
         relationLabel: 'العائلة • الأب',
-        avatarEmoji: '🧔🏻',
+        avatarEmoji: '🕌',
         tasbihCount: 340,
         championScore: 280,
         winsCount: 4,
@@ -252,7 +253,7 @@ class FamilyChallengeProvider with ChangeNotifier {
         name: 'والدتي الغالية',
         group: ChallengerGroup.family,
         relationLabel: 'العائلة • الأم',
-        avatarEmoji: '🧕🏻',
+        avatarEmoji: '🌙',
         tasbihCount: 520,
         championScore: 310,
         winsCount: 5,
@@ -267,7 +268,7 @@ class FamilyChallengeProvider with ChangeNotifier {
         name: 'سيف (الأخ)',
         group: ChallengerGroup.family,
         relationLabel: 'العائلة • الأخ',
-        avatarEmoji: '🧑🏻',
+        avatarEmoji: '✨',
         tasbihCount: 215,
         championScore: 460,
         winsCount: 6,
@@ -282,7 +283,7 @@ class FamilyChallengeProvider with ChangeNotifier {
         name: 'مريم (الأخت)',
         group: ChallengerGroup.family,
         relationLabel: 'العائلة • الأخت',
-        avatarEmoji: '👩🏻‍🦱',
+        avatarEmoji: '🌸',
         tasbihCount: 290,
         championScore: 390,
         winsCount: 5,
@@ -312,7 +313,7 @@ class FamilyChallengeProvider with ChangeNotifier {
         name: 'كريم',
         group: ChallengerGroup.friend,
         relationLabel: 'الأصدقاء • صاحب المنافسة',
-        avatarEmoji: '🦁',
+        avatarEmoji: '🛡️',
         tasbihCount: 165,
         championScore: 320,
         winsCount: 4,
@@ -432,7 +433,7 @@ class FamilyChallengeProvider with ChangeNotifier {
         name: 'أخي أحمد',
         group: ChallengerGroup.family,
         relationLabel: 'العائلة • الأخ الأكبر',
-        avatarEmoji: '🦅',
+        avatarEmoji: '🌟',
         tasbihCount: 450,
         championScore: 520,
         winsCount: 8,
@@ -462,7 +463,7 @@ class FamilyChallengeProvider with ChangeNotifier {
         name: 'أختي عائشة',
         group: ChallengerGroup.family,
         relationLabel: 'العائلة • الأخت الكبرى',
-        avatarEmoji: '🕊️',
+        avatarEmoji: '💫',
         tasbihCount: 480,
         championScore: 470,
         winsCount: 7,
@@ -582,7 +583,7 @@ class FamilyChallengeProvider with ChangeNotifier {
         name: 'صديقي خالد',
         group: ChallengerGroup.friend,
         relationLabel: 'الأصدقاء • فارس الميدان',
-        avatarEmoji: '🐎',
+        avatarEmoji: '🏆',
         tasbihCount: 330,
         championScore: 510,
         winsCount: 7,
@@ -596,7 +597,7 @@ class FamilyChallengeProvider with ChangeNotifier {
         id: 'frd_anas',
         name: 'صديقي أنس',
         group: ChallengerGroup.friend,
-        relationLabel: 'الأصدقاء • خادم الخير',
+        relationLabel: 'الأصدقاء • ساعي الخير',
         avatarEmoji: '☀️',
         tasbihCount: 465,
         championScore: 485,
@@ -717,7 +718,7 @@ class FamilyChallengeProvider with ChangeNotifier {
         name: 'صديقي سليمان',
         group: ChallengerGroup.friend,
         relationLabel: 'الأصدقاء • خبير السيرة',
-        avatarEmoji: '🦅',
+        avatarEmoji: '🌟',
         tasbihCount: 315,
         championScore: 505,
         winsCount: 7,
@@ -807,7 +808,7 @@ class FamilyChallengeProvider with ChangeNotifier {
         name: 'صديقي مصعب',
         group: ChallengerGroup.friend,
         relationLabel: 'الأصدقاء • داعي الخير',
-        avatarEmoji: '🕊️',
+        avatarEmoji: '💫',
         tasbihCount: 420,
         championScore: 515,
         winsCount: 7,
@@ -852,7 +853,7 @@ class FamilyChallengeProvider with ChangeNotifier {
         name: 'صديقي أسامة',
         group: ChallengerGroup.friend,
         relationLabel: 'الأصدقاء • همة الشباب',
-        avatarEmoji: '🦁',
+        avatarEmoji: '🛡️',
         tasbihCount: 310,
         championScore: 475,
         winsCount: 6,
@@ -944,7 +945,7 @@ class FamilyChallengeProvider with ChangeNotifier {
     if (_isInitialized) return;
     try {
       final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(_storageKey);
+      final raw = prefs.getString(_storageKey) ?? prefs.getString(_storageBackupKey);
       if (raw != null && raw.isNotEmpty) {
         final j = jsonDecode(raw) as Map<String, dynamic>;
         _userTasbihCount = (j['userTasbihCount'] as num?)?.toInt() ?? 0;
@@ -972,23 +973,33 @@ class FamilyChallengeProvider with ChangeNotifier {
           for (final m in loaded) {
             existingIds.add(m.id);
             final st = starterById[m.id];
-            if (st != null &&
-                (m.networkPhotoUrl == null || m.networkPhotoUrl!.isEmpty)) {
-              merged.add(
-                m.copyWith(
-                  networkPhotoUrl: st.networkPhotoUrl,
-                  age: m.age == 25 ? st.age : m.age,
-                  traits: (m.traits.length == 1 && m.traits.first == 'صاحب همة')
-                      ? st.traits
-                      : m.traits,
-                  dailyTasbihGoal: m.dailyTasbihGoal == 100
-                      ? st.dailyTasbihGoal
-                      : m.dailyTasbihGoal,
-                ),
-              );
-            } else {
-              merged.add(m);
-            }
+            final hasStalePortrait = m.networkPhotoUrl == null ||
+                m.networkPhotoUrl!.isEmpty ||
+                m.networkPhotoUrl!.contains('randomuser');
+            final cleanRel = m.relationLabel.replaceAll('خادم الخير', 'ساعي الخير');
+            final sanitizedEmoji = const {'🧔🏻', '🧕🏻', '🧑🏻', '👩🏻‍🦱', '🦁', '🦅', '🕊️', '🐎'}
+                    .contains(m.avatarEmoji)
+                ? (st?.avatarEmoji ?? '🌟')
+                : m.avatarEmoji;
+            merged.add(
+              m.copyWith(
+                relationLabel: cleanRel,
+                avatarEmoji: sanitizedEmoji,
+                networkPhotoUrl: hasStalePortrait
+                    ? (st?.networkPhotoUrl ??
+                        Background500Catalog.personaPortraits50.first)
+                    : m.networkPhotoUrl,
+                age: (st != null && m.age == 25) ? st.age : m.age,
+                traits: (st != null &&
+                        m.traits.length == 1 &&
+                        m.traits.first == 'صاحب همة')
+                    ? st.traits
+                    : m.traits,
+                dailyTasbihGoal: (st != null && m.dailyTasbihGoal == 100)
+                    ? st.dailyTasbihGoal
+                    : m.dailyTasbihGoal,
+              ),
+            );
           }
           for (final st in starters) {
             if (!existingIds.contains(st.id)) {
@@ -1017,23 +1028,22 @@ class FamilyChallengeProvider with ChangeNotifier {
   Future<void> _save() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-        _storageKey,
-        jsonEncode({
-          'userTasbihCount': _userTasbihCount,
-          'userChampionScore': _userChampionScore,
-          'userWins': _userWins,
-          'userLosses': _userLosses,
-          'phraseCounter': _phraseCounter,
-          'selectedRivalId': _selectedRivalId,
-          'lastMatchPhrase': _lastMatchPhrase,
-          'lastMatchWon': _lastMatchWon,
-          'lastRivalName': _lastRivalName,
-          'lastModeTitle': _lastModeTitle,
-          'members': _members.map((m) => m.toJson()).toList(),
-          'history': _history.take(80).map((h) => h.toJson()).toList(),
-        }),
-      );
+      final payload = jsonEncode({
+        'userTasbihCount': _userTasbihCount,
+        'userChampionScore': _userChampionScore,
+        'userWins': _userWins,
+        'userLosses': _userLosses,
+        'phraseCounter': _phraseCounter,
+        'selectedRivalId': _selectedRivalId,
+        'lastMatchPhrase': _lastMatchPhrase,
+        'lastMatchWon': _lastMatchWon,
+        'lastRivalName': _lastRivalName,
+        'lastModeTitle': _lastModeTitle,
+        'members': _members.map((m) => m.toJson()).toList(),
+        'history': _history.take(80).map((h) => h.toJson()).toList(),
+      });
+      await prefs.setString(_storageKey, payload);
+      await prefs.setString(_storageBackupKey, payload);
     } catch (e) {
       debugPrint('FamilyChallengeProvider save error: $e');
     }

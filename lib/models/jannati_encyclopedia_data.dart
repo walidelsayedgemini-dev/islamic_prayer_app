@@ -223,7 +223,7 @@ class JannatiCatalog {
       exactHadith: '«مَنْ قَالَ: سُبْحَانَ اللَّهِ الْعَظِيمِ وَبِحَمْدِهِ، غُرِسَتْ لَهُ نَخْلَةٌ فِي الْجَنَّةِ»',
       sourceReference: 'صحيح الترمذي والألباني',
       paradiseDescription:
-          'نخلة طيبة باسقة في بستانك بالجنة؛ ساقها من ذهب خالص متلألئ، وكربها أخضر كحُلل السندس، ورطبها ألين من الزبد وأحلى من الشهد.',
+          'نخلة طيبة باسقة في رياضك بالجنة؛ ساقها من ذهب خالص متلألئ، وكربها أخضر كحُلل السندس، ورطبها ألين من الزبد وأحلى من الشهد.',
       buttonText: 'سَبِّح واغرس نخلة ذهبية 🌴',
       cycleTarget: 1,
       pointsPerTap: 15,
@@ -1277,7 +1277,7 @@ class JannatiCatalog {
     JannahRankTier(level: 7, arabicTitle: 'صَاحِبُ بَابِ الرَّيَّانِ', arabicSubtitle: 'صاحب ذكر وصبر وبذل وخلوة صالحة', minPoints: 3000, icon: Icons.water_drop_rounded, badgeColor: Color(0xFF60A5FA)),
     JannahRankTier(level: 8, arabicTitle: 'الْمُنَافِسُ فِي الْخَيْرَاتِ', arabicSubtitle: '﴿وفي ذلك فليتنافس المتنافسون﴾', minPoints: 4500, icon: Icons.stars_rounded, badgeColor: Color(0xFFF472B6)),
     JannahRankTier(level: 9, arabicTitle: 'الْمُقَرَّبُ عَلَى الْحَوْضِ', arabicSubtitle: 'مكثر من الصلاة على المصطفى ﷺ', minPoints: 6200, icon: Icons.waves_rounded, badgeColor: Color(0xFF22D3EE)),
-    JannahRankTier(level: 10, arabicTitle: 'حَامِلُ لِوَاءِ التَّشْمِيرِ', arabicSubtitle: 'تتوالى حسناتك اليومية في بستان الفردوس', minPoints: 8200, icon: Icons.auto_awesome_rounded, badgeColor: Color(0xFFEAB308)),
+    JannahRankTier(level: 10, arabicTitle: 'حَامِلُ لِوَاءِ التَّشْمِيرِ', arabicSubtitle: 'تتوالى حسناتك اليومية في رياض الفردوس', minPoints: 8200, icon: Icons.auto_awesome_rounded, badgeColor: Color(0xFFEAB308)),
     JannahRankTier(level: 11, arabicTitle: 'سَاعٍ لِمَقْعَدِ الصِّدْقِ', arabicSubtitle: 'رفيع الهمة في العمارة الروحية', minPoints: 10500, icon: Icons.verified_user_rounded, badgeColor: Color(0xFF4ADE80)),
     JannahRankTier(level: 12, arabicTitle: 'مُهَنْدِسُ الْفِرْدَوْسِ الْأَعْلَى', arabicSubtitle: 'أسأل الله لك الفردوس الأعلى برفقة النبيين', minPoints: 14000, icon: Icons.workspace_premium_rounded, badgeColor: Color(0xFFFBBF24)),
   ];

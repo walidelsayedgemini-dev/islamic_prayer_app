@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'qa_5000_catalog.dart';
 
 enum IslamicQaCategory {
   jannah, // الجنة ونعيمها وأبوابها (1-50)
@@ -94,6 +95,7 @@ class IslamicQaItem {
   final int number;
   final String id;
   final IslamicQaCategory category;
+  final String sectionTitle;
   final String question;
   final String answer;
   final String evidence;
@@ -103,6 +105,7 @@ class IslamicQaItem {
     required this.number,
     required this.id,
     required this.category,
+    this.sectionTitle = 'أحكام عامة',
     required this.question,
     required this.answer,
     required this.evidence,
@@ -138,10 +141,25 @@ class IslamicQaCatalog {
   static List<IslamicQaItem>? _cachedAll;
 
   static List<IslamicQaItem> get allQuestions =>
-      _cachedAll ??= List<IslamicQaItem>.unmodifiable(_buildAll500());
+      _cachedAll ??= List<IslamicQaItem>.unmodifiable(_buildAll5000());
 
   static List<IslamicQaItem> byCategory(IslamicQaCategory category) =>
       allQuestions.where((q) => q.category == category).toList(growable: false);
+
+  static List<String> sectionsForCategory(IslamicQaCategory category) =>
+      Qa5000ExpansionCatalog.subsectionsByCategory[category] ?? const [];
+
+  static List<IslamicQaItem> byCategoryAndSection(
+    IslamicQaCategory category,
+    String? sectionTitle,
+  ) {
+    if (sectionTitle == null || sectionTitle.isEmpty) {
+      return byCategory(category);
+    }
+    return allQuestions
+        .where((q) => q.category == category && q.sectionTitle == sectionTitle)
+        .toList(growable: false);
+  }
 
   static String normalizeArabic(String input) {
     var s = input.trim().toLowerCase();
@@ -240,7 +258,7 @@ class IslamicQaCatalog {
             .map((e) => IslamicQaSearchMatch(item: e, score: 100))
             .toList(growable: false),
         smartSummary:
-            'اكتب أي سؤال في بالك بالعامية أو الفصحى وسيقوم محرك الفردوس بالبحث الفوري في 500 سؤال وجواب موثق في الجنة والفقه والعقيدة والأخلاق.',
+            'اكتب أي سؤال في بالك بالعامية أو الفصحى وسيقوم محرك الفردوس بالبحث الفوري في 5000 سؤال وجواب موثق ومنظم في 50 قسماً فرعياً.',
       );
     }
 
@@ -301,7 +319,7 @@ class IslamicQaCatalog {
         query: rawQuery,
         matches: const [],
         smartSummary:
-            'لم نجد تطابقاً حرفياً لهذا النص ضمن الـ 500 سؤال وجواب. جرّب كتابة كلمة مفتاحية أوضح (مثل: الجنة، القضاء، الوضوء، التوبة، الصيام، الزكاة، الرزق) أو تصفح الأقسام العشرة.',
+            'لم نجد تطابقاً حرفياً لهذا النص ضمن الـ 5000 سؤال وجواب. جرّب كتابة كلمة مفتاحية أوضح (مثل: الجنة، القضاء، الوضوء، التوبة، الصيام، الزكاة، الرزق) أو تصفح الأقسام العشرة.',
       );
     }
 
@@ -318,26 +336,29 @@ class IslamicQaCatalog {
     );
   }
 
-  static List<IslamicQaItem> _buildAll500() {
+  static List<IslamicQaItem> _buildAll5000() {
     final result = <IslamicQaItem>[];
 
     void addCategory(
       IslamicQaCategory category,
       List<({String q, String a, String e, List<String> t})> entries,
     ) {
+      int catIdx = 0;
       for (final entry in entries) {
         final numIdx = result.length + 1;
         result.add(
           IslamicQaItem(
             number: numIdx,
-            id: 'qa_${numIdx.toString().padLeft(3, '0')}',
+            id: 'qa_${numIdx.toString().padLeft(4, '0')}',
             category: category,
+            sectionTitle: Qa5000ExpansionCatalog.subsectionFor(category, catIdx ~/ 10),
             question: entry.q,
             answer: entry.a,
             evidence: entry.e,
             tags: entry.t,
           ),
         );
+        catIdx++;
       }
     }
 
@@ -3401,7 +3422,11 @@ class IslamicQaCatalog {
       ),
     ]);
 
-    assert(result.length == 500, 'Expected 500 Q&A items, got ${result.length}');
+    assert(result.length == 500, 'Expected 500 base Q&A items, got ${result.length}');
+    result.addAll(
+      Qa5000ExpansionCatalog.build4500Expansion(startNumber: result.length + 1),
+    );
+    assert(result.length == 5000, 'Expected 5000 Q&A items, got ${result.length}');
     return result;
   }
 }

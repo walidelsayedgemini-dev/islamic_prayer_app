@@ -11,6 +11,7 @@ import '../models/tasbih_3d_phrases_200.dart';
 import '../models/tasbih_challenge.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/hasanat_provider.dart';
+import '../providers/hoor_companion_provider.dart';
 import '../providers/jannati_provider.dart';
 import 'hasanat_store_screen.dart';
 import '../providers/family_challenge_provider.dart';
@@ -272,10 +273,19 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
       }
     });
 
-    // تشجير بستان «جنتي» ثلاثي الأبعاد + تحديث تحدي العائلة «مين سبّح أكتر» مع كل تسبيحة!
+    // غراس رياض «جنتي» التفاعلية + تفاعل حور النصي الفوري + تحديث تحدي العائلة «مين سبّح أكتر»
     try {
       Provider.of<JannatiProvider>(context, listen: false)
           .recordTasbihForGarden(activeDhikrText, count: 1);
+    } catch (_) {}
+    try {
+      Provider.of<HoorCompanionProvider>(context, listen: false)
+          .onDhikrPerformed(
+        dhikrType: activeDhikrText,
+        count: 1,
+        userName: userProv.displayName,
+        isFemale: userProv.isFemale,
+      );
     } catch (_) {}
     try {
       Provider.of<FamilyChallengeProvider>(context, listen: false)
@@ -1538,7 +1548,7 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
 
                         const SizedBox(height: 8),
 
-                        // شارة النمو الفوري لبستان جنتي 3D مع كل تسبيحة
+                        // شارة النمو الفوري لرياض جنتي مع كل تسبيحة
                         Builder(
                           builder: (ctx) {
                             int trees = 0;
@@ -1582,7 +1592,7 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          'بستان جنتي 3D يزدان بكل تسبيحة: $trees شجرة 🌳',
+                                          'رفيقك في جنتي يفرح بكل تسبيحة: $trees غِراس ✨',
                                           style: TextStyle(
                                             color: palette.textPrimary,
                                             fontWeight: FontWeight.bold,
@@ -1607,7 +1617,7 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                                   const Flexible(
                                     fit: FlexFit.loose,
                                     child: Text(
-                                      'شاهد البستان ⬅️',
+                                      'شاهد جنتي ⬅️',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(

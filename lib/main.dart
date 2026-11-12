@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'providers/settings_provider.dart';
 import 'providers/audio_player_provider.dart';
 import 'providers/firdaws_user_provider.dart';
+import 'providers/hoor_companion_provider.dart';
 import 'providers/jannati_provider.dart';
 import 'providers/family_challenge_provider.dart';
 import 'providers/hasanat_provider.dart';
@@ -30,6 +31,7 @@ void main() async {
   final audioPlayerProvider = AudioPlayerProvider();
   final firdawsUserProvider = FirdawsUserProvider();
   final jannatiProvider = JannatiProvider();
+  final hoorCompanionProvider = HoorCompanionProvider();
   final familyChallengeProvider = FamilyChallengeProvider();
   final hasanatProvider = HasanatProvider();
 
@@ -43,6 +45,8 @@ void main() async {
         ChangeNotifierProvider<FirdawsUserProvider>.value(
             value: firdawsUserProvider),
         ChangeNotifierProvider<JannatiProvider>.value(value: jannatiProvider),
+        ChangeNotifierProvider<HoorCompanionProvider>.value(
+            value: hoorCompanionProvider),
         ChangeNotifierProvider<FamilyChallengeProvider>.value(
             value: familyChallengeProvider),
         ChangeNotifierProvider<HasanatProvider>.value(value: hasanatProvider),
@@ -59,6 +63,7 @@ void main() async {
       await settingsProvider.init();
       await firdawsUserProvider.init();
       await jannatiProvider.init();
+      await hoorCompanionProvider.init();
       await familyChallengeProvider.init();
       await hasanatProvider.init();
       settingsProvider.syncAllNotifications();

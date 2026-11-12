@@ -8,7 +8,7 @@ import '../theme/islamic_theme.dart';
 import 'firdaws_resilient_image.dart';
 import 'sacred_reference_widgets.dart';
 
-/// واجهة بحث ذكية وتفاعلية شاملة للـ 500 سؤال وجواب في الإسلام (عقيدة، طهارة، صلاة، جنة، قرآن، حياة يومية)
+/// واجهة بحث ذكية وتفاعلية منظمة للـ 5000 سؤال وجواب في الإسلام عبر 10 أقسام رئيسية و50 قسماً فرعياً
 class IslamicQaExplorerWidget extends StatefulWidget {
   final ThemePalette palette;
   final IslamicQaCategory? initialCategory;
@@ -19,8 +19,8 @@ class IslamicQaExplorerWidget extends StatefulWidget {
     super.key,
     required this.palette,
     this.initialCategory,
-    this.headerTitle = 'مَوْسُوعَةُ الفَرْدَوْسِ • ٥٠٠ سُؤَالٍ وَجَوَابٍ شَرْعِيٍّ',
-    this.headerSubtitle = 'اسأل أي سؤال بالعربية أو العامية وستصلك الإجابة الموثقة بالدليل فوراً',
+    this.headerTitle = 'مَوْسُوعَةُ الفَرْدَوْسِ • ٥٠٠٠ سُؤَالٍ وَجَوَابٍ مُنَظَّمَةٍ',
+    this.headerSubtitle = 'مقسمة على ١٠ أقسام رئيسية و٥٠ قسماً فرعياً حتى تجد ضالتك بسهولة ويسر',
   });
 
   @override
@@ -30,8 +30,10 @@ class IslamicQaExplorerWidget extends StatefulWidget {
 class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
   final TextEditingController _searchController = TextEditingController();
   IslamicQaCategory? _selectedCategory;
+  String? _selectedSection;
   bool _onlyBookmarked = false;
   String _query = '';
+  int _visibleLimit = 40;
   final Set<String> _expandedIds = {};
 
   static const List<String> _quickPrompts = [
@@ -66,7 +68,7 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
 
     final bool hasQuery = _query.trim().isNotEmpty;
     final IslamicQaSearchResult? searchResult = hasQuery
-        ? IslamicQaCatalog.answerAnyQuestion(_query, maxResults: 30)
+        ? IslamicQaCatalog.answerAnyQuestion(_query, maxResults: 80)
         : null;
 
     List<IslamicQaItem> visibleItems;
@@ -75,17 +77,21 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
       if (_selectedCategory != null) {
         visibleItems = visibleItems.where((q) => q.category == _selectedCategory).toList();
       }
+      if (_selectedSection != null) {
+        visibleItems = visibleItems.where((q) => q.sectionTitle == _selectedSection).toList();
+      }
       if (_onlyBookmarked) {
         visibleItems = visibleItems.where((q) => bookmarks.contains(q.id)).toList();
       }
     } else {
       visibleItems = _selectedCategory == null
           ? IslamicQaCatalog.allQuestions
-          : IslamicQaCatalog.byCategory(_selectedCategory!);
+          : IslamicQaCatalog.byCategoryAndSection(_selectedCategory!, _selectedSection);
       if (_onlyBookmarked) {
         visibleItems = visibleItems.where((q) => bookmarks.contains(q.id)).toList();
       }
     }
+    final List<IslamicQaItem> pagedItems = visibleItems.take(_visibleLimit).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -219,7 +225,7 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                 padding: const EdgeInsets.only(left: 6),
                 child: FilterChip(
                   label: Text(
-                    'الكل (٥٠٠)',
+                    'الكل (٥٠٠٠)',
                     style: TextStyle(
                       color: _selectedCategory == null && !_onlyBookmarked
                           ? palette.onAccentColor
@@ -234,7 +240,9 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                   side: BorderSide(color: palette.dividerColor),
                   onSelected: (_) => setState(() {
                     _selectedCategory = null;
+                    _selectedSection = null;
                     _onlyBookmarked = false;
+                    _visibleLimit = 40;
                   }),
                 ),
               ),
@@ -273,7 +281,7 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                       color: isSel ? Colors.white : catCol,
                     ),
                     label: Text(
-                      '${cat.arabicTitle} (٥٠)',
+                      '${cat.arabicTitle} (٥٠٠)',
                       style: TextStyle(
                         color: isSel ? Colors.white : palette.textPrimary,
                         fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
@@ -286,6 +294,8 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                     side: BorderSide(color: isSel ? catCol : palette.dividerColor),
                     onSelected: (_) => setState(() {
                       _selectedCategory = isSel ? null : cat;
+                      _selectedSection = null;
+                      _visibleLimit = 40;
                     }),
                   ),
                 );
@@ -293,6 +303,56 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
             ],
           ),
         ),
+
+        // 2.5 شريط الأقسام الفرعية المنظمة داخل القسم المختار (حتى لا يتوه المستخدم)
+        if (_selectedCategory != null) ...[
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 34,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 6),
+                  child: ChoiceChip(
+                    label: Text(
+                      'كل فروع ${_selectedCategory!.arabicTitle}',
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    selected: _selectedSection == null,
+                    selectedColor: _selectedCategory!.color.withOpacity(0.85),
+                    onSelected: (_) => setState(() {
+                      _selectedSection = null;
+                      _visibleLimit = 40;
+                    }),
+                  ),
+                ),
+                ...IslamicQaCatalog.sectionsForCategory(_selectedCategory!).map((sec) {
+                  final sel = _selectedSection == sec;
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 6),
+                    child: ChoiceChip(
+                      label: Text(
+                        sec,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: sel ? Colors.white : palette.textPrimary,
+                        ),
+                      ),
+                      selected: sel,
+                      selectedColor: _selectedCategory!.color,
+                      onSelected: (_) => setState(() {
+                        _selectedSection = sel ? null : sec;
+                        _visibleLimit = 40;
+                      }),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        ],
 
         const SizedBox(height: 10),
 
@@ -358,15 +418,20 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'الأسئلة المعروضة: ${visibleItems.length} من أصل ٥٠٠',
-                style: TextStyle(
-                  color: palette.textSecondary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11.5,
+              Expanded(
+                child: Text(
+                  'عرض ${pagedItems.length} من أصل ${visibleItems.length} سؤالاً (الموسوعة: ٥٠٠٠)',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: palette.textSecondary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11.5,
+                  ),
                 ),
               ),
-              if (_expandedIds.isNotEmpty)
+              if (_expandedIds.isNotEmpty) ...[
+                const SizedBox(width: 8),
                 GestureDetector(
                   onTap: () => setState(() => _expandedIds.clear()),
                   child: Text(
@@ -378,6 +443,7 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                     ),
                   ),
                 ),
+              ],
             ],
           ),
         ),
@@ -398,20 +464,20 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                 Text(
                   _onlyBookmarked
                       ? 'لم تحفظ أي سؤال في المفضلة بعد — اضغط أيقونة الحفظ على أي سؤال لإضافته.'
-                      : 'لم نجد تطابقاً حرفياً في التصنيف المحدد. جرّب «الكل (٥٠٠)» أو استخدم كلمات أبسط (مثل: صلاة، زكاة، جنة، توبة).',
+                      : 'لم نجد تطابقاً حرفياً في القسم المحدد. جرّب «الكل (٥٠٠٠)» أو استخدم كلمات أبسط (مثل: صلاة، زكاة، جنة، توبة).',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: palette.textSecondary, fontSize: 12.5, height: 1.4),
                 ),
               ],
             ),
           )
-        else
+        else ...[
           ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: visibleItems.length,
+            itemCount: pagedItems.length,
             itemBuilder: (_, idx) {
-              final item = visibleItems[idx];
+              final item = pagedItems[idx];
               final isExpanded = _expandedIds.contains(item.id) || (idx == 0 && hasQuery);
               final isSaved = bookmarks.contains(item.id);
               final catCol = item.category.color;
@@ -423,7 +489,8 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                   isDark: palette.isDark,
                   padding: EdgeInsets.zero,
                   borderRadius: 18,
-                  borderColor: isExpanded ? catCol.withOpacity(0.75) : palette.dividerColor,
+                  borderColor: Colors.transparent,
+                  borderWidth: 0,
                   imageOpacity: 0.44,
                   child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -450,7 +517,6 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                               decoration: BoxDecoration(
                                 color: catCol.withOpacity(0.16),
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: catCol.withOpacity(0.55)),
                               ),
                               child: Text(
                                 '${item.number}',
@@ -477,7 +543,7 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    item.category.arabicTitle,
+                                    '${item.category.arabicTitle} • ${item.sectionTitle}',
                                     style: TextStyle(
                                       color: catCol,
                                       fontWeight: FontWeight.w600,
@@ -631,6 +697,20 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
             );
             },
           ),
+          if (pagedItems.length < visibleItems.length)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Center(
+                child: ElevatedButton.icon(
+                  onPressed: () => setState(() => _visibleLimit += 40),
+                  icon: const Icon(Icons.expand_more_rounded),
+                  label: Text(
+                    'عرض ٤٠ سؤالاً إضافياً (متبقي ${visibleItems.length - pagedItems.length})',
+                  ),
+                ),
+              ),
+            ),
+        ],
       ],
     );
   }

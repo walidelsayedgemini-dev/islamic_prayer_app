@@ -21,7 +21,7 @@ const List<ArenaGameDefinition> kArenaGamesPart2 = [
     collectibleEmoji: '💧',
     obstacleEmoji: '🥀',
     memorySymbols: ['🌴', '💧', '🌸', '🕊️', '🏞️', '✨', '🍎', '🍇'],
-    customWords: ['بستان', 'ندى', 'نخيل', 'جداول', 'كوثر', 'صفاء'],
+    customWords: ['روضة', 'ندى', 'نخيل', 'جداول', 'كوثر', 'صفاء'],
     worlds: [
       GameWorldSpec(
         id: 'w_16_1',
@@ -63,7 +63,7 @@ const List<ArenaGameDefinition> kArenaGamesPart2 = [
     heroes: [
       GameHeroSpec(
         id: 'h_16_1',
-        name: 'أنس البستاني',
+        name: 'أنس المحبين',
         title: 'حارس الغِراس',
         passivePower: 'نطاق التقاط أوسع على حلقة الإيقاع',
         powerType: HeroPowerType.hintOrMagnet,
@@ -870,7 +870,7 @@ const List<ArenaGameDefinition> kArenaGamesPart2 = [
       name: 'شوك الفتور',
       title: 'مانع النماء',
       sabotagePower: 'يرمي أعواداً يابسة بين الشتلات الخضراء',
-      tauntPhrase: 'ستذبل همّتك قبل أن ينبت البستان!',
+      tauntPhrase: 'أسرع بالذكر قبل أن تسبقك القافلة!',
       emoji: '🪵',
       accentColor: Color(0xFFEF4444),
     ),
@@ -1303,7 +1303,7 @@ const List<ArenaGameDefinition> kArenaGamesPart2 = [
       ),
       GameWorldSpec(
         id: 'w_29_2',
-        name: 'بستان الحفاظ الصغار',
+        name: 'رياض الحفاظ الصغار',
         subtitle: 'أوراق خضراء وقناديل دافئة',
         skyTop: Color(0xFF064E3B),
         skyBottom: Color(0xFF059669),

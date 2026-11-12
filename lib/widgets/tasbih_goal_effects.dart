@@ -25,7 +25,7 @@ enum TasbihGoalEffectType {
   muskNebulaGlow, // 17. سحابة المسك الأرجوانية
   rubyMosaicConfetti, // 18. فسيفساء الياقوت والمرجان
   calligraphicFlourishArcs, // 19. خطوط القلم الذهبي المتألقة
-  supremeFirdawsFinale, // 20. احتفال الفردوس الأعلى الشامل
+  supremeFirdawsFinale, // 20. احتفال الفردوس الأعلى المبارك
 }
 
 class TasbihGoalEffectInfo {
@@ -224,7 +224,7 @@ class TasbihGoalEffectsCatalog {
     TasbihGoalEffectInfo(
       type: TasbihGoalEffectType.supremeFirdawsFinale,
       number: 20,
-      name: 'احتفال الفردوس الأعلى الشامل',
+      name: 'احتفال الفردوس الأعلى المبارك',
       subtitle: 'تتويج شامل يجمع الشهب والأهلة والنور والورد',
       icon: Icons.workspace_premium_rounded,
       primaryColor: Color(0xFFFFD700),

@@ -1,5 +1,5 @@
 name: islamic_prayer_app
-description: "تطبيق الفردوس الإسلامي الشامل: مواقيت الصلاة، القبلة الذكية، السبحة والتحديات، التقويم الهجري، والقرآن والأذكار."
+description: "تطبيق الفردوس: مواقيت الصلاة، القبلة الذكية، السبحة والتحديات، التقويم الهجري، والقرآن والأذكار."
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -43,6 +43,7 @@ dependencies:
 
   # رفع صورة الملف الشخصي من معرض الصور
   image_picker: ^1.2.4
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:
@@ -54,7 +55,7 @@ flutter:
   assets:
     - assets/images/
     - assets/images/themes/
-    - assets/images/characters/
+    - assets/images/marble/
     - assets/images/garden/
     - assets/images/games/
     - assets/data/

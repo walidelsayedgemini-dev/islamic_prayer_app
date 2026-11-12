@@ -9,9 +9,12 @@ import 'jannati_screen.dart';
 import 'help_me_screen.dart';
 import 'settings_screen.dart';
 import '../models/backgrounds_500_catalog.dart';
+import '../providers/hoor_companion_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/firdaws_resilient_image.dart';
+import '../widgets/firdaws_themed_icon.dart';
+import '../widgets/hoor_floating_guide_overlay.dart';
 
 class FirdawsNavBridge {
   static void Function(
@@ -107,9 +110,30 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     super.dispose();
   }
 
+  static const List<String> _routeKeys = [
+    'prayer_home',
+    'journey',
+    'qibla',
+    'calendar',
+    'tasbih',
+    'jannati',
+    'help_me',
+    'settings',
+  ];
+
+  void _syncHoorRoute(int index) {
+    if (!mounted) return;
+    try {
+      final routeKey = _routeKeys[index.clamp(0, _routeKeys.length - 1)];
+      Provider.of<HoorCompanionProvider>(context, listen: false)
+          .setActiveScreenRoute(routeKey);
+    } catch (_) {}
+  }
+
   void _onTabTapped(int index) {
     if (index == _currentIndex) return;
     setState(() => _currentIndex = index);
+    _syncHoorRoute(index);
     _pageController.animateToPage(
       index,
       duration: const Duration(milliseconds: 350),
@@ -121,8 +145,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
     final isNight = settings.isNightEffective;
-    final palette =
-        IslamicTheme.resolvePalette(settings.selectedTheme, isNight: isNight);
+    final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
+    final palette = themeOption.resolve(isNight: isNight);
     final accentColor = palette.accentColor;
 
     final journeyAccent =
@@ -141,6 +165,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         'المواقيت',
         accentColor,
         palette,
+        themeOption,
       ),
       _buildNavItem(
         1,
@@ -148,6 +173,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         'السجل والمهام',
         journeyAccent,
         palette,
+        themeOption,
       ),
       _buildNavItem(
         2,
@@ -155,6 +181,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         'القبلة',
         accentColor,
         palette,
+        themeOption,
       ),
       _buildNavItem(
         3,
@@ -162,6 +189,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         'التقويم',
         calAccent,
         palette,
+        themeOption,
       ),
       _buildNavItem(
         4,
@@ -169,6 +197,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         'السبحة',
         accentColor,
         palette,
+        themeOption,
       ),
       _buildNavItem(
         5,
@@ -176,6 +205,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         'جَنَّتِي',
         jannaAccent,
         palette,
+        themeOption,
       ),
       _buildNavItem(
         6,
@@ -183,6 +213,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         'سَاعِدْنِي',
         helpAccent,
         palette,
+        themeOption,
       ),
       _buildNavItem(
         7,
@@ -190,18 +221,25 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         'الإعدادات',
         accentColor,
         palette,
+        themeOption,
       ),
     ];
 
     return Scaffold(
       extendBody: true,
-      body: PageView(
-        controller: _pageController,
-        physics: const BouncingScrollPhysics(),
-        onPageChanged: (index) {
-          setState(() => _currentIndex = index);
-        },
-        children: _screens,
+      body: Stack(
+        children: [
+          PageView(
+            controller: _pageController,
+            physics: const BouncingScrollPhysics(),
+            onPageChanged: (index) {
+              setState(() => _currentIndex = index);
+              _syncHoorRoute(index);
+            },
+            children: _screens,
+          ),
+          HoorFloatingGuideOverlay(palette: palette),
+        ],
       ),
       bottomNavigationBar: Container(
         margin: const EdgeInsets.fromLTRB(8, 0, 8, 12),
@@ -297,6 +335,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     String label,
     Color activeColor,
     ThemePalette palette,
+    ThemeOption themeOption,
   ) {
     final isSelected = _currentIndex == index;
     final inactiveColor = palette.textMuted;
@@ -314,24 +353,24 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    activeColor.withOpacity(palette.isDark ? 0.28 : 0.20),
-                    activeColor.withOpacity(palette.isDark ? 0.12 : 0.08),
+                    activeColor.withOpacity(palette.isDark ? 0.24 : 0.16),
+                    activeColor.withOpacity(palette.isDark ? 0.08 : 0.04),
                   ],
                 )
               : null,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
-                ? activeColor.withOpacity(0.65)
+                ? activeColor.withOpacity(0.32)
                 : Colors.transparent,
-            width: 1.1,
+            width: 0.7,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: activeColor.withOpacity(0.28),
-                    offset: const Offset(0, 3),
-                    blurRadius: 8,
+                    color: activeColor.withOpacity(0.22),
+                    offset: const Offset(0, 2),
+                    blurRadius: 10,
                   ),
                 ]
               : const [],
@@ -342,11 +381,20 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             AnimatedScale(
               scale: isSelected ? 1.16 : 1.0,
               duration: const Duration(milliseconds: 200),
-              child: Icon(
-                icon,
-                color: isSelected ? activeColor : inactiveColor,
-                size: 19,
-              ),
+              child: isSelected
+                  ? FirdawsThemedIcon(
+                      icon: icon,
+                      themeOption: themeOption,
+                      palette: palette,
+                      size: 19,
+                      color: activeColor,
+                      showEnvironmentAura: true,
+                    )
+                  : Icon(
+                      icon,
+                      color: inactiveColor,
+                      size: 19,
+                    ),
             ),
             const SizedBox(height: 2),
             Text(

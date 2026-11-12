@@ -77,6 +77,21 @@ class _RealMosqueBackgroundState extends State<RealMosqueBackground>
     } catch (_) {}
 
     final key = widget.themeOption.key;
+    if (key == 'royal_emerald_marble') {
+      return widget.isNightMode
+          ? 'assets/images/marble/marble_emerald_dark.jpg'
+          : 'assets/images/marble/marble_pearl_gold_light.jpg';
+    }
+    if (key == 'pearl_blush_marble') {
+      return widget.isNightMode
+          ? 'assets/images/marble/marble_emerald_dark.jpg'
+          : 'assets/images/marble/marble_pearl_gold_light.jpg';
+    }
+    if (key == 'alabaster_veined_marble') {
+      return widget.isNightMode
+          ? 'assets/images/marble/marble_emerald_dark.jpg'
+          : 'assets/images/marble/marble_white_veined_light.jpg';
+    }
     if (key.isNotEmpty) {
       return 'assets/images/themes/$key.jpg';
     }

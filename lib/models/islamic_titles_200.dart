@@ -959,8 +959,8 @@ class IslamicTitlesCatalog {
     IslamicTitleEntry(
       number: 66,
       id: 'title_066',
-      titleMale: 'سيدُ بستان النخيل',
-      titleFemale: 'سيدةُ بستان النخيل',
+      titleMale: 'سيدُ روضة النخيل',
+      titleFemale: 'سيدةُ روضة النخيل',
       category: 'الذاكرين والذاكرات',
       tierName: 'رباني',
       badgeColor: Color(0xFFF59E0B),
@@ -1824,7 +1824,7 @@ class IslamicTitlesCatalog {
       icon: Icons.menu_book_rounded,
       missionType: TitleMissionType.quranSurahsRead,
       targetValue: 50,
-      missionDescription: 'إتمام قراءة 50 سورة في القارئ الشامل',
+      missionDescription: 'إتمام قراءة 50 سورة في القارئ المبارك',
     ),
     IslamicTitleEntry(
       number: 132,
@@ -2223,7 +2223,7 @@ class IslamicTitlesCatalog {
     IslamicTitleEntry(
       number: 162,
       id: 'title_162',
-      titleMale: 'بستانُ الستين عملاً',
+      titleMale: 'غِراسُ الستين عملاً',
       titleFemale: 'روضةُ الستين عملاً',
       category: 'فرسان المهام والطاعات',
       tierName: 'متقدّم',

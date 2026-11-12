@@ -1018,7 +1018,7 @@ const List<ArenaGameDefinition> kArenaGamesPart1 = [
       ),
       GameWorldSpec(
         id: 'w_11_3',
-        name: 'بستان العلم المغربي',
+        name: 'رياض العلم المغربي',
         subtitle: 'فسقية مياه وسط الورد',
         skyTop: Color(0xFF064E3B),
         skyBottom: Color(0xFF059669),
@@ -1086,7 +1086,7 @@ const List<ArenaGameDefinition> kArenaGamesPart1 = [
     collectibleEmoji: '🪷',
     obstacleEmoji: '🌀',
     memorySymbols: ['🪷', '🌊', '🌿', '🌳', '🕌', '💎', '🦋', '🕊️'],
-    customWords: ['بغداد', 'نواعير', 'حكمة', 'رياض', 'دجلة', 'بستان'],
+    customWords: ['بغداد', 'نواعير', 'حكمة', 'رياض', 'دجلة', 'واحة'],
     worlds: [
       GameWorldSpec(
         id: 'w_12_1',

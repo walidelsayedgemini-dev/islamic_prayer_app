@@ -25,7 +25,8 @@ class SettingsProvider extends ChangeNotifier {
   bool _jannatiAutoCycleScenery = false;
   int _selectedTasbihBackdropIndex = 0; // 0..29 (تتغير تلقائياً كل 100 تسبيحة عبر 30 صورة إسلامية)
   int _lastTasbihStageMilestone = 0;
-  String _selectedBirdsongTrackId = 'birds_paradise';
+  bool _ambientSparklesEnabled = true;
+  int _ambientShapePresetIndex = 0; // 0..499 (500 شكل طبيعي هادئ قابل للتخصيص)
   bool _gameSfxEnabled = true;
   String _adhanVoice = 'madinah';
   bool _isAutoLocation = true;
@@ -71,7 +72,8 @@ class SettingsProvider extends ChangeNotifier {
   int get selectedTasbihBackdropIndex => _selectedTasbihBackdropIndex;
   Background4KEntry get activeTasbihBackdrop =>
       Background500Catalog.forTasbihStage(_selectedTasbihBackdropIndex);
-  String get selectedBirdsongTrackId => _selectedBirdsongTrackId;
+  bool get ambientSparklesEnabled => _ambientSparklesEnabled;
+  int get ambientShapePresetIndex => _ambientShapePresetIndex;
   bool get gameSfxEnabled => _gameSfxEnabled;
   String get adhanVoice => _adhanVoice;
   bool get isAutoLocation => _isAutoLocation;
@@ -170,8 +172,10 @@ class SettingsProvider extends ChangeNotifier {
         (_prefs!.getInt('tasbih_backdrop_idx_30') ?? 0).clamp(0, 29);
     _lastTasbihStageMilestone =
         _prefs!.getInt('tasbih_backdrop_milestone') ?? 0;
-    _selectedBirdsongTrackId =
-        _prefs!.getString('birdsong_track_id') ?? 'birds_paradise';
+    _ambientSparklesEnabled =
+        _prefs!.getBool('ambient_sparkles_enabled') ?? true;
+    _ambientShapePresetIndex =
+        (_prefs!.getInt('ambient_shape_preset_idx') ?? 0).clamp(0, 499);
 
     _gameSfxEnabled = _prefs!.getBool('game_sfx_enabled') ?? true;
     ArenaSfxService.instance.setEnabled(_gameSfxEnabled);
@@ -284,9 +288,16 @@ class SettingsProvider extends ChangeNotifier {
     return false;
   }
 
-  void setSelectedBirdsongTrackId(String id) {
-    _selectedBirdsongTrackId = id;
-    _prefs?.setString('birdsong_track_id', id);
+  void setAmbientSparklesEnabled(bool enabled) {
+    _ambientSparklesEnabled = enabled;
+    _prefs?.setBool('ambient_sparkles_enabled', enabled);
+    notifyListeners();
+  }
+
+  void setAmbientShapePresetIndex(int index) {
+    final safe = ((index % 500) + 500) % 500;
+    _ambientShapePresetIndex = safe;
+    _prefs?.setInt('ambient_shape_preset_idx', safe);
     notifyListeners();
   }
 

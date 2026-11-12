@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -6,8 +7,10 @@ import '../models/hasanat_store_catalog.dart';
 import '../providers/hasanat_provider.dart';
 import 'firdaws_resilient_image.dart';
 
-/// عارض الصور الشخصية الواقعية لجميع أفراد العائلة والصحبة والمنافسين الافتراضيين.
-/// يربط كل معرف بالصور الفوتوغرافية الحقيقية (أو المرفوعة أو من الإنترنت) ويلفّها بإطار 3D مطابق للسكن المجهَّز من المتجر.
+/// عارض الشعارات الإسلامية والمعالم المعمارية النقية لأفراد العائلة والصحبة والمستخدم.
+/// - يعرض الصورة الشخصية المرفوعة من المعرض عند رفعها من قِبل المستخدم (`customBytes` أو `customPhotoBase64`).
+/// - وإلا يعرض معالم الفردوس المعمارية النقية أو شارة نجمة هندسية إسلامية فخمة (بدون صور بشر أو حيوانات)
+///   مع إطار 3D مطابق للسكن المجهَّز من المتجر.
 class FirdawsPortraitAvatar extends StatelessWidget {
   final String entityId;
   final String? displayName;
@@ -55,16 +58,15 @@ class FirdawsPortraitAvatar extends StatelessWidget {
     }
   }
 
-  static const List<String> _maleAssets = [
-    'assets/images/characters/friend_omar.jpg',
-    'assets/images/characters/friend_kareem.jpg',
-    'assets/images/characters/family_brother_seif.jpg',
-    'assets/images/characters/family_father.jpg',
-  ];
-
-  static const List<String> _femaleAssets = [
-    'assets/images/characters/family_sister_maryam.jpg',
-    'assets/images/characters/family_mother.jpg',
+  static const List<String> _pureSanctuaryAssets = [
+    'assets/images/themes/emerald_gold.jpg',
+    'assets/images/marble/marble_emerald_dark.jpg',
+    'assets/images/themes/celestial_rayyan.jpg',
+    'assets/images/themes/kawthar_fountain_pure.jpg',
+    'assets/images/themes/paradise_glade_firdaws.jpg',
+    'assets/images/themes/suleymaniye_istanbul.jpg',
+    'assets/images/themes/damascus_bronze.jpg',
+    'assets/images/themes/alhambra_granada.jpg',
   ];
 
   static String resolveAssetFor(
@@ -74,71 +76,12 @@ class FirdawsPortraitAvatar extends StatelessWidget {
   }) {
     final id = entityId.trim().toLowerCase();
     final name = (displayName ?? '').trim().toLowerCase();
-
-    if (id.contains('mother') ||
-        id.contains('mom') ||
-        id.contains('salma') ||
-        name.contains('الوالدة') ||
-        name.contains('الأم') ||
-        name.contains('أمي') ||
-        name.contains('ماما') ||
-        name.contains('سلمى')) {
-      return 'assets/images/characters/family_mother.jpg';
-    }
-    if (id.contains('father') ||
-        id.contains('dad') ||
-        id.contains('tariq') ||
-        name.contains('الوالد') ||
-        name.contains('الأب') ||
-        name.contains('أبي') ||
-        name.contains('بابا') ||
-        name.contains('طارق')) {
-      return 'assets/images/characters/family_father.jpg';
-    }
-    if (id.contains('sister') ||
-        id.contains('maryam') ||
-        id.contains('noor') ||
-        id.contains('qamar') ||
-        name.contains('أخت') ||
-        name.contains('الأخت') ||
-        name.contains('مريم') ||
-        name.contains('نور') ||
-        name.contains('قمر')) {
-      return 'assets/images/characters/family_sister_maryam.jpg';
-    }
-    if (id.contains('brother') ||
-        id.contains('seif') ||
-        id.contains('zaid') ||
-        name.contains('أخي') ||
-        name.contains('الأخ') ||
-        name.contains('سيف') ||
-        name.contains('زيد')) {
-      return 'assets/images/characters/family_brother_seif.jpg';
-    }
-    if (id.contains('omar') || id == 'p2' || name.contains('عمر')) {
-      return 'assets/images/characters/friend_omar.jpg';
-    }
-    if (id.contains('kareem') || id == 'you' || name.contains('كريم')) {
-      return 'assets/images/characters/friend_kareem.jpg';
-    }
-
-    final inferredFemale = isFemale ??
-        (name.contains('أخت') ||
-            name.contains('أم') ||
-            name.contains('فاطمة') ||
-            name.contains('خديجة') ||
-            name.contains('عائشة') ||
-            name.contains('زينب') ||
-            name.endsWith('ة'));
-
-    final hash = (id.isNotEmpty ? id : name).codeUnits.fold<int>(
-          0,
-          (acc, c) => (acc * 31 + c) & 0x7fffffff,
-        );
-    if (inferredFemale) {
-      return _femaleAssets[hash % _femaleAssets.length];
-    }
-    return _maleAssets[hash % _maleAssets.length];
+    final seedStr = id.isNotEmpty ? id : name;
+    final hash = seedStr.codeUnits.fold<int>(
+      0,
+      (acc, c) => (acc * 31 + c) & 0x7fffffff,
+    );
+    return _pureSanctuaryAssets[hash % _pureSanctuaryAssets.length];
   }
 
   List<Color> _frameColors(
@@ -156,8 +99,9 @@ class FirdawsPortraitAvatar extends StatelessWidget {
     switch (key) {
       case 'frame_laurel':
         return const [Color(0xFFFBBF24), Color(0xFFFDE047), Color(0xFFB45309)];
+      case 'frame_noor':
       case 'frame_cyber':
-        return const [Color(0xFF22D3EE), Color(0xFF3B82F6), Color(0xFF06B6D4)];
+        return const [Color(0xFF22D3EE), Color(0xFF38BDF8), Color(0xFF10B981)];
       case 'frame_royal':
         return const [Color(0xFFF43F5E), Color(0xFFF59E0B), Color(0xFFBE123C)];
       case 'frame_prism':
@@ -181,11 +125,26 @@ class FirdawsPortraitAvatar extends StatelessWidget {
     }
   }
 
+  String? _sanitizeNetworkUrl(String? raw) {
+    final u = raw?.trim();
+    if (u == null || u.isEmpty) return null;
+    final lower = u.toLowerCase();
+    // حماية تلقائية من أي روابط بشرية محفوظة في إصدار أقدم
+    if (lower.contains('randomuser') ||
+        lower.contains('tourists') ||
+        lower.contains('muslim_women') ||
+        lower.contains('women_in_veils')) {
+      return null;
+    }
+    return u;
+  }
+
   @override
   Widget build(BuildContext context) {
     String activeFrame = frameStyleKey ?? 'frame_default';
-    HasanatSkinItem? resolvedSkin =
-        frameStyleKey != null ? HasanatStoreCatalog.byStyleKey(frameStyleKey!) : null;
+    HasanatSkinItem? resolvedSkin = frameStyleKey != null
+        ? HasanatStoreCatalog.byStyleKey(frameStyleKey!)
+        : null;
     if (frameStyleKey == null) {
       try {
         final equipped =
@@ -202,9 +161,12 @@ class FirdawsPortraitAvatar extends StatelessWidget {
       displayName: displayName,
       isFemale: isFemale,
     );
-    final decodeW = (size * 2.5).round().clamp(96, 320);
     final resolvedBytes = customBytes ?? _resolveBase64(customPhotoBase64);
-    final netUrl = networkPhotoUrl?.trim();
+    final netUrl = _sanitizeNetworkUrl(networkPhotoUrl);
+    final seedHash = (entityId + (displayName ?? '')).codeUnits.fold<int>(
+          0,
+          (acc, c) => (acc * 37 + c) & 0x7fffffff,
+        );
 
     return SizedBox(
       width: size,
@@ -244,27 +206,46 @@ class FirdawsPortraitAvatar extends StatelessWidget {
                         width: size,
                         height: size,
                       )
-                    : (netUrl != null && netUrl.isNotEmpty)
-                        ? FirdawsResilientImage(
-                            networkUrl: netUrl,
-                            fallbackAsset: assetPath,
-                            fit: BoxFit.cover,
-                            width: size,
-                            height: size,
-                          )
-                        : Image.asset(
-                            assetPath,
-                            fit: BoxFit.cover,
-                            cacheWidth: decodeW,
-                            filterQuality: FilterQuality.medium,
-                            errorBuilder: (_, __, ___) => Center(
-                              child: Icon(
-                                Icons.person_rounded,
-                                color: colors.first,
-                                size: size * 0.5,
+                    : Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          if (netUrl != null)
+                            FirdawsResilientImage(
+                              networkUrl: netUrl,
+                              fallbackAsset: assetPath,
+                              fit: BoxFit.cover,
+                              width: size,
+                              height: size,
+                            )
+                          else
+                            Image.asset(
+                              assetPath,
+                              fit: BoxFit.cover,
+                              width: size,
+                              height: size,
+                              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                            ),
+                          DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: RadialGradient(
+                                colors: [
+                                  Colors.black.withOpacity(0.18),
+                                  const Color(0xFF05131E).withOpacity(0.58),
+                                ],
                               ),
                             ),
                           ),
+                          CustomPaint(
+                            painter: _IslamicCrestAvatarPainter(
+                              accent: colors.first,
+                              secondary: colors.length > 1
+                                  ? colors[1]
+                                  : const Color(0xFFFBBF24),
+                              seed: seedHash,
+                            ),
+                          ),
+                        ],
+                      ),
               ),
             ),
           ),
@@ -298,4 +279,72 @@ class FirdawsPortraitAvatar extends StatelessWidget {
       ),
     );
   }
+}
+
+class _IslamicCrestAvatarPainter extends CustomPainter {
+  final Color accent;
+  final Color secondary;
+  final int seed;
+
+  const _IslamicCrestAvatarPainter({
+    required this.accent,
+    required this.secondary,
+    required this.seed,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final r = math.min(size.width, size.height) * 0.34;
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = (size.width * 0.042).clamp(1.0, 2.5)
+      ..color = Color.lerp(secondary, Colors.white, 0.35)!.withOpacity(0.90);
+
+    // نجمة إسلامية ثمانية الأضلاع نقية داخل الميدالية
+    final points = (seed % 3 == 0) ? 10 : 8;
+    final rotOffset = (seed % 12) * 0.08;
+    for (int sq = 0; sq < 2; sq++) {
+      final path = Path();
+      final count = points ~/ 2;
+      for (int i = 0; i < count; i++) {
+        final angle = rotOffset +
+            (i * 2 * math.pi / count) +
+            (sq * math.pi / count);
+        final p = Offset(
+          center.dx + r * math.cos(angle),
+          center.dy + r * math.sin(angle),
+        );
+        if (i == 0) {
+          path.moveTo(p.dx, p.dy);
+        } else {
+          path.lineTo(p.dx, p.dy);
+        }
+      }
+      path.close();
+      canvas.drawPath(path, paint);
+    }
+
+    // هلال ونور مركزي ناعم
+    canvas.drawCircle(
+      center,
+      r * 0.36,
+      Paint()
+        ..color = accent.withOpacity(0.85)
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawCircle(
+      center,
+      r * 0.16,
+      Paint()
+        ..color = Colors.white.withOpacity(0.95)
+        ..style = PaintingStyle.fill,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _IslamicCrestAvatarPainter oldDelegate) =>
+      oldDelegate.accent != accent ||
+      oldDelegate.secondary != secondary ||
+      oldDelegate.seed != seed;
 }

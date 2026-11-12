@@ -251,11 +251,11 @@ class Firdaws4KCardShell extends StatelessWidget {
     required this.child,
     required this.isDark,
     this.borderColor,
-    this.borderRadius = 20,
-    this.borderWidth = 1.3,
+    this.borderRadius = 22,
+    this.borderWidth = 0.0,
     this.padding = const EdgeInsets.all(14),
     this.margin,
-    this.imageOpacity = 0.56,
+    this.imageOpacity = 0.52,
     this.onTap,
   });
 
@@ -263,25 +263,30 @@ class Firdaws4KCardShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(borderRadius);
     final overlayStart = isDark
-        ? const Color(0xFF040B14).withOpacity(0.84)
-        : Colors.white.withOpacity(0.86);
+        ? const Color(0xFF040B14).withOpacity(0.76)
+        : Colors.white.withOpacity(0.82);
     final overlayEnd = isDark
-        ? const Color(0xFF06131E).withOpacity(0.70)
-        : const Color(0xFFF4F9F6).withOpacity(0.76);
+        ? const Color(0xFF06131E).withOpacity(0.62)
+        : const Color(0xFFF4F9F6).withOpacity(0.70);
+    final showSoftBorder = borderWidth > 0 && borderColor != Colors.transparent;
 
     final box = Container(
       margin: margin,
       decoration: BoxDecoration(
         borderRadius: radius,
-        border: Border.all(
-          color: borderColor ??
-              (isDark ? Colors.white.withOpacity(0.18) : Colors.black.withOpacity(0.10)),
-          width: borderWidth,
-        ),
+        border: showSoftBorder
+            ? Border.all(
+                color: (borderColor ??
+                        (isDark ? Colors.white : Colors.black))
+                    .withOpacity(isDark ? 0.16 : 0.09),
+                width: borderWidth.clamp(0.4, 1.0),
+              )
+            : null,
         boxShadow: [
           BoxShadow(
-            color: (borderColor ?? Colors.black).withOpacity(isDark ? 0.25 : 0.10),
-            blurRadius: 16,
+            color: (borderColor ?? Colors.black).withOpacity(isDark ? 0.22 : 0.08),
+            blurRadius: 20,
+            spreadRadius: 1,
             offset: const Offset(0, 6),
           ),
         ],

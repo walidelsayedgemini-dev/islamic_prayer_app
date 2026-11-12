@@ -42,7 +42,7 @@ class JannahDeed {
       hadith: '«مَنْ قَالَ: سُبْحَانَ اللَّهِ الْعَظِيمِ وَبِحَمْدِهِ، غُرِسَتْ لَهُ نَخْلَةٌ فِي الْجَنَّةِ»',
       reference: 'صحيح الترمذي (نخلة جذوعها من ذهب وثمارها أحلى من العسل)',
       targetPerUnit: 1,
-      rewardName: 'نخلة ذهبية في بستانك',
+      rewardName: 'نخلة ذهبية في جنتك',
       icon: Icons.forest_rounded,
       primaryColor: Color(0xFF10B981),
       secondaryColor: Color(0xFFFBBF24),

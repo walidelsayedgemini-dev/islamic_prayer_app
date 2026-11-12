@@ -9,6 +9,17 @@ enum ThemeCategory {
   jannahNature, // رياض الجنة والطبيعة
 }
 
+/// الطابع البيئي العام للثيم (يُكيّف الأيقونات والفواصل والجسيمات تلقائياً)
+enum ThemeEnvironmentKind {
+  snow,
+  water,
+  marble,
+  kaaba,
+  desert,
+  space,
+  paradise,
+}
+
 extension ThemeCategoryExtension on ThemeCategory {
   String get label {
     switch (this) {
@@ -185,6 +196,51 @@ class ThemeOption {
 
   ThemePalette resolve({required bool isNight}) => isNight ? nightPalette : dayPalette;
 
+  ThemeEnvironmentKind get environmentKind {
+    switch (key) {
+      case 'snow_hermon_dawn':
+        return ThemeEnvironmentKind.snow;
+      case 'firdaws_waterfall':
+      case 'kawthar_silver':
+      case 'salsabil_spring':
+      case 'zamzam_spring':
+      case 'arabian_pearl':
+      case 'hassan_casablanca':
+        return ThemeEnvironmentKind.water;
+      case 'royal_emerald_marble':
+      case 'pearl_blush_marble':
+      case 'alabaster_veined_marble':
+      case 'andalusian':
+      case 'sheikh_zayed_abudhabi':
+      case 'suleymaniye_istanbul':
+        return ThemeEnvironmentKind.marble;
+      case 'kaaba_black_gold':
+      case 'makkah_rose':
+      case 'hira_light':
+      case 'arafat_mercy':
+      case 'mina_tents':
+        return ThemeEnvironmentKind.kaaba;
+      case 'madinah_sands':
+      case 'asr_gold':
+      case 'qairawan_tunis':
+      case 'uhud_dawn':
+      case 'ibn_tulun_cairo':
+      case 'koutoubia_marrakech':
+        return ThemeEnvironmentKind.desert;
+      case 'desert_night':
+      case 'isha_indigo':
+      case 'laylat_qadr':
+      case 'qiyam_aurora':
+      case 'fajr_sapphire':
+      case 'ramadan_hilal':
+      case 'musk_obsidian':
+      case 'samarkand_registan':
+        return ThemeEnvironmentKind.space;
+      default:
+        return ThemeEnvironmentKind.paradise;
+    }
+  }
+
   String get primaryEmoji => ThemeEmojiRegistry.primaryFor(key);
   List<String> get signatureEmojis => ThemeEmojiRegistry.packFor(key);
   String get emojiStrip => signatureEmojis.take(5).join(' ');
@@ -245,6 +301,10 @@ class ThemeEmojiRegistry {
     'olive_palestine': ['🫒', '🌿', '💚', '🕊️', '✨', '🌳', '🏛️', '☀️'],
     'yemen_aqeeq': ['💎', '❤️', '🏛️', '☀️', '✨', '🌹', '🪵', '🏜️'],
     'andalus_orange_blossom': ['🍊', '🌸', '🌳', '💧', '✨', '☀️', '🕌', '💚'],
+    'royal_emerald_marble': ['💚', '🪨', '✨', '👑', '🕌', '🌟', '💎', '🤲'],
+    'pearl_blush_marble': ['🤍', '🌸', '✨', '🪨', '👑', '🌷', '🕌', '💛'],
+    'alabaster_veined_marble': ['🕊️', '🏛️', '✨', '🤍', '🪨', '💎', '🕌', '🌿'],
+    'snow_hermon_dawn': ['❄️', '🏔️', '🤍', '✨', '🕌', '💎', '🩵', '🌟'],
   };
 
   static List<String> packFor(String key) {

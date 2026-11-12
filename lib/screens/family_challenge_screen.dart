@@ -500,7 +500,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                             SnackBar(
                               backgroundColor: firdaws3DSurfaceColor(palette),
                               content: Text(
-                                'تمت إضافة ٣٣ تسبيحة لرصيدك وبستان جنتي 3D 🌳✨',
+                                'تمت إضافة ٣٣ تسبيحة لرصيدك ولرفيقك في جنتي ✨',
                                 style: TextStyle(color: palette.textPrimary),
                               ),
                             ),
@@ -1700,7 +1700,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                                     ),
                                   ),
                                   Text(
-                                    'تحكم كامل في الاسم، الصورة الحقيقية، العمر، الصفات، والأهداف',
+                                    'تحكم كامل في الاسم، الشارة أو الصورة، العمر، الصفات، والأهداف',
                                     style: TextStyle(
                                       color: palette.textSecondary,
                                       fontSize: 11,
@@ -1763,7 +1763,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          'أو اختر صورة جاهزة من ٥٠ صورة حقيقية عالية الدقة:',
+                          'أو اختر من ٥٠ معلم وشعار إسلامي نقي 4K:',
                           style: TextStyle(
                             color: palette.textSecondary,
                             fontSize: 11.5,

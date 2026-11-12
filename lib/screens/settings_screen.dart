@@ -8,6 +8,7 @@ import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/firdaws_native_service.dart';
 import '../services/location_service.dart';
+import '../services/suggestions_service.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/audio_download_manager_sheet.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
@@ -43,6 +44,162 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) {
       setState(() => _adhanDiag = diag);
     }
+  }
+
+  void _showAmbient500ShapesSheet(
+    BuildContext context,
+    SettingsProvider settings,
+    ThemePalette palette,
+  ) {
+    final accent = palette.accentColor;
+    AmbientNonLivingShapeKind? filterKind;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          final allItems = List<AmbientShapeConfig>.generate(
+            AmbientShapeCatalog.totalShapes,
+            AmbientShapeCatalog.configAt,
+          );
+          final items = filterKind == null
+              ? allItems
+              : allItems.where((e) => e.kind == filterKind).toList();
+          return DraggableScrollableSheet(
+            initialChildSize: 0.80,
+            minChildSize: 0.48,
+            maxChildSize: 0.94,
+            builder: (_, sc) => Container(
+              decoration: BoxDecoration(
+                color: palette.scaffoldColor,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 10),
+                  Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: palette.dividerColor,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    child: Row(
+                      children: [
+                        Icon(Icons.eco_rounded, color: accent),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '٥٠٠ شكل طبيعي طائر (نباتات وندى وثلج وزخارف)',
+                            style: TextStyle(
+                              color: accent,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.close_rounded, color: palette.textMuted),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    height: 36,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(left: 6),
+                          child: ChoiceChip(
+                            label: Text(
+                              'الكل (٥٠٠)',
+                              style: TextStyle(
+                                color: filterKind == null
+                                    ? palette.onAccentColor
+                                    : palette.textPrimary,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            selected: filterKind == null,
+                            selectedColor: accent,
+                            backgroundColor: palette.cardColor,
+                            onSelected: (_) =>
+                                setModalState(() => filterKind = null),
+                          ),
+                        ),
+                        ...AmbientNonLivingShapeKind.values.map((k) {
+                          final sel = filterKind == k;
+                          return Padding(
+                            padding: const EdgeInsets.only(left: 6),
+                            child: ChoiceChip(
+                              label: Text(
+                                k.arabicCategory,
+                                style: TextStyle(
+                                  color: sel
+                                      ? palette.onAccentColor
+                                      : palette.textPrimary,
+                                  fontSize: 11,
+                                ),
+                              ),
+                              selected: sel,
+                              selectedColor: accent,
+                              backgroundColor: palette.cardColor,
+                              onSelected: (_) => setModalState(
+                                () => filterKind = sel ? null : k,
+                              ),
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: ListView.builder(
+                      controller: sc,
+                      padding: const EdgeInsets.fromLTRB(14, 4, 14, 24),
+                      itemCount: items.length,
+                      itemBuilder: (_, idx) {
+                        final item = items[idx];
+                        final sel = settings.ambientShapePresetIndex == item.index;
+                        return ListTile(
+                          dense: true,
+                          leading: Icon(
+                            sel ? Icons.check_circle_rounded : Icons.blur_on_rounded,
+                            color: sel ? accent : palette.textSecondary,
+                          ),
+                          title: Text(
+                            item.title,
+                            style: TextStyle(
+                              color: sel ? accent : palette.textPrimary,
+                              fontWeight: sel ? FontWeight.bold : FontWeight.w500,
+                              fontSize: 12.5,
+                            ),
+                          ),
+                          onTap: () {
+                            settings.setAmbientShapePresetIndex(item.index);
+                            Navigator.pop(ctx);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   void _showCitySearchSheet(
@@ -745,7 +902,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  "${themeOption.primaryEmoji} تطبيق الفردوس الإسلامي الشامل",
+                                  "${themeOption.primaryEmoji} تطبيق الفردوس الأعلى",
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -912,6 +1069,69 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: const Text(
                     'اختيار 4K',
                     style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              Divider(color: palette.dividerColor.withOpacity(0.55)),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  "اللمعان والنجوم العائمة ✨",
+                  style: TextStyle(
+                    color: palette.textPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13.5,
+                  ),
+                ),
+                subtitle: Text(
+                  "إظهار أو إيقاف النجوم والومضات التفاعلية في الخلفية",
+                  style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
+                ),
+                value: settings.ambientSparklesEnabled,
+                activeTrackColor: accentColor,
+                onChanged: (v) => settings.setAmbientSparklesEnabled(v),
+              ),
+              Divider(color: palette.dividerColor.withOpacity(0.55)),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CircleAvatar(
+                  backgroundColor: accentColor.withOpacity(0.16),
+                  child: Icon(Icons.eco_rounded, color: accentColor),
+                ),
+                title: Text(
+                  "شكل العناصر الطافية (٥٠٠ شكل طبيعي) 🌿",
+                  style: TextStyle(
+                    color: palette.textPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13.5,
+                  ),
+                ),
+                subtitle: Text(
+                  settings.ambientShapePresetIndex == 0
+                      ? "تلقائي حسب الثيم — اضغط للاختيار بين ٥٠٠ شكل طبيعي نقي"
+                      : AmbientShapeCatalog.configAt(
+                              settings.ambientShapePresetIndex)
+                          .title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
+                ),
+                trailing: ElevatedButton(
+                  onPressed: () =>
+                      _showAmbient500ShapesSheet(context, settings, palette),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: accentColor,
+                    foregroundColor: palette.onAccentColor,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    '٥٠٠ شكل',
+                    style:
+                        TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -1700,6 +1920,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const AboutMeScreen()),
                 ),
+              ),
+              Divider(color: palette.dividerColor.withOpacity(0.55)),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CircleAvatar(
+                  backgroundColor: accentColor.withOpacity(0.18),
+                  child: Icon(Icons.mark_email_unread_rounded, color: accentColor),
+                ),
+                title: Text(
+                  "صندوق الاقتراحات 💌",
+                  style: TextStyle(
+                    color: palette.textPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+                subtitle: Text(
+                  "أرسل اقتراحاً أو ملاحظة لفريق التطوير بسرية تامة",
+                  style: TextStyle(color: palette.textSecondary, fontSize: 11),
+                ),
+                trailing: Icon(Icons.chevron_left_rounded, color: accentColor),
+                onTap: () => SuggestionsService.showComposerSheet(context, palette),
               ),
             ], sectionIndex: 9),
 

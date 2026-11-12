@@ -1,41 +1,38 @@
-import 'dart:async';
 import 'package:adhan/adhan.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/backgrounds_500_catalog.dart';
 import '../models/events_missions_catalog.dart';
 import '../models/hasanat_store_catalog.dart';
-import '../models/islamic_audio_data.dart';
 import '../models/islamic_qa_500.dart';
 import '../models/jannati_encyclopedia_data.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/hasanat_provider.dart';
+import '../providers/hoor_companion_provider.dart';
 import '../providers/jannati_provider.dart';
-import '../providers/family_challenge_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/firdaws_brand_logo.dart';
 import '../widgets/firdaws_resilient_image.dart';
+import '../widgets/hoor_companion_widget.dart';
 import '../widgets/islamic_qa_explorer_widget.dart';
 import 'events_missions_screen.dart';
 import 'hasanat_store_screen.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/jannati_atlas_and_covenant_views.dart';
-import '../widgets/jannati_garden_canvas.dart';
 import '../widgets/real_mosque_background.dart';
 import '../widgets/sacred_reference_widgets.dart';
 import '../widgets/firdaws_3d_ui.dart';
 import '../widgets/wallpaper_70_picker_sheet.dart';
 
-/// واحة الفردوس الأعلى التفاعلية الشاملة («جنتي» + ٥٠٠ سؤال وجواب):
+/// واحة الفردوس الأعلى التفاعلية («جنتي» مع رفيق حُور + ٥٠٠٠ سؤال وجواب):
 /// 5 تبويبات متكاملة:
-/// 0. بستاني التفاعلي: مشهد الفردوس الحي + خزينة الباقيات الـ ١٤ + البناء السريع + سجل الأعمال + أدعية الفردوس
+/// 0. رفيقي في جنتي: حُور (أو رفيق مخصص) + الفضفضة + خزينة الباقيات الـ ١٤ + البناء السريع + سجل الأعمال
 /// 1. مهندس الجنة اليومي: جدول الـ ١٦ ورداً يومياً + الـ ١٤ استثماراً نبوياً ببناء متدرج
 /// 2. أطلس الجنة الموسوعي: الأبواب الـ ٨ + الدرجات الـ ١٢ + الأنهار الـ ٨ + النعيم الـ ١٨ + رفقة النبي ﷺ
 /// 3. صك أمنياتي والاختبار: ميثاق الأمنيات الشخصي + سلم الـ ١٢ مقاماً + اختبار ٢٥ سؤالاً
-/// 4. اسألني (٥٠٠ س&ج): موسوعة ٥٠٠ سؤال وجواب بالبحث الفوري بالعامية والفصحى
+/// 4. اسألني (٥٠٠٠ س&ج): موسوعة ٥٠٠٠ سؤال وجواب مقسمة ومنظمة بالبحث الفوري بالعامية والفصحى
 class JannatiScreen extends StatefulWidget {
   final ValueNotifier<int?>? tabRequestNotifier;
 
@@ -53,17 +50,13 @@ class _JannatiScreenState extends State<JannatiScreen>
   int _activeTab = 0;
   bool _showAll14TreasuryMetrics = false;
   String _deedCategoryFilter = 'all'; // all, dhikr, salah, sunnah, sadaqah
-  AudioPlayer? _birdPlayer;
-  bool _birdPlaying = false;
-  bool _birdLoading = false;
-  double _birdVolume = 0.72;
 
   static const List<({String label, IconData icon})> _tabSpecs = [
-    (label: 'بُستاني التفاعلي', icon: Icons.park_rounded),
+    (label: 'حُور وجنّتي', icon: Icons.auto_awesome_rounded),
     (label: 'مُهندس الجنة', icon: Icons.architecture_rounded),
     (label: 'أطلس الجنة', icon: Icons.menu_book_rounded),
     (label: 'ميثاقي والاختبار', icon: Icons.auto_stories_rounded),
-    (label: '٥٠٠ سؤال وجواب', icon: Icons.question_answer_rounded),
+    (label: '٥٠٠٠ سؤال وجواب', icon: Icons.question_answer_rounded),
   ];
 
   static const List<({String title, String arabicText, String source, String reflection})>
@@ -144,67 +137,10 @@ class _JannatiScreenState extends State<JannatiScreen>
   @override
   void dispose() {
     widget.tabRequestNotifier?.removeListener(_consumeTabRequest);
-    unawaited(_birdPlayer?.stop() ?? Future.value());
-    unawaited(_birdPlayer?.dispose() ?? Future.value());
     super.dispose();
   }
 
-  Future<void> _playBirdsongTrack(ParadiseBirdsongItem track) async {
-    if (!mounted) return;
-    setState(() => _birdLoading = true);
-    try {
-      _birdPlayer ??= AudioPlayer();
-      await _birdPlayer!.stop();
-      await _birdPlayer!.setReleaseMode(ReleaseMode.loop);
-      await _birdPlayer!.setVolume(_birdVolume);
-
-      bool started = false;
-      if (track.streamUrl != null && track.streamUrl!.trim().isNotEmpty) {
-        try {
-          await _birdPlayer!
-              .play(UrlSource(track.streamUrl!.trim()))
-              .timeout(const Duration(seconds: 6));
-          started = true;
-        } catch (_) {
-          started = false;
-        }
-      }
-      if (!started) {
-        await _birdPlayer!.play(AssetSource(track.localAsset));
-      }
-      if (mounted) {
-        setState(() {
-          _birdPlaying = true;
-          _birdLoading = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _birdPlaying = false;
-          _birdLoading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _toggleBirdsong(SettingsProvider settings) async {
-    HapticFeedback.selectionClick();
-    if (_birdPlaying) {
-      try {
-        await _birdPlayer?.pause();
-      } catch (_) {}
-      if (mounted) setState(() => _birdPlaying = false);
-      return;
-    }
-    final track =
-        IslamicAudioLibrary.getBirdsongById(settings.selectedBirdsongTrackId);
-    await _playBirdsongTrack(track);
-  }
-
-  void _triggerPulse() {
-    // تمت إزالة تحريك شريط الإحصاءات للحفاظ على ثبات الواجهة عند التسبيح والاستغفار.
-  }
+  void _triggerPulse() {}
 
   Future<void> _handleInvestmentTap(
     JannahInvestment inv,
@@ -214,6 +150,15 @@ class _JannatiScreenState extends State<JannatiScreen>
     final userProv = Provider.of<FirdawsUserProvider>(context, listen: false);
     final outcome = await jannati.performInvestmentTap(inv.id);
     if (!mounted) return;
+
+    try {
+      Provider.of<HoorCompanionProvider>(context, listen: false)
+          .onJannahDeedPerformed(
+        deedTitle: inv.shortLabel,
+        userName: userProv.displayName,
+        isFemale: userProv.isFemale,
+      );
+    } catch (_) {}
 
     try {
       final hasanat = Provider.of<HasanatProvider>(context, listen: false);
@@ -596,278 +541,6 @@ class _JannatiScreenState extends State<JannatiScreen>
     );
   }
 
-  void _openCanvasFocusSheet({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required List<String> investmentIds,
-    required JannatiProvider jannati,
-    required ThemePalette palette,
-  }) {
-    final focused = JannatiCatalog.investments
-        .where((i) => investmentIds.contains(i.id))
-        .toList();
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (sheetCtx) {
-        return Container(
-          padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
-          decoration: BoxDecoration(
-            color: palette.scaffoldColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border.all(color: palette.accentColor.withOpacity(0.55), width: 1.5),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 46,
-                  height: 4.5,
-                  decoration: BoxDecoration(
-                    color: palette.dividerColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: palette.accentColor.withOpacity(0.18),
-                    child: Icon(icon, color: palette.accentColor),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: TextStyle(
-                            color: palette.accentColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15.5,
-                          ),
-                        ),
-                        Text(
-                          subtitle,
-                          style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              ...focused.map((inv) {
-                final c = inv.colorFor(palette.isDark);
-                final cnt = jannati.countFor(inv.id);
-                return Firdaws4KCardShell(
-                  backdrop: Background500Catalog.forExtraSection(
-                    56 + (inv.id.hashCode.abs() % 18),
-                  ),
-                  isDark: palette.isDark,
-                  borderColor: c.withOpacity(0.45),
-                  borderRadius: 16,
-                  borderWidth: 1.0,
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.all(12),
-                  imageOpacity: 0.34,
-                  child: Row(
-                    children: [
-                      Icon(inv.icon, color: c, size: 22),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              inv.title,
-                              style: TextStyle(
-                                color: palette.textPrimary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                              ),
-                            ),
-                            Text(
-                              '${inv.dhikrOrAction} • الرصيد: $cnt ${inv.unitPlural}',
-                              style: TextStyle(color: palette.textSecondary, fontSize: 11),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(sheetCtx);
-                          _handleInvestmentTap(inv, palette);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: c,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          inv.cycleTarget > 1
-                              ? '+١ (${jannati.cycleProgressFor(inv.id)}/${inv.cycleTarget})'
-                              : '+١',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _openRiversExperienceSheet(ThemePalette palette) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.78,
-          minChildSize: 0.45,
-          maxChildSize: 0.94,
-          builder: (_, sc) {
-            return Container(
-              decoration: BoxDecoration(
-                color: palette.scaffoldColor,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-                border: Border.all(color: palette.accentColor.withOpacity(0.55), width: 1.5),
-              ),
-              child: ListView(
-                controller: sc,
-                padding: const EdgeInsets.all(20),
-                children: [
-                  Center(
-                    child: Container(
-                      width: 46,
-                      height: 4.5,
-                      decoration: BoxDecoration(
-                        color: palette.dividerColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    'أَنْهَارُ الْجَنَّةِ الْأَرْبَعَةُ وَعُيُونُهَا الْمُتَفَجِّرَةُ 🌊',
-                    style: TextStyle(
-                      color: palette.accentColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'تجري في الفردوس بغير أخدود، وأولها نهر الكوثر الذي أُعطيه نبيّنا ﷺ.',
-                    style: TextStyle(color: palette.textSecondary, fontSize: 12),
-                  ),
-                  const SizedBox(height: 14),
-                  ...JannatiCatalog.riversAndSprings.map((river) {
-                    return Firdaws4KCardShell(
-                      backdrop: Background500Catalog.forExtraSection(
-                        1 + (river.name.hashCode.abs() % 30),
-                      ),
-                      isDark: palette.isDark,
-                      borderColor: river.riverColor.withOpacity(0.5),
-                      borderRadius: 16,
-                      borderWidth: 1.1,
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.all(14),
-                      imageOpacity: 0.36,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(river.icon, color: river.riverColor, size: 20),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  river.name,
-                                  style: TextStyle(
-                                    color: river.riverColor,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14.5,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 5),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 9, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: river.riverColor.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: river.riverColor.withOpacity(0.32),
-                              ),
-                            ),
-                            child: Text(
-                              '📍 ${river.sourcePlace}',
-                              style: TextStyle(
-                                color: palette.textSecondary,
-                                fontSize: 10.8,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            '${river.tasteAndLook} • الأواني: ${river.vesselsAndCups}',
-                            style: TextStyle(
-                              color: palette.textPrimary,
-                              fontSize: 12,
-                              height: 1.45,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '📜 الدليل: ${river.quranOrHadith}',
-                            style: TextStyle(
-                              color: palette.textSecondary,
-                              fontSize: 10.5,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          SacredEvidenceFooter(
-                            evidenceText: river.quranOrHadith,
-                            titleForHadith: river.name,
-                            trackInJannati: true,
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
   Widget _sheetInfoBox({
     required String title,
     required String body,
@@ -1029,7 +702,7 @@ class _JannatiScreenState extends State<JannatiScreen>
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              '${rank.arabicTitle} • ازدهار البستان $vibrancyPct% • ${themeOption.name} ${themeOption.emojiStrip}',
+                              '${rank.arabicTitle} • نماء الفردوس $vibrancyPct% • ${themeOption.name} ${themeOption.emojiStrip}',
                               style: TextStyle(
                                 color: palette.textSecondary,
                                 fontSize: 10.5,
@@ -1149,12 +822,22 @@ class _JannatiScreenState extends State<JannatiScreen>
                     ),
                   ),
                   Expanded(
-                    child: _staticMiniStat(
-                      '📖',
-                      '${jannati.hadithsReadCount}',
-                      'حديث',
-                      const Color(0xFF2DD4BF),
-                      palette,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 360),
+                      transitionBuilder: (child, anim) => ScaleTransition(
+                        scale: Tween<double>(begin: 0.86, end: 1.0).animate(anim),
+                        child: child,
+                      ),
+                      child: KeyedSubtree(
+                        key: ValueKey<int>(jannati.hadithsReadCount),
+                        child: _staticMiniStat(
+                          '📖',
+                          '${jannati.hadithsReadCount}',
+                          'حديث',
+                          const Color(0xFF2DD4BF),
+                          palette,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -1310,9 +993,9 @@ class _JannatiScreenState extends State<JannatiScreen>
         return IslamicQaExplorerWidget(
           palette: palette,
           initialCategory: IslamicQaCategory.jannah,
-          headerTitle: 'مَوْسُوعَةُ الفَرْدَوْسِ • ٥٠٠ سُؤَالٍ وَجَوَابٍ',
+          headerTitle: 'مَوْسُوعَةُ الفَرْدَوْسِ • ٥٠٠٠ سُؤَالٍ وَجَوَابٍ مُنَظَّمَةٍ',
           headerSubtitle:
-              'تصفح أسئلة الجنة أو اضغط «الكل (٥٠٠)» واسأل أي سؤال بالعامية أو الفصحى فوراً!',
+              'تصفح ٥٠ قسماً فرعياً منظماً أو اضغط «الكل (٥٠٠٠)» واسأل أي سؤال بالعامية أو الفصحى!',
         );
     }
   }
@@ -1359,69 +1042,11 @@ class _JannatiScreenState extends State<JannatiScreen>
       padding: const EdgeInsets.fromLTRB(14, 2, 14, 105),
       physics: const BouncingScrollPhysics(),
       children: [
-        // 1. لوحة الجنة البصرية الحية 3D (القصور، النخيل، بستان التسبيح، الأنهار الأربعة)
-        JannatiGardenCanvas(
+        // 1. الشخصية التفاعلية الفرفوشة «حُور» (أو رفيق الفردوس) بخلفيات ١٠٠٠ وسكنات ١٠٠٠ وخانة الفضفضة
+        HoorCompanionWidget(
           palette: palette,
-          palmsCount: jannati.palmsCount,
-          palacesCount: jannati.palacesCount,
-          housesCount: jannati.housesCount,
-          treasuresCount: jannati.treasuresCount,
-          grovesCount: jannati.grovesCount,
-          vibrancy: jannati.gardenVibrancy,
-          tasbihOrchardTrees: jannati.tasbihOrchardTrees,
-          lastTasbihTreeName: jannati.lastTasbihTreeName,
-          orchardStageTitle: jannati.orchardStageTitle,
-          onQuickTasbih: () {
-            jannati.recordTasbihForGarden('سُبْحَانَ اللَّهِ وَبِحَمْدِهِ', count: 1);
-            try {
-              Provider.of<FamilyChallengeProvider>(context, listen: false)
-                  .recordUserTasbih(1);
-            } catch (_) {}
-            try {
-              final hasanat = Provider.of<HasanatProvider>(context, listen: false);
-              hasanat.earnHasanat(2, reason: 'غرس شجرة تسبيح في جنتي 🌴', sourceTag: 'جنتي');
-              hasanat.recordMetric(EventMissionMetric.tasbihCount, delta: 1);
-              hasanat.recordMetric(EventMissionMetric.jannahDeedsCount, delta: 1);
-            } catch (_) {}
-            _triggerPulse();
-          },
-          onOpenSceneryGallery: () => _showJannati100ScenerySheet(context, palette),
-          onTapPalaces: () => _openCanvasFocusSheet(
-            title: 'قُصُورُكَ وَبُيُوتُكَ فِي الفِرْدَوْس 🏰',
-            subtitle: 'اختر سبباً نبوياً لتشييد قصر أو بيت الآن',
-            icon: Icons.castle_rounded,
-            investmentIds: const [
-              'ikhlas_palaces',
-              'rawatib_houses',
-              'mosque_shares',
-              'ethics_palaces',
-              'duha_homes',
-            ],
-            jannati: jannati,
-            palette: palette,
-          ),
-          onTapPalms: () => _openCanvasFocusSheet(
-            title: 'نَخِيلُكَ الذَّهَبِيُّ وَرِيَاضُ الخَلِيل 🌴',
-            subtitle: 'اغرس نخلة أو روضة أو شجرة طوبى بذكر الله',
-            icon: Icons.forest_rounded,
-            investmentIds: const ['palms', 'ibrahim_groves', 'tuba_groves'],
-            jannati: jannati,
-            palette: palette,
-          ),
-          onTapRivers: () => _openRiversExperienceSheet(palette),
-          onTapTreasures: () => _openCanvasFocusSheet(
-            title: 'كُنُوزُ العَرْشِ وَالمَرْوِيَّاتُ الشَّرِيفَة 💎',
-            subtitle: 'كنوز لا حول ولا قوة إلا بالله والوضوء وسيد الاستغفار',
-            icon: Icons.diamond_rounded,
-            investmentIds: const [
-              'throne_treasures',
-              'salawat_kawthar',
-              'wudu_gates',
-              'sayyid_istighfar',
-            ],
-            jannati: jannati,
-            palette: palette,
-          ),
+          onOpenParadiseSceneryPicker: () =>
+              _showJannati100ScenerySheet(context, palette),
         ),
 
         const SizedBox(height: 10),
@@ -1459,8 +1084,8 @@ class _JannatiScreenState extends State<JannatiScreen>
                     ),
                   ),
                   Firdaws3DPill(
-                    icon: Icons.park_rounded,
-                    label: 'سكنات البستان: $skinName',
+                    icon: Icons.auto_awesome_rounded,
+                    label: 'سكنات الجنة: $skinName',
                     accentColor: const Color(0xFF10B981),
                     palette: palette,
                     onTap: () => Navigator.of(context).push(
@@ -1494,10 +1119,6 @@ class _JannatiScreenState extends State<JannatiScreen>
             );
           },
         ),
-        const SizedBox(height: 10),
-
-        // 1.5 لوحة ١٠٠ صورة طبيعة 4K وتغريد عصافير الجنة والأنهار
-        _buildBirdsongAndSceneryControlCard(palette: palette),
         const SizedBox(height: 12),
 
         // 2. صرح خزائن الفردوس (4 كبرى + توسعة إلى الـ 14 ذخر كاملة)
@@ -1512,7 +1133,7 @@ class _JannatiScreenState extends State<JannatiScreen>
 
         const SizedBox(height: 12),
 
-        // 3. شريط انتقال سريع للأطلس والاختبار وموسوعة 500 س&ج
+        // 3. شريط انتقال سريع للأطلس والاختبار وموسوعة 5000 س&ج
         _buildQuickFeatureLauncherRow(palette: palette),
 
         const SizedBox(height: 14),
@@ -1580,7 +1201,7 @@ class _JannatiScreenState extends State<JannatiScreen>
 
         const SizedBox(height: 8),
 
-        // 6. سجل الحسنات الأخيرة في بستانك
+        // 6. سجل الحسنات الأخيرة في جنتك
         _buildRecentDeedLedgerCard(palette: palette, jannati: jannati),
 
         const SizedBox(height: 14),
@@ -1692,7 +1313,7 @@ class _JannatiScreenState extends State<JannatiScreen>
                     plural3To10: 'شجرات',
                     singular11Plus: 'شجرة',
                   ),
-                  'بستان التشجير 3D',
+                  'غِراس الفردوس',
                   Icons.forest_rounded,
                   emeraldColor,
                   palette,
@@ -1878,8 +1499,8 @@ class _JannatiScreenState extends State<JannatiScreen>
         Expanded(
           child: _featureJumpCard(
             slotIdx: 14,
-            title: '٥٠٠ سؤال وجواب',
-            subtitle: 'اسأل أي سؤال',
+            title: '٥٠٠٠ سؤال وجواب',
+            subtitle: 'موسوعة منظمة',
             icon: Icons.question_answer_rounded,
             color: const Color(0xFF38BDF8),
             palette: palette,
@@ -2323,229 +1944,6 @@ class _JannatiScreenState extends State<JannatiScreen>
               ),
             );
           }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBirdsongAndSceneryControlCard({required ThemePalette palette}) {
-    final settings = Provider.of<SettingsProvider>(context);
-    final accent = palette.accentColor;
-    final activeTrack =
-        IslamicAudioLibrary.getBirdsongById(settings.selectedBirdsongTrackId);
-    final scenery = settings.activeJannatiScenery;
-    final idx = settings.selectedJannatiSceneryIndex;
-
-    return Firdaws4KCardShell(
-      backdrop: Background500Catalog.forExtraSection(10),
-      isDark: palette.isDark,
-      borderColor: const Color(0xFF10B981).withOpacity(0.55),
-      borderRadius: 20,
-      padding: const EdgeInsets.all(13),
-      imageOpacity: 0.42,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFF10B981).withOpacity(0.20),
-                  border: Border.all(
-                    color: const Color(0xFF10B981).withOpacity(0.65),
-                  ),
-                ),
-                child: Icon(
-                  _birdPlaying
-                      ? Icons.graphic_eq_rounded
-                      : Icons.music_note_rounded,
-                  color: const Color(0xFF34D399),
-                  size: 19,
-                ),
-              ),
-              const SizedBox(width: 9),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '🐦 عصافير الجنة ومشاهد الفردوس الـ ١٠٠ (4K)',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: palette.textPrimary,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 13,
-                      ),
-                    ),
-                    Text(
-                      '${activeTrack.title} • المنظر ${idx + 1}/١٠٠: ${scenery.title}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: palette.textSecondary,
-                        fontSize: 10.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 6),
-              Material(
-                color: _birdPlaying
-                    ? const Color(0xFF059669)
-                    : accent.withOpacity(0.22),
-                borderRadius: BorderRadius.circular(14),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
-                  onTap: _birdLoading ? null : () => _toggleBirdsong(settings),
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_birdLoading)
-                          const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        else
-                          Icon(
-                            _birdPlaying
-                                ? Icons.pause_rounded
-                                : Icons.play_arrow_rounded,
-                            color: _birdPlaying ? Colors.white : accent,
-                            size: 18,
-                          ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _birdPlaying ? 'إيقاف' : 'تشغيل الطيور',
-                          style: TextStyle(
-                            color: _birdPlaying
-                                ? Colors.white
-                                : palette.textPrimary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: Row(
-              children: IslamicAudioLibrary.paradiseBirdsongTracks.map((t) {
-                final isSel = t.id == settings.selectedBirdsongTrackId;
-                return Padding(
-                  padding: const EdgeInsets.only(left: 6),
-                  child: ChoiceChip(
-                    label: Text(
-                      t.title,
-                      style: TextStyle(
-                        color: isSel
-                            ? palette.onAccentColor
-                            : palette.textPrimary,
-                        fontSize: 10.5,
-                        fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                      ),
-                    ),
-                    selected: isSel,
-                    selectedColor: const Color(0xFF10B981),
-                    backgroundColor: palette.elevatedCardColor,
-                    onSelected: (_) async {
-                      settings.setSelectedBirdsongTrackId(t.id);
-                      if (_birdPlaying) {
-                        await _playBirdsongTrack(t);
-                      }
-                    },
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-          Row(
-            children: [
-              Icon(Icons.volume_down_rounded,
-                  color: palette.textSecondary, size: 17),
-              Expanded(
-                child: Slider(
-                  value: _birdVolume,
-                  min: 0.1,
-                  max: 1.0,
-                  activeColor: const Color(0xFF10B981),
-                  inactiveColor: palette.dividerColor,
-                  onChanged: (v) {
-                    setState(() => _birdVolume = v);
-                    unawaited(
-                      _birdPlayer?.setVolume(v) ?? Future.value(),
-                    );
-                  },
-                ),
-              ),
-              Text(
-                '${(_birdVolume * 100).round()}%',
-                style: TextStyle(
-                  color: palette.textSecondary,
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Row(
-            children: [
-              IconButton(
-                style: IconButton.styleFrom(
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  minimumSize: const Size(34, 34),
-                  padding: EdgeInsets.zero,
-                ),
-                tooltip: 'المنظر السابق',
-                icon: Icon(Icons.chevron_right_rounded, color: accent),
-                onPressed: settings.previousJannatiScenery,
-              ),
-              Expanded(
-                child: TextButton.icon(
-                  onPressed: () => _showJannati100ScenerySheet(context, palette),
-                  icon: Icon(Icons.photo_library_rounded, color: accent, size: 15),
-                  label: Text(
-                    'تبديل الـ ١٠٠ صورة (${idx + 1}/١٠٠)',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: accent,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-              ),
-              IconButton(
-                style: IconButton.styleFrom(
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  minimumSize: const Size(34, 34),
-                  padding: EdgeInsets.zero,
-                ),
-                tooltip: 'المنظر التالي',
-                icon: Icon(Icons.chevron_left_rounded, color: accent),
-                onPressed: settings.nextJannatiScenery,
-              ),
-            ],
-          ),
         ],
       ),
     );

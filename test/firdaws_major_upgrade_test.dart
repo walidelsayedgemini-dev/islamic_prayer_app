@@ -19,6 +19,7 @@ import 'package:islamic_prayer_app/providers/audio_player_provider.dart';
 import 'package:islamic_prayer_app/providers/family_challenge_provider.dart';
 import 'package:islamic_prayer_app/providers/firdaws_user_provider.dart';
 import 'package:islamic_prayer_app/providers/hasanat_provider.dart';
+import 'package:islamic_prayer_app/providers/hoor_companion_provider.dart';
 import 'package:islamic_prayer_app/providers/jannati_provider.dart';
 import 'package:islamic_prayer_app/providers/settings_provider.dart';
 import 'package:islamic_prayer_app/screens/about_me_screen.dart';
@@ -49,7 +50,7 @@ import 'package:islamic_prayer_app/widgets/games/arena_3d_game_stage.dart';
 import 'package:islamic_prayer_app/widgets/games/gfx/arena_4k_stage_compositor.dart';
 import 'package:islamic_prayer_app/widgets/games/gfx/arena_live_events_controller.dart';
 import 'package:islamic_prayer_app/widgets/games/gfx/arena_stage_fx.dart';
-import 'package:islamic_prayer_app/widgets/jannati_garden_canvas.dart';
+import 'package:islamic_prayer_app/widgets/hoor_companion_widget.dart';
 import 'package:islamic_prayer_app/widgets/unified_theme_hub.dart';
 import 'package:islamic_prayer_app/widgets/wallpaper_70_picker_sheet.dart';
 
@@ -68,6 +69,9 @@ Widget _wrapWithProviders(
         create: (_) => FirdawsUserProvider(),
       ),
       ChangeNotifierProvider<JannatiProvider>(create: (_) => JannatiProvider()),
+      ChangeNotifierProvider<HoorCompanionProvider>(
+        create: (_) => HoorCompanionProvider(),
+      ),
       ChangeNotifierProvider<FamilyChallengeProvider>(
         create: (_) => FamilyChallengeProvider(),
       ),
@@ -277,7 +281,7 @@ void main() {
     expect(champBoard.any((e) => e.isCurrentUser && e.value >= 120), isTrue);
   });
 
-  testWidgets('UnifiedThemePillButton opens ThemeHubSheet and JannatiGardenCanvas renders cleanly',
+  testWidgets('UnifiedThemePillButton opens ThemeHubSheet and HoorCompanionWidget renders cleanly',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     await tester.binding.setSurfaceSize(const Size(430, 880));
@@ -292,16 +296,7 @@ void main() {
               children: [
                 const UnifiedThemePillButton(),
                 const SizedBox(height: 12),
-                JannatiGardenCanvas(
-                  palette: palette,
-                  palmsCount: 5,
-                  palacesCount: 2,
-                  housesCount: 3,
-                  treasuresCount: 4,
-                  grovesCount: 6,
-                  vibrancy: 0.72,
-                  tasbihOrchardTrees: 12,
-                ),
+                HoorCompanionWidget(palette: palette),
               ],
             ),
           ),
@@ -311,7 +306,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 250));
     expect(tester.takeException(), isNull);
     expect(find.byType(UnifiedThemePillButton), findsOneWidget);
-    expect(find.byType(JannatiGardenCanvas), findsOneWidget);
+    expect(find.byType(HoorCompanionWidget), findsOneWidget);
 
     await tester.tap(find.byType(UnifiedThemePillButton));
     await tester.pump(const Duration(milliseconds: 350));
@@ -439,27 +434,21 @@ void main() {
     expect(find.textContaining('400 عبارة فوز'), findsOneWidget);
   });
 
-  testWidgets('JannatiScreen 3D garden quick tasbih grows trees live & treasury renders cleanly at 390x844',
+  testWidgets('JannatiScreen HoorCompanionWidget & treasury render cleanly at 390x844',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     await tester.binding.setSurfaceSize(const Size(390, 844));
 
     await tester.pumpWidget(_wrapWithProviders(const JannatiScreen()));
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.byType(JannatiGardenCanvas), findsOneWidget);
+    expect(find.byType(HoorCompanionWidget), findsOneWidget);
     expect(tester.takeException(), isNull);
 
-    final quickTasbihBtn = find.text('سبّح واغرس شجرة حقيقية 🌴');
-    await tester.ensureVisible(quickTasbihBtn);
+    final tasbihBtn = find.textContaining('سبّح').first;
+    await tester.ensureVisible(tasbihBtn);
     await tester.pump(const Duration(milliseconds: 100));
-
-    await tester.tap(quickTasbihBtn);
+    await tester.tap(tasbihBtn);
     await tester.pump(const Duration(milliseconds: 250));
-    expect(find.text('١ شجرة'), findsWidgets);
-
-    await tester.tap(quickTasbihBtn);
-    await tester.pump(const Duration(milliseconds: 250));
-    expect(find.text('شجرتان'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 
@@ -584,22 +573,20 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await tester.binding.setSurfaceSize(const Size(390, 844));
 
-    expect(
-      FirdawsPortraitAvatar.resolveAssetFor('father', displayName: 'الوالد طارق'),
-      'assets/images/characters/family_father.jpg',
-    );
-    expect(
-      FirdawsPortraitAvatar.resolveAssetFor('mother', displayName: 'الوالدة سلمى'),
-      'assets/images/characters/family_mother.jpg',
-    );
-    expect(
-      FirdawsPortraitAvatar.resolveAssetFor('sister', displayName: 'الأخت مريم'),
-      'assets/images/characters/family_sister_maryam.jpg',
-    );
-    expect(
-      FirdawsPortraitAvatar.resolveAssetFor('omar', displayName: 'صديقي عمر'),
-      'assets/images/characters/friend_omar.jpg',
-    );
+    for (final entry in [
+      ('father', 'الوالد طارق'),
+      ('mother', 'الوالدة سلمى'),
+      ('sister', 'الأخت مريم'),
+      ('omar', 'صديقي عمر'),
+    ]) {
+      final resolved = FirdawsPortraitAvatar.resolveAssetFor(
+        entry.$1,
+        displayName: entry.$2,
+      );
+      expect(resolved, startsWith('assets/images/'));
+      expect(resolved.contains('characters/'), isFalse,
+          reason: 'Expected non-living pure paradise asset, got $resolved');
+    }
 
     await tester.pumpWidget(
       _wrapWithProviders(
@@ -763,8 +750,30 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     expect(tester.takeException(), isNull);
 
-    // Tap 'الأنهار الـ ٤' to open the paradise rivers bottom sheet
+    // Switch to 'أطلس الجنة' tab, then select 'الأنهار والعيون'
+    final atlasTab = find.text('أطلس الجنة');
+    if (atlasTab.evaluate().isEmpty) {
+      await tester.scrollUntilVisible(
+        atlasTab,
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+    expect(atlasTab, findsWidgets);
+    await tester.ensureVisible(atlasTab.first);
+    await tester.tap(atlasTab.first);
+    await tester.pump(const Duration(milliseconds: 350));
+
     final riversChip = find.textContaining('الأنهار');
+    if (riversChip.evaluate().isEmpty) {
+      await tester.scrollUntilVisible(
+        riversChip,
+        120,
+        scrollable: find.byType(Scrollable).at(1),
+      );
+      await tester.pump(const Duration(milliseconds: 200));
+    }
     expect(riversChip, findsWidgets);
     await tester.ensureVisible(riversChip.first);
     await tester.tap(riversChip.first);
@@ -779,10 +788,6 @@ void main() {
     expect(kawtharSize.height, lessThan(70),
         reason: 'River title wrapped vertically into tiny chars: $kawtharSize');
     expect(tester.takeException(), isNull);
-
-    // Close modal sheet
-    Navigator.of(tester.element(kawtharFinder.first)).pop();
-    await tester.pump(const Duration(milliseconds: 350));
 
     // Open Wallpaper70PickerSheet and verify it renders cleanly at 360x740
     await tester.pumpWidget(

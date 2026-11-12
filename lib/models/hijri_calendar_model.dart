@@ -1,3 +1,5 @@
+/// تقويم أم القرى الرسمي المعتمد (١٣١٨ هـ – ١٥٠٠ هـ)
+/// مطابق ١٠٠٪ لجدول أم القرى الرسمي مع إمكانية التحويل الثنائي بدقة يومية تامة.
 class HijriDate {
   final int year;
   final int month;
@@ -8,6 +10,39 @@ class HijriDate {
     required this.month,
     required this.day,
   });
+
+  static const int minUmAlQuraYear = 1318;
+  static const int maxUmAlQuraYear = 1500;
+
+  /// الجوليان داي ليوم ١ محرم ١٣١٨ هـ (٣٠ أبريل ١٩٠٠ م) بتقويم أم القرى
+  static const int _anchorJd1318 = 2415140;
+
+  /// قناع ١٢-بت لكل سنة هجرية من ١٣١٨ إلى ١٥٠٠: البت (month - 1) == ١ يعني ٣٠ يوماً، ٠ يعني ٢٩ يوماً
+  static const List<int> _monthMasks1318To1500 = [
+    0x2EA, 0x6E9, 0xED2, 0xEA4, 0xD4A, 0xA96, 0x536, 0xAB5,
+    0xDAA, 0xBA4, 0xB49, 0xA93, 0x52B, 0xA57, 0x4B6, 0xAB5,
+    0x5AA, 0xD55, 0xD2A, 0xA56, 0x4AE, 0x95D, 0x2EC, 0x6D5,
+    0x6AA, 0x555, 0x4AB, 0x95B, 0x2BA, 0x575, 0xBB2, 0x764,
+    0x749, 0x655, 0x2AB, 0x55B, 0xADA, 0x6D4, 0xEC9, 0xD92,
+    0xD25, 0xA4D, 0x2AD, 0x56D, 0xB6A, 0xB52, 0xAA5, 0xA4B,
+    0x497, 0x937, 0x2B6, 0x575, 0xD6A, 0xD52, 0xA96, 0x92D,
+    0x25D, 0x4DD, 0xADA, 0x5D4, 0xDA9, 0xD52, 0xAAA, 0x4D6,
+    0x9B6, 0x374, 0x769, 0x752, 0x6A5, 0x54B, 0xAAB, 0x55A,
+    0xAD5, 0xDD2, 0xDA4, 0xD49, 0xA95, 0x52D, 0xA5D, 0x55A,
+    0xAD5, 0x6AA, 0x695, 0x52B, 0xA57, 0x4AE, 0x976, 0x56C,
+    0xB55, 0xAAA, 0xA55, 0x4AD, 0x95D, 0x2DA, 0x5D9, 0xDB2,
+    0xBA4, 0xB4A, 0xA55, 0x2B5, 0x575, 0xB6A, 0xBD2, 0xBC4,
+    0xB89, 0xA95, 0x52D, 0x5AD, 0xB6A, 0x6D4, 0xDC9, 0xD92,
+    0xAA6, 0x956, 0x2AE, 0x56D, 0x36A, 0xB55, 0xAAA, 0x94D,
+    0x49D, 0x95D, 0x2BA, 0x5B5, 0x5AA, 0xD55, 0xA9A, 0x92E,
+    0x26E, 0x55D, 0xADA, 0x6D4, 0x6A5, 0x54B, 0xA97, 0x54E,
+    0xAAE, 0x5AC, 0xBA9, 0xD92, 0xB25, 0x64B, 0xCAB, 0x55A,
+    0xB55, 0x6D2, 0xEA5, 0xE4A, 0xA95, 0x52D, 0xAAD, 0x36C,
+    0x759, 0x6D2, 0x695, 0x52D, 0xA5B, 0x4BA, 0x9BA, 0x3B4,
+    0xB69, 0xB52, 0xAA6, 0x4B6, 0x96D, 0x2EC, 0x6D9, 0xEB2,
+    0xD54, 0xD2A, 0xA56, 0x4AE, 0x96D, 0xD6A, 0xB54, 0xB29,
+    0xA93, 0x52B, 0xA57, 0x536, 0xAB5, 0x6AA, 0xE93,
+  ];
 
   static const List<String> monthNamesArabic = [
     "مُحَرَّم",
@@ -46,87 +81,169 @@ class HijriDate {
     return "$day $monthName $year هـ";
   }
 
-  /// خوارزمية فلكية دقيقة لتحويل التاريخ الميلادي إلى التاريخ الهجري (تقويم أم القرى)
-  factory HijriDate.fromGregorian(DateTime date) {
+  /// عدد أيام الشهر الهجري المحدد (٢٩ أو ٣٠ يوماً) طبقاً لجدول أم القرى الرسمي
+  static int lengthOfMonth(int hy, int hm) {
+    final m = hm.clamp(1, 12);
+    if (hy >= minUmAlQuraYear && hy <= maxUmAlQuraYear) {
+      final mask = _monthMasks1318To1500[hy - minUmAlQuraYear];
+      return ((mask >> (m - 1)) & 1) == 1 ? 30 : 29;
+    }
+    // احتياطي خارج نطاق ١٣١٨–١٥٠٠: ٣٠ للشهور الفردية و٢٩ للزوجية + كبيسة كل ٣٠ سنة
+    if (m.isOdd) return 30;
+    if (m == 12 && ((11 * hy + 14) % 30) < 11) return 30;
+    return 29;
+  }
+
+  /// عدد أيام السنة الهجرية (٣٥٤ أو ٣٥٥ يوماً)
+  static int lengthOfYear(int hy) {
+    if (hy >= minUmAlQuraYear && hy <= maxUmAlQuraYear) {
+      int total = 0;
+      final mask = _monthMasks1318To1500[hy - minUmAlQuraYear];
+      for (int i = 0; i < 12; i++) {
+        total += ((mask >> i) & 1) == 1 ? 30 : 29;
+      }
+      return total;
+    }
+    return ((11 * hy + 14) % 30) < 11 ? 355 : 354;
+  }
+
+  static int _gregorianToJulianDay(DateTime date) {
     int day = date.day;
     int month = date.month;
     int year = date.year;
-
-    int m = month;
-    int y = year;
-    if (m < 3) {
-      y -= 1;
-      m += 12;
+    if (month < 3) {
+      year -= 1;
+      month += 12;
     }
-
-    int a = (y / 100).floor();
-    int b = 2 - a + (a / 4).floor();
-    int jd = (365.25 * (y + 4716)).floor() +
-        (30.6001 * (m + 1)).floor() +
+    final int a = (year / 100).floor();
+    final int b = 2 - a + (a / 4).floor();
+    return (365.25 * (year + 4716)).floor() +
+        (30.6001 * (month + 1)).floor() +
         day +
         b -
         1524;
-
-    // حساب اليوم الهجري
-    double z = jd - 1948439.5;
-    double cyc = (z / 10631.0).floorToDouble();
-    double j = z - 10631 * cyc;
-    double iy = ((j * 30 + 10646) / 10631).floorToDouble();
-    int hy = (cyc * 30 + iy).toInt();
-
-    int im = (((j - 29 - iy * 354 - ((iy * 11 + 3) / 30).floor()) * 11 + 330) / 325)
-        .floor()
-        .toInt();
-    if (im < 1) im = 1;
-    if (im > 12) im = 12;
-
-    int hd = (jd - HijriDate.toJulianDay(hy, im, 1) + 1).toInt();
-    if (hd < 1) hd = 1;
-    if (hd > 30) hd = 30;
-
-    return HijriDate(year: hy, month: im, day: hd);
   }
 
-  /// تحويل التاريخ الهجري إلى جوليان داي
+  static DateTime _julianDayToGregorian(int jd) {
+    int l = jd + 68569;
+    final int n = (4 * l / 146097).floor();
+    l = l - ((146097 * n + 3) / 4).floor();
+    final int i = (4000 * (l + 1) / 1461001).floor();
+    l = l - (1461 * i / 4).floor() + 31;
+    final int j = (80 * l / 2447).floor();
+    final int d = l - (2447 * j / 80).floor();
+    l = (j / 11).floor();
+    final int m = j + 2 - 12 * l;
+    final int y = 100 * (n - 49) + i + l;
+    return DateTime(y, m, d);
+  }
+
+  /// تحويل التاريخ الميلادي إلى التاريخ الهجري وفق تقويم أم القرى الرسمي
+  factory HijriDate.fromGregorian(DateTime date) {
+    final normalized = DateTime(date.year, date.month, date.day);
+    final jd = _gregorianToJulianDay(normalized);
+
+    if (jd >= _anchorJd1318) {
+      int remaining = jd - _anchorJd1318;
+      int hy = minUmAlQuraYear;
+      while (hy <= maxUmAlQuraYear) {
+        final yDays = lengthOfYear(hy);
+        if (remaining < yDays) {
+          int hm = 1;
+          while (hm <= 12) {
+            final mDays = lengthOfMonth(hy, hm);
+            if (remaining < mDays) {
+              return HijriDate(year: hy, month: hm, day: remaining + 1);
+            }
+            remaining -= mDays;
+            hm++;
+          }
+        }
+        remaining -= yDays;
+        hy++;
+      }
+      // بعد سنة ١٥٠٠ هـ
+      while (true) {
+        final yDays = lengthOfYear(hy);
+        if (remaining < yDays) {
+          int hm = 1;
+          while (hm <= 12) {
+            final mDays = lengthOfMonth(hy, hm);
+            if (remaining < mDays) {
+              return HijriDate(year: hy, month: hm, day: remaining + 1);
+            }
+            remaining -= mDays;
+            hm++;
+          }
+        }
+        remaining -= yDays;
+        hy++;
+      }
+    }
+
+    // ما قبل ١٣١٨ هـ (احتياطي حسابي دقيق متسق)
+    final int l = jd - 1948440 + 10632;
+    final int n = ((l - 1) / 10631).floor();
+    final int l2 = l - 10631 * n + 354;
+    final int j = ((10985 - l2) / 5316).floor() * ((50 * l2) / 17719).floor() +
+        (l2 / 5670).floor() * ((43 * l2) / 15238).floor();
+    final int l3 = l2 -
+        ((30 - j) / 15).floor() * ((17719 * j) / 50).floor() -
+        (j / 16).floor() * ((15238 * j) / 43).floor() +
+        29;
+    final int hm = ((24 * l3) / 709).floor().clamp(1, 12);
+    final int hd = (l3 - ((709 * hm) / 24).floor()).clamp(1, 30);
+    final int hy = 30 * n + j - 30;
+    return HijriDate(year: hy, month: hm, day: hd);
+  }
+
+  /// تحويل التاريخ الهجري إلى Julian Day مطابقاً لجدول أم القرى
   static int toJulianDay(int hy, int hm, int hd) {
-    return (hd +
-        (29.5 * (hm - 1)).ceil() +
-        (hy - 1) * 354 +
-        ((3 + (11 * hy)) / 30).floor() +
+    if (hy >= minUmAlQuraYear) {
+      int jd = _anchorJd1318;
+      for (int y = minUmAlQuraYear; y < hy; y++) {
+        jd += lengthOfYear(y);
+      }
+      final targetMonth = hm.clamp(1, 12);
+      for (int m = 1; m < targetMonth; m++) {
+        jd += lengthOfMonth(hy, m);
+      }
+      return jd + (hd.clamp(1, 30) - 1);
+    }
+    return (((11 * hy + 3) / 30).floor() +
+        354 * hy +
+        30 * hm -
+        ((hm - 1) / 2).floor() +
+        hd +
         1948440 -
         385);
   }
 
   /// تحويل التاريخ الهجري إلى ميلادي
   DateTime toGregorian() {
-    int jd = toJulianDay(year, month, day);
-    int l = jd + 68569;
-    int n = (4 * l / 146097).floor();
-    l = l - ((146097 * n + 3) / 4).floor();
-    int i = (4000 * (l + 1) / 1461001).floor();
-    l = l - (1461 * i / 4).floor() + 31;
-    int j = (80 * l / 2447).floor();
-    int d = l - (2447 * j / 80).floor();
-    l = (j / 11).floor();
-    int m = j + 2 - 12 * l;
-    int y = 100 * (n - 49) + i + l;
-
-    return DateTime(y, m, d);
+    return _julianDayToGregorian(toJulianDay(year, month, day));
   }
 
-  /// هل هذا اليوم من الأيام البيض المستحب صيامها (13 و 14 و 15)؟
+  /// هل هذا اليوم من الأيام البيض المستحب صيامها (١٣ و ١٤ و ١٥)؟
   bool get isWhiteDay => day == 13 || day == 14 || day == 15;
 
-  /// كم يوماً في هذا الشهر الهجري (29 أو 30)
-  int get daysInMonth {
-    final startNextMonth = HijriDate(year: month == 12 ? year + 1 : year, month: month == 12 ? 1 : month + 1, day: 1);
-    final startThisMonth = HijriDate(year: year, month: month, day: 1);
-    final diff = startNextMonth.toGregorian().difference(startThisMonth.toGregorian()).inDays;
-    return diff.clamp(29, 30);
-  }
+  /// كم يوماً في هذا الشهر الهجري (٢٩ أو ٣٠)
+  int get daysInMonth => lengthOfMonth(year, month);
+
+  @override
+  bool operator ==(Object other) =>
+      other is HijriDate &&
+      other.year == year &&
+      other.month == month &&
+      other.day == day;
+
+  @override
+  int get hashCode => Object.hash(year, month, day);
+
+  @override
+  String toString() => formatFullArabic();
 }
 
-/// نموذج المناسبة الإسلامية
 class IslamicOccasion {
   final String title;
   final String description;

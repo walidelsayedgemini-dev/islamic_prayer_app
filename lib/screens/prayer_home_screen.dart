@@ -1640,10 +1640,10 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                     onPressed: () => FirdawsNavBridge.jumpTo(5, jannatiTab: 0),
                     child: const Column(
                       children: [
-                        Text('🌴', style: TextStyle(fontSize: 18)),
+                        Text('✨', style: TextStyle(fontSize: 18)),
                         SizedBox(height: 2),
                         Text(
-                          'بستان جَنَّتِي 3D',
+                          'حُور وجَنَّتِي',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -1653,7 +1653,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                           ),
                         ),
                         Text(
-                          'تشجير حيّ مع كل تسبيح',
+                          'رفيق تفاعلي يسبّح معك',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(

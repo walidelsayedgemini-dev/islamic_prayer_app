@@ -124,11 +124,11 @@ class HasanatStoreCatalog {
   static const int skinsPerCategory = 500;
 
   static const List<HasanatSkinItem> _coreSkins = [
-    // ================= 1. بساتين جنتي الواقعية =================
+    // ================= 1. مشاهد جنتي الواقعية =================
     HasanatSkinItem(
       id: 'garden_paradise_day',
       name: 'روضة النخيل والشلال الصباحي',
-      subtitle: 'بستان نهاري مشرق مع أشعة الشمس الشفافة والشلالات الصافية',
+      subtitle: 'مشهد جنان نهاري مشرق مع أشعة الشمس الشفافة والشلالات الصافية',
       category: StoreItemCategory.gardenSkin,
       rarity: SkinRarity.common,
       price: 0,
@@ -351,15 +351,15 @@ class HasanatStoreCatalog {
       styleKey: 'frame_laurel',
     ),
     HasanatSkinItem(
-      id: 'frame_cyber_halo',
+      id: 'frame_noor_halo',
       name: 'هالة النور الفيروزية',
-      subtitle: 'حلقة نيون مضيئة مزدوجة الطبقات ذات تدرج عصري 3D',
+      subtitle: 'حلقة نورانية مضيئة مزدوجة الطبقات بإشراقة سماوية 3D',
       category: StoreItemCategory.frameSkin,
       rarity: SkinRarity.rare,
       price: 210,
       primaryColor: Color(0xFF22D3EE),
       secondaryColor: Color(0xFF3B82F6),
-      styleKey: 'frame_cyber',
+      styleKey: 'frame_noor',
     ),
     HasanatSkinItem(
       id: 'frame_crimson_royal',
@@ -651,7 +651,7 @@ class HasanatStoreCatalog {
   static String _categoryPrefixNoun(StoreItemCategory category) {
     switch (category) {
       case StoreItemCategory.gardenSkin:
-        return 'روضة وبستان';
+        return 'روضة ومقام';
       case StoreItemCategory.craftSkin:
         return 'مركبة طواف';
       case StoreItemCategory.heroSkin:
@@ -672,7 +672,7 @@ class HasanatStoreCatalog {
   static String _categorySubtitle(StoreItemCategory category, String gem, String adj, int num) {
     switch (category) {
       case StoreItemCategory.gardenSkin:
-        return 'مظهر بستان إسلامي بطابع $gem $adj • الإصدار #$num لغرس الأنهار والأشجار';
+        return 'مظهر جنة إسلامي بطابع $gem $adj • الإصدار #$num لقصور الفردوس والأنهار';
       case StoreItemCategory.craftSkin:
         return 'هيكل ثلاثي الأبعاد مستوحى من تراث $gem $adj • الطراز #$num للسباقات';
       case StoreItemCategory.heroSkin:

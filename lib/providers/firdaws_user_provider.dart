@@ -387,7 +387,7 @@ class FirdawsUserProvider extends ChangeNotifier {
 
   // بيانات قسم «عنّي وبياناتي والدعاء»
   String _aboutCreatorName = 'صاحبُ رسالة تطبيق الفردوس';
-  String _aboutCreatorTitle = 'خادمُ كتاب الله وسنة نبيه ﷺ';
+  String _aboutCreatorTitle = 'مُحِبُّ الخير والدَّاعي إلى الفردوس';
   String _aboutBio =
       'اجتهدتُ في جمع مواقيت الصلاة، المصحف المرتل الموثق، صحيح البخاري، القصص النبوية، والأذكار في مكانٍ واحدٍ ليكون رفيقك إلى الجنة.';
   String _aboutDuaRequest =
@@ -581,8 +581,18 @@ class FirdawsUserProvider extends ChangeNotifier {
     }
   }
 
+  static const String _kUserBackupKey = 'firdaws_user_backup_v2';
+
   void _loadFromPrefs() {
     if (_prefs == null) return;
+
+    Map<String, dynamic> backup = const {};
+    final backupRaw = _prefs!.getString(_kUserBackupKey);
+    if (backupRaw != null && backupRaw.isNotEmpty) {
+      try {
+        backup = jsonDecode(backupRaw) as Map<String, dynamic>;
+      } catch (_) {}
+    }
 
     final profileRaw = _prefs!.getString('firdaws_user_profile');
     if (profileRaw != null) {
@@ -591,10 +601,15 @@ class FirdawsUserProvider extends ChangeNotifier {
           jsonDecode(profileRaw) as Map<String, dynamic>,
         );
       } catch (_) {}
+    } else if (backup['profile'] is Map<String, dynamic>) {
+      try {
+        _profile = FirdawsUserProfile.fromJson(
+          backup['profile'] as Map<String, dynamic>,
+        );
+      } catch (_) {}
     }
 
     final logsRaw = _prefs!.getString('firdaws_prayer_logs');
-    _prayerLogs.clear();
     if (logsRaw != null) {
       try {
         final decoded = jsonDecode(logsRaw) as Map<String, dynamic>;
@@ -605,80 +620,150 @@ class FirdawsUserProvider extends ChangeNotifier {
         }
       } catch (_) {}
     }
+    if (backup['prayerLogs'] is Map<String, dynamic>) {
+      final bLogs = backup['prayerLogs'] as Map<String, dynamic>;
+      for (final entry in bLogs.entries) {
+        if (!_prayerLogs.containsKey(entry.key) && entry.value is Map<String, dynamic>) {
+          try {
+            _prayerLogs[entry.key] = DayPrayerRecord.fromJson(
+              entry.value as Map<String, dynamic>,
+            );
+          } catch (_) {}
+        }
+      }
+    }
 
     final missionProgRaw = _prefs!.getString('firdaws_mission_progress');
-    _missionProgress.clear();
     if (missionProgRaw != null) {
       try {
         final decoded = jsonDecode(missionProgRaw) as Map<String, dynamic>;
         for (final entry in decoded.entries) {
-          _missionProgress[entry.key] = (entry.value as num).toInt();
+          final v = (entry.value as num).toInt();
+          if (v > (_missionProgress[entry.key] ?? 0)) {
+            _missionProgress[entry.key] = v;
+          }
         }
       } catch (_) {}
     }
+    if (backup['missionProgress'] is Map<String, dynamic>) {
+      final bProg = backup['missionProgress'] as Map<String, dynamic>;
+      for (final entry in bProg.entries) {
+        final v = (entry.value as num?)?.toInt() ?? 0;
+        if (v > (_missionProgress[entry.key] ?? 0)) {
+          _missionProgress[entry.key] = v;
+        }
+      }
+    }
 
     final customMissionsRaw = _prefs!.getString('firdaws_custom_missions');
-    _customMissions.clear();
     if (customMissionsRaw != null) {
       try {
         final list = jsonDecode(customMissionsRaw) as List<dynamic>;
+        final existingIds = _customMissions.map((m) => m.id).toSet();
         for (final item in list) {
-          _customMissions.add(
-            IslamicMission.fromJson(item as Map<String, dynamic>),
-          );
+          final parsed = IslamicMission.fromJson(item as Map<String, dynamic>);
+          if (!existingIds.contains(parsed.id)) {
+            _customMissions.add(parsed);
+            existingIds.add(parsed.id);
+          }
         }
       } catch (_) {}
     }
 
     final journalRaw = _prefs!.getString('firdaws_journal_entries');
-    _journalEntries.clear();
     if (journalRaw != null) {
       try {
         final list = jsonDecode(journalRaw) as List<dynamic>;
+        final existingIds = _journalEntries.map((j) => j.id).toSet();
         for (final item in list) {
-          _journalEntries.add(
-            JournalEntry.fromJson(item as Map<String, dynamic>),
-          );
+          final parsed = JournalEntry.fromJson(item as Map<String, dynamic>);
+          if (!existingIds.contains(parsed.id)) {
+            _journalEntries.add(parsed);
+            existingIds.add(parsed.id);
+          }
         }
       } catch (_) {}
     }
 
     final unlockedList = _prefs!.getStringList('firdaws_unlocked_titles') ?? [];
-    _unlockedTitleIds
-      ..clear()
-      ..addAll(unlockedList);
+    _unlockedTitleIds.addAll(unlockedList);
+    if (backup['unlockedTitles'] is List) {
+      _unlockedTitleIds.addAll(
+        (backup['unlockedTitles'] as List).map((e) => e.toString()),
+      );
+    }
 
     final surahList = _prefs!.getStringList('firdaws_read_surahs') ?? [];
-    _readSurahNumbers
-      ..clear()
-      ..addAll(surahList.map((e) => int.tryParse(e) ?? 0).where((e) => e > 0));
+    _readSurahNumbers.addAll(
+      surahList.map((e) => int.tryParse(e) ?? 0).where((e) => e > 0),
+    );
+    if (backup['readSurahs'] is List) {
+      _readSurahNumbers.addAll(
+        (backup['readSurahs'] as List)
+            .map((e) => int.tryParse(e.toString()) ?? 0)
+            .where((e) => e > 0),
+      );
+    }
 
     final claimedList =
         _prefs!.getStringList('firdaws_claimed_competitions') ?? [];
-    _claimedCompetitionIds
-      ..clear()
-      ..addAll(claimedList);
+    _claimedCompetitionIds.addAll(claimedList);
+    if (backup['claimedCompetitions'] is List) {
+      _claimedCompetitionIds.addAll(
+        (backup['claimedCompetitions'] as List).map((e) => e.toString()),
+      );
+    }
 
-    _totalDhikr = _prefs!.getInt('firdaws_total_dhikr') ?? 0;
-    _istighfarCount = _prefs!.getInt('firdaws_istighfar_count') ?? 0;
-    _salawatCount = _prefs!.getInt('firdaws_salawat_count') ?? 0;
-    _completedMissionsTotal = _prefs!.getInt('firdaws_missions_total') ?? 0;
-    _competitionsWon = _prefs!.getInt('firdaws_competitions_won') ?? 0;
-    _competitionPoints = _prefs!.getInt('firdaws_competition_points') ?? 0;
-    _bestPrayerStreak = _prefs!.getInt('firdaws_best_streak') ?? 0;
+    int maxInt(int a, int b) => a > b ? a : b;
+    _totalDhikr = maxInt(
+      _prefs!.getInt('firdaws_total_dhikr') ?? 0,
+      (backup['totalDhikr'] as num?)?.toInt() ?? 0,
+    );
+    _istighfarCount = maxInt(
+      _prefs!.getInt('firdaws_istighfar_count') ?? 0,
+      (backup['istighfarCount'] as num?)?.toInt() ?? 0,
+    );
+    _salawatCount = maxInt(
+      _prefs!.getInt('firdaws_salawat_count') ?? 0,
+      (backup['salawatCount'] as num?)?.toInt() ?? 0,
+    );
+    _completedMissionsTotal = maxInt(
+      _prefs!.getInt('firdaws_missions_total') ?? 0,
+      (backup['completedMissionsTotal'] as num?)?.toInt() ?? 0,
+    );
+    _competitionsWon = maxInt(
+      _prefs!.getInt('firdaws_competitions_won') ?? 0,
+      (backup['competitionsWon'] as num?)?.toInt() ?? 0,
+    );
+    _competitionPoints = maxInt(
+      _prefs!.getInt('firdaws_competition_points') ?? 0,
+      (backup['competitionPoints'] as num?)?.toInt() ?? 0,
+    );
+    _bestPrayerStreak = maxInt(
+      _prefs!.getInt('firdaws_best_streak') ?? 0,
+      (backup['bestPrayerStreak'] as num?)?.toInt() ?? 0,
+    );
     _motivationSeed = _prefs!.getInt('firdaws_motivation_seed') ?? 0;
     _avatarBase64 = _prefs!.getString('firdaws_avatar_base64');
     _cachedAvatarBytes = null;
     _aboutCreatorName =
         _prefs!.getString('firdaws_about_name') ?? _aboutCreatorName;
-    _aboutCreatorTitle =
-        _prefs!.getString('firdaws_about_title') ?? _aboutCreatorTitle;
+    final savedTitle = _prefs!.getString('firdaws_about_title');
+    if (savedTitle != null && !savedTitle.contains('خادم')) {
+      _aboutCreatorTitle = savedTitle;
+    } else if (savedTitle != null && savedTitle.contains('خادم')) {
+      _aboutCreatorTitle = 'مُحِبُّ الخير والدَّاعي إلى الفردوس';
+      _prefs!.setString('firdaws_about_title', _aboutCreatorTitle);
+    }
     _aboutBio = _prefs!.getString('firdaws_about_bio') ?? _aboutBio;
     _aboutDuaRequest =
         _prefs!.getString('firdaws_about_dua') ?? _aboutDuaRequest;
     _aboutContactInfo =
         _prefs!.getString('firdaws_about_contact') ?? _aboutContactInfo;
-    _creatorDuasCount = _prefs!.getInt('firdaws_about_duas_count') ?? 0;
+    _creatorDuasCount = maxInt(
+      _prefs!.getInt('firdaws_about_duas_count') ?? 0,
+      (backup['creatorDuasCount'] as num?)?.toInt() ?? 0,
+    );
   }
 
   Future<void> _saveToPrefs() async {
@@ -730,6 +815,25 @@ class FirdawsUserProvider extends ChangeNotifier {
       await _prefs!.setInt('firdaws_competition_points', _competitionPoints);
       await _prefs!.setInt('firdaws_best_streak', _bestPrayerStreak);
       await _prefs!.setInt('firdaws_motivation_seed', _motivationSeed);
+      await _prefs!.setString(
+        _kUserBackupKey,
+        jsonEncode({
+          'profile': _profile.toJson(),
+          'prayerLogs': _prayerLogs.map((k, v) => MapEntry(k, v.toJson())),
+          'missionProgress': _missionProgress,
+          'unlockedTitles': _unlockedTitleIds.toList(),
+          'readSurahs': _readSurahNumbers.toList(),
+          'claimedCompetitions': _claimedCompetitionIds.toList(),
+          'totalDhikr': _totalDhikr,
+          'istighfarCount': _istighfarCount,
+          'salawatCount': _salawatCount,
+          'completedMissionsTotal': _completedMissionsTotal,
+          'competitionsWon': _competitionsWon,
+          'competitionPoints': _competitionPoints,
+          'bestPrayerStreak': _bestPrayerStreak,
+          'creatorDuasCount': _creatorDuasCount,
+        }),
+      );
     } catch (e) {
       debugPrint('FirdawsUserProvider save error: $e');
     }

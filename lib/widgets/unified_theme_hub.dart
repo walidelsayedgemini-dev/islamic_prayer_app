@@ -7,7 +7,26 @@ import '../theme/islamic_theme.dart';
 import 'firdaws_3d_ui.dart';
 import 'wallpaper_70_picker_sheet.dart';
 
-/// زر البوابة الموحدة للثيمات: يجمع كل الـ 52 ثيماً + الوضع الليلي/النهاري + الخطوط في زر واحد أنيق 3D!
+String _themeThumbnailAsset(String key, bool isNight) {
+  if (key == 'royal_emerald_marble') {
+    return isNight
+        ? 'assets/images/marble/marble_emerald_dark.jpg'
+        : 'assets/images/marble/marble_pearl_gold_light.jpg';
+  }
+  if (key == 'pearl_blush_marble') {
+    return isNight
+        ? 'assets/images/marble/marble_emerald_dark.jpg'
+        : 'assets/images/marble/marble_pearl_gold_light.jpg';
+  }
+  if (key == 'alabaster_veined_marble') {
+    return isNight
+        ? 'assets/images/marble/marble_emerald_dark.jpg'
+        : 'assets/images/marble/marble_white_veined_light.jpg';
+  }
+  return 'assets/images/themes/$key.jpg';
+}
+
+/// زر البوابة الموحدة للثيمات: يجمع كل الثيمات + الوضع الليلي/النهاري + الخطوط في زر واحد أنيق 3D!
 class UnifiedThemePillButton extends StatelessWidget {
   final bool compact;
 
@@ -46,7 +65,7 @@ class UnifiedThemePillButton extends StatelessWidget {
             const SizedBox(width: 5),
             Flexible(
               child: Text(
-                'الثيمات (٥٢) 3D',
+                'الثيمات (${IslamicTheme.allThemes.length}) 3D',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -92,7 +111,7 @@ class UnifiedThemePillButton extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.asset(
-                'assets/images/themes/${themeOption.key}.jpg',
+                _themeThumbnailAsset(themeOption.key, isNight),
                 fit: BoxFit.cover,
                 cacheWidth: 200,
                 errorBuilder: (_, __, ___) => Container(
@@ -556,7 +575,7 @@ class _ThemeHubSheetState extends State<ThemeHubSheet> {
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
                                     child: Image.asset(
-                                      'assets/images/themes/${theme.key}.jpg',
+                                      _themeThumbnailAsset(theme.key, isNight),
                                       width: 52,
                                       height: 52,
                                       cacheWidth: 240,

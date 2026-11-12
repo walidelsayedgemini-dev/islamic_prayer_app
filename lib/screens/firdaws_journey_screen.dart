@@ -12,6 +12,7 @@ import '../models/islamic_titles_200.dart';
 import '../models/motivational_phrases_500.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/hasanat_provider.dart';
+import '../providers/hoor_companion_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/firdaws_brand_logo.dart';
@@ -940,6 +941,14 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                               EventMissionMetric.prayersLogged,
                               delta: 1,
                             );
+                            Provider.of<HoorCompanionProvider>(
+                              context,
+                              listen: false,
+                            ).onPrayerCompleted(
+                              prayerName: pName,
+                              userName: userProv.displayName,
+                              isFemale: userProv.isFemale,
+                            );
                           } catch (_) {}
                         }
                         if (!context.mounted) return;
@@ -1278,6 +1287,14 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                                 hasanat.recordMetric(
                                   EventMissionMetric.prayersLogged,
                                   delta: 1,
+                                );
+                                Provider.of<HoorCompanionProvider>(
+                                  context,
+                                  listen: false,
+                                ).onPrayerCompleted(
+                                  prayerName: entry.prayerArabicName,
+                                  userName: userProv.displayName,
+                                  isFemale: userProv.isFemale,
                                 );
                               } catch (_) {}
                             }
@@ -2173,7 +2190,7 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
   }
 
   // ===========================================================================
-  // التبويب 4: المذكرة الشخصية + بستان الـ 500 عبارة تشجيعية بالاسم
+  // التبويب 4: المذكرة الشخصية + واحة الـ 500 عبارة تشجيعية بالاسم
   // ===========================================================================
   Widget _buildJournalAndPhrasesTab(
     BuildContext context,
@@ -2215,7 +2232,7 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                 child: ChoiceChip(
                   label: Center(
                     child: Text(
-                      'بستان الـ 500 عبارة باسمي',
+                      'واحة الـ 500 عبارة باسمي',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(

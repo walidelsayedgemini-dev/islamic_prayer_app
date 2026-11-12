@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../models/backgrounds_500_catalog.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
+import '../services/suggestions_service.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/firdaws_brand_logo.dart';
 import '../widgets/firdaws_resilient_image.dart';
@@ -492,6 +493,36 @@ class _AboutMeScreenState extends State<AboutMeScreen>
                                     backgroundColor: accent,
                                     foregroundColor: palette.onAccentColor,
                                     padding: const EdgeInsets.symmetric(vertical: 14),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: () =>
+                                      SuggestionsService.showComposerSheet(
+                                    context,
+                                    palette,
+                                  ),
+                                  icon: Icon(Icons.mark_email_unread_rounded,
+                                      color: accent, size: 19),
+                                  label: Text(
+                                    'صندوق الاقتراحات 💌 — أرسل فكرتك بسرية',
+                                    style: TextStyle(
+                                      color: accent,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(
+                                        color: accent.withOpacity(0.55)),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(16),
                                     ),

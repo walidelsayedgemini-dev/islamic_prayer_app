@@ -212,32 +212,26 @@ class Firdaws3DCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: radius,
         border: Border.all(
-          color: accent.withOpacity(isDark ? 0.38 : 0.28),
-          width: hasCustomCardSkin ? 1.45 : 1.2,
+          color: accent.withOpacity(isDark ? 0.14 : 0.10),
+          width: hasCustomCardSkin ? 0.9 : 0.45,
         ),
         boxShadow: [
-          // انعكاس إضاءة علوي ثلاثي الأبعاد
+          // انعكاس إضاءة علوي ثلاثي الأبعاد ناعم
           BoxShadow(
-            color: Colors.white.withOpacity(isDark ? 0.08 : 0.75),
-            blurRadius: 0,
-            offset: const Offset(0, -1.2),
+            color: Colors.white.withOpacity(isDark ? 0.05 : 0.55),
+            blurRadius: 6,
+            offset: const Offset(0, -1),
           ),
-          // حافة السُمك المجسّم (3D extrusion rim)
+          // ظل محيطي ناعم منساب
           BoxShadow(
-            color: baseRimColor.withOpacity(isDark ? 0.85 : 0.45),
-            blurRadius: 0,
-            offset: Offset(0, depth),
-          ),
-          // ظل محيطي ناعم
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.55 : 0.11),
-            blurRadius: 18,
-            offset: Offset(0, depth + 6),
+            color: baseRimColor.withOpacity(isDark ? 0.35 : 0.14),
+            blurRadius: depth + 12,
+            offset: Offset(0, depth + 2),
           ),
           // توهج لوني خفيف
           BoxShadow(
-            color: accent.withOpacity(isDark ? 0.16 : 0.09),
-            blurRadius: 22,
+            color: accent.withOpacity(isDark ? 0.12 : 0.06),
+            blurRadius: 20,
             spreadRadius: -2,
           ),
         ],

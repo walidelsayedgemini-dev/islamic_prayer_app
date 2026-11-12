@@ -78,10 +78,10 @@ void main() {
     expect(TasbihChallengesCatalog.builtIn.length, greaterThanOrEqualTo(10));
   });
 
-  test('All 52 themes span 4 categories with distinct Day and Night palettes + custom font', () {
-    expect(IslamicTheme.allThemes.length, 52);
+  test('All 56 themes span 4 categories with distinct Day and Night palettes + custom font', () {
+    expect(IslamicTheme.allThemes.length, 56);
     final keys = IslamicTheme.allThemes.map((t) => t.key).toSet();
-    expect(keys.length, 52);
+    expect(keys.length, 56);
 
     int catTotal = 0;
     for (final cat in ThemeCategory.values) {
@@ -89,8 +89,8 @@ void main() {
       expect(list, isNotEmpty, reason: 'Empty ThemeCategory $cat');
       catTotal += list.length;
     }
-    expect(catTotal, 52);
-    expect(IslamicTheme.themesByCategory(null).length, 52);
+    expect(catTotal, 56);
+    expect(IslamicTheme.themesByCategory(null).length, 56);
 
     for (final theme in IslamicTheme.allThemes) {
       expect(theme.nightPalette.isDark, isTrue);
@@ -199,11 +199,17 @@ void main() {
       }
     }
 
-    // Verify Palace logo and all 52 theme background photos exist
+    // Verify Palace logo and all 56 theme background photos exist
     final logoBytes = await rootBundle.load('assets/images/palace_jannah_logo.png');
     expect(logoBytes.lengthInBytes, greaterThan(10000));
+    const marbleAssetMap = {
+      'royal_emerald_marble': 'assets/images/marble/marble_emerald_dark.jpg',
+      'pearl_blush_marble': 'assets/images/marble/marble_pearl_gold_light.jpg',
+      'alabaster_veined_marble': 'assets/images/marble/marble_white_veined_light.jpg',
+    };
     for (final t in IslamicTheme.allThemes) {
-      final bgBytes = await rootBundle.load('assets/images/themes/${t.key}.jpg');
+      final path = marbleAssetMap[t.key] ?? 'assets/images/themes/${t.key}.jpg';
+      final bgBytes = await rootBundle.load(path);
       expect(bgBytes.lengthInBytes, greaterThan(15000), reason: 'Missing theme bg for ${t.key}');
     }
   });
@@ -403,22 +409,22 @@ void main() {
     expect(prov.journalEntries, isEmpty);
   });
 
-  test('IslamicQaCatalog provides 500 verified Q&A items across 10 categories with smart lookup',
+  test('IslamicQaCatalog provides 5000 verified Q&A items across 10 categories with smart lookup',
       () {
     final all = IslamicQaCatalog.allQuestions;
-    expect(all.length, 500);
+    expect(all.length, 5000);
     final ids = all.map((q) => q.id).toSet();
     final numbers = all.map((q) => q.number).toSet();
-    expect(ids.length, 500);
-    expect(numbers.length, 500);
+    expect(ids.length, 5000);
+    expect(numbers.length, 5000);
     expect(all.first.number, 1);
-    expect(all.last.number, 500);
+    expect(all.last.number, 5000);
 
     for (final cat in IslamicQaCategory.values) {
       expect(
         IslamicQaCatalog.byCategory(cat).length,
-        50,
-        reason: 'Category $cat should have 50 Q&A items',
+        500,
+        reason: 'Category $cat should have 500 Q&A items',
       );
     }
 
@@ -657,17 +663,12 @@ void main() {
     expect(reloaded.bioNote, 'محافظ على قيام الليل');
   });
 
-  test('Genuine MP3 Birdsong tracks, 100-Tasbih backdrop cycling, manual-only Jannati scenery, location & timezone config work cleanly',
+  test('Adhan audio library, 100-Tasbih backdrop cycling, manual-only Jannati scenery, location & timezone config work cleanly',
       () async {
-    expect(IslamicAudioLibrary.paradiseBirdsongTracks.length, 6);
-    for (final track in IslamicAudioLibrary.paradiseBirdsongTracks) {
-      expect(track.localAsset.endsWith('.mp3'), isTrue,
-          reason: 'Expected genuine MP3 track, found ${track.localAsset}');
-      expect(track.localAsset.endsWith('.wav'), isFalse);
-      final bytes = await rootBundle.load('assets/${track.localAsset}');
-      expect(bytes.lengthInBytes, greaterThan(10000),
-          reason: 'Birdsong MP3 asset ${track.localAsset} missing or empty');
-    }
+    expect(IslamicAudioLibrary.adhanVoices.length, greaterThanOrEqualTo(4));
+    expect(IslamicAudioLibrary.allSurahs.length, 114);
+    expect(IslamicAudioLibrary.allRuqyah, isNotEmpty);
+    expect(IslamicAudioLibrary.allIbtihalat, isNotEmpty);
 
     final settings = SettingsProvider();
     expect(settings.jannatiAutoCycleScenery, isFalse);

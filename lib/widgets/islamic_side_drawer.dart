@@ -14,11 +14,13 @@ import '../screens/main_navigation_screen.dart';
 import '../screens/millionaire_quiz_screen.dart';
 import '../screens/quran_reader_screen.dart';
 import '../screens/sahih_hadith_screen.dart';
+import '../services/suggestions_service.dart';
 import '../theme/islamic_theme.dart';
 import 'audio_download_manager_sheet.dart';
 import 'firdaws_3d_ui.dart';
 import 'firdaws_brand_logo.dart';
 import 'firdaws_resilient_image.dart';
+import 'firdaws_themed_icon.dart';
 import 'unified_theme_hub.dart';
 import 'user_profile_editor_sheet.dart';
 
@@ -107,7 +109,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                             Text(
                               userProv.profile.hasCustomName
                                   ? '${widget.themeOption.primaryEmoji} أهلاً يا ${userProv.displayName}'
-                                  : "${widget.themeOption.primaryEmoji} الفردوس • المكتبة الشاملة",
+                                  : "${widget.themeOption.primaryEmoji} الفردوس • الواحة المباركة",
                               style: TextStyle(
                                 color: palette.textPrimary,
                                 fontSize: 15.5,
@@ -155,7 +157,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                     child: Row(
                       children: [
                         _drawerShortcutChip(
-                          label: '🎨 الثيمات (٥٢) 3D',
+                          label: '🎨 الثيمات (${IslamicTheme.allThemes.length}) 3D',
                           icon: Icons.palette_rounded,
                           accent: accent,
                           palette: palette,
@@ -284,7 +286,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                           },
                         ),
                         _drawerShortcutChip(
-                          label: '٥٠٠ سؤال وجواب',
+                          label: '٥٠٠٠ سؤال وجواب',
                           icon: Icons.question_answer_rounded,
                           accent: accent,
                           palette: palette,
@@ -340,6 +342,19 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                             nav.push(
                               MaterialPageRoute(builder: (_) => const AboutMeScreen()),
                             );
+                          },
+                        ),
+                        _drawerShortcutChip(
+                          label: 'صندوق الاقتراحات 💌',
+                          icon: Icons.mark_email_unread_rounded,
+                          accent: accent,
+                          palette: palette,
+                          onTap: () {
+                            final nav = Navigator.of(context);
+                            final parentCtx = nav.context;
+                            nav.pop();
+                            SuggestionsService.showComposerSheet(
+                                parentCtx, palette);
                           },
                         ),
                         _drawerShortcutChip(
@@ -1354,7 +1369,14 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: accent, size: 13),
+              FirdawsThemedIcon(
+                icon: icon,
+                themeOption: widget.themeOption,
+                palette: palette,
+                size: 13.5,
+                color: accent,
+                showEnvironmentAura: false,
+              ),
               const SizedBox(width: 4),
               Text(
                 label,

@@ -1,17 +1,108 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
+
+/// فئات الأشكال الطبيعية غير الحيّة (٥٠٠ نمط هادئ بلا بشر أو حيوانات أو طيور أو إلكترونيات)
+enum AmbientNonLivingShapeKind {
+  oliveLeaf('أوراق الزيتون المبارك 🌿'),
+  snowflakeCrystal('بلورات الثلج الصافية ❄️'),
+  waterDroplet('قطرات الندى والماء 💧'),
+  softCloud('غيوم السكينة البيضاء ☁️'),
+  jasminePetal('بتلات الورد والياسمين 🌸'),
+  crescentLight('أهلّة النور السماوية 🌙'),
+  octagramStar('زخارف النجمة الثمانية ✨'),
+  marbleVeinFleck('رقائق المرمر والذهب 💎'),
+  palmFrond('سعف النخيل الهادئ 🌴'),
+  gingkoLeaf('أوراق الخريف الذهبية 🍂');
+
+  final String arabicCategory;
+  const AmbientNonLivingShapeKind(this.arabicCategory);
+}
+
+class AmbientShapeConfig {
+  final int index; // 0..499
+  final AmbientNonLivingShapeKind kind;
+  final String title;
+  final double windAmplitude;
+  final double fallSpeed;
+  final double scaleFactor;
+  final double glowFactor;
+  final double spinFactor;
+
+  const AmbientShapeConfig({
+    required this.index,
+    required this.kind,
+    required this.title,
+    required this.windAmplitude,
+    required this.fallSpeed,
+    required this.scaleFactor,
+    required this.glowFactor,
+    required this.spinFactor,
+  });
+}
+
+class AmbientShapeCatalog {
+  static const int totalShapes = 500;
+
+  static const List<String> _motionLabels = [
+    'انسياب هادئ',
+    'نسيم رقيق',
+    'تساقط بطيء',
+    'تحليق دائري',
+    'صعود نوراني',
+    'تموج عذب',
+    'انهمار لطيف',
+    'دوران ناعم',
+    'هبوب فجري',
+    'سكينة مسائية',
+  ];
+
+  static const List<String> _densityLabels = [
+    'أثيري',
+    'شفاف',
+    'متوازن',
+    'متوهج',
+    'مخملي',
+  ];
+
+  static AmbientShapeConfig configAt(int rawIndex) {
+    final idx = rawIndex.clamp(0, totalShapes - 1);
+    const kinds = AmbientNonLivingShapeKind.values;
+    final kind = kinds[idx % kinds.length];
+    final motionIdx = (idx ~/ kinds.length) % _motionLabels.length;
+    final densityIdx =
+        (idx ~/ (kinds.length * _motionLabels.length)) % _densityLabels.length;
+    final title =
+        '#${idx + 1} • ${kind.arabicCategory} (${_motionLabels[motionIdx]} - ${_densityLabels[densityIdx]})';
+    return AmbientShapeConfig(
+      index: idx,
+      kind: kind,
+      title: title,
+      windAmplitude: 0.008 + (motionIdx % 5) * 0.006,
+      fallSpeed: motionIdx == 4 ? -0.025 : 0.015 + (motionIdx % 4) * 0.012,
+      scaleFactor: 0.72 + densityIdx * 0.14,
+      glowFactor: 0.45 + densityIdx * 0.12,
+      spinFactor: 0.4 + (motionIdx % 3) * 0.45,
+    );
+  }
+}
 
 class IslamicThemeEffectsCanvas extends StatefulWidget {
   final ThemeOption themeOption;
   final bool isInteractive;
   final bool isNightMode;
+  final bool? ambientSparklesEnabled;
+  final int? ambientShapePresetIndex;
 
   const IslamicThemeEffectsCanvas({
     super.key,
     required this.themeOption,
     this.isInteractive = true,
     this.isNightMode = true,
+    this.ambientSparklesEnabled,
+    this.ambientShapePresetIndex,
   });
 
   @override
@@ -68,6 +159,19 @@ class _IslamicThemeEffectsCanvasState extends State<IslamicThemeEffectsCanvas>
 
   @override
   Widget build(BuildContext context) {
+    bool sparkles = widget.ambientSparklesEnabled ?? true;
+    int shapePreset = widget.ambientShapePresetIndex ?? 0;
+    if (widget.ambientSparklesEnabled == null ||
+        widget.ambientShapePresetIndex == null) {
+      try {
+        final settings = context.watch<SettingsProvider>();
+        sparkles =
+            widget.ambientSparklesEnabled ?? settings.ambientSparklesEnabled;
+        shapePreset =
+            widget.ambientShapePresetIndex ?? settings.ambientShapePresetIndex;
+      } catch (_) {}
+    }
+
     return AnimatedBuilder(
       animation: _animController,
       builder: (context, _) {
@@ -78,6 +182,8 @@ class _IslamicThemeEffectsCanvasState extends State<IslamicThemeEffectsCanvas>
             progress: _animController.value,
             particles: _particles,
             isNightMode: widget.isNightMode,
+            ambientSparklesEnabled: sparkles,
+            ambientShapePresetIndex: shapePreset,
           ),
         );
       },
@@ -130,12 +236,16 @@ class _IslamicThemeMasterPainter extends CustomPainter {
   final double progress;
   final List<_EffectParticle> particles;
   final bool isNightMode;
+  final bool ambientSparklesEnabled;
+  final int ambientShapePresetIndex;
 
   _IslamicThemeMasterPainter({
     required this.themeOption,
     required this.progress,
     required this.particles,
     required this.isNightMode,
+    this.ambientSparklesEnabled = true,
+    this.ambientShapePresetIndex = 0,
   });
 
   @override
@@ -144,97 +254,244 @@ class _IslamicThemeMasterPainter extends CustomPainter {
 
     final key = themeOption.key;
 
-    switch (key) {
-      case 'emerald_gold':
-        _paintPropheticEmeraldEffects(canvas, size);
-        break;
-      case 'andalusian':
-        _paintCordobaMarbleEffects(canvas, size);
-        break;
-      case 'kaaba_black_gold':
-        _paintKiswaBlackGoldEffects(canvas, size);
-        break;
-      case 'blue_mosque':
-        _paintOttomanIznikBlueEffects(canvas, size);
-        break;
-      case 'madinah_sands':
-        _paintSacredSaharaGoldEffects(canvas, size);
-        break;
-      case 'celestial_rayyan':
-        _paintSeljukTurquoiseEffects(canvas, size);
-        break;
-      case 'makkah_rose':
-        _paintNoorFajrWhiteEffects(canvas, size);
-        break;
-      case 'damascus_bronze':
-        _paintDamascusLanternsEffects(canvas, size);
-        break;
-      case 'baghdad_amber':
-        _paintFezZelligeEffects(canvas, size);
-        break;
-      case 'dome_of_rock':
-        _paintAndalusianRoyalPurpleEffects(canvas, size);
-        break;
-      case 'desert_night':
-        _paintRamadanAstralEffects(canvas, size);
-        break;
-      case 'arabian_pearl':
-        _paintSereneKhushooEffects(canvas, size);
-        break;
-      // --- الثيمات الـ 40 الجديدة مصنفة حسب طبيعتها الروحية والمعمارية ---
-      case 'qiyam_aurora':
-      case 'laylat_qadr':
-      case 'isha_indigo':
-      case 'fajr_sapphire':
-        _paintAuroraAndNightSkyEffects(canvas, size, key);
-        break;
-      case 'firdaws_waterfall':
-      case 'kawthar_silver':
-      case 'salsabil_spring':
-      case 'zamzam_spring':
-        _paintParadiseWaterAndMistEffects(canvas, size);
-        break;
-      case 'ramadan_hilal':
-      case 'al_azhar_cairo':
-      case 'sultan_qaboos_muscat':
-      case 'amr_ibn_as':
-      case 'salahuddin_citadel':
-      case 'ibn_tulun_cairo':
-      case 'aleppo_umayyad':
-      case 'hassan_casablanca':
-      case 'koutoubia_marrakech':
-      case 'qairawan_tunis':
-        _paintLanternAndCourtyardEffects(canvas, size, key);
-        break;
-      case 'cordoba_arches':
-      case 'alhambra_granada':
-      case 'andalus_orange_blossom':
-      case 'olive_palestine':
-      case 'sidrat_muntaha':
-      case 'oud_royal_mahogany':
-        _paintBotanicalSanctuaryEffects(canvas, size, key);
-        break;
-      case 'suleymaniye_istanbul':
-      case 'sheikh_zayed_abudhabi':
-      case 'samarkand_registan':
-      case 'bukhara_turquoise':
-      case 'lahore_badshahi':
-        _paintGrandCupolaGeometryEffects(canvas, size);
-        break;
-      case 'arafat_mercy':
-      case 'mina_tents':
-      case 'hira_light':
-      case 'uhud_dawn':
-      case 'baqi_serenity':
-      case 'duha_sunlight':
-      case 'asr_gold':
-      case 'maghrib_crimson':
-      case 'musk_obsidian':
-      case 'saffron_imperial':
-      case 'yemen_aqeeq':
-      default:
-        _paintSacredSolarAndDesertEffects(canvas, size, key);
-        break;
+    if (ambientSparklesEnabled) {
+      switch (key) {
+        case 'emerald_gold':
+          _paintPropheticEmeraldEffects(canvas, size);
+          break;
+        case 'andalusian':
+          _paintCordobaMarbleEffects(canvas, size);
+          break;
+        case 'kaaba_black_gold':
+          _paintKiswaBlackGoldEffects(canvas, size);
+          break;
+        case 'blue_mosque':
+          _paintOttomanIznikBlueEffects(canvas, size);
+          break;
+        case 'madinah_sands':
+          _paintSacredSaharaGoldEffects(canvas, size);
+          break;
+        case 'celestial_rayyan':
+          _paintSeljukTurquoiseEffects(canvas, size);
+          break;
+        case 'makkah_rose':
+          _paintNoorFajrWhiteEffects(canvas, size);
+          break;
+        case 'damascus_bronze':
+          _paintDamascusLanternsEffects(canvas, size);
+          break;
+        case 'baghdad_amber':
+          _paintFezZelligeEffects(canvas, size);
+          break;
+        case 'dome_of_rock':
+          _paintAndalusianRoyalPurpleEffects(canvas, size);
+          break;
+        case 'desert_night':
+          _paintRamadanAstralEffects(canvas, size);
+          break;
+        case 'arabian_pearl':
+          _paintSereneKhushooEffects(canvas, size);
+          break;
+        // --- الثيمات الجديدة مصنفة حسب طبيعتها الروحية والمعمارية ---
+        case 'qiyam_aurora':
+        case 'laylat_qadr':
+        case 'isha_indigo':
+        case 'fajr_sapphire':
+          _paintAuroraAndNightSkyEffects(canvas, size, key);
+          break;
+        case 'firdaws_waterfall':
+        case 'kawthar_silver':
+        case 'salsabil_spring':
+        case 'zamzam_spring':
+          _paintParadiseWaterAndMistEffects(canvas, size);
+          break;
+        case 'ramadan_hilal':
+        case 'al_azhar_cairo':
+        case 'sultan_qaboos_muscat':
+        case 'amr_ibn_as':
+        case 'salahuddin_citadel':
+        case 'ibn_tulun_cairo':
+        case 'aleppo_umayyad':
+        case 'hassan_casablanca':
+        case 'koutoubia_marrakech':
+        case 'qairawan_tunis':
+          _paintLanternAndCourtyardEffects(canvas, size, key);
+          break;
+        case 'cordoba_arches':
+        case 'alhambra_granada':
+        case 'andalus_orange_blossom':
+        case 'olive_palestine':
+        case 'sidrat_muntaha':
+        case 'oud_royal_mahogany':
+          _paintBotanicalSanctuaryEffects(canvas, size, key);
+          break;
+        case 'suleymaniye_istanbul':
+        case 'sheikh_zayed_abudhabi':
+        case 'samarkand_registan':
+        case 'bukhara_turquoise':
+        case 'lahore_badshahi':
+          _paintGrandCupolaGeometryEffects(canvas, size);
+          break;
+        case 'snow_hermon_dawn':
+          _paintSnowCrystalDriftEffects(canvas, size);
+          break;
+        case 'royal_emerald_marble':
+        case 'pearl_blush_marble':
+        case 'alabaster_veined_marble':
+          _paintLuxuryMarbleEffects(canvas, size);
+          break;
+        case 'arafat_mercy':
+        case 'mina_tents':
+        case 'hira_light':
+        case 'uhud_dawn':
+        case 'baqi_serenity':
+        case 'duha_sunlight':
+        case 'asr_gold':
+        case 'maghrib_crimson':
+        case 'musk_obsidian':
+        case 'saffron_imperial':
+        case 'yemen_aqeeq':
+        default:
+          _paintSacredSolarAndDesertEffects(canvas, size, key);
+          break;
+      }
+    }
+
+    if (ambientShapePresetIndex > 0) {
+      _paintAmbient500ShapeLayer(
+        canvas,
+        size,
+        AmbientShapeCatalog.configAt(ambientShapePresetIndex),
+      );
+    }
+  }
+
+  void _paintSnowCrystalDriftEffects(Canvas canvas, Size size) {
+    final t = progress * math.pi * 2;
+    final tint = isNightMode ? const Color(0xFFBAE6FD) : const Color(0xFF0284C7);
+    for (final p in particles.take(28)) {
+      p.update(0.016, 0.025 * math.sin(t + p.pulseOffset), 0.038);
+      final pos = Offset(p.x * size.width, p.y * size.height);
+      _drawSnowflakeCrystal(canvas, pos, p.size * 1.15, p.rotation, tint.withOpacity(p.opacity * 0.72));
+    }
+  }
+
+  void _paintLuxuryMarbleEffects(Canvas canvas, Size size) {
+    final t = progress * math.pi * 2;
+    final accent = themeOption.accentColor;
+    final veinGlow = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Colors.transparent,
+          accent.withOpacity((isNightMode ? 0.12 : 0.08) + 0.03 * math.sin(t)),
+          Colors.transparent,
+        ],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, veinGlow);
+    if (!ambientSparklesEnabled) return;
+    for (final p in particles.take(20)) {
+      p.update(0.016, 0.012 * math.cos(t + p.pulseOffset), -0.008);
+      final px = p.x * size.width;
+      final py = p.y * size.height;
+      canvas.drawCircle(
+        Offset(px, py),
+        p.size * 0.42,
+        Paint()..color = accent.withOpacity(p.opacity * 0.48),
+      );
+    }
+  }
+
+  void _drawSnowflakeCrystal(Canvas canvas, Offset c, double r, double rot, Color color) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.15
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    canvas.save();
+    canvas.translate(c.dx, c.dy);
+    canvas.rotate(rot);
+    for (int b = 0; b < 6; b++) {
+      final a = b * math.pi / 3;
+      final ex = math.cos(a) * r;
+      final ey = math.sin(a) * r;
+      canvas.drawLine(Offset.zero, Offset(ex, ey), paint);
+      final bx = math.cos(a) * r * 0.55;
+      final by = math.sin(a) * r * 0.55;
+      canvas.drawLine(
+        Offset(bx, by),
+        Offset(bx + math.cos(a + 0.65) * r * 0.32, by + math.sin(a + 0.65) * r * 0.32),
+        paint,
+      );
+      canvas.drawLine(
+        Offset(bx, by),
+        Offset(bx + math.cos(a - 0.65) * r * 0.32, by + math.sin(a - 0.65) * r * 0.32),
+        paint,
+      );
+    }
+    canvas.restore();
+  }
+
+  void _paintAmbient500ShapeLayer(
+    Canvas canvas,
+    Size size,
+    AmbientShapeConfig config,
+  ) {
+    final t = progress * math.pi * 2;
+    final baseAccent = themeOption.accentColor;
+    for (int i = 0; i < 16 && i < particles.length; i++) {
+      final p = particles[i];
+      p.update(
+        0.016,
+        config.windAmplitude * math.sin(t + p.pulseOffset),
+        config.fallSpeed,
+      );
+      final pos = Offset(p.x * size.width, p.y * size.height);
+      final r = p.size * config.scaleFactor * 0.95;
+      final color = baseAccent.withOpacity((p.opacity * config.glowFactor).clamp(0.12, 0.72));
+
+      switch (config.kind) {
+        case AmbientNonLivingShapeKind.snowflakeCrystal:
+          _drawSnowflakeCrystal(canvas, pos, r * 1.1, p.rotation * config.spinFactor, color);
+          break;
+        case AmbientNonLivingShapeKind.waterDroplet:
+          final drop = Path()
+            ..moveTo(pos.dx, pos.dy - r)
+            ..quadraticBezierTo(pos.dx + r * 0.75, pos.dy + r * 0.25, pos.dx, pos.dy + r)
+            ..quadraticBezierTo(pos.dx - r * 0.75, pos.dy + r * 0.25, pos.dx, pos.dy - r);
+          canvas.drawPath(drop, Paint()..color = color);
+          break;
+        case AmbientNonLivingShapeKind.softCloud:
+          final cp = Paint()..color = (isNightMode ? Colors.white : baseAccent).withOpacity(0.14);
+          canvas.drawOval(Rect.fromCenter(center: pos, width: r * 3.2, height: r * 1.3), cp);
+          break;
+        case AmbientNonLivingShapeKind.crescentLight:
+          if (ambientSparklesEnabled) {
+            _drawGlowingCrescentMoon(canvas, pos, r * 0.95, color, t);
+          }
+          break;
+        case AmbientNonLivingShapeKind.octagramStar:
+          if (ambientSparklesEnabled) {
+            _drawEightPointStar(canvas, pos, r * 1.35, color, p.rotation * config.spinFactor);
+          }
+          break;
+        case AmbientNonLivingShapeKind.oliveLeaf:
+        case AmbientNonLivingShapeKind.jasminePetal:
+        case AmbientNonLivingShapeKind.marbleVeinFleck:
+        case AmbientNonLivingShapeKind.palmFrond:
+        case AmbientNonLivingShapeKind.gingkoLeaf:
+          canvas.save();
+          canvas.translate(pos.dx, pos.dy);
+          canvas.rotate(p.rotation * config.spinFactor);
+          final leaf = Path()
+            ..moveTo(0, -r)
+            ..quadraticBezierTo(r * 0.7, 0, 0, r)
+            ..quadraticBezierTo(-r * 0.7, 0, 0, -r);
+          canvas.drawPath(leaf, Paint()..color = color);
+          canvas.restore();
+          break;
+      }
     }
   }
 

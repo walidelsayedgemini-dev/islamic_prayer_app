@@ -8,7 +8,7 @@ import 'firdaws_3d_ui.dart';
 
 enum WallpaperTarget { app, garden, both }
 
-/// نافذة اختيار حرة من ٧٠ صورة حقيقية فائقة الدقة 4K لخلفيات التطبيق وبستان جنتي.
+/// نافذة اختيار حرة من ٧٠ صورة حقيقية فائقة الدقة 4K لخلفيات التطبيق ومشاهد جنتي.
 class Wallpaper70PickerSheet extends StatefulWidget {
   final WallpaperTarget initialTarget;
 
@@ -85,7 +85,7 @@ class _Wallpaper70PickerSheetState extends State<Wallpaper70PickerSheet> {
         backgroundColor: const Color(0xFF065F46),
         content: Text(
           _target == WallpaperTarget.garden
-              ? 'تم تعيين «${item.title}» خلفيةً لبستان جنتي 4K 🌴'
+              ? 'تم تعيين «${item.title}» خلفيةً لمشهد جنتي 4K 🌴'
               : (_target == WallpaperTarget.both
                   ? 'تم تعيين «${item.title}» خلفيةً للتطبيق وجنتي معاً 4K ✨'
                   : 'تم تعيين «${item.title}» خلفيةً للتطبيق 4K 🖼️'),
@@ -181,7 +181,7 @@ class _Wallpaper70PickerSheetState extends State<Wallpaper70PickerSheet> {
                               ),
                             ),
                             Text(
-                              'اختر أي صورة من ٧٠ لقطة حقيقية للتطبيق أو لبستان جنتي',
+                              'اختر أي صورة من ٧٠ لقطة نقية للتطبيق أو لرفيقك في جنتي',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -236,8 +236,8 @@ class _Wallpaper70PickerSheetState extends State<Wallpaper70PickerSheet> {
                       const SizedBox(width: 6),
                       _targetChip(
                         WallpaperTarget.garden,
-                        'بستان جنتي',
-                        Icons.park_rounded,
+                        'رفيقي وجنتي',
+                        Icons.auto_awesome_rounded,
                         palette,
                         const Color(0xFF10B981),
                       ),

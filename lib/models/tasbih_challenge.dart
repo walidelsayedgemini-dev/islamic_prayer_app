@@ -48,10 +48,10 @@ class TasbihChallengesCatalog {
     ),
     TasbihChallenge(
       id: 'palm_100',
-      title: 'تحدي بستان النخيل الذهبي',
+      title: 'تحدي روضة النخيل الذهبي',
       dhikr: 'سُبْحَانَ اللَّهِ الْعَظِيمِ وَبِحَمْدِهِ',
       targetCount: 100,
-      badge: 'بستان 100 نخلة 🌴',
+      badge: 'غراس 100 نخلة 🌴',
       rewardVirtue: '«من قال سبحان الله العظيم وبحمده غُرست له نخلة في الجنة» (صحيح الترمذي).',
       icon: Icons.forest_rounded,
       color: Color(0xFF34D399),
