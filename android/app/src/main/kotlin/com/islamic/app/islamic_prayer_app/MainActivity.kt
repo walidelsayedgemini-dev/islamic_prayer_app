@@ -1,15 +1,18 @@
 package com.islamic.app.islamic_prayer_app
 
 import android.app.AlarmManager
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.Settings
 import android.view.KeyEvent
 import android.view.WindowManager
+import androidx.core.app.NotificationManagerCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -89,7 +92,58 @@ class MainActivity : FlutterActivity() {
 
                 "schedulePrayerAlarms" -> {
                     val alarms = call.argument<List<Map<String, Any>>>("alarms") ?: emptyList()
-                    scheduleNativeAdhanAlarms(alarms)
+                    AdhanAlarmScheduler.saveAndSchedule(this, alarms)
+                    result.success(true)
+                }
+
+                "getAdhanDiagnostics" -> {
+                    val am = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                    val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+                    val canExact = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        am.canScheduleExactAlarms()
+                    } else {
+                        true
+                    }
+                    val ignoringBattery = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        pm.isIgnoringBatteryOptimizations(packageName)
+                    } else {
+                        true
+                    }
+                    val notifEnabled = NotificationManagerCompat.from(this).areNotificationsEnabled()
+                    val overlayEnabled = Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(this)
+                    result.success(
+                        mapOf(
+                            "canScheduleExactAlarms" to canExact,
+                            "notificationsEnabled" to notifEnabled,
+                            "ignoringBatteryOptimizations" to ignoringBattery,
+                            "canDrawOverlays" to overlayEnabled,
+                            "scheduledCount" to AdhanAlarmScheduler.getScheduledFutureCount(this)
+                        )
+                    )
+                }
+
+                "requestExactAlarmPermission" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        try {
+                            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                                data = Uri.parse("package:$packageName")
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            startActivity(intent)
+                        } catch (_: Exception) {}
+                    }
+                    result.success(true)
+                }
+
+                "requestBatteryOptimizationExemption" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        try {
+                            val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            startActivity(intent)
+                        } catch (_: Exception) {}
+                    }
                     result.success(true)
                 }
 
@@ -175,53 +229,7 @@ class MainActivity : FlutterActivity() {
         return super.onKeyDown(keyCode, event)
     }
 
-    private fun scheduleNativeAdhanAlarms(alarms: List<Map<String, Any>>) {
-        val am = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        // إلغاء المعرفات السابقة 101..105
-        for (req in 101..105) {
-            val cancelIntent = Intent(this, AdhanAlarmReceiver::class.java)
-            val pi = PendingIntent.getBroadcast(
-                this,
-                req,
-                cancelIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            am.cancel(pi)
-        }
-
-        val now = System.currentTimeMillis()
-        for ((index, alarm) in alarms.take(5).withIndex()) {
-            val triggerMillis = (alarm["triggerAtMillis"] as? Number)?.toLong() ?: continue
-            if (triggerMillis <= now) continue
-            val voiceId = alarm["voiceId"] as? String ?: "madinah"
-            val prayerName = alarm["prayerName"] as? String ?: "صلاة الفرض"
-
-            val receiverIntent = Intent(this, AdhanAlarmReceiver::class.java).apply {
-                putExtra(AdhanPlaybackService.EXTRA_VOICE_ID, voiceId)
-                putExtra(AdhanPlaybackService.EXTRA_PRAYER_NAME, prayerName)
-            }
-            val pi = PendingIntent.getBroadcast(
-                this,
-                101 + index,
-                receiverIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && am.canScheduleExactAlarms()) {
-                    am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMillis, pi)
-                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMillis, pi)
-                } else {
-                    am.setExact(AlarmManager.RTC_WAKEUP, triggerMillis, pi)
-                }
-            } catch (_: Exception) {
-                try {
-                    am.set(AlarmManager.RTC_WAKEUP, triggerMillis, pi)
-                } catch (_: Exception) {}
-            }
-        }
-    }
+    // تم نقل جدولة المنبهات إلى AdhanAlarmScheduler لحفظها وإعادة جدولتها تلقائياً بعد إعادة التشغيل
 
     private fun scheduleNativeSalawatAlarms(
         enabled: Boolean,

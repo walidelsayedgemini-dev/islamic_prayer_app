@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:provider/provider.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/events_missions_catalog.dart';
 import '../models/hijri_calendar_model.dart';
 import '../models/islamic_missions_data.dart';
@@ -14,10 +15,12 @@ import '../providers/hasanat_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/firdaws_brand_logo.dart';
+import '../widgets/firdaws_resilient_image.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/real_mosque_background.dart';
 import '../widgets/user_profile_editor_sheet.dart';
 import 'about_me_screen.dart';
+import 'main_navigation_screen.dart';
 
 class FirdawsJourneyRequest {
   final int tabIndex;
@@ -229,37 +232,40 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                 _buildTopProfileHeader(context, userProv, palette, themeOption),
 
                 // 2. شريط التنقل الرباعي داخل الميدان
-                Container(
+                Firdaws4KCardShell(
+                  backdrop: Background500Catalog.forExtraSection(34),
+                  isDark: isNight,
+                  borderColor: accent.withOpacity(0.45),
                   margin: const EdgeInsets.fromLTRB(12, 4, 12, 6),
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: palette.cardColor.withOpacity(isNight ? 0.86 : 0.92),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: accent.withOpacity(0.35)),
-                  ),
-                  child: TabBar(
-                    controller: _tabController,
-                    isScrollable: true,
-                    tabAlignment: TabAlignment.start,
-                    indicator: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: accent.withOpacity(0.22),
-                      border: Border.all(color: accent, width: 1.2),
+                  padding: const EdgeInsets.all(2),
+                  borderRadius: 14,
+                  imageOpacity: 0.42,
+                  child: SizedBox(
+                    height: 44,
+                    child: TabBar(
+                      controller: _tabController,
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.start,
+                      indicator: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: accent.withOpacity(0.24),
+                        border: Border.all(color: accent, width: 1.2),
+                      ),
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      labelColor: accent,
+                      unselectedLabelColor: palette.textMuted,
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 14),
+                      labelStyle: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                      tabs: const [
+                        Tab(text: 'سجل الصلوات'),
+                        Tab(text: 'المهام والطاعات'),
+                        Tab(text: 'المسابقات و200 لقب'),
+                        Tab(text: 'المذكرة و500 عبارة'),
+                      ],
                     ),
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    labelColor: accent,
-                    unselectedLabelColor: palette.textMuted,
-                    labelPadding: const EdgeInsets.symmetric(horizontal: 14),
-                    labelStyle: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                    tabs: const [
-                      Tab(text: 'سجل الصلوات'),
-                      Tab(text: 'المهام والطاعات'),
-                      Tab(text: 'المسابقات و200 لقب'),
-                      Tab(text: 'المذكرة و500 عبارة'),
-                    ],
                   ),
                 ),
 
@@ -294,22 +300,14 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
     final titleColor = activeTitle?.badgeColor ?? accent;
     final avatarBytes = userProv.avatarBytes;
 
-    return Container(
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forExtraSection(35),
+      isDark: palette.isDark,
+      borderColor: accent.withOpacity(0.50),
       margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: palette.cardColor.withOpacity(palette.isDark ? 0.84 : 0.92),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: accent.withOpacity(0.45), width: 1.3),
-        boxShadow: [
-          BoxShadow(
-            color: (palette.isDark ? Colors.black : palette.primaryColor)
-                .withOpacity(palette.isDark ? 0.5 : 0.14),
-            blurRadius: 14,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
+      borderRadius: 20,
+      imageOpacity: 0.46,
       child: Column(
         children: [
           Row(
@@ -418,10 +416,20 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   TextButton.icon(
-                    onPressed: () => UserProfileEditorSheet.show(context),
-                    icon: Icon(Icons.edit_rounded, color: accent, size: 14),
+                    onPressed: () {
+                      if (p.hasCustomName) {
+                        FirdawsNavBridge.jumpTo(7);
+                      } else {
+                        FirdawsNavBridge.jumpTo(7);
+                      }
+                    },
+                    icon: Icon(
+                      p.hasCustomName ? Icons.settings_rounded : Icons.tune_rounded,
+                      color: accent,
+                      size: 14,
+                    ),
                     label: Text(
-                      p.hasCustomName ? 'بياناتي 📸' : 'سجّل اسمك ✨',
+                      p.hasCustomName ? 'بياناتي ⚙️' : 'الإعدادات ⚙️',
                       style: TextStyle(
                         color: accent,
                         fontSize: 10.5,
@@ -581,13 +589,13 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
       padding: const EdgeInsets.fromLTRB(14, 4, 14, 96),
       children: [
         // 1. محدد التاريخ والتاريخ الهجري + زر اختيار أي تاريخ من التقويم
-        Container(
+        Firdaws4KCardShell(
+          backdrop: Background500Catalog.forExtraSection(36),
+          isDark: palette.isDark,
+          borderColor: accent.withOpacity(0.48),
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: palette.cardColor.withOpacity(0.92),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: accent.withOpacity(0.45)),
-          ),
+          borderRadius: 18,
+          imageOpacity: 0.44,
           child: Column(
             children: [
               Row(
@@ -791,13 +799,14 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
         const SizedBox(height: 10),
 
         // 2. ملخص إنجاز اليوم المختار + أزرار الكل في وقتها
-        Container(
+        Firdaws4KCardShell(
+          backdrop: Background500Catalog.forPrayerLogKey('default'),
+          isDark: palette.isDark,
+          borderColor: (record.allFiveCompleted ? const Color(0xFF10B981) : accent)
+              .withOpacity(0.48),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: palette.cardColor.withOpacity(0.92),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: palette.dividerColor),
-          ),
+          borderRadius: 16,
+          imageOpacity: 0.44,
           child: Row(
             children: [
               Icon(
@@ -838,23 +847,21 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
 
         const SizedBox(height: 10),
 
-        // 3. بطاقات الصلوات الخمس لهذا التاريخ
+        // 3. بطاقات الصلوات الخمس لهذا التاريخ بخلفيات 4K حقيقية متفردة لكل صلاة
         ...FirdawsUserProvider.obligatoryPrayerKeys.map((pKey) {
           final pName = FirdawsUserProvider.prayerArabicNames[pKey] ?? pKey;
           final currentStatus = record.statusFor(pKey);
-          return Container(
+          return Firdaws4KCardShell(
+            backdrop: Background500Catalog.forPrayerLogKey(pKey),
+            isDark: palette.isDark,
+            borderColor: currentStatus == PrayerLogStatus.none
+                ? palette.dividerColor.withOpacity(0.55)
+                : currentStatus.statusColor(palette.isDark).withOpacity(0.78),
+            borderWidth: currentStatus == PrayerLogStatus.none ? 1.1 : 1.6,
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: palette.cardColor.withOpacity(0.92),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: currentStatus == PrayerLogStatus.none
-                    ? palette.dividerColor
-                    : currentStatus.statusColor(palette.isDark).withOpacity(0.7),
-                width: currentStatus == PrayerLogStatus.none ? 1.0 : 1.5,
-              ),
-            ),
+            borderRadius: 16,
+            imageOpacity: 0.48,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -998,13 +1005,13 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
         }),
 
         // 4. النوافل والسنن الرواتب وقيام الليل لهذا التاريخ
-        Container(
+        Firdaws4KCardShell(
+          backdrop: Background500Catalog.forExtraSection(37),
+          isDark: palette.isDark,
+          borderColor: accent.withOpacity(0.45),
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: palette.cardColor.withOpacity(0.92),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: accent.withOpacity(0.35)),
-          ),
+          borderRadius: 18,
+          imageOpacity: 0.44,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1159,17 +1166,15 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
         const SizedBox(height: 12),
 
         // 5. سجل الفوائت للمراجعة والقضاء السريع
-        Container(
+        Firdaws4KCardShell(
+          backdrop: Background500Catalog.forExtraSection(38),
+          isDark: palette.isDark,
+          borderColor: missedEntries.isEmpty
+              ? const Color(0xFF10B981).withOpacity(0.55)
+              : const Color(0xFFF87171).withOpacity(0.65),
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: palette.cardColor.withOpacity(0.92),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: missedEntries.isEmpty
-                  ? const Color(0xFF10B981).withOpacity(0.45)
-                  : const Color(0xFFF87171).withOpacity(0.6),
-            ),
-          ),
+          borderRadius: 18,
+          imageOpacity: 0.44,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1405,19 +1410,17 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
               final ratio = (prog / m.targetCount).clamp(0.0, 1.0);
               final catColor = m.category.badgeColor(palette.isDark);
 
-              return Container(
+              return Firdaws4KCardShell(
+                backdrop: Background500Catalog.forMissionItem(16 + (idx % 24)),
+                isDark: palette.isDark,
+                borderColor: isDone
+                    ? const Color(0xFF10B981)
+                    : catColor.withOpacity(0.55),
+                borderWidth: isDone ? 1.6 : 1.1,
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: palette.cardColor.withOpacity(0.92),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: isDone
-                        ? const Color(0xFF10B981)
-                        : catColor.withOpacity(0.45),
-                    width: isDone ? 1.6 : 1.1,
-                  ),
-                ),
+                borderRadius: 18,
+                imageOpacity: 0.45,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1710,18 +1713,14 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
       padding: const EdgeInsets.fromLTRB(14, 4, 14, 96),
       children: [
         // 1. ساحة المسابقات الإسلامية التفاعلية (سؤال وجواب + سباقات الفوز)
-        Container(
+        Firdaws4KCardShell(
+          backdrop: Background500Catalog.forEventItem(10),
+          isDark: palette.isDark,
+          borderColor: accent.withOpacity(0.78),
+          borderWidth: 1.5,
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                accent.withOpacity(palette.isDark ? 0.25 : 0.16),
-                palette.cardColor.withOpacity(0.95),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: accent, width: 1.5),
-          ),
+          borderRadius: 20,
+          imageOpacity: 0.50,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1792,122 +1791,123 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
                     return Container(
                       width: 245,
                       margin: const EdgeInsets.only(left: 10),
-                      padding: const EdgeInsets.all(11),
-                      decoration: BoxDecoration(
-                        color: palette.cardColor,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isClaimed
-                              ? const Color(0xFF10B981)
-                              : comp.accent.withOpacity(0.5),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(comp.icon, color: comp.accent, size: 18),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  comp.title,
+                      child: Firdaws4KCardShell(
+                        backdrop:
+                            Background500Catalog.forEventItem(11 + (idx % 9)),
+                        isDark: palette.isDark,
+                        borderColor: isClaimed
+                            ? const Color(0xFF10B981)
+                            : comp.accent.withOpacity(0.58),
+                        padding: const EdgeInsets.all(11),
+                        borderRadius: 16,
+                        imageOpacity: 0.44,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(comp.icon, color: comp.accent, size: 18),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    comp.title,
+                                    style: TextStyle(
+                                      color: palette.textPrimary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              comp.description,
+                              style: TextStyle(
+                                color: palette.textSecondary,
+                                fontSize: 10,
+                                height: 1.25,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const Spacer(),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: LinearProgressIndicator(
+                                value: ratio,
+                                minHeight: 6,
+                                backgroundColor: palette.elevatedCardColor,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(comp.accent),
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '$prog / ${comp.targetValue}',
                                   style: TextStyle(
                                     color: palette.textPrimary,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 12,
+                                    fontSize: 11,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            comp.description,
-                            style: TextStyle(
-                              color: palette.textSecondary,
-                              fontSize: 10,
-                              height: 1.25,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const Spacer(),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(6),
-                            child: LinearProgressIndicator(
-                              value: ratio,
-                              minHeight: 6,
-                              backgroundColor: palette.elevatedCardColor,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(comp.accent),
-                            ),
-                          ),
-                          const SizedBox(height: 5),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                '$prog / ${comp.targetValue}',
-                                style: TextStyle(
-                                  color: palette.textPrimary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11,
-                                ),
-                              ),
-                              if (isDone && !isClaimed)
-                                GestureDetector(
-                                  onTap: () async {
-                                    final unlocked =
-                                        await userProv.claimCompetitionReward(
-                                      comp,
-                                    );
-                                    if (context.mounted) {
-                                      _showUnlockSnackbarsIfAny(
-                                        context,
-                                        userProv,
-                                        unlocked,
-                                        palette,
+                                if (isDone && !isClaimed)
+                                  GestureDetector(
+                                    onTap: () async {
+                                      final unlocked =
+                                          await userProv.claimCompetitionReward(
+                                        comp,
                                       );
-                                    }
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: comp.accent,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Text(
-                                      'استلم الكأس 🏆',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 10,
+                                      if (context.mounted) {
+                                        _showUnlockSnackbarsIfAny(
+                                          context,
+                                          userProv,
+                                          unlocked,
+                                          palette,
+                                        );
+                                      }
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 3,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: comp.accent,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Text(
+                                        'استلم الكأس 🏆',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 10,
+                                        ),
                                       ),
                                     ),
+                                  )
+                                else
+                                  Text(
+                                    isClaimed
+                                        ? 'فزت بالكأس ✓'
+                                        : '+${comp.rewardPoints} نقطة',
+                                    style: TextStyle(
+                                      color: isClaimed
+                                          ? const Color(0xFF10B981)
+                                          : comp.accent,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 10.5,
+                                    ),
                                   ),
-                                )
-                              else
-                                Text(
-                                  isClaimed
-                                      ? 'فزت بالكأس ✓'
-                                      : '+${comp.rewardPoints} نقطة',
-                                  style: TextStyle(
-                                    color: isClaimed
-                                        ? const Color(0xFF10B981)
-                                        : comp.accent,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 10.5,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -2008,19 +2008,20 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
           final ratio = userProv.progressForTitle(t);
           final titleName = t.localizedTitle(isFemale: userProv.isFemale);
 
-          return Container(
+          return Firdaws4KCardShell(
+            backdrop: Background500Catalog.forExtraSection(
+                40 + ((t.number - 1) % 30)),
+            isDark: palette.isDark,
+            borderColor: isEquipped
+                ? const Color(0xFF38BDF8)
+                : (isUnlocked
+                    ? t.badgeColor
+                    : palette.dividerColor.withOpacity(0.5)),
+            borderWidth: isEquipped ? 2.0 : (isUnlocked ? 1.5 : 1.0),
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: palette.cardColor.withOpacity(0.92),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isEquipped
-                    ? const Color(0xFF38BDF8)
-                    : (isUnlocked ? t.badgeColor : palette.dividerColor),
-                width: isEquipped ? 2.0 : (isUnlocked ? 1.4 : 1.0),
-              ),
-            ),
+            borderRadius: 16,
+            imageOpacity: isUnlocked ? 0.46 : 0.34,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -2298,13 +2299,13 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
         ),
         const SizedBox(height: 10),
         if (notes.isEmpty)
-          Container(
+          Firdaws4KCardShell(
+            backdrop: Background500Catalog.forExtraSection(70),
+            isDark: palette.isDark,
+            borderColor: accent.withOpacity(0.45),
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: palette.cardColor.withOpacity(0.9),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: palette.dividerColor),
-            ),
+            borderRadius: 18,
+            imageOpacity: 0.46,
             child: Column(
               children: [
                 Icon(Icons.menu_book_rounded, color: accent, size: 42),
@@ -2329,17 +2330,17 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
           )
         else
           ...notes.map((note) {
-            return Container(
+            return Firdaws4KCardShell(
+              backdrop: Background500Catalog.forExtraSection(
+                  71 + (note.id.hashCode.abs() % 10)),
+              isDark: palette.isDark,
+              borderColor:
+                  note.isPinned ? accent : palette.dividerColor.withOpacity(0.55),
+              borderWidth: note.isPinned ? 1.6 : 1.0,
               margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: palette.cardColor.withOpacity(0.92),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: note.isPinned ? accent : palette.dividerColor,
-                  width: note.isPinned ? 1.6 : 1.0,
-                ),
-              ),
+              borderRadius: 18,
+              imageOpacity: 0.42,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -2489,18 +2490,14 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
+              Firdaws4KCardShell(
+                backdrop: Background500Catalog.forExtraSection(81),
+                isDark: palette.isDark,
+                borderColor: accent.withOpacity(0.70),
+                borderWidth: 1.4,
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      accent.withOpacity(0.22),
-                      palette.cardColor,
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: accent, width: 1.4),
-                ),
+                borderRadius: 18,
+                imageOpacity: 0.50,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -2587,14 +2584,15 @@ class _FirdawsJourneyScreenState extends State<FirdawsJourneyScreen>
           name: userProv.displayName,
           isFemale: userProv.isFemale,
         );
-        return Container(
+        return Firdaws4KCardShell(
+          backdrop: Background500Catalog.forExtraSection(
+              82 + ((entry.number - 1) % 40)),
+          isDark: palette.isDark,
+          borderColor: palette.dividerColor.withOpacity(0.55),
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: palette.cardColor.withOpacity(0.92),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: palette.dividerColor),
-          ),
+          borderRadius: 14,
+          imageOpacity: 0.36,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

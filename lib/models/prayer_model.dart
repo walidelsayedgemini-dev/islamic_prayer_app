@@ -20,13 +20,30 @@ class AdvancedPrayerTimes {
     required double longitude,
     required CalculationMethod method,
     required Madhab madhab,
-    Map<String, int>? offsets, // تعديلات الدقائق اليدوية
+    Map<String, int>? offsets,
+  }) {
+    return AdvancedPrayerTimes.calculateForDate(
+      date: DateTime.now(),
+      latitude: latitude,
+      longitude: longitude,
+      method: method,
+      madhab: madhab,
+      offsets: offsets,
+    );
+  }
+
+  factory AdvancedPrayerTimes.calculateForDate({
+    required DateTime date,
+    required double latitude,
+    required double longitude,
+    required CalculationMethod method,
+    required Madhab madhab,
+    Map<String, int>? offsets,
   }) {
     final coordinates = Coordinates(latitude, longitude);
     final params = method.getParameters();
     params.madhab = madhab;
 
-    // تطبيق التعديل اليدوي بالدقائق إن وجد
     if (offsets != null) {
       params.adjustments.fajr = offsets['fajr'] ?? 0;
       params.adjustments.dhuhr = offsets['dhuhr'] ?? 0;
@@ -35,21 +52,18 @@ class AdvancedPrayerTimes {
       params.adjustments.isha = offsets['isha'] ?? 0;
     }
 
-    final today = DateComponents.from(DateTime.now());
-    final current = PrayerTimes(coordinates, today, params);
+    final targetDate = DateComponents.from(date);
+    final current = PrayerTimes(coordinates, targetDate, params);
 
-    // حساب صلوات اليوم التالي لمعرفة وقت فجر الغد بدقة
-    final tomorrow = DateComponents.from(DateTime.now().add(const Duration(days: 1)));
-    final nextDayTimes = PrayerTimes(coordinates, tomorrow, params);
+    final nextDate = DateComponents.from(date.add(const Duration(days: 1)));
+    final nextDayTimes = PrayerTimes(coordinates, nextDate, params);
 
-    // حساب مدة الليل الشرعي (من المغرب إلى فجر الغد)
     final nightDuration = nextDayTimes.fajr.difference(current.maghrib);
-
     final midnight = current.maghrib.add(nightDuration ~/ 2);
     final qiyam = current.maghrib.add(
       Duration(milliseconds: (nightDuration.inMilliseconds * (2 / 3)).round()),
     );
-    final duha = current.sunrise.add(const Duration(minutes: 20)); // خروج وقت الكراهة
+    final duha = current.sunrise.add(const Duration(minutes: 20));
 
     return AdvancedPrayerTimes(
       prayerTimes: current,

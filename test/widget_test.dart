@@ -4,6 +4,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:adhan/adhan.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:islamic_prayer_app/models/backgrounds_500_catalog.dart';
 import 'package:islamic_prayer_app/models/font_catalog.dart';
 import 'package:islamic_prayer_app/models/islamic_audio_data.dart';
 import 'package:islamic_prayer_app/models/islamic_missions_data.dart';
@@ -21,8 +22,11 @@ import 'package:islamic_prayer_app/models/sahih_hadith_data.dart';
 import 'package:islamic_prayer_app/models/tasbih_3d_phrases_200.dart';
 import 'package:islamic_prayer_app/models/tasbih_challenge.dart';
 import 'package:islamic_prayer_app/models/touch_effects_200.dart';
+import 'package:islamic_prayer_app/providers/family_challenge_provider.dart';
 import 'package:islamic_prayer_app/providers/firdaws_user_provider.dart';
 import 'package:islamic_prayer_app/providers/jannati_provider.dart';
+import 'package:islamic_prayer_app/services/location_service.dart';
+import 'package:islamic_prayer_app/services/notification_service.dart';
 import 'package:islamic_prayer_app/theme/islamic_theme.dart';
 import 'package:islamic_prayer_app/utils/compass_utils.dart';
 import 'package:islamic_prayer_app/widgets/prayer_time_effects_canvas.dart';
@@ -56,10 +60,10 @@ void main() {
     expect(smoothed, anyOf(0.0, 360.0));
   });
 
-  test('Al-Firdaws provides 3 calm readable Arabic fonts defaulting to Cairo', () {
-    expect(FontCatalog.allFonts.length, 3);
+  test('Al-Firdaws provides 20 selectable Arabic fonts defaulting to Cairo', () {
+    expect(FontCatalog.allFonts.length, 20);
     final uniqueFamilies = FontCatalog.allFonts.map((f) => f.family).toSet();
-    expect(uniqueFamilies.length, 3);
+    expect(uniqueFamilies.length, 20);
     expect(FontCatalog.getByFamily('non_existent_font').family, 'Cairo');
   });
 
@@ -576,5 +580,85 @@ void main() {
     expect(userProv.aboutCreatorName, 'وليد');
     await userProv.incrementCreatorDua();
     expect(userProv.creatorDuasCount, 1);
+  });
+
+  test('500 unique 4K backgrounds, 100 Jannati Paradise images & 46+ disjoint persona portraits', () {
+    const all500 = Background500Catalog.all500;
+    expect(all500.length, 500);
+    final urls500 = all500.map((e) => e.url).toSet();
+    final ids500 = all500.map((e) => e.id).toSet();
+    expect(urls500.length, 500);
+    expect(ids500.length, 500);
+
+    const j100 = Background500Catalog.jannati100;
+    expect(j100.length, 100);
+    final urlsJ100 = j100.map((e) => e.url).toSet();
+    final idsJ100 = j100.map((e) => e.id).toSet();
+    expect(urlsJ100.length, 100);
+    expect(idsJ100.length, 100);
+    expect(urls500.intersection(urlsJ100), isEmpty);
+
+    const portraits = Background500Catalog.personaPortraits50;
+    expect(portraits.length, greaterThanOrEqualTo(46));
+    expect(portraits.toSet().length, portraits.length);
+    expect(urls500.intersection(portraits.toSet()), isEmpty);
+  });
+
+  test('FamilyChallengeProvider loads 47+ rich personas and supports full member customization',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final fam = FamilyChallengeProvider();
+    await fam.init();
+
+    expect(fam.members.length, greaterThanOrEqualTo(47));
+    for (final m in fam.members) {
+      expect(m.name.trim(), isNotEmpty);
+      expect(m.traits, isNotEmpty);
+      expect(m.age, greaterThan(0));
+      expect(m.networkPhotoUrl, isNotNull);
+    }
+
+    final first = fam.members.first;
+    final edited = first.copyWith(
+      name: 'عمر الفاروق المحدث',
+      age: 34,
+      traits: ['قارئ للقرآن', 'صاحب همة'],
+      dailyTasbihGoal: 500,
+      championScore: 999,
+      tasbihCount: 333,
+      bioNote: 'محافظ على قيام الليل',
+    );
+    await fam.updateChallenger(edited);
+
+    final reloaded = fam.members.firstWhere((m) => m.id == first.id);
+    expect(reloaded.name, 'عمر الفاروق المحدث');
+    expect(reloaded.age, 34);
+    expect(reloaded.traits, contains('قارئ للقرآن'));
+    expect(reloaded.dailyTasbihGoal, 500);
+    expect(reloaded.championScore, 999);
+    expect(reloaded.tasbihCount, 333);
+    expect(reloaded.bioNote, 'محافظ على قيام الليل');
+  });
+
+  test('Birdsong Paradise audio tracks & assets, location nearest city & timezone config work cleanly',
+      () async {
+    expect(IslamicAudioLibrary.paradiseBirdsongTracks.length, greaterThanOrEqualTo(4));
+    final birds1 = await rootBundle.load('assets/audio/birds_paradise.wav');
+    final birds2 = await rootBundle.load('assets/audio/birds_forest.wav');
+    expect(birds1.lengthInBytes, greaterThan(10000));
+    expect(birds2.lengthInBytes, greaterThan(10000));
+
+    final nearestCairo = LocationService.findNearestPresetCity(30.05, 31.24);
+    expect(nearestCairo, isNotNull);
+    expect(nearestCairo!.countryOnly, contains('مصر'));
+
+    final nearestMakkah = LocationService.findNearestPresetCity(21.42, 39.82);
+    expect(nearestMakkah, isNotNull);
+    expect(nearestMakkah!.cityOnly, contains('مكة'));
+
+    expect(
+      () => NotificationService().configureLocalTimezone(overrideOffsetMillis: 2 * 3600 * 1000),
+      returnsNormally,
+    );
   });
 }

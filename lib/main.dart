@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'providers/settings_provider.dart';
 import 'providers/audio_player_provider.dart';
 import 'providers/firdaws_user_provider.dart';
@@ -9,15 +10,18 @@ import 'providers/jannati_provider.dart';
 import 'providers/family_challenge_provider.dart';
 import 'providers/hasanat_provider.dart';
 import 'models/events_missions_catalog.dart';
+import 'models/prayer_model.dart';
 import 'screens/adhan_alarm_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'services/firdaws_native_service.dart';
 import 'services/notification_service.dart';
 import 'theme/islamic_theme.dart';
 import 'widgets/touch_effects_overlay.dart';
+import 'widgets/user_profile_editor_sheet.dart';
 
 final GlobalKey<NavigatorState> firdawsNavigatorKey =
     GlobalKey<NavigatorState>();
+final ValueNotifier<bool> firdawsBootReadyNotifier = ValueNotifier<bool>(false);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,17 +51,18 @@ void main() async {
     ),
   );
 
-  // تحميل الإعدادات والخدمات في الخلفية بعد رسم الشاشة الأولى
+  // تحميل الإعدادات والخدمات بالترتيب الآمن في الخلفية بعد رسم الشاشة الأولى
   Future.microtask(() async {
     try {
+      await NotificationService().initialize();
+      await FirdawsNativeService().initialize();
       await settingsProvider.init();
       await firdawsUserProvider.init();
       await jannatiProvider.init();
       await familyChallengeProvider.init();
       await hasanatProvider.init();
-      await NotificationService().initialize();
-      await FirdawsNativeService().initialize();
       settingsProvider.syncAllNotifications();
+      firdawsBootReadyNotifier.value = true;
     } catch (e) {
       debugPrint('Background init: $e');
     }
@@ -74,12 +79,16 @@ class IslamicPrayerApp extends StatefulWidget {
 class _IslamicPrayerAppState extends State<IslamicPrayerApp>
     with WidgetsBindingObserver {
   Timer? _salawatTimer;
+  Timer? _prayerWatcherTimer;
   Timer? _salawatAutoHideTimer;
   DateTime _lastSalawatShownAt = DateTime.now();
+  DateTime? _lastNotificationSyncAt;
   String? _lastCustomMinuteKey;
+  final Set<String> _triggeredAdhanKeys = {};
   bool _showInAppSalawat = false;
   int _salawatStyleSeed = 0;
   bool _adhanOpen = false;
+  bool _checkedFirstRunPrompt = false;
 
   @override
   void initState() {
@@ -95,6 +104,17 @@ class _IslamicPrayerAppState extends State<IslamicPrayerApp>
       (_) => _checkSalawatSchedule(),
     );
 
+    // مراقب حي لدخول أوقات الصلاة الخمس أثناء عمل التطبيق لتشغيل شاشة وصوت الأذان المتواصل فوراً
+    _prayerWatcherTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => _checkForegroundPrayerArrival(),
+    );
+
+    firdawsBootReadyNotifier.addListener(_onBootReady);
+    if (firdawsBootReadyNotifier.value) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _onBootReady());
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _syncNativeState();
     });
@@ -103,7 +123,9 @@ class _IslamicPrayerAppState extends State<IslamicPrayerApp>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    firdawsBootReadyNotifier.removeListener(_onBootReady);
     _salawatTimer?.cancel();
+    _prayerWatcherTimer?.cancel();
     _salawatAutoHideTimer?.cancel();
     final native = FirdawsNativeService();
     if (native.onOpenAdhanScreen == _openAdhanScreenIfNeeded) {
@@ -115,10 +137,94 @@ class _IslamicPrayerAppState extends State<IslamicPrayerApp>
     super.dispose();
   }
 
+  Future<void> _onBootReady() async {
+    if (!mounted || _checkedFirstRunPrompt) return;
+    _checkedFirstRunPrompt = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final alreadyPrompted =
+          prefs.getBool('firdaws_first_run_profile_prompted_v1') ?? false;
+      if (alreadyPrompted || !mounted) return;
+
+      final userProv = Provider.of<FirdawsUserProvider>(context, listen: false);
+      if (userProv.profile.hasCustomName) {
+        await prefs.setBool('firdaws_first_run_profile_prompted_v1', true);
+        return;
+      }
+
+      await prefs.setBool('firdaws_first_run_profile_prompted_v1', true);
+      final navCtx = firdawsNavigatorKey.currentContext;
+      if (navCtx != null && navCtx.mounted && !_adhanOpen) {
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+        if (navCtx.mounted) {
+          UserProfileEditorSheet.show(navCtx);
+        }
+      }
+    } catch (e) {
+      debugPrint('First-run profile check: $e');
+    }
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _syncNativeState();
+      _checkForegroundPrayerArrival();
+      final now = DateTime.now();
+      if (_lastNotificationSyncAt == null ||
+          now.difference(_lastNotificationSyncAt!).inMinutes >= 15) {
+        _lastNotificationSyncAt = now;
+        try {
+          Provider.of<SettingsProvider>(context, listen: false)
+              .syncAllNotifications();
+        } catch (_) {}
+      }
+    }
+  }
+
+  void _checkForegroundPrayerArrival() {
+    if (!mounted) return;
+    try {
+      final settings = Provider.of<SettingsProvider>(context, listen: false);
+      final now = DateTime.now();
+      final prayerData = AdvancedPrayerTimes.calculate(
+        latitude: settings.latitude,
+        longitude: settings.longitude,
+        method: settings.calculationMethod,
+        madhab: settings.madhab,
+        offsets: settings.offsets,
+      );
+
+      final checks = <(String key, String arabic, DateTime time)>[
+        ('fajr', 'صلاة الفجر', prayerData.prayerTimes.fajr),
+        ('dhuhr', 'صلاة الظهر', prayerData.prayerTimes.dhuhr),
+        ('asr', 'صلاة العصر', prayerData.prayerTimes.asr),
+        ('maghrib', 'صلاة المغرب', prayerData.prayerTimes.maghrib),
+        ('isha', 'صلاة العشاء', prayerData.prayerTimes.isha),
+      ];
+
+      for (final item in checks) {
+        final t = item.$3;
+        final diffSec = now.difference(t).inSeconds;
+        if (!now.isBefore(t) && diffSec >= 0 && diffSec <= 50) {
+          final uniqueKey =
+              '${item.$1}_${t.year}-${t.month}-${t.day}_${t.hour}:${t.minute}';
+          if (!_triggeredAdhanKeys.contains(uniqueKey)) {
+            _triggeredAdhanKeys.add(uniqueKey);
+            if (_triggeredAdhanKeys.length > 30) {
+              _triggeredAdhanKeys.remove(_triggeredAdhanKeys.first);
+            }
+            if (!_adhanOpen) {
+              _openAdhanScreenIfNeeded(settings.adhanVoice, item.$2);
+            }
+            // إعادة جدولة صلوات الغد الخمس فوراً عند دخول وقت الصلاة
+            settings.syncAllNotifications();
+            break;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Foreground prayer watcher error: $e');
     }
   }
 

@@ -1,16 +1,20 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/hasanat_store_catalog.dart';
 import '../providers/hasanat_provider.dart';
+import 'firdaws_resilient_image.dart';
 
 /// عارض الصور الشخصية الواقعية لجميع أفراد العائلة والصحبة والمنافسين الافتراضيين.
-/// يربط كل معرف بالصور الفوتوغرافية الحقيقية ويلفّها بإطار 3D مطابق للسكن المجهَّز من المتجر.
+/// يربط كل معرف بالصور الفوتوغرافية الحقيقية (أو المرفوعة أو من الإنترنت) ويلفّها بإطار 3D مطابق للسكن المجهَّز من المتجر.
 class FirdawsPortraitAvatar extends StatelessWidget {
   final String entityId;
   final String? displayName;
   final bool? isFemale;
   final Uint8List? customBytes;
+  final String? customPhotoBase64;
+  final String? networkPhotoUrl;
   final double size;
   final String? frameStyleKey;
   final Color? ringColor;
@@ -23,12 +27,33 @@ class FirdawsPortraitAvatar extends StatelessWidget {
     this.displayName,
     this.isFemale,
     this.customBytes,
+    this.customPhotoBase64,
+    this.networkPhotoUrl,
     this.size = 48,
     this.frameStyleKey,
     this.ringColor,
     this.showCrown = false,
     this.isHighlighted = false,
   });
+
+  static final Map<String, Uint8List> _b64Cache = {};
+
+  static Uint8List? _resolveBase64(String? b64) {
+    if (b64 == null || b64.trim().isEmpty) return null;
+    final key = '${b64.hashCode}_${b64.length}';
+    final existing = _b64Cache[key];
+    if (existing != null) return existing;
+    try {
+      final decoded = base64Decode(b64.trim());
+      if (_b64Cache.length >= 64) {
+        _b64Cache.remove(_b64Cache.keys.first);
+      }
+      _b64Cache[key] = decoded;
+      return decoded;
+    } catch (_) {
+      return null;
+    }
+  }
 
   static const List<String> _maleAssets = [
     'assets/images/characters/friend_omar.jpg',
@@ -163,6 +188,8 @@ class FirdawsPortraitAvatar extends StatelessWidget {
       isFemale: isFemale,
     );
     final decodeW = (size * 2.5).round().clamp(96, 320);
+    final resolvedBytes = customBytes ?? _resolveBase64(customPhotoBase64);
+    final netUrl = networkPhotoUrl?.trim();
 
     return SizedBox(
       width: size,
@@ -195,24 +222,34 @@ class FirdawsPortraitAvatar extends StatelessWidget {
                 color: Color(0xFF09111F),
               ),
               child: ClipOval(
-                child: customBytes != null
+                child: resolvedBytes != null
                     ? Image.memory(
-                        customBytes!,
+                        resolvedBytes,
                         fit: BoxFit.cover,
+                        width: size,
+                        height: size,
                       )
-                    : Image.asset(
-                        assetPath,
-                        fit: BoxFit.cover,
-                        cacheWidth: decodeW,
-                        filterQuality: FilterQuality.medium,
-                        errorBuilder: (_, __, ___) => Center(
-                          child: Icon(
-                            Icons.person_rounded,
-                            color: colors.first,
-                            size: size * 0.5,
+                    : (netUrl != null && netUrl.isNotEmpty)
+                        ? FirdawsResilientImage(
+                            networkUrl: netUrl,
+                            fallbackAsset: assetPath,
+                            fit: BoxFit.cover,
+                            width: size,
+                            height: size,
+                          )
+                        : Image.asset(
+                            assetPath,
+                            fit: BoxFit.cover,
+                            cacheWidth: decodeW,
+                            filterQuality: FilterQuality.medium,
+                            errorBuilder: (_, __, ___) => Center(
+                              child: Icon(
+                                Icons.person_rounded,
+                                color: colors.first,
+                                size: size * 0.5,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
               ),
             ),
           ),

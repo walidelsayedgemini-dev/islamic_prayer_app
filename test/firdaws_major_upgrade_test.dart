@@ -672,7 +672,7 @@ void main() {
     await tester.pump();
   });
 
-  test('Wallpaper70Catalog has 70 verified image assets, 7 WAV SFX exist, and FontCatalog has 3 calm Cairo-first fonts',
+  test('Wallpaper70Catalog has 70 verified image assets, 7 WAV SFX exist, and FontCatalog has 20 selectable Cairo-first fonts',
       () async {
     TestWidgetsFlutterBinding.ensureInitialized();
     SharedPreferences.setMockInitialValues({});
@@ -704,7 +704,7 @@ void main() {
       );
     }
 
-    expect(FontCatalog.allFonts.length, 3);
+    expect(FontCatalog.allFonts.length, 20);
     expect(FontCatalog.allFonts.first.family, 'Cairo');
     expect(SettingsProvider().selectedFont, 'Cairo');
 

@@ -1,9 +1,11 @@
 import 'dart:async';
-import 'package:adhan/adhan.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../models/arena_game_models.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/challenge_phrases_800.dart';
 import '../models/events_missions_catalog.dart';
 import '../providers/family_challenge_provider.dart';
@@ -14,7 +16,7 @@ import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/firdaws_3d_ui.dart';
 import '../widgets/firdaws_portrait_avatar.dart';
-import '../widgets/real_mosque_background.dart';
+import '../widgets/firdaws_resilient_image.dart';
 import 'arena_hub_screen.dart';
 import 'events_missions_screen.dart';
 import 'hasanat_store_screen.dart';
@@ -45,9 +47,11 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
   final TextEditingController _p2NameCtrl = TextEditingController(text: 'صديقي');
   DualPlayerPhraseOutcome? _lastDualOutcome;
 
-  // تصفح موسوعة الـ 800 عبارة
+  // تصفح موسوعة الـ 800 عبارة وبحث وتصفية المتنافسين
   bool _showWinPhrases = true;
   String _phraseSearch = '';
+  String _memberSearch = '';
+  String _memberGroupFilter = 'all'; // all, family, friend
 
   @override
   void initState() {
@@ -194,7 +198,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
           IconButton(
             tooltip: 'إضافة فرد من العائلة أو صديق',
             icon: Icon(Icons.person_add_alt_1_rounded, color: accent),
-            onPressed: () => _showAddChallengerDialog(palette, challenge),
+            onPressed: () => _showChallengerEditorSheet(palette, challenge),
           ),
         ],
         bottom: TabBar(
@@ -216,13 +220,32 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
       body: Stack(
         children: [
           Positioned.fill(
-            child: RealMosqueBackground(
-              currentPrayer: isNight ? Prayer.isha : Prayer.dhuhr,
-              themeOption: IslamicTheme.getThemeOption(settings.selectedTheme),
-              isNightMode: isNight,
-              customAssetOverride: settings.selectedAppWallpaperAsset ??
-                  'assets/images/themes/cordoba_arches.jpg',
-              dimFactor: 0.90,
+            child: settings.selectedAppWallpaperAsset != null
+                ? Image.asset(
+                    settings.selectedAppWallpaperAsset!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => FirdawsResilientImage.entry(
+                      Background500Catalog.forFamilySection(0),
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : FirdawsResilientImage.entry(
+                    Background500Catalog.forFamilySection(0),
+                    fit: BoxFit.cover,
+                  ),
+          ),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    palette.scaffoldColor.withOpacity(isNight ? 0.78 : 0.78),
+                    palette.scaffoldColor.withOpacity(isNight ? 0.90 : 0.88),
+                  ],
+                ),
+              ),
             ),
           ),
           Column(
@@ -355,14 +378,35 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
     required FirdawsUserProvider userProv,
   }) {
     final top3 = entries.take(3).toList();
+    final mq = _memberSearch.trim();
+    final filteredEntries = entries.where((e) {
+      if (_memberGroupFilter == 'family' &&
+          !e.isCurrentUser &&
+          e.group != ChallengerGroup.family) {
+        return false;
+      }
+      if (_memberGroupFilter == 'friend' &&
+          !e.isCurrentUser &&
+          e.group != ChallengerGroup.friend) {
+        return false;
+      }
+      if (mq.isEmpty) return true;
+      return e.name.contains(mq) ||
+          e.relation.contains(mq) ||
+          e.traits.any((t) => t.contains(mq));
+    }).toList();
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 30),
       physics: const BouncingScrollPhysics(),
       children: [
-        Firdaws3DCard(
-          palette: palette,
-          glowColor: accent,
+        Firdaws4KCardShell(
+          backdrop: Background500Catalog.forFamilySection(isTasbihTab ? 1 : 2),
+          isDark: palette.isDark,
+          borderColor: accent.withOpacity(0.5),
+          borderRadius: 22,
           padding: const EdgeInsets.all(14),
+          imageOpacity: 0.44,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -509,7 +553,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
           children: [
             Expanded(
               child: Text(
-                'ترتيب جميع المتنافسين (${entries.length})',
+                'ترتيب جميع المتنافسين (${filteredEntries.length}/${entries.length})',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -520,20 +564,55 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
               ),
             ),
             TextButton.icon(
-              onPressed: () => _showAddChallengerDialog(palette, challenge),
+              onPressed: () => _showChallengerEditorSheet(palette, challenge),
               icon: Icon(Icons.add_circle_outline_rounded,
                   size: 16, color: accent),
               label: Text(
-                'إضافة منافس',
+                'إضافة وتخصيص فرد',
                 style: TextStyle(color: accent, fontSize: 11.5),
               ),
             ),
           ],
         ),
         const SizedBox(height: 6),
-        ...entries.asMap().entries.map((item) {
-          final rank = item.key + 1;
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                style: TextStyle(color: palette.textPrimary, fontSize: 12.5),
+                onChanged: (v) => setState(() => _memberSearch = v),
+                decoration: InputDecoration(
+                  hintText: 'ابحث بالاسم أو الصفة أو القرابة...',
+                  hintStyle: TextStyle(color: palette.textMuted, fontSize: 11.5),
+                  prefixIcon: Icon(Icons.search_rounded, color: accent, size: 19),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 9),
+                  filled: true,
+                  fillColor: firdaws3DElevatedSurfaceColor(palette),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _groupFilterChip('all', 'الكل (${entries.length})', palette, accent),
+              _groupFilterChip('family', 'العائلة 👨‍👩‍👧‍👦', palette, accent),
+              _groupFilterChip('friend', 'الأصدقاء 🤝', palette, accent),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...filteredEntries.asMap().entries.map((item) {
           final e = item.value;
+          final rank = entries.indexWhere((x) => x.id == e.id) + 1;
           final isSelectedRival =
               !e.isCurrentUser && challenge.selectedRivalId == e.id;
           final rowAccent = e.isCurrentUser
@@ -542,11 +621,13 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: Firdaws3DCard(
-              palette: palette,
-              glowColor: rowAccent,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Firdaws4KCardShell(
+              backdrop: Background500Catalog.forFamilySection(3 + (rank % 20)),
+              isDark: palette.isDark,
+              borderColor: rowAccent.withOpacity(0.55),
               borderRadius: 18,
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
+              imageOpacity: 0.28,
               onTap: e.isCurrentUser
                   ? null
                   : () {
@@ -556,12 +637,12 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
               child: Row(
                 children: [
                   Container(
-                    width: 34,
-                    height: 34,
+                    width: 32,
+                    height: 32,
                     decoration: BoxDecoration(
-                      color: rowAccent.withOpacity(0.18),
+                      color: rowAccent.withOpacity(0.20),
                       shape: BoxShape.circle,
-                      border: Border.all(color: rowAccent.withOpacity(0.6)),
+                      border: Border.all(color: rowAccent.withOpacity(0.65)),
                     ),
                     child: Center(
                       child: Text(
@@ -569,18 +650,22 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                         style: TextStyle(
                           color: rowAccent,
                           fontWeight: FontWeight.w900,
-                          fontSize: 12,
+                          fontSize: 11.5,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 9),
                   FirdawsPortraitAvatar(
                     entityId: e.isCurrentUser
                         ? 'you'
                         : (e.emoji.contains('_') ? e.emoji : e.id),
                     displayName: e.name,
                     customBytes: e.isCurrentUser ? userProv.avatarBytes : null,
+                    customPhotoBase64:
+                        e.isCurrentUser ? null : e.customPhotoBase64,
+                    networkPhotoUrl:
+                        e.isCurrentUser ? null : e.networkPhotoUrl,
                     size: 46,
                     ringColor: rowAccent,
                     showCrown: rank == 1,
@@ -591,40 +676,81 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        Wrap(
+                          spacing: 5,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            Flexible(
-                              child: Text(
-                                e.name,
-                                style: TextStyle(
-                                  color: palette.textPrimary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13.5,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                            Text(
+                              e.name,
+                              style: TextStyle(
+                                color: palette.textPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.5,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            if (isSelectedRival) ...[
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Firdaws3DPill(
-                                  label: 'المنافس المختار',
-                                  accentColor: accent,
-                                  palette: palette,
+                            if (!e.isCurrentUser)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 1.5),
+                                decoration: BoxDecoration(
+                                  color: accent.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '${e.age} سنة',
+                                  style: TextStyle(
+                                    color: accent,
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                            ],
+                            if (isSelectedRival)
+                              Firdaws3DPill(
+                                label: 'المنافس المختار',
+                                accentColor: accent,
+                                palette: palette,
+                              ),
                           ],
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '${e.relation} • فوز ${e.wins} | خسارة ${e.losses}',
+                          '${e.relation} • فوز ${e.wins} | خسارة ${e.losses}${!e.isCurrentUser ? ' • هدف ${e.dailyTasbihGoal}' : ''}',
                           style: TextStyle(
-                            color: palette.textMuted,
+                            color: palette.textSecondary,
                             fontSize: 10.5,
                           ),
                         ),
+                        if (e.traits.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Wrap(
+                            spacing: 4,
+                            runSpacing: 4,
+                            children: e.traits.take(3).map((t) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: accent.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                      color: accent.withOpacity(0.32)),
+                                ),
+                                child: Text(
+                                  t,
+                                  style: TextStyle(
+                                    color: palette.textPrimary,
+                                    fontSize: 9.2,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -650,17 +776,41 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                       ),
                     ],
                   ),
-                  if (!e.isCurrentUser && isTasbihTab) ...[
-                    const SizedBox(width: 6),
-                    IconButton(
-                      tooltip: 'تسجيل +33 تسبيحة لهذا المنافس',
-                      icon: Icon(
-                        Icons.add_circle_rounded,
-                        color: accent,
-                        size: 20,
+                  if (!e.isCurrentUser) ...[
+                    if (isTasbihTab)
+                      IconButton(
+                        style: IconButton.styleFrom(
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          minimumSize: const Size(30, 30),
+                          padding: EdgeInsets.zero,
+                        ),
+                        tooltip: 'تسجيل +33 تسبيحة لهذا المنافس',
+                        icon: const Icon(
+                          Icons.add_circle_rounded,
+                          color: Color(0xFF10B981),
+                          size: 20,
+                        ),
+                        onPressed: () => challenge.addMemberTasbihManual(e.id, 33),
                       ),
-                      onPressed: () => challenge.addMemberTasbihManual(e.id, 33),
-                    ),
+                    if (e.memberRef != null)
+                      IconButton(
+                        style: IconButton.styleFrom(
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          minimumSize: const Size(30, 30),
+                          padding: EdgeInsets.zero,
+                        ),
+                        tooltip: 'تعديل الاسم والصورة والصفات',
+                        icon: Icon(
+                          Icons.tune_rounded,
+                          color: accent,
+                          size: 19,
+                        ),
+                        onPressed: () => _showChallengerEditorSheet(
+                          palette,
+                          challenge,
+                          existing: e.memberRef,
+                        ),
+                      ),
                   ],
                 ],
               ),
@@ -752,6 +902,10 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
             entityId: entry.id,
             displayName: entry.name,
             customBytes: entry.isCurrentUser ? userProv.avatarBytes : null,
+            customPhotoBase64:
+                entry.isCurrentUser ? null : entry.customPhotoBase64,
+            networkPhotoUrl:
+                entry.isCurrentUser ? null : entry.networkPhotoUrl,
             size: rank == 1 ? 52 : 42,
             ringColor: medalColor,
             showCrown: rank == 1,
@@ -920,10 +1074,13 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
     return ListView(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 30),
       children: [
-        Firdaws3DCard(
-          palette: palette,
-          glowColor: accent,
+        Firdaws4KCardShell(
+          backdrop: Background500Catalog.forFamilySection(23),
+          isDark: palette.isDark,
+          borderColor: accent.withOpacity(0.5),
+          borderRadius: 20,
           padding: const EdgeInsets.all(14),
+          imageOpacity: 0.38,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1405,146 +1562,634 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
     );
   }
 
-  void _showAddChallengerDialog(
+  Widget _groupFilterChip(
+    String value,
+    String label,
     ThemePalette palette,
-    FamilyChallengeProvider challenge,
+    Color accent,
   ) {
-    final nameCtrl = TextEditingController();
-    final relCtrl = TextEditingController(text: 'الأصدقاء');
-    ChallengerGroup group = ChallengerGroup.friend;
-    String selectedPortraitId = 'fr_omar';
-    const portraitChoices = [
-      (id: 'fam_father', label: 'الوالد'),
-      (id: 'fam_mother', label: 'الوالدة'),
-      (id: 'fam_brother', label: 'أخ'),
-      (id: 'fam_sister', label: 'أخت'),
-      (id: 'fr_omar', label: 'عمر'),
-      (id: 'fr_kareem', label: 'كريم'),
-    ];
+    final isSel = _memberGroupFilter == value;
+    return Padding(
+      padding: const EdgeInsets.only(left: 7),
+      child: ChoiceChip(
+        label: Text(
+          label,
+          style: TextStyle(
+            color: isSel ? palette.onAccentColor : palette.textPrimary,
+            fontSize: 11,
+            fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
+          ),
+        ),
+        selected: isSel,
+        selectedColor: accent,
+        backgroundColor: firdaws3DElevatedSurfaceColor(palette),
+        onSelected: (_) => setState(() => _memberGroupFilter = value),
+      ),
+    );
+  }
 
-    showDialog(
+  Future<void> _showChallengerEditorSheet(
+    ThemePalette palette,
+    FamilyChallengeProvider challenge, {
+    ChallengerMember? existing,
+  }) async {
+    final isEdit = existing != null;
+    final nameCtrl = TextEditingController(text: existing?.name ?? '');
+    final relCtrl = TextEditingController(
+      text: existing?.relationLabel ?? 'العائلة • قريب',
+    );
+    final bioCtrl = TextEditingController(text: existing?.bioNote ?? '');
+    final customTraitCtrl = TextEditingController();
+
+    ChallengerGroup group = existing?.group ?? ChallengerGroup.family;
+    int age = (existing?.age ?? 25).clamp(5, 99);
+    int dailyGoal = existing?.dailyTasbihGoal ?? 100;
+    int tasbihVal = existing?.tasbihCount ?? 0;
+    int scoreVal = existing?.championScore ?? 120;
+    String? customPhotoB64 = existing?.customPhotoBase64;
+    String? networkUrl = existing?.networkPhotoUrl ??
+        Background500Catalog.personaPortraits50.first;
+    final List<String> selectedTraits = List<String>.from(
+      existing?.traits ?? const ['صاحب همة'],
+    );
+    final accent = firdawsModernAccent(palette);
+
+    const suggestedTraits = [
+      'محافظ على الفجر',
+      'سبّاح كثير الذكر',
+      'حافظ للقرآن',
+      'واصل للرحم',
+      'بارّ بوالديه',
+      'قائم الليل',
+      'كريم النفس',
+      'منافس شرس',
+      'صاحب أخلاق رفيعة',
+      'معين على الخير',
+      'متفائل دائماً',
+      'هادئ الطبع',
+    ];
+    final ImagePicker picker = ImagePicker();
+
+    await showModalBottomSheet<void>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModal) => AlertDialog(
-          backgroundColor: firdaws3DSurfaceColor(palette),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-            side: BorderSide(color: firdawsModernAccent(palette), width: 1.4),
-          ),
-          title: Text(
-            'إضافة فرد من العائلة أو صديق 🤝',
-            style: TextStyle(
-              color: palette.textPrimary,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameCtrl,
-                  style: TextStyle(color: palette.textPrimary),
-                  decoration: InputDecoration(
-                    labelText: 'الاسم',
-                    labelStyle: TextStyle(color: palette.textSecondary),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: relCtrl,
-                  style: TextStyle(color: palette.textPrimary),
-                  decoration: InputDecoration(
-                    labelText: 'صلة القرابة / الوصف',
-                    labelStyle: TextStyle(color: palette.textSecondary),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ChoiceChip(
-                        label: const Text('عائلة'),
-                        selected: group == ChallengerGroup.family,
-                        onSelected: (_) => setModal(() {
-                          group = ChallengerGroup.family;
-                          relCtrl.text = 'العائلة';
-                        }),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (ctx, setModal) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              ),
+              child: DraggableScrollableSheet(
+                initialChildSize: 0.88,
+                minChildSize: 0.55,
+                maxChildSize: 0.96,
+                builder: (_, sc) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: firdaws3DSurfaceColor(palette),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(28),
+                      ),
+                      border: Border.all(
+                        color: accent.withOpacity(0.55),
+                        width: 1.5,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ChoiceChip(
-                        label: const Text('صديق'),
-                        selected: group == ChallengerGroup.friend,
-                        onSelected: (_) => setModal(() {
-                          group = ChallengerGroup.friend;
-                          relCtrl.text = 'الأصدقاء';
-                        }),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: portraitChoices
-                      .map(
-                        (p) => GestureDetector(
-                          onTap: () => setModal(() => selectedPortraitId = p.id),
+                    child: ListView(
+                      controller: sc,
+                      padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
+                      children: [
+                        Center(
                           child: Container(
-                            padding: const EdgeInsets.all(3),
+                            width: 46,
+                            height: 4.5,
                             decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: selectedPortraitId == p.id
-                                    ? firdawsModernAccent(palette)
-                                    : Colors.transparent,
-                                width: 2,
-                              ),
-                            ),
-                            child: FirdawsPortraitAvatar(
-                              entityId: p.id,
-                              size: 40,
-                              isHighlighted: selectedPortraitId == p.id,
+                              color: palette.dividerColor,
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
                         ),
-                      )
-                      .toList(),
-                ),
-              ],
-            ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            FirdawsPortraitAvatar(
+                              entityId: existing?.id ?? 'custom_preview',
+                              displayName: nameCtrl.text,
+                              customPhotoBase64: customPhotoB64,
+                              networkPhotoUrl:
+                                  customPhotoB64 == null ? networkUrl : null,
+                              size: 62,
+                              ringColor: accent,
+                              isHighlighted: true,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    isEdit
+                                        ? 'تخصيص وتعديل: ${existing.name} ✨'
+                                        : 'إضافة فرد عائلة أو صديق جديد 🤝',
+                                    style: TextStyle(
+                                      color: accent,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  Text(
+                                    'تحكم كامل في الاسم، الصورة الحقيقية، العمر، الصفات، والأهداف',
+                                    style: TextStyle(
+                                      color: palette.textSecondary,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: () async {
+                                try {
+                                  final XFile? file = await picker.pickImage(
+                                    source: ImageSource.gallery,
+                                    maxWidth: 420,
+                                    maxHeight: 420,
+                                    imageQuality: 80,
+                                  );
+                                  if (file == null) return;
+                                  final bytes = await file.readAsBytes();
+                                  setModal(() {
+                                    customPhotoB64 = base64Encode(bytes);
+                                  });
+                                } catch (_) {}
+                              },
+                              icon: const Icon(Icons.photo_camera_rounded,
+                                  size: 16),
+                              label: const Text(
+                                'رفع صورة من المعرض 📸',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 11.5),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF10B981),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                            if (customPhotoB64 != null)
+                              TextButton.icon(
+                                onPressed: () =>
+                                    setModal(() => customPhotoB64 = null),
+                                icon: const Icon(Icons.delete_outline_rounded,
+                                    size: 16, color: Colors.orangeAccent),
+                                label: const Text(
+                                  'استخدام صورة من المكتبة',
+                                  style: TextStyle(
+                                      color: Colors.orangeAccent, fontSize: 11),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'أو اختر صورة جاهزة من ٥٠ صورة حقيقية عالية الدقة:',
+                          style: TextStyle(
+                            color: palette.textSecondary,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        SizedBox(
+                          height: 64,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount:
+                                Background500Catalog.personaPortraits50.length,
+                            itemBuilder: (_, idx) {
+                              final url =
+                                  Background500Catalog.personaPortraits50[idx];
+                              final sel =
+                                  customPhotoB64 == null && networkUrl == url;
+                              return Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    HapticFeedback.selectionClick();
+                                    setModal(() {
+                                      customPhotoB64 = null;
+                                      networkUrl = url;
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(2),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: sel
+                                            ? const Color(0xFF10B981)
+                                            : Colors.transparent,
+                                        width: 2.2,
+                                      ),
+                                    ),
+                                    child: FirdawsPortraitAvatar(
+                                      entityId: 'preset_$idx',
+                                      networkPhotoUrl: url,
+                                      size: 52,
+                                      isHighlighted: sel,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: nameCtrl,
+                          style: TextStyle(color: palette.textPrimary),
+                          decoration: InputDecoration(
+                            labelText: 'الاسم الكامل أو اللقب',
+                            labelStyle: TextStyle(color: palette.textSecondary),
+                            filled: true,
+                            fillColor: firdaws3DElevatedSurfaceColor(palette),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: relCtrl,
+                          style: TextStyle(color: palette.textPrimary),
+                          decoration: InputDecoration(
+                            labelText: 'صلة القرابة أو الوصف (مثل: العائلة • الأخ)',
+                            labelStyle: TextStyle(color: palette.textSecondary),
+                            filled: true,
+                            fillColor: firdaws3DElevatedSurfaceColor(palette),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ChoiceChip(
+                                label: const Center(child: Text('العائلة 👨‍👩‍👧‍👦')),
+                                selected: group == ChallengerGroup.family,
+                                onSelected: (_) => setModal(() {
+                                  group = ChallengerGroup.family;
+                                }),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ChoiceChip(
+                                label: const Center(child: Text('الأصدقاء 🤝')),
+                                selected: group == ChallengerGroup.friend,
+                                onSelected: (_) => setModal(() {
+                                  group = ChallengerGroup.friend;
+                                }),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'العمر:',
+                              style: TextStyle(
+                                color: palette.textPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                            Firdaws3DPill(
+                              label: '$age سنة',
+                              accentColor: accent,
+                              palette: palette,
+                            ),
+                          ],
+                        ),
+                        Slider(
+                          value: age.toDouble(),
+                          min: 5,
+                          max: 99,
+                          divisions: 94,
+                          activeColor: accent,
+                          onChanged: (v) => setModal(() => age = v.round()),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'الصفات والأخلاق (اختر أو أضف صفة مخصصة):',
+                          style: TextStyle(
+                            color: palette.textPrimary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12.5,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: {
+                            ...suggestedTraits,
+                            ...selectedTraits,
+                          }.map((tr) {
+                            final isSel = selectedTraits.contains(tr);
+                            return FilterChip(
+                              label: Text(
+                                tr,
+                                style: TextStyle(
+                                  color: isSel
+                                      ? palette.onAccentColor
+                                      : palette.textPrimary,
+                                  fontSize: 11,
+                                  fontWeight: isSel
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                              selected: isSel,
+                              selectedColor: accent,
+                              backgroundColor:
+                                  firdaws3DElevatedSurfaceColor(palette),
+                              onSelected: (v) => setModal(() {
+                                if (v) {
+                                  if (!selectedTraits.contains(tr)) {
+                                    selectedTraits.add(tr);
+                                  }
+                                } else {
+                                  selectedTraits.remove(tr);
+                                }
+                              }),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: customTraitCtrl,
+                                style: TextStyle(
+                                    color: palette.textPrimary, fontSize: 12.5),
+                                decoration: InputDecoration(
+                                  hintText: 'أضف صفة جديدة (مثلاً: ملازم الضحى)...',
+                                  hintStyle: TextStyle(
+                                      color: palette.textMuted, fontSize: 11.5),
+                                  isDense: true,
+                                  filled: true,
+                                  fillColor:
+                                      firdaws3DElevatedSurfaceColor(palette),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              onPressed: () {
+                                final t = customTraitCtrl.text.trim();
+                                if (t.isNotEmpty) {
+                                  setModal(() {
+                                    if (!selectedTraits.contains(t)) {
+                                      selectedTraits.add(t);
+                                    }
+                                    customTraitCtrl.clear();
+                                  });
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: accent,
+                                foregroundColor: palette.onAccentColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text('إضافة'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'الهدف اليومي للتسبيح:',
+                          style: TextStyle(
+                            color: palette.textPrimary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12.5,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [33, 100, 200, 300, 500, 1000].map((g) {
+                            final sel = dailyGoal == g;
+                            return ChoiceChip(
+                              label: Text('$g 📿'),
+                              selected: sel,
+                              selectedColor: const Color(0xFF10B981),
+                              onSelected: (_) => setModal(() => dailyGoal = g),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _scoreStepperBox(
+                                label: 'التسبيحات: $tasbihVal',
+                                palette: palette,
+                                onMinus: () => setModal(() => tasbihVal =
+                                    (tasbihVal - 33).clamp(0, 999999)),
+                                onPlus: () =>
+                                    setModal(() => tasbihVal += 33),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _scoreStepperBox(
+                                label: 'نقاط المجد: $scoreVal',
+                                palette: palette,
+                                onMinus: () => setModal(() => scoreVal =
+                                    (scoreVal - 50).clamp(0, 999999)),
+                                onPlus: () => setModal(() => scoreVal += 50),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: bioCtrl,
+                          maxLines: 2,
+                          style: TextStyle(
+                              color: palette.textPrimary, fontSize: 12.5),
+                          decoration: InputDecoration(
+                            labelText: 'ملاحظة أو دعوة تحفيزية عن هذا الفرد',
+                            labelStyle: TextStyle(color: palette.textSecondary),
+                            filled: true,
+                            fillColor: firdaws3DElevatedSurfaceColor(palette),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            if (isEdit && challenge.members.length > 1)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: OutlinedButton.icon(
+                                  onPressed: () async {
+                                    await challenge.removeChallenger(existing.id);
+                                    if (sheetCtx.mounted) {
+                                      Navigator.pop(sheetCtx);
+                                    }
+                                  },
+                                  icon: const Icon(Icons.delete_rounded,
+                                      color: Colors.redAccent, size: 18),
+                                  label: const Text(
+                                    'حذف',
+                                    style: TextStyle(color: Colors.redAccent),
+                                  ),
+                                ),
+                              ),
+                            Expanded(
+                              child: Firdaws3DButton(
+                                baseColor: const Color(0xFF10B981),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                onPressed: () async {
+                                  final cleanName = nameCtrl.text.trim();
+                                  if (cleanName.isEmpty) return;
+                                  final finalTraits = selectedTraits.isEmpty
+                                      ? const ['صاحب همة']
+                                      : List<String>.from(selectedTraits);
+                                  if (isEdit) {
+                                    await challenge.updateChallenger(
+                                      existing.copyWith(
+                                        name: cleanName,
+                                        group: group,
+                                        relationLabel: relCtrl.text.trim().isEmpty
+                                            ? existing.relationLabel
+                                            : relCtrl.text.trim(),
+                                        age: age,
+                                        traits: finalTraits,
+                                        customPhotoBase64: customPhotoB64,
+                                        clearCustomPhoto: customPhotoB64 == null,
+                                        networkPhotoUrl: networkUrl,
+                                        dailyTasbihGoal: dailyGoal,
+                                        tasbihCount: tasbihVal,
+                                        championScore: scoreVal,
+                                        bioNote: bioCtrl.text.trim(),
+                                      ),
+                                    );
+                                  } else {
+                                    await challenge.addChallenger(
+                                      name: cleanName,
+                                      group: group,
+                                      relationLabel: relCtrl.text,
+                                      age: age,
+                                      traits: finalTraits,
+                                      customPhotoBase64: customPhotoB64,
+                                      networkPhotoUrl: networkUrl,
+                                      dailyTasbihGoal: dailyGoal,
+                                      initialTasbih: tasbihVal,
+                                      initialScore: scoreVal,
+                                      bioNote: bioCtrl.text.trim(),
+                                    );
+                                  }
+                                  if (sheetCtx.mounted) {
+                                    Navigator.pop(sheetCtx);
+                                  }
+                                },
+                                child: Text(
+                                  isEdit
+                                      ? 'حفظ التعديلات ✨'
+                                      : 'إضافة إلى التحدي 🏆',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _scoreStepperBox({
+    required String label,
+    required ThemePalette palette,
+    required VoidCallback onMinus,
+    required VoidCallback onPlus,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: firdaws3DElevatedSurfaceColor(palette),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: palette.dividerColor),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          InkWell(
+            onTap: onMinus,
+            child: const Icon(Icons.remove_circle_outline_rounded, size: 20),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text('إلغاء', style: TextStyle(color: palette.textMuted)),
-            ),
-            Firdaws3DButton(
-              baseColor: const Color(0xFF10B981),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-              onPressed: () {
-                challenge.addChallenger(
-                  name: nameCtrl.text,
-                  group: group,
-                  relationLabel: relCtrl.text,
-                  avatarEmoji: selectedPortraitId,
-                );
-                Navigator.pop(ctx);
-              },
-              child: const Text(
-                'حفظ المنافس',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: palette.textPrimary,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          ],
-        ),
+          ),
+          InkWell(
+            onTap: onPlus,
+            child: const Icon(Icons.add_circle_outline_rounded,
+                size: 20, color: Color(0xFF10B981)),
+          ),
+        ],
       ),
     );
   }

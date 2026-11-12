@@ -98,6 +98,39 @@ class FirdawsNativeService {
     }
   }
 
+  Future<Map<String, dynamic>> getAdhanDiagnostics() async {
+    if (!isAndroid) {
+      return const {
+        'canScheduleExactAlarms': true,
+        'notificationsEnabled': true,
+        'ignoringBatteryOptimizations': true,
+        'canDrawOverlays': true,
+        'scheduledCount': 0,
+      };
+    }
+    try {
+      final res =
+          await _channel.invokeMapMethod<String, dynamic>('getAdhanDiagnostics');
+      return res ?? const {};
+    } catch (_) {
+      return const {};
+    }
+  }
+
+  Future<void> requestExactAlarmPermission() async {
+    if (!isAndroid) return;
+    try {
+      await _channel.invokeMethod('requestExactAlarmPermission');
+    } catch (_) {}
+  }
+
+  Future<void> requestBatteryOptimizationExemption() async {
+    if (!isAndroid) return;
+    try {
+      await _channel.invokeMethod('requestBatteryOptimizationExemption');
+    } catch (_) {}
+  }
+
   Future<bool> canDrawOverlays() async {
     if (!isAndroid) return false;
     try {

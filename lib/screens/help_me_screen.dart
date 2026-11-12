@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:adhan/adhan.dart';
 import 'package:provider/provider.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/help_me_model.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
+import '../widgets/firdaws_resilient_image.dart';
 import '../widgets/islamic_qa_explorer_widget.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/real_mosque_background.dart';
@@ -161,13 +163,13 @@ class _HelpMeScreenState extends State<HelpMeScreen>
                   const SizedBox(height: 16),
                   Divider(color: palette.dividerColor),
                   const SizedBox(height: 10),
-                  Container(
+                  Firdaws4KCardShell(
+                    backdrop: Background500Catalog.forHelpMeBanner(1),
+                    isDark: palette.isDark,
+                    borderColor: catAccent.withOpacity(0.5),
+                    borderRadius: 16,
                     padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: category.primaryColor.withOpacity(palette.isDark ? 0.14 : 0.10),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: catAccent.withOpacity(0.35)),
-                    ),
+                    imageOpacity: 0.56,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -191,13 +193,13 @@ class _HelpMeScreenState extends State<HelpMeScreen>
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Container(
+                  Firdaws4KCardShell(
+                    backdrop: Background500Catalog.forHelpMeBanner(2),
+                    isDark: palette.isDark,
+                    borderColor: catAccent.withOpacity(0.45),
+                    borderRadius: 16,
                     padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: palette.cardColor,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: palette.dividerColor),
-                    ),
+                    imageOpacity: 0.52,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -205,12 +207,14 @@ class _HelpMeScreenState extends State<HelpMeScreen>
                           children: [
                             Icon(Icons.record_voice_over_rounded, color: catAccent, size: 18),
                             const SizedBox(width: 8),
-                            Text(
-                              "🤲 دعاء الكرب وتفريج الضيق:",
-                              style: TextStyle(
-                                color: catAccent,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
+                            Expanded(
+                              child: Text(
+                                "🤲 دعاء الكرب وتفريج الضيق:",
+                                style: TextStyle(
+                                  color: catAccent,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
                               ),
                             ),
                           ],
@@ -275,45 +279,49 @@ class _HelpMeScreenState extends State<HelpMeScreen>
                     ),
                   ),
                   const SizedBox(height: 10),
-                  ...category.sunnahSteps.map((step) {
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: palette.cardColor,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: palette.dividerColor),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(step.icon, color: catAccent, size: 20),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  step.title,
-                                  style: TextStyle(
-                                    color: palette.textPrimary,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13,
+                  ...category.sunnahSteps.asMap().entries.map((stepEntry) {
+                    final sIdx = stepEntry.key;
+                    final step = stepEntry.value;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Firdaws4KCardShell(
+                        backdrop: Background500Catalog.forHelpMeCategory(20 + (sIdx % 30)),
+                        isDark: palette.isDark,
+                        borderColor: catAccent.withOpacity(0.42),
+                        borderRadius: 14,
+                        padding: const EdgeInsets.all(12),
+                        imageOpacity: 0.48,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(step.icon, color: catAccent, size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    step.title,
+                                    style: TextStyle(
+                                      color: palette.textPrimary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  step.description,
-                                  style: TextStyle(
-                                    color: palette.textSecondary,
-                                    fontSize: 12,
-                                    height: 1.3,
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    step.description,
+                                    style: TextStyle(
+                                      color: palette.textSecondary,
+                                      fontSize: 12,
+                                      height: 1.3,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     );
                   }),
@@ -476,13 +484,13 @@ class _HelpMeScreenState extends State<HelpMeScreen>
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
-                  child: Container(
+                  child: Firdaws4KCardShell(
+                    backdrop: Background500Catalog.forHelpMeBanner(0),
+                    isDark: isNight,
+                    borderColor: accentColor.withOpacity(0.55),
+                    borderRadius: 20,
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: palette.cardColor.withOpacity(isNight ? 0.82 : 0.92),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: accentColor.withOpacity(0.45)),
-                    ),
+                    imageOpacity: 0.62,
                     child: Column(
                       children: [
                         Row(
@@ -650,65 +658,51 @@ class _HelpMeScreenState extends State<HelpMeScreen>
                           itemBuilder: (context, index) {
                             final cat = HelpMeCategory.categories[index];
                             final catAccent = _resolveCatAccent(cat, palette.isDark);
-                            return GestureDetector(
+                            return Firdaws4KCardShell(
+                              backdrop: Background500Catalog.forHelpMeCategory(index),
+                              isDark: isNight,
+                              borderColor: catAccent.withOpacity(0.60),
+                              borderRadius: 20,
+                              padding: const EdgeInsets.all(14),
+                              imageOpacity: 0.66,
                               onTap: () => _showCategoryDetails(context, cat, palette),
-                              child: Container(
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: palette.cardColor.withOpacity(isNight ? 0.85 : 0.90),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: catAccent.withOpacity(0.45),
-                                    width: 1.2,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: cat.primaryColor.withOpacity(0.24),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: catAccent.withOpacity(0.8)),
+                                    ),
+                                    child: Icon(cat.icon, color: catAccent, size: 28),
                                   ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: cat.primaryColor.withOpacity(
-                                        palette.isDark ? 0.16 : 0.10,
-                                      ),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 3),
-                                    )
-                                  ],
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: cat.primaryColor.withOpacity(0.18),
-                                        shape: BoxShape.circle,
-                                        border: Border.all(color: catAccent.withOpacity(0.7)),
-                                      ),
-                                      child: Icon(cat.icon, color: catAccent, size: 30),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    cat.title,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: catAccent,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                    const SizedBox(height: 10),
-                                    Text(
-                                      cat.title,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        color: catAccent,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    cat.subtitle,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: palette.textSecondary,
+                                      fontSize: 10,
+                                      height: 1.3,
                                     ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      cat.subtitle,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        color: palette.textSecondary,
-                                        fontSize: 10,
-                                        height: 1.3,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
                               ),
                             );
                           },

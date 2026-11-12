@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/arena_games_catalog.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/events_missions_catalog.dart';
 import '../providers/hasanat_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/firdaws_3d_ui.dart';
-import '../widgets/games/gfx/arena_4k_stage_compositor.dart';
+import '../widgets/firdaws_resilient_image.dart';
 import '../widgets/real_mosque_background.dart';
 import 'arena_game_play_screen.dart';
 import 'hasanat_store_screen.dart';
@@ -100,13 +101,30 @@ class _EventsMissionsScreenState extends State<EventsMissionsScreen> {
         body: Stack(
           children: [
             Positioned.fill(
-              child: RealMosqueBackground(
-                currentPrayer: isNight ? Prayer.isha : Prayer.dhuhr,
-                themeOption: themeOption,
-                isNightMode: isNight,
-                customAssetOverride: settings.selectedAppWallpaperAsset ??
-                    'assets/images/themes/samarkand_registan.jpg',
-                dimFactor: 0.90,
+              child: settings.selectedAppWallpaperAsset != null
+                  ? RealMosqueBackground(
+                      currentPrayer: isNight ? Prayer.isha : Prayer.dhuhr,
+                      themeOption: themeOption,
+                      isNightMode: isNight,
+                      customAssetOverride: settings.selectedAppWallpaperAsset,
+                      dimFactor: 0.90,
+                    )
+                  : FirdawsResilientImage.entry(
+                      Background500Catalog.forEventItem(0),
+                    ),
+            ),
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withOpacity(isNight ? 0.62 : 0.30),
+                      Colors.black.withOpacity(isNight ? 0.78 : 0.45),
+                    ],
+                  ),
+                ),
               ),
             ),
             SafeArea(
@@ -124,17 +142,31 @@ class _EventsMissionsScreenState extends State<EventsMissionsScreen> {
                         const SizedBox(height: 12),
                         if (_activeView == 1) ...[
                           ...EventsMissionsCatalog.events
-                              .map((ev) => Padding(
+                              .asMap()
+                              .entries
+                              .map((entry) => Padding(
                                     padding: const EdgeInsets.only(bottom: 12),
-                                    child: _buildEventCard(ev, hasanat, palette),
+                                    child: _buildEventCard(
+                                      entry.value,
+                                      hasanat,
+                                      palette,
+                                      eventIndex: entry.key,
+                                    ),
                                   )),
                           const SizedBox(height: 10),
                           _sectionTitle('المهام الـ ١٦ المرتبطة بالأحداث', Icons.task_alt_rounded, accent, palette),
                           const SizedBox(height: 8),
                           ...EventsMissionsCatalog.missions
-                              .map((m) => Padding(
+                              .asMap()
+                              .entries
+                              .map((entry) => Padding(
                                     padding: const EdgeInsets.only(bottom: 10),
-                                    child: _buildMissionCard(m, hasanat, palette),
+                                    child: _buildMissionCard(
+                                      entry.value,
+                                      hasanat,
+                                      palette,
+                                      missionIndex: entry.key,
+                                    ),
                                   )),
                         ] else ...[
                           _sectionTitle(
@@ -145,9 +177,16 @@ class _EventsMissionsScreenState extends State<EventsMissionsScreen> {
                           ),
                           const SizedBox(height: 8),
                           ...EventsMissionsCatalog.missions
-                              .map((m) => Padding(
+                              .asMap()
+                              .entries
+                              .map((entry) => Padding(
                                     padding: const EdgeInsets.only(bottom: 10),
-                                    child: _buildMissionCard(m, hasanat, palette),
+                                    child: _buildMissionCard(
+                                      entry.value,
+                                      hasanat,
+                                      palette,
+                                      missionIndex: entry.key,
+                                    ),
                                   )),
                           const SizedBox(height: 12),
                           _sectionTitle(
@@ -158,9 +197,16 @@ class _EventsMissionsScreenState extends State<EventsMissionsScreen> {
                           ),
                           const SizedBox(height: 8),
                           ...EventsMissionsCatalog.events
-                              .map((ev) => Padding(
+                              .asMap()
+                              .entries
+                              .map((entry) => Padding(
                                     padding: const EdgeInsets.only(bottom: 12),
-                                    child: _buildEventCard(ev, hasanat, palette),
+                                    child: _buildEventCard(
+                                      entry.value,
+                                      hasanat,
+                                      palette,
+                                      eventIndex: entry.key,
+                                    ),
                                   )),
                         ],
                       ],
@@ -228,11 +274,13 @@ class _EventsMissionsScreenState extends State<EventsMissionsScreen> {
     UnlockableGameEvent? activeEv,
   ) {
     if (activeEv == null) {
-      return Firdaws3DCard(
-        palette: palette,
-        glowColor: const Color(0xFF38BDF8),
+      return Firdaws4KCardShell(
+        backdrop: Background500Catalog.forEventItem(1),
+        isDark: palette.isDark,
+        borderColor: const Color(0xFF38BDF8).withOpacity(0.55),
         padding: const EdgeInsets.all(14),
         borderRadius: 20,
+        imageOpacity: 0.60,
         child: Row(
           children: [
             Container(
@@ -275,41 +323,65 @@ class _EventsMissionsScreenState extends State<EventsMissionsScreen> {
       );
     }
 
-    return Firdaws3DCard(
-      palette: palette,
-      glowColor: activeEv.primaryColor,
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forEventItem(1),
+      isDark: palette.isDark,
+      borderColor: activeEv.primaryColor.withOpacity(0.65),
       padding: const EdgeInsets.all(12),
       borderRadius: 22,
+      imageOpacity: 0.56,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Arena4KBackdropPreview(
-            assetPath: activeEv.backdropAsset,
-            height: 108,
-            borderRadius: 16,
-            accentColor: activeEv.primaryColor,
-            overlayChild: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: SizedBox(
+              height: 108,
+              width: double.infinity,
+              child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  Text(
-                    '⚡ الحدث المُفعَّل الآن',
-                    style: TextStyle(
-                      color: activeEv.secondaryColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 11,
+                  FirdawsResilientImage(
+                    networkUrl: Background500Catalog.forEventItem(19).url,
+                    fallbackAsset: activeEv.backdropAsset,
+                  ),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.75),
+                        ],
+                      ),
                     ),
                   ),
-                  Text(
-                    activeEv.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 15,
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          '⚡ الحدث المُفعَّل الآن',
+                          style: TextStyle(
+                            color: activeEv.secondaryColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                          ),
+                        ),
+                        Text(
+                          activeEv.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -441,8 +513,9 @@ class _EventsMissionsScreenState extends State<EventsMissionsScreen> {
   Widget _buildMissionCard(
     HasanatMissionSpec m,
     HasanatProvider hasanat,
-    ThemePalette palette,
-  ) {
+    ThemePalette palette, {
+    int missionIndex = 0,
+  }) {
     final prog = hasanat.missionProgressValue(m);
     final ratio = (prog / m.targetValue).clamp(0.0, 1.0);
     final ready = hasanat.isMissionReadyToClaim(m);
@@ -450,14 +523,17 @@ class _EventsMissionsScreenState extends State<EventsMissionsScreen> {
     final unlocksEv = m.unlocksEventId != null
         ? EventsMissionsCatalog.eventById(m.unlocksEventId)
         : null;
+    final borderCol = claimed
+        ? const Color(0xFF10B981)
+        : (ready ? const Color(0xFFF59E0B) : m.accentColor);
 
-    return Firdaws3DCard(
-      palette: palette,
-      glowColor: claimed
-          ? const Color(0xFF10B981)
-          : (ready ? const Color(0xFFF59E0B) : m.accentColor),
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forMissionItem(missionIndex),
+      isDark: palette.isDark,
+      borderColor: borderCol.withOpacity(0.60),
       padding: const EdgeInsets.all(13),
       borderRadius: 18,
+      imageOpacity: 0.54,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -582,83 +658,109 @@ class _EventsMissionsScreenState extends State<EventsMissionsScreen> {
   Widget _buildEventCard(
     UnlockableGameEvent ev,
     HasanatProvider hasanat,
-    ThemePalette palette,
-  ) {
+    ThemePalette palette, {
+    int eventIndex = 0,
+  }) {
     final unlocked = hasanat.isEventUnlocked(ev.id);
     final isActive = hasanat.activeEventId == ev.id;
     final reqMission = EventsMissionsCatalog.missionById(ev.requiredMissionId);
+    final evBackdrop = Background500Catalog.forEventItem(2 + (eventIndex % 16));
 
-    return Firdaws3DCard(
-      palette: palette,
-      glowColor: isActive ? const Color(0xFF10B981) : ev.primaryColor,
+    return Firdaws4KCardShell(
+      backdrop: evBackdrop,
+      isDark: palette.isDark,
+      borderColor: (isActive ? const Color(0xFF10B981) : ev.primaryColor).withOpacity(0.62),
       padding: const EdgeInsets.all(12),
       borderRadius: 20,
+      imageOpacity: 0.48,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Arena4KBackdropPreview(
-            assetPath: ev.backdropAsset,
-            height: 98,
-            borderRadius: 14,
-            accentColor: ev.primaryColor,
-            overlayChild: Padding(
-              padding: const EdgeInsets.all(10),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: SizedBox(
+              height: 102,
+              width: double.infinity,
+              child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  FirdawsResilientImage(
+                    networkUrl: evBackdrop.url,
+                    fallbackAsset: ev.backdropAsset,
+                  ),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.10),
+                          Colors.black.withOpacity(0.75),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: unlocked
+                                      ? const Color(0xFF10B981).withOpacity(0.85)
+                                      : Colors.black.withOpacity(0.68),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  isActive
+                                      ? 'مُفعَّل حالياً ⚡'
+                                      : (unlocked ? 'مفتوح 🔓' : 'مقفل 🔒'),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                ev.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 14.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                              horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: unlocked
-                                ? const Color(0xFF10B981).withOpacity(0.85)
-                                : Colors.black.withOpacity(0.68),
-                            borderRadius: BorderRadius.circular(10),
+                            color: ev.primaryColor.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            isActive
-                                ? 'مُفعَّل حالياً ⚡'
-                                : (unlocked ? 'مفتوح 🔓' : 'مقفل 🔒'),
+                            '×${ev.hasanatMultiplier}',
                             style: const TextStyle(
                               color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 13,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          ev.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 14.5,
-                          ),
-                        ),
                       ],
-                    ),
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: ev.primaryColor.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '×${ev.hasanatMultiplier}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 13,
-                      ),
                     ),
                   ),
                 ],

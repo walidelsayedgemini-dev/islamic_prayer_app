@@ -5,11 +5,13 @@ import 'package:provider/provider.dart';
 
 import '../models/arena_game_models.dart';
 import '../models/arena_games_catalog.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/events_missions_catalog.dart';
 import '../providers/hasanat_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/firdaws_3d_ui.dart';
+import '../widgets/firdaws_resilient_image.dart';
 import '../widgets/games/gfx/arena_4k_stage_compositor.dart';
 import '../widgets/real_mosque_background.dart';
 import 'arena_game_play_screen.dart';
@@ -108,13 +110,30 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: RealMosqueBackground(
-              currentPrayer: isNight ? Prayer.isha : Prayer.dhuhr,
-              themeOption: themeOption,
-              isNightMode: isNight,
-              customAssetOverride: settings.selectedAppWallpaperAsset ??
-                  'assets/images/games/arena_emerald_fortress.jpg',
-              dimFactor: 0.92,
+            child: settings.selectedAppWallpaperAsset != null
+                ? RealMosqueBackground(
+                    currentPrayer: isNight ? Prayer.isha : Prayer.dhuhr,
+                    themeOption: themeOption,
+                    isNightMode: isNight,
+                    customAssetOverride: settings.selectedAppWallpaperAsset,
+                    dimFactor: 0.92,
+                  )
+                : FirdawsResilientImage.entry(
+                    Background500Catalog.forArenaSection(0),
+                  ),
+          ),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withOpacity(isNight ? 0.62 : 0.28),
+                    Colors.black.withOpacity(isNight ? 0.78 : 0.44),
+                  ],
+                ),
+              ),
             ),
           ),
           SafeArea(
@@ -300,11 +319,13 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
     HasanatProvider? hasanat,
   ) {
     final claimable = hasanat?.claimableMissionsCount ?? 0;
-    return Firdaws3DCard(
-      palette: palette,
-      glowColor: const Color(0xFF38BDF8),
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forArenaSection(1),
+      isDark: palette.isDark,
+      borderColor: const Color(0xFF38BDF8).withOpacity(0.55),
       padding: const EdgeInsets.all(14),
-      depth: 5.5,
+      borderRadius: 20,
+      imageOpacity: 0.48,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -515,11 +536,14 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
     ThemePalette palette,
     UnlockableGameEvent ev,
   ) {
-    return Firdaws3DCard(
-      palette: palette,
-      glowColor: ev.primaryColor,
+    final evBackdrop = Background500Catalog.forArenaSection(2);
+    return Firdaws4KCardShell(
+      backdrop: evBackdrop,
+      isDark: palette.isDark,
+      borderColor: ev.primaryColor.withOpacity(0.7),
       padding: EdgeInsets.zero,
       borderRadius: 18,
+      imageOpacity: 0.42,
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -527,66 +551,89 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
           ),
         );
       },
-      child: Arena4KBackdropPreview(
-        assetPath: ev.backdropAsset,
-        height: 82,
-        borderRadius: 17,
-        accentColor: ev.primaryColor,
-        overlayChild: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(17),
+        child: SizedBox(
+          height: 82,
+          width: double.infinity,
+          child: Stack(
+            fit: StackFit.expand,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: ev.primaryColor.withOpacity(0.88),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(ev.icon, color: Colors.white, size: 20),
+              FirdawsResilientImage(
+                networkUrl: evBackdrop.url,
+                fallbackAsset: ev.backdropAsset,
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.18),
+                      Colors.black.withOpacity(0.72),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
                   children: [
-                    Text(
-                      'حدث نشط الآن: ${ev.title}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 12.5,
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: ev.primaryColor.withOpacity(0.88),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(ev.icon, color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'حدث نشط الآن: ${ev.title}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 12.5,
+                            ),
+                          ),
+                          Text(
+                            ev.ruleDescription,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 10.5,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Text(
-                      ev.ruleDescription,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 10.5,
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF59E0B),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '×${ev.hasanatMultiplier}',
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 11,
+                        ),
                       ),
                     ),
                   ],
-                ),
-              ),
-              const SizedBox(width: 6),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF59E0B),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '×${ev.hasanatMultiplier}',
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 11,
-                  ),
                 ),
               ),
             ],
@@ -597,11 +644,13 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
   }
 
   Widget _buildModeQuickSwitcher(ThemePalette palette, Color accent) {
-    return Firdaws3DCard(
-      palette: palette,
-      glowColor: accent,
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forArenaSection(3),
+      isDark: palette.isDark,
+      borderColor: accent.withOpacity(0.55),
       padding: const EdgeInsets.all(10),
       borderRadius: 18,
+      imageOpacity: 0.45,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -773,14 +822,18 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
   Widget _buildGameCard3D(ArenaGameDefinition g, ThemePalette palette) {
     final c = g.accentColor;
     final backdropPath = Arena4KStageAssets.backdropForGame(g);
+    final gameBackdrop4K = Background500Catalog.forArenaGame(g.number - 1);
+    final shellBackdrop =
+        Background500Catalog.forArenaSection(4 + (g.number % 16));
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Firdaws3DCard(
-        palette: palette,
-        glowColor: c,
+      child: Firdaws4KCardShell(
+        backdrop: shellBackdrop,
+        isDark: palette.isDark,
+        borderColor: c.withOpacity(0.62),
         padding: EdgeInsets.zero,
         borderRadius: 22,
-        depth: 5.5,
+        imageOpacity: 0.36,
         onTap: () => _openGame(g),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -789,117 +842,138 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
             ClipRRect(
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(21)),
-              child: Arena4KBackdropPreview(
-                assetPath: backdropPath,
-                height: 102,
-                borderRadius: 0,
-                accentColor: c,
-                overlayChild: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.45),
-                          borderRadius: BorderRadius.circular(15),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.5),
-                            width: 1.4,
-                          ),
-                        ),
-                        child: Center(
-                          child:
-                              Text(g.emoji, style: const TextStyle(fontSize: 25)),
+              child: SizedBox(
+                height: 106,
+                width: double.infinity,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    FirdawsResilientImage(
+                      networkUrl: gameBackdrop4K.url,
+                      fallbackAsset: backdropPath,
+                    ),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withOpacity(0.14),
+                            Colors.black.withOpacity(0.70),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.45),
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.5),
+                                width: 1.4,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(g.emoji,
+                                  style: const TextStyle(fontSize: 25)),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Flexible(
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.55),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text(
-                                      'اللعبة #${g.number}',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 10.5,
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.55),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        child: Text(
+                                          'اللعبة #${g.number}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 10.5,
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                    const SizedBox(width: 6),
+                                    Flexible(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: c.withOpacity(0.75),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        child: Text(
+                                          g.category,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 10,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 6),
-                                Flexible(
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: c.withOpacity(0.75),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text(
-                                      g.category,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 10,
+                                const SizedBox(height: 5),
+                                Text(
+                                  g.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 15,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black,
+                                        blurRadius: 6,
                                       ),
-                                    ),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 5),
-                            Text(
-                              g.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 15,
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.black,
-                                    blurRadius: 6,
-                                  ),
-                                ],
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.black.withOpacity(0.42),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.35),
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.all(7),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.black.withOpacity(0.42),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.35),
+                            child: Icon(g.engineType.icon,
+                                color: Colors.white, size: 19),
                           ),
-                        ),
-                        child: Icon(g.engineType.icon,
-                            color: Colors.white, size: 19),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),

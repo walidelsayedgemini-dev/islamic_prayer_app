@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:adhan/adhan.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/font_catalog.dart';
 import '../models/prayer_model.dart';
 import '../services/arena_sfx_service.dart';
@@ -20,12 +21,18 @@ class SettingsProvider extends ChangeNotifier {
   String _brightnessMode = 'night'; // 'night', 'day', 'auto'
   String? _selectedAppWallpaperAsset;
   String? _selectedGardenWallpaperAsset;
+  int _selectedJannatiSceneryIndex = 0; // 0..99 (من الـ 100 صورة 4K لجنتي)
+  bool _jannatiAutoCycleScenery = true;
+  String _selectedBirdsongTrackId = 'birds_paradise';
   bool _gameSfxEnabled = true;
   String _adhanVoice = 'madinah';
   bool _isAutoLocation = true;
-  double _latitude = 24.7136; // افتراضي: الرياض
+  double _latitude = 24.7136; // افتراضي مؤقت حتى يكتشف الجهاز بلدك ومدينتك
   double _longitude = 46.6753;
-  String _cityName = "الرياض، المملكة العربية السعودية";
+  String _cityName = "جاري تحديد مدينتك وبلدك...";
+  bool _isDetectingLocation = false;
+  String _lastLocationStatus = 'لم يتم الفحص بعد';
+  String? _lastLocationError;
   bool _playPreAdhanReminder = true;
   bool _autoMuteDuringPrayer = false;
 
@@ -55,12 +62,20 @@ class SettingsProvider extends ChangeNotifier {
   String get brightnessMode => _brightnessMode;
   String? get selectedAppWallpaperAsset => _selectedAppWallpaperAsset;
   String? get selectedGardenWallpaperAsset => _selectedGardenWallpaperAsset;
+  int get selectedJannatiSceneryIndex => _selectedJannatiSceneryIndex;
+  bool get jannatiAutoCycleScenery => _jannatiAutoCycleScenery;
+  Background4KEntry get activeJannatiScenery =>
+      Background500Catalog.jannatiByIndex(_selectedJannatiSceneryIndex);
+  String get selectedBirdsongTrackId => _selectedBirdsongTrackId;
   bool get gameSfxEnabled => _gameSfxEnabled;
   String get adhanVoice => _adhanVoice;
   bool get isAutoLocation => _isAutoLocation;
   double get latitude => _latitude;
   double get longitude => _longitude;
   String get cityName => _cityName;
+  bool get isDetectingLocation => _isDetectingLocation;
+  String get lastLocationStatus => _lastLocationStatus;
+  String? get lastLocationError => _lastLocationError;
   bool get playPreAdhanReminder => _playPreAdhanReminder;
   bool get autoMuteDuringPrayer => _autoMuteDuringPrayer;
   Map<String, int> get offsets => _offsets;
@@ -142,6 +157,13 @@ class SettingsProvider extends ChangeNotifier {
             ? savedGardenWp
             : null;
 
+    _selectedJannatiSceneryIndex =
+        (_prefs!.getInt('jannati_scenery_idx_100') ?? 0).clamp(0, 99);
+    _jannatiAutoCycleScenery =
+        _prefs!.getBool('jannati_scenery_autocycle') ?? true;
+    _selectedBirdsongTrackId =
+        _prefs!.getString('birdsong_track_id') ?? 'birds_paradise';
+
     _gameSfxEnabled = _prefs!.getBool('game_sfx_enabled') ?? true;
     ArenaSfxService.instance.setEnabled(_gameSfxEnabled);
 
@@ -154,7 +176,16 @@ class SettingsProvider extends ChangeNotifier {
     _isAutoLocation = _prefs!.getBool('auto_loc') ?? true;
     _latitude = _prefs!.getDouble('lat') ?? 24.7136;
     _longitude = _prefs!.getDouble('lng') ?? 46.6753;
-    _cityName = _prefs!.getString('city_name') ?? "الرياض، المملكة العربية السعودية";
+    final savedCity = _prefs!.getString('city_name');
+    if (savedCity != null &&
+        savedCity.trim().isNotEmpty &&
+        savedCity != "الموقع الحالي المكتشف (GPS)") {
+      _cityName = savedCity;
+      _lastLocationStatus = _isAutoLocation ? 'موقع محفوظ (سيتم التحديث)' : 'مدينة مختارة يدوياً';
+    } else {
+      _cityName = "جاري تحديد موقعك تلقائياً...";
+    }
+
     _playPreAdhanReminder = _prefs!.getBool('pre_adhan_reminder') ?? true;
     _autoMuteDuringPrayer = _prefs!.getBool('auto_mute') ?? false;
 
@@ -179,6 +210,44 @@ class SettingsProvider extends ChangeNotifier {
     };
     notifyListeners();
     _syncSalawatReminders();
+
+    // كشف الموقع الحقيقي واسم البلد والمدينة في الخلفية فوراً دون تعليق واجهة البداية
+    if (_isAutoLocation) {
+      Future.microtask(() => refreshCurrentLocation(silent: true));
+    }
+  }
+
+  void setJannatiSceneryIndex(int index) {
+    final safe = ((index % 100) + 100) % 100;
+    _selectedJannatiSceneryIndex = safe;
+    _selectedGardenWallpaperAsset = null; // نمنح الأولوية للمنظر المختار من الـ 100 صورة 4K
+    _prefs?.setInt('jannati_scenery_idx_100', safe);
+    _prefs?.remove('garden_wallpaper_4k');
+    notifyListeners();
+  }
+
+  void nextJannatiScenery() =>
+      setJannatiSceneryIndex((_selectedJannatiSceneryIndex + 1) % 100);
+
+  void previousJannatiScenery() =>
+      setJannatiSceneryIndex((_selectedJannatiSceneryIndex - 1 + 100) % 100);
+
+  void cycleJannatiIfAuto() {
+    if (_jannatiAutoCycleScenery) {
+      nextJannatiScenery();
+    }
+  }
+
+  void setJannatiAutoCycleScenery(bool enabled) {
+    _jannatiAutoCycleScenery = enabled;
+    _prefs?.setBool('jannati_scenery_autocycle', enabled);
+    notifyListeners();
+  }
+
+  void setSelectedBirdsongTrackId(String id) {
+    _selectedBirdsongTrackId = id;
+    _prefs?.setString('birdsong_track_id', id);
+    notifyListeners();
   }
 
   void setTouchEffectsEnabled(bool enabled) {
@@ -241,19 +310,71 @@ class SettingsProvider extends ChangeNotifier {
     } catch (_) {}
   }
 
-  Future<void> refreshCurrentLocation() async {
-    final pos = await LocationService.getCurrentLocation();
-    if (pos != null) {
-      _latitude = pos.latitude;
-      _longitude = pos.longitude;
-      _cityName = "الموقع الحالي المكتشف (GPS)";
-      _isAutoLocation = true;
-      _prefs?.setDouble('lat', _latitude);
-      _prefs?.setDouble('lng', _longitude);
-      _prefs?.setString('city_name', _cityName);
-      _prefs?.setBool('auto_loc', true);
+  /// كشف الموقع الجغرافي الحالي واسم المدينة والبلد دون تعليق
+  Future<DetectedLocationResult> refreshCurrentLocation({bool silent = false}) async {
+    if (_isDetectingLocation) {
+      return DetectedLocationResult(
+        succeeded: false,
+        cityArabic: _cityName,
+        countryArabic: '',
+        displayName: _cityName,
+        sourceLabel: 'جاري الفحص...',
+      );
+    }
+
+    _isDetectingLocation = true;
+    _lastLocationError = null;
+    if (!silent) {
+      _lastLocationStatus = 'جاري تحديد موقعك وبلدك...';
       notifyListeners();
-      _rescheduleNotifications();
+    }
+
+    try {
+      final result = await LocationService.detectCurrentLocation();
+      if (result.succeeded && result.latitude != null && result.longitude != null) {
+        _latitude = result.latitude!;
+        _longitude = result.longitude!;
+        _cityName = result.displayName;
+        _isAutoLocation = true;
+        _lastLocationStatus = 'مُحدَّث عبر ${result.sourceLabel}';
+        _lastLocationError = null;
+        _prefs?.setDouble('lat', _latitude);
+        _prefs?.setDouble('lng', _longitude);
+        _prefs?.setString('city_name', _cityName);
+        _prefs?.setBool('auto_loc', true);
+        _isDetectingLocation = false;
+        notifyListeners();
+        _rescheduleNotifications();
+        return result;
+      } else {
+        _lastLocationError = result.errorMessage;
+        _lastLocationStatus = 'تعذر الكشف التلقائي';
+        if (_cityName.contains('جاري')) {
+          final fallback = LocationService.presetCities[5]; // القاهرة كافتراضي عربي واضح عند فشل الشبكة والـ GPS أول مرة فقط
+          _latitude = fallback.latitude;
+          _longitude = fallback.longitude;
+          _cityName = fallback.name;
+        }
+        _isDetectingLocation = false;
+        notifyListeners();
+        return result;
+      }
+    } catch (e) {
+      _isDetectingLocation = false;
+      _lastLocationError = 'تعذر الاتصال بخدمة الموقع حالياً';
+      _lastLocationStatus = 'فشل مؤقت';
+      if (_cityName.contains('جاري')) {
+        _cityName = "مكة المكرمة، السعودية";
+      }
+      notifyListeners();
+      return DetectedLocationResult(
+        succeeded: false,
+        cityArabic: _cityName,
+        countryArabic: '',
+        displayName: _cityName,
+        sourceLabel: 'خطأ',
+        errorMessage: _lastLocationError,
+      );
     }
   }
 
@@ -374,6 +495,8 @@ class SettingsProvider extends ChangeNotifier {
     _longitude = lng;
     _cityName = name;
     _isAutoLocation = false;
+    _lastLocationStatus = 'مدينة مختارة يدوياً';
+    _lastLocationError = null;
     _prefs?.setDouble('lat', lat);
     _prefs?.setDouble('lng', lng);
     _prefs?.setString('city_name', name);
@@ -400,6 +523,11 @@ class SettingsProvider extends ChangeNotifier {
       prayers: prayers,
       voiceResource: _adhanVoice,
       preAdhanReminder: _playPreAdhanReminder,
+      latitude: _latitude,
+      longitude: _longitude,
+      method: _calculationMethod,
+      madhab: _madhab,
+      offsets: _offsets,
     );
   }
 }

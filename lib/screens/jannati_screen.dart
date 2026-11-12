@@ -1,9 +1,13 @@
+import 'dart:async';
 import 'package:adhan/adhan.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/events_missions_catalog.dart';
 import '../models/hasanat_store_catalog.dart';
+import '../models/islamic_audio_data.dart';
 import '../models/islamic_qa_500.dart';
 import '../models/jannati_encyclopedia_data.dart';
 import '../providers/firdaws_user_provider.dart';
@@ -13,6 +17,7 @@ import '../providers/family_challenge_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/firdaws_brand_logo.dart';
+import '../widgets/firdaws_resilient_image.dart';
 import '../widgets/islamic_qa_explorer_widget.dart';
 import 'events_missions_screen.dart';
 import 'hasanat_store_screen.dart';
@@ -48,6 +53,10 @@ class _JannatiScreenState extends State<JannatiScreen>
   int _activeTab = 0;
   bool _showAll14TreasuryMetrics = false;
   String _deedCategoryFilter = 'all'; // all, dhikr, salah, sunnah, sadaqah
+  AudioPlayer? _birdPlayer;
+  bool _birdPlaying = false;
+  bool _birdLoading = false;
+  double _birdVolume = 0.72;
 
   static const List<({String label, IconData icon})> _tabSpecs = [
     (label: 'بُستاني التفاعلي', icon: Icons.park_rounded),
@@ -135,7 +144,62 @@ class _JannatiScreenState extends State<JannatiScreen>
   @override
   void dispose() {
     widget.tabRequestNotifier?.removeListener(_consumeTabRequest);
+    unawaited(_birdPlayer?.stop() ?? Future.value());
+    unawaited(_birdPlayer?.dispose() ?? Future.value());
     super.dispose();
+  }
+
+  Future<void> _playBirdsongTrack(ParadiseBirdsongItem track) async {
+    if (!mounted) return;
+    setState(() => _birdLoading = true);
+    try {
+      _birdPlayer ??= AudioPlayer();
+      await _birdPlayer!.stop();
+      await _birdPlayer!.setReleaseMode(ReleaseMode.loop);
+      await _birdPlayer!.setVolume(_birdVolume);
+
+      bool started = false;
+      if (track.streamUrl != null && track.streamUrl!.trim().isNotEmpty) {
+        try {
+          await _birdPlayer!
+              .play(UrlSource(track.streamUrl!.trim()))
+              .timeout(const Duration(seconds: 6));
+          started = true;
+        } catch (_) {
+          started = false;
+        }
+      }
+      if (!started) {
+        await _birdPlayer!.play(AssetSource(track.localAsset));
+      }
+      if (mounted) {
+        setState(() {
+          _birdPlaying = true;
+          _birdLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _birdPlaying = false;
+          _birdLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _toggleBirdsong(SettingsProvider settings) async {
+    HapticFeedback.selectionClick();
+    if (_birdPlaying) {
+      try {
+        await _birdPlayer?.pause();
+      } catch (_) {}
+      if (mounted) setState(() => _birdPlaying = false);
+      return;
+    }
+    final track =
+        IslamicAudioLibrary.getBirdsongById(settings.selectedBirdsongTrackId);
+    await _playBirdsongTrack(track);
   }
 
   void _triggerPulse() {
@@ -167,6 +231,10 @@ class _JannatiScreenState extends State<JannatiScreen>
     _triggerPulse();
     if (outcome.completedCycle) {
       HapticFeedback.mediumImpact();
+      try {
+        Provider.of<SettingsProvider>(context, listen: false)
+            .cycleJannatiIfAuto();
+      } catch (_) {}
     } else {
       HapticFeedback.lightImpact();
     }
@@ -1302,8 +1370,13 @@ class _JannatiScreenState extends State<JannatiScreen>
               hasanat.recordMetric(EventMissionMetric.tasbihCount, delta: 1);
               hasanat.recordMetric(EventMissionMetric.jannahDeedsCount, delta: 1);
             } catch (_) {}
+            try {
+              Provider.of<SettingsProvider>(context, listen: false)
+                  .cycleJannatiIfAuto();
+            } catch (_) {}
             _triggerPulse();
           },
+          onOpenSceneryGallery: () => _showJannati100ScenerySheet(context, palette),
           onTapPalaces: () => _openCanvasFocusSheet(
             title: 'قُصُورُكَ وَبُيُوتُكَ فِي الفِرْدَوْس 🏰',
             subtitle: 'اختر سبباً نبوياً لتشييد قصر أو بيت الآن',
@@ -1391,13 +1464,10 @@ class _JannatiScreenState extends State<JannatiScreen>
                   ),
                   Firdaws3DPill(
                     icon: Icons.photo_library_rounded,
-                    label: 'خلفيات الجنة 4K (٧٠ صورة)',
+                    label: '١٠٠ منظر 4K لجنتي 🌅',
                     accentColor: accent,
                     palette: palette,
-                    onTap: () => Wallpaper70PickerSheet.show(
-                      context,
-                      initialTarget: WallpaperTarget.garden,
-                    ),
+                    onTap: () => _showJannati100ScenerySheet(context, palette),
                   ),
                   Firdaws3DPill(
                     icon: Icons.flash_on_rounded,
@@ -1415,6 +1485,10 @@ class _JannatiScreenState extends State<JannatiScreen>
             );
           },
         ),
+        const SizedBox(height: 10),
+
+        // 1.5 لوحة ١٠٠ صورة طبيعة 4K وتغريد عصافير الجنة والأنهار
+        _buildBirdsongAndSceneryControlCard(palette: palette),
         const SizedBox(height: 12),
 
         // 2. صرح خزائن الفردوس (4 كبرى + توسعة إلى الـ 14 ذخر كاملة)
@@ -1483,11 +1557,12 @@ class _JannatiScreenState extends State<JannatiScreen>
         const SizedBox(height: 10),
 
         // 5. بطاقات الاستثمارات النبوية الـ ١٤ بالعد التفاعلي والتفاصيل
-        ...filteredQuickDeeds.map((inv) {
+        ...filteredQuickDeeds.asMap().entries.map((entry) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: _buildSacredInvestmentCard(
-              inv: inv,
+              inv: entry.value,
+              cardIdx: entry.key,
               jannati: jannati,
               palette: palette,
             ),
@@ -1540,20 +1615,14 @@ class _JannatiScreenState extends State<JannatiScreen>
   }) {
     final accent = palette.accentColor;
 
-    return Container(
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forExtraSection(11),
+      isDark: palette.isDark,
+      borderColor: accent.withOpacity(0.55),
+      borderRadius: 22,
+      borderWidth: 1.5,
       padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            palette.cardColor.withOpacity(palette.isDark ? 0.88 : 0.94),
-            palette.elevatedCardColor.withOpacity(palette.isDark ? 0.90 : 0.96),
-          ],
-        ),
-        border: Border.all(color: accent.withOpacity(0.55), width: 1.5),
-      ),
+      imageOpacity: 0.40,
       child: Column(
         children: [
           Row(
@@ -1773,6 +1842,7 @@ class _JannatiScreenState extends State<JannatiScreen>
       children: [
         Expanded(
           child: _featureJumpCard(
+            slotIdx: 12,
             title: 'مهندس اليوم',
             subtitle: '١٦ ورداً يومياً',
             icon: Icons.architecture_rounded,
@@ -1784,6 +1854,7 @@ class _JannatiScreenState extends State<JannatiScreen>
         const SizedBox(width: 8),
         Expanded(
           child: _featureJumpCard(
+            slotIdx: 13,
             title: 'أطلس الجنة',
             subtitle: 'أبواب وأنهار ونعيم',
             icon: Icons.menu_book_rounded,
@@ -1795,6 +1866,7 @@ class _JannatiScreenState extends State<JannatiScreen>
         const SizedBox(width: 8),
         Expanded(
           child: _featureJumpCard(
+            slotIdx: 14,
             title: '٥٠٠ سؤال وجواب',
             subtitle: 'اسأل أي سؤال',
             icon: Icons.question_answer_rounded,
@@ -1808,6 +1880,7 @@ class _JannatiScreenState extends State<JannatiScreen>
   }
 
   Widget _featureJumpCard({
+    required int slotIdx,
     required String title,
     required String subtitle,
     required IconData icon,
@@ -1820,13 +1893,13 @@ class _JannatiScreenState extends State<JannatiScreen>
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
-      child: Container(
+      child: Firdaws4KCardShell(
+        backdrop: Background500Catalog.forExtraSection(slotIdx),
+        isDark: palette.isDark,
+        borderColor: resolved.withOpacity(0.5),
+        borderRadius: 16,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-        decoration: BoxDecoration(
-          color: palette.cardColor.withOpacity(0.90),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: resolved.withOpacity(0.45)),
-        ),
+        imageOpacity: 0.44,
         child: Column(
           children: [
             Icon(icon, color: resolved, size: 22),
@@ -1855,6 +1928,7 @@ class _JannatiScreenState extends State<JannatiScreen>
 
   Widget _buildSacredInvestmentCard({
     required JannahInvestment inv,
+    required int cardIdx,
     required JannatiProvider jannati,
     required ThemePalette palette,
   }) {
@@ -1865,20 +1939,14 @@ class _JannatiScreenState extends State<JannatiScreen>
     final count = jannati.countFor(inv.id);
     final cycle = jannati.cycleProgressFor(inv.id);
 
-    return Container(
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forExtraSection(15 + (cardIdx % 14)),
+      isDark: palette.isDark,
+      borderColor: c.withOpacity(0.48),
+      borderRadius: 20,
+      borderWidth: 1.3,
       padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: palette.cardColor.withOpacity(palette.isDark ? 0.87 : 0.93),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: c.withOpacity(0.45), width: 1.3),
-        boxShadow: [
-          BoxShadow(
-            color: c.withOpacity(0.10),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
+      imageOpacity: 0.34,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2049,13 +2117,13 @@ class _JannatiScreenState extends State<JannatiScreen>
     final accent = palette.accentColor;
     final logs = jannati.recentLogs.take(8).toList();
 
-    return Container(
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forExtraSection(29),
+      isDark: palette.isDark,
+      borderColor: accent.withOpacity(0.45),
+      borderRadius: 18,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: palette.cardColor.withOpacity(0.90),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: accent.withOpacity(0.4)),
-      ),
+      imageOpacity: 0.36,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2139,13 +2207,13 @@ class _JannatiScreenState extends State<JannatiScreen>
   }) {
     final accent = palette.accentColor;
 
-    return Container(
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forExtraSection(30),
+      isDark: palette.isDark,
+      borderColor: accent.withOpacity(0.48),
+      borderRadius: 18,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: palette.cardColor.withOpacity(0.90),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: accent.withOpacity(0.45)),
-      ),
+      imageOpacity: 0.36,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2234,6 +2302,473 @@ class _JannatiScreenState extends State<JannatiScreen>
           }),
         ],
       ),
+    );
+  }
+
+  Widget _buildBirdsongAndSceneryControlCard({required ThemePalette palette}) {
+    final settings = Provider.of<SettingsProvider>(context);
+    final accent = palette.accentColor;
+    final activeTrack =
+        IslamicAudioLibrary.getBirdsongById(settings.selectedBirdsongTrackId);
+    final scenery = settings.activeJannatiScenery;
+    final idx = settings.selectedJannatiSceneryIndex;
+
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forExtraSection(10),
+      isDark: palette.isDark,
+      borderColor: const Color(0xFF10B981).withOpacity(0.55),
+      borderRadius: 20,
+      padding: const EdgeInsets.all(13),
+      imageOpacity: 0.42,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF10B981).withOpacity(0.20),
+                  border: Border.all(
+                    color: const Color(0xFF10B981).withOpacity(0.65),
+                  ),
+                ),
+                child: Icon(
+                  _birdPlaying
+                      ? Icons.graphic_eq_rounded
+                      : Icons.music_note_rounded,
+                  color: const Color(0xFF34D399),
+                  size: 19,
+                ),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '🐦 عصافير الجنة ومشاهد الفردوس الـ ١٠٠ (4K)',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                      ),
+                    ),
+                    Text(
+                      '${activeTrack.title} • المنظر ${idx + 1}/١٠٠: ${scenery.title}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: palette.textSecondary,
+                        fontSize: 10.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Material(
+                color: _birdPlaying
+                    ? const Color(0xFF059669)
+                    : accent.withOpacity(0.22),
+                borderRadius: BorderRadius.circular(14),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: _birdLoading ? null : () => _toggleBirdsong(settings),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_birdLoading)
+                          const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        else
+                          Icon(
+                            _birdPlaying
+                                ? Icons.pause_rounded
+                                : Icons.play_arrow_rounded,
+                            color: _birdPlaying ? Colors.white : accent,
+                            size: 18,
+                          ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _birdPlaying ? 'إيقاف' : 'تشغيل الطيور',
+                          style: TextStyle(
+                            color: _birdPlaying
+                                ? Colors.white
+                                : palette.textPrimary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              children: IslamicAudioLibrary.paradiseBirdsongTracks.map((t) {
+                final isSel = t.id == settings.selectedBirdsongTrackId;
+                return Padding(
+                  padding: const EdgeInsets.only(left: 6),
+                  child: ChoiceChip(
+                    label: Text(
+                      t.title,
+                      style: TextStyle(
+                        color: isSel
+                            ? palette.onAccentColor
+                            : palette.textPrimary,
+                        fontSize: 10.5,
+                        fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
+                      ),
+                    ),
+                    selected: isSel,
+                    selectedColor: const Color(0xFF10B981),
+                    backgroundColor: palette.elevatedCardColor,
+                    onSelected: (_) async {
+                      settings.setSelectedBirdsongTrackId(t.id);
+                      if (_birdPlaying) {
+                        await _playBirdsongTrack(t);
+                      }
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          Row(
+            children: [
+              Icon(Icons.volume_down_rounded,
+                  color: palette.textSecondary, size: 17),
+              Expanded(
+                child: Slider(
+                  value: _birdVolume,
+                  min: 0.1,
+                  max: 1.0,
+                  activeColor: const Color(0xFF10B981),
+                  inactiveColor: palette.dividerColor,
+                  onChanged: (v) {
+                    setState(() => _birdVolume = v);
+                    unawaited(
+                      _birdPlayer?.setVolume(v) ?? Future.value(),
+                    );
+                  },
+                ),
+              ),
+              Text(
+                '${(_birdVolume * 100).round()}%',
+                style: TextStyle(
+                  color: palette.textSecondary,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Row(
+            children: [
+              IconButton(
+                style: IconButton.styleFrom(
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  minimumSize: const Size(34, 34),
+                  padding: EdgeInsets.zero,
+                ),
+                tooltip: 'المنظر السابق',
+                icon: Icon(Icons.chevron_right_rounded, color: accent),
+                onPressed: settings.previousJannatiScenery,
+              ),
+              Expanded(
+                child: TextButton.icon(
+                  onPressed: () => _showJannati100ScenerySheet(context, palette),
+                  icon: Icon(Icons.photo_library_rounded, color: accent, size: 15),
+                  label: Text(
+                    'تبديل الـ ١٠٠ صورة (${idx + 1}/١٠٠)',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: accent,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+              ),
+              IconButton(
+                style: IconButton.styleFrom(
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  minimumSize: const Size(34, 34),
+                  padding: EdgeInsets.zero,
+                ),
+                tooltip: 'المنظر التالي',
+                icon: Icon(Icons.chevron_left_rounded, color: accent),
+                onPressed: settings.nextJannatiScenery,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showJannati100ScenerySheet(
+    BuildContext context,
+    ThemePalette palette,
+  ) async {
+    String query = '';
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            final settings = Provider.of<SettingsProvider>(ctx);
+            final accent = palette.accentColor;
+            final q = query.trim();
+            final filtered = <({int index, Background4KEntry item})>[];
+            for (int i = 0; i < Background500Catalog.jannati100.length; i++) {
+              final item = Background500Catalog.jannati100[i];
+              if (q.isEmpty ||
+                  item.title.contains(q) ||
+                  '${i + 1}' == q ||
+                  '#${i + 1}'.contains(q)) {
+                filtered.add((index: i, item: item));
+              }
+            }
+
+            return DraggableScrollableSheet(
+              initialChildSize: 0.85,
+              minChildSize: 0.50,
+              maxChildSize: 0.96,
+              builder: (_, scrollCtrl) {
+                return Container(
+                  decoration: BoxDecoration(
+                    color: palette.scaffoldColor,
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(28)),
+                    border:
+                        Border.all(color: accent.withOpacity(0.55), width: 1.5),
+                  ),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 10),
+                      Container(
+                        width: 46,
+                        height: 4.5,
+                        decoration: BoxDecoration(
+                          color: palette.dividerColor,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                        child: Row(
+                          children: [
+                            Icon(Icons.landscape_rounded, color: accent),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'مكتبة جنتي • ١٠٠ منظر خلاب 4K من الطبيعة 🌅',
+                                style: TextStyle(
+                                  color: accent,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(sheetCtx);
+                                Wallpaper70PickerSheet.show(
+                                  context,
+                                  initialTarget: WallpaperTarget.garden,
+                                );
+                              },
+                              child: Text(
+                                '+ ٧٠ خلفية',
+                                style: TextStyle(
+                                  color: accent,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        child: SwitchListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            'تبديل منظر البستان تلقائياً مع التسبيح والإنجاز',
+                            style: TextStyle(
+                              color: palette.textPrimary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                          ),
+                          value: settings.jannatiAutoCycleScenery,
+                          activeTrackColor: accent,
+                          onChanged: settings.setJannatiAutoCycleScenery,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(14, 2, 14, 8),
+                        child: TextField(
+                          style: TextStyle(
+                              color: palette.textPrimary, fontSize: 13),
+                          onChanged: (v) => setModalState(() => query = v),
+                          decoration: InputDecoration(
+                            hintText: 'ابحث برقم المشهد (١..١٠٠) أو اسمه...',
+                            hintStyle: TextStyle(
+                                color: palette.textMuted, fontSize: 12),
+                            prefixIcon: Icon(Icons.search_rounded, color: accent),
+                            filled: true,
+                            fillColor: palette.elevatedCardColor,
+                            contentPadding:
+                                const EdgeInsets.symmetric(vertical: 8),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: GridView.builder(
+                          controller: scrollCtrl,
+                          padding: const EdgeInsets.fromLTRB(14, 4, 14, 24),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            childAspectRatio: 1.32,
+                          ),
+                          itemCount: filtered.length,
+                          itemBuilder: (_, gridIdx) {
+                            final rec = filtered[gridIdx];
+                            final isSelected =
+                                settings.selectedJannatiSceneryIndex ==
+                                        rec.index &&
+                                    settings.selectedGardenWallpaperAsset == null;
+                            return GestureDetector(
+                              onTap: () {
+                                HapticFeedback.mediumImpact();
+                                settings.setJannatiSceneryIndex(rec.index);
+                                Navigator.pop(sheetCtx);
+                                _showSacredBannerToast(
+                                  'تم اختيار المشهد #${rec.index + 1}: ${rec.item.title} 🌅✨',
+                                  palette,
+                                );
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? const Color(0xFF10B981)
+                                        : accent.withOpacity(0.35),
+                                    width: isSelected ? 2.4 : 1.0,
+                                  ),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(14.5),
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      FirdawsResilientImage.entry(
+                                        rec.item,
+                                        fit: BoxFit.cover,
+                                      ),
+                                      DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topCenter,
+                                            end: Alignment.bottomCenter,
+                                            colors: [
+                                              Colors.transparent,
+                                              Colors.black.withOpacity(0.72),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        top: 6,
+                                        right: 6,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 7, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: isSelected
+                                                ? const Color(0xFF10B981)
+                                                : Colors.black.withOpacity(0.65),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          child: Text(
+                                            isSelected
+                                                ? '✓ #${rec.index + 1}'
+                                                : '#${rec.index + 1}',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        bottom: 7,
+                                        right: 8,
+                                        left: 8,
+                                        child: Text(
+                                          rec.item.title,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 }

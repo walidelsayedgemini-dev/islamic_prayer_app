@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/islamic_qa_500.dart';
 import '../providers/jannati_provider.dart';
 import '../theme/islamic_theme.dart';
+import 'firdaws_resilient_image.dart';
 import 'sacred_reference_widgets.dart';
 
 /// واجهة بحث ذكية وتفاعلية شاملة للـ 500 سؤال وجواب في الإسلام (عقيدة، طهارة، صلاة، جنة، قرآن، حياة يومية)
@@ -89,20 +91,13 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // 1. بطاقة الترحيب وحقل السؤال الذكي
-        Container(
+        Firdaws4KCardShell(
+          backdrop: Background500Catalog.forHelpMeBanner(5),
+          isDark: palette.isDark,
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: palette.cardColor.withOpacity(palette.isDark ? 0.86 : 0.94),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: accent.withOpacity(0.55), width: 1.4),
-            boxShadow: [
-              BoxShadow(
-                color: accent.withOpacity(palette.isDark ? 0.14 : 0.08),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
+          borderRadius: 20,
+          borderColor: accent.withOpacity(0.55),
+          imageOpacity: 0.54,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -421,17 +416,16 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
               final isSaved = bookmarks.contains(item.id);
               final catCol = item.category.color;
 
-              return Container(
-                margin: const EdgeInsets.only(bottom: 10),
-                decoration: BoxDecoration(
-                  color: palette.cardColor.withOpacity(palette.isDark ? 0.88 : 0.94),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: isExpanded ? catCol.withOpacity(0.75) : palette.dividerColor,
-                    width: isExpanded ? 1.4 : 1.0,
-                  ),
-                ),
-                child: Column(
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Firdaws4KCardShell(
+                  backdrop: Background500Catalog.forHelpMeCategory(35 + (idx % 15)),
+                  isDark: palette.isDark,
+                  padding: EdgeInsets.zero,
+                  borderRadius: 18,
+                  borderColor: isExpanded ? catCol.withOpacity(0.75) : palette.dividerColor,
+                  imageOpacity: 0.44,
+                  child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     InkWell(
@@ -633,7 +627,8 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                       ),
                   ],
                 ),
-              );
+              ),
+            );
             },
           ),
       ],

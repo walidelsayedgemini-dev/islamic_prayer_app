@@ -3,11 +3,13 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/hasanat_store_catalog.dart';
 import '../providers/hasanat_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import 'firdaws_3d_ui.dart';
+import 'firdaws_resilient_image.dart';
 import 'games/gfx/arena_ui_image_cache.dart';
 import 'wallpaper_70_picker_sheet.dart';
 
@@ -31,6 +33,9 @@ class JannatiGardenCanvas extends StatefulWidget {
   final VoidCallback? onTapRivers;
   final VoidCallback? onTapTreasures;
   final VoidCallback? onQuickTasbih;
+  final VoidCallback? onOpenSceneryGallery;
+  final VoidCallback? onNextScenery;
+  final VoidCallback? onPrevScenery;
 
   const JannatiGardenCanvas({
     super.key,
@@ -49,6 +54,9 @@ class JannatiGardenCanvas extends StatefulWidget {
     this.onTapRivers,
     this.onTapTreasures,
     this.onQuickTasbih,
+    this.onOpenSceneryGallery,
+    this.onNextScenery,
+    this.onPrevScenery,
   });
 
   @override
@@ -187,15 +195,21 @@ class _JannatiGardenCanvasState extends State<JannatiGardenCanvas>
     } catch (_) {}
 
     String? customGardenWallpaper;
+    Background4KEntry activeScenery = Background500Catalog.jannatiByIndex(0);
+    int sceneryIdx = 0;
+    SettingsProvider? settingsProv;
     try {
-      customGardenWallpaper =
-          context.watch<SettingsProvider>().selectedGardenWallpaperAsset;
+      settingsProv = context.watch<SettingsProvider>();
+      customGardenWallpaper = settingsProv.selectedGardenWallpaperAsset;
+      activeScenery = settingsProv.activeJannatiScenery;
+      sceneryIdx = settingsProv.selectedJannatiSceneryIndex;
     } catch (_) {}
 
-    final backdropAsset =
-        (customGardenWallpaper != null && customGardenWallpaper.trim().isNotEmpty)
-            ? customGardenWallpaper.trim()
-            : ArenaUiImageCache.resolveGardenBackdrop(gardenStyleKey);
+    final bool hasCustomWp =
+        customGardenWallpaper != null && customGardenWallpaper.trim().isNotEmpty;
+    final backdropAsset = hasCustomWp
+        ? customGardenWallpaper.trim()
+        : ArenaUiImageCache.resolveGardenBackdrop(gardenStyleKey);
     _warmGardenAssets(backdropAsset);
 
     return Column(
@@ -236,6 +250,35 @@ class _JannatiGardenCanvasState extends State<JannatiGardenCanvas>
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
+                    if (!hasCustomWp)
+                      Positioned.fill(
+                        child: AnimatedBuilder(
+                          animation: _animController,
+                          builder: (context, child) {
+                            final orbitOffset = _autoOrbit
+                                ? math.sin(_animController.value * math.pi * 2) *
+                                    0.16
+                                : 0.0;
+                            final shiftX =
+                                (-((_yaw + orbitOffset) * 26.0)).clamp(-36.0, 36.0);
+                            final shiftY =
+                                ((_pitch - 0.42) * 20.0).clamp(-18.0, 18.0);
+                            final sc = 1.12 * _zoom.clamp(0.90, 1.35);
+                            return Transform.translate(
+                              offset: Offset(shiftX, shiftY),
+                              child: Transform.scale(
+                                scale: sc,
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: FirdawsResilientImage.entry(
+                            activeScenery,
+                            key: ValueKey('jannati_bg_${activeScenery.id}'),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
                     AnimatedBuilder(
                       animation:
                           Listenable.merge([_animController, _sproutController]),
@@ -262,7 +305,10 @@ class _JannatiGardenCanvasState extends State<JannatiGardenCanvas>
                             tasbihOrchardTrees: widget.tasbihOrchardTrees,
                             vibrancy: widget.vibrancy,
                             tapBursts: _tapBursts,
-                            backdropImg: ArenaUiImageCache.getCached(backdropAsset),
+                            backdropImg: hasCustomWp
+                                ? ArenaUiImageCache.getCached(backdropAsset)
+                                : null,
+                            drawFallbackGradient: hasCustomWp,
                             treeSprites: ArenaUiImageCache.gardenTreeSpriteAssets
                                 .map(ArenaUiImageCache.getCached)
                                 .toList(growable: false),
@@ -289,18 +335,20 @@ class _JannatiGardenCanvasState extends State<JannatiGardenCanvas>
                             onTap: widget.onTapPalaces,
                           ),
                           GestureDetector(
-                            onTap: () => Wallpaper70PickerSheet.show(
-                              context,
-                              initialTarget: WallpaperTarget.garden,
-                            ),
+                            onTap: widget.onOpenSceneryGallery ??
+                                () => Wallpaper70PickerSheet.show(
+                                      context,
+                                      initialTarget: WallpaperTarget.garden,
+                                    ),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.58),
+                                color: Colors.black.withOpacity(0.62),
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                    color: Colors.white.withOpacity(0.24)),
+                                    color: const Color(0xFF34D399)
+                                        .withOpacity(0.55)),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -310,7 +358,7 @@ class _JannatiGardenCanvasState extends State<JannatiGardenCanvas>
                                   const SizedBox(width: 4),
                                   Flexible(
                                     child: Text(
-                                      '4K حقيقي • شجر: $totalTrees 🌴',
+                                      'منظر ${sceneryIdx + 1}/١٠٠ • 4K 🌴',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
@@ -331,6 +379,39 @@ class _JannatiGardenCanvasState extends State<JannatiGardenCanvas>
                             onTap: widget.onTapPalms,
                           ),
                         ],
+                      ),
+                    ),
+
+                    Positioned(
+                      top: 150,
+                      right: 8,
+                      child: _sceneryStepCircle(
+                        icon: Icons.chevron_right_rounded,
+                        tooltip: 'المشهد السابق من ١٠٠',
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          if (widget.onPrevScenery != null) {
+                            widget.onPrevScenery!();
+                          } else {
+                            settingsProv?.previousJannatiScenery();
+                          }
+                        },
+                      ),
+                    ),
+                    Positioned(
+                      top: 150,
+                      left: 8,
+                      child: _sceneryStepCircle(
+                        icon: Icons.chevron_left_rounded,
+                        tooltip: 'المشهد التالي من ١٠٠',
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          if (widget.onNextScenery != null) {
+                            widget.onNextScenery!();
+                          } else {
+                            settingsProv?.nextJannatiScenery();
+                          }
+                        },
                       ),
                     ),
 
@@ -451,12 +532,13 @@ class _JannatiGardenCanvasState extends State<JannatiGardenCanvas>
             IconButton(
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               padding: EdgeInsets.zero,
-              tooltip: 'اختيار من ٧٠ خلفية 4K 🖼️',
+              tooltip: 'اختيار من ١٠٠ منظر 4K لجنتي 🖼️',
               icon: Icon(Icons.photo_library_rounded, color: accent, size: 19),
-              onPressed: () => Wallpaper70PickerSheet.show(
-                context,
-                initialTarget: WallpaperTarget.garden,
-              ),
+              onPressed: widget.onOpenSceneryGallery ??
+                  () => Wallpaper70PickerSheet.show(
+                        context,
+                        initialTarget: WallpaperTarget.garden,
+                      ),
             ),
             IconButton(
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -514,6 +596,36 @@ class _JannatiGardenCanvasState extends State<JannatiGardenCanvas>
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sceneryStepCircle({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.black.withOpacity(0.55),
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withOpacity(0.32),
+                width: 1.0,
+              ),
+            ),
+            child: Icon(icon, color: Colors.white, size: 20),
           ),
         ),
       ),
@@ -616,6 +728,7 @@ class _ParadiseOrchard3DPainter extends CustomPainter {
   final double vibrancy;
   final List<_GardenSpark> tapBursts;
   final ui.Image? backdropImg;
+  final bool drawFallbackGradient;
   final List<ui.Image?> treeSprites;
 
   const _ParadiseOrchard3DPainter({
@@ -635,6 +748,7 @@ class _ParadiseOrchard3DPainter extends CustomPainter {
     required this.vibrancy,
     required this.tapBursts,
     required this.backdropImg,
+    this.drawFallbackGradient = true,
     required this.treeSprites,
   });
 
@@ -650,27 +764,29 @@ class _ParadiseOrchard3DPainter extends CustomPainter {
   void _paintPhotorealisticBackdropAndLight(
       Canvas canvas, Size size, double t) {
     final rect = Offset.zero & size;
-    final skyColors = isDark
-        ? [
-            const Color(0xFF061322),
-            const Color(0xFF0A2438),
-            const Color(0xFF0F3B4A),
-          ]
-        : [
-            const Color(0xFF0EA5E9),
-            const Color(0xFF10B981),
-            const Color(0xFFD1FAE5),
-          ];
+    if (drawFallbackGradient) {
+      final skyColors = isDark
+          ? [
+              const Color(0xFF061322),
+              const Color(0xFF0A2438),
+              const Color(0xFF0F3B4A),
+            ]
+          : [
+              const Color(0xFF0EA5E9),
+              const Color(0xFF10B981),
+              const Color(0xFFD1FAE5),
+            ];
 
-    canvas.drawRect(
-      rect,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: skyColors,
-        ).createShader(rect),
-    );
+      canvas.drawRect(
+        rect,
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: skyColors,
+          ).createShader(rect),
+      );
+    }
 
     if (backdropImg != null) {
       final img = backdropImg!;

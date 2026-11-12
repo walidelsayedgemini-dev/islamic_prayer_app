@@ -143,6 +143,7 @@ class AdhanPlaybackService : Service() {
                         .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                         .build()
                 )
+                player.setVolume(1.0f, 1.0f)
                 player.isLooping = true
                 player.prepare()
                 player.start()

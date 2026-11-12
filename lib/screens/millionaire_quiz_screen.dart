@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../models/backgrounds_500_catalog.dart';
 import '../models/events_missions_catalog.dart';
 import '../models/millionaire/millionaire_models.dart';
 import '../models/millionaire/millionaire_question_bank.dart';
@@ -17,6 +18,7 @@ import '../services/arena_sfx_service.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/firdaws_3d_ui.dart';
 import '../widgets/firdaws_portrait_avatar.dart';
+import '../widgets/firdaws_resilient_image.dart';
 import '../widgets/real_mosque_background.dart';
 import 'hasanat_store_screen.dart';
 
@@ -864,14 +866,17 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
         body: Stack(
           children: [
             Positioned.fill(
-              child: RealMosqueBackground(
-                currentPrayer: isNight ? Prayer.isha : Prayer.dhuhr,
-                themeOption: themeOption,
-                isNightMode: isNight,
-                customAssetOverride: settings.selectedAppWallpaperAsset ??
-                    'assets/images/games/arena_starlight_library.jpg',
-                dimFactor: 0.90,
-              ),
+              child: settings.selectedAppWallpaperAsset != null
+                  ? RealMosqueBackground(
+                      currentPrayer: isNight ? Prayer.isha : Prayer.dhuhr,
+                      themeOption: themeOption,
+                      isNightMode: isNight,
+                      customAssetOverride: settings.selectedAppWallpaperAsset,
+                      dimFactor: 0.90,
+                    )
+                  : FirdawsResilientImage.entry(
+                      Background500Catalog.forMillionaireSection(0),
+                    ),
             ),
             // خلفية استوديو 3D تفاعلية متحركة بأضواء المسرح فوق صورة 4K
             Positioned.fill(
@@ -958,11 +963,14 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              // بطاقة العنوان 3D
-              Firdaws3DCard(
-                palette: palette,
-                glowColor: const Color(0xFF38BDF8),
+              // بطاقة العنوان 4K
+              Firdaws4KCardShell(
+                backdrop: Background500Catalog.forMillionaireSection(1),
+                isDark: palette.isDark,
+                borderColor: const Color(0xFF38BDF8).withOpacity(0.58),
                 padding: const EdgeInsets.all(18),
+                borderRadius: 22,
+                imageOpacity: 0.52,
                 child: Column(
                   children: [
                     const Text('💎', style: TextStyle(fontSize: 44)),
@@ -1043,62 +1051,75 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: MillionaireLadderConfig.virtualRivals.map((rival) {
+                  children: MillionaireLadderConfig.virtualRivals
+                      .asMap()
+                      .entries
+                      .map((entry) {
+                    final rIdx = entry.key;
+                    final rival = entry.value;
                     final sel = rival.id == _selectedAiRival.id;
-                    return GestureDetector(
+                    return Firdaws4KCardShell(
+                      backdrop: Background500Catalog.forMillionaireSection(
+                          6 + (rIdx % 5)),
+                      isDark: palette.isDark,
+                      borderColor: sel
+                          ? const Color(0xFF38BDF8).withOpacity(0.85)
+                          : palette.dividerColor.withOpacity(0.45),
+                      borderRadius: 16,
+                      imageOpacity: sel ? 0.52 : 0.36,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
                       onTap: () => setState(() => _selectedAiRival = rival),
-                      child: Firdaws3DCard(
-                        palette: palette,
-                        glowColor: sel ? const Color(0xFF38BDF8) : null,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 10),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            FirdawsPortraitAvatar(
-                              entityId: rival.id,
-                              displayName: rival.name,
-                              size: 38,
-                              ringColor: sel ? const Color(0xFF38BDF8) : null,
-                              isHighlighted: sel,
-                            ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    rival.name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 12.5,
-                                      color: sel
-                                          ? const Color(0xFF38BDF8)
-                                          : palette.textPrimary,
-                                    ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          FirdawsPortraitAvatar(
+                            entityId: rival.id,
+                            displayName: rival.name,
+                            size: 38,
+                            ringColor: sel ? const Color(0xFF38BDF8) : null,
+                            isHighlighted: sel,
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  rival.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 12.5,
+                                    color: sel
+                                        ? const Color(0xFF38BDF8)
+                                        : palette.textPrimary,
                                   ),
-                                  Text(
-                                    'دقة ${(rival.accuracyRate * 100).round()}٪',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                        fontSize: 10.5, color: secondary),
-                                  ),
-                                ],
-                              ),
+                                ),
+                                Text(
+                                  'دقة ${(rival.accuracyRate * 100).round()}٪',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                      fontSize: 10.5, color: secondary),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     );
                   }).toList(),
                 ),
               ] else if (_playMode == MillionairePlayMode.dualPlayerLocal) ...[
-                Firdaws3DCard(
-                  palette: palette,
-                  glowColor: const Color(0xFF10B981),
+                Firdaws4KCardShell(
+                  backdrop: Background500Catalog.forMillionaireSection(5),
+                  isDark: palette.isDark,
+                  borderColor: const Color(0xFF10B981).withOpacity(0.58),
+                  borderRadius: 18,
+                  imageOpacity: 0.46,
+                  padding: const EdgeInsets.all(14),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1184,6 +1205,8 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
                             FirdawsPortraitAvatar(
                               entityId: m.id,
                               displayName: m.name,
+                              customPhotoBase64: m.customPhotoBase64,
+                              networkPhotoUrl: m.networkPhotoUrl,
                               size: 22,
                             ),
                             const SizedBox(width: 6),
@@ -1302,9 +1325,14 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
     required Color color,
   }) {
     final selected = _playMode == mode;
-    return Firdaws3DCard(
-      palette: palette,
-      glowColor: selected ? color : null,
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forMillionaireSection(2 + mode.index),
+      isDark: palette.isDark,
+      borderColor: selected
+          ? color.withOpacity(0.85)
+          : palette.dividerColor.withOpacity(0.42),
+      borderRadius: 18,
+      imageOpacity: selected ? 0.54 : 0.38,
       onTap: () => setState(() => _playMode = mode),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
@@ -1540,11 +1568,14 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
             children: [
-              // بطاقة السؤال 3D
-              Firdaws3DCard(
-                palette: palette,
-                glowColor: q.difficulty.color,
-                depth: 7,
+              // بطاقة السؤال 4K
+              Firdaws4KCardShell(
+                backdrop: Background500Catalog.forMillionaireSection(
+                    13 + (_currentRungIndex % 4)),
+                isDark: palette.isDark,
+                borderColor: q.difficulty.color.withOpacity(0.70),
+                borderRadius: 22,
+                imageOpacity: 0.52,
                 padding: const EdgeInsets.all(18),
                 child: Column(
                   children: [
@@ -1625,9 +1656,14 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Opacity(
                     opacity: eliminated ? 0.24 : 1.0,
-                    child: Firdaws3DCard(
-                      palette: palette,
-                      glowColor: cardGlow,
+                    child: Firdaws4KCardShell(
+                      backdrop: Background500Catalog.forMillionaireSection(
+                          17 + (i % 2)),
+                      isDark: palette.isDark,
+                      borderColor: (cardGlow ?? palette.dividerColor)
+                          .withOpacity(cardGlow != null ? 0.85 : 0.45),
+                      borderRadius: 16,
+                      imageOpacity: cardGlow != null ? 0.52 : 0.34,
                       onTap: eliminated ? null : () => _onSelectOption(i),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 14),
@@ -1681,9 +1717,12 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
               // شرح تعليمي مختصر فور الكشف
               if (_answerRevealed) ...[
                 const SizedBox(height: 6),
-                Firdaws3DCard(
-                  palette: palette,
-                  glowColor: const Color(0xFF10B981),
+                Firdaws4KCardShell(
+                  backdrop: Background500Catalog.forMillionaireSection(19),
+                  isDark: palette.isDark,
+                  borderColor: const Color(0xFF10B981).withOpacity(0.65),
+                  borderRadius: 16,
+                  imageOpacity: 0.46,
                   padding: const EdgeInsets.all(12),
                   child: Text(
                     '💡 الفائدة: ${q.explanation}',
@@ -1716,9 +1755,12 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
       padding: const EdgeInsets.all(20),
       children: [
         const SizedBox(height: 16),
-        Firdaws3DCard(
-          palette: palette,
-          glowColor: statusColor,
+        Firdaws4KCardShell(
+          backdrop: Background500Catalog.forMillionaireSection(11),
+          isDark: palette.isDark,
+          borderColor: statusColor.withOpacity(0.75),
+          borderRadius: 22,
+          imageOpacity: 0.52,
           padding: const EdgeInsets.all(22),
           child: Column(
             children: [
@@ -1777,9 +1819,12 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
         ),
         const SizedBox(height: 14),
         if (_postMatchPhrase.isNotEmpty)
-          Firdaws3DCard(
-            palette: palette,
-            glowColor: const Color(0xFFA855F7),
+          Firdaws4KCardShell(
+            backdrop: Background500Catalog.forMillionaireSection(12),
+            isDark: palette.isDark,
+            borderColor: const Color(0xFFA855F7).withOpacity(0.65),
+            borderRadius: 18,
+            imageOpacity: 0.48,
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

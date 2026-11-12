@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:adhan/adhan.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:provider/provider.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/prayer_info.dart';
 import '../models/prayer_model.dart';
 import '../providers/firdaws_user_provider.dart';
@@ -19,10 +20,10 @@ import '../widgets/islamic_prayer_card_view.dart';
 import '../widgets/persistent_audio_player_bar.dart';
 import '../widgets/audio_download_manager_sheet.dart';
 import '../widgets/firdaws_3d_ui.dart';
+import '../widgets/firdaws_resilient_image.dart';
 import '../widgets/real_mosque_background.dart';
 import '../widgets/sacred_reference_widgets.dart';
 import '../widgets/unified_theme_hub.dart';
-import '../widgets/user_profile_editor_sheet.dart';
 import '../widgets/wallpaper_70_picker_sheet.dart';
 import '../models/daily_inspiration_model.dart';
 import '../models/hijri_calendar_model.dart';
@@ -529,14 +530,14 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                               ),
                               const SizedBox(width: 8),
 
-                              // شعار قصر في الجنة أو صورة المستخدم الموحد الدائري النظيف
+                              // شعار قصر في الجنة أو صورة المستخدم — الانتقال إلى الإعدادات
                               FirdawsBrandLogo(
                                 size: 34,
                                 borderColor: accentColor,
                                 borderWidth: 1.6,
                                 userAvatarBytes: userProv.avatarBytes,
                                 fallbackIcon: Icons.castle_rounded,
-                                onTap: () => UserProfileEditorSheet.show(context),
+                                onTap: () => FirdawsNavBridge.jumpTo(7),
                               ),
                               const SizedBox(width: 8),
 
@@ -737,20 +738,49 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                               IconButton(
                                 constraints: const BoxConstraints(),
                                 padding: const EdgeInsets.all(5),
-                                icon: Icon(Icons.my_location_rounded, color: palette.textSecondary, size: 18),
-                                tooltip: "تحديث الموقع عبر GPS",
+                                icon: settings.isDetectingLocation
+                                    ? SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: accentColor,
+                                        ),
+                                      )
+                                    : Icon(Icons.my_location_rounded,
+                                        color: palette.textSecondary, size: 18),
+                                tooltip: "تحديد مدينتك وبلدك تلقائياً",
                                 onPressed: () async {
-                                  ScaffoldMessenger.of(context).showSnackBar(
+                                  final messenger = ScaffoldMessenger.of(context);
+                                  messenger.showSnackBar(
                                     SnackBar(
                                       backgroundColor: palette.cardColor,
                                       content: Text(
-                                        "جاري تحديد موقعك الجغرافي...",
+                                        "🛰️ جاري تحديد مدينتك وبلدك الآن...",
                                         style: TextStyle(color: palette.textPrimary),
                                       ),
                                       duration: const Duration(seconds: 1),
                                     ),
                                   );
-                                  await settings.refreshCurrentLocation();
+                                  final res = await settings.refreshCurrentLocation();
+                                  if (!mounted) return;
+                                  messenger.hideCurrentSnackBar();
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      backgroundColor: palette.cardColor,
+                                      behavior: SnackBarBehavior.floating,
+                                      content: Text(
+                                        res.succeeded
+                                            ? "✅ تم تحديد الموقع: ${res.displayName} (${res.sourceLabel})"
+                                            : "⚠️ ${res.errorMessage ?? 'تعذر تحديد الموقع تلقائياً — يمكنك اختياره من الإعدادات'}",
+                                        style: TextStyle(
+                                          color: palette.textPrimary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      duration: const Duration(seconds: 3),
+                                    ),
+                                  );
                                 },
                               ),
                             ],
@@ -1085,40 +1115,48 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     final passedColor =
         palette.isDark ? const Color(0xFF38BDF8) : const Color(0xFFB45309);
     final info = PrayerInfo.data[name];
+    final extraSlot = prayerType == Prayer.fajr
+        ? 0
+        : prayerType == Prayer.sunrise
+            ? 1
+            : prayerType == Prayer.dhuhr
+                ? 2
+                : prayerType == Prayer.asr
+                    ? 3
+                    : prayerType == Prayer.maghrib
+                        ? 4
+                        : 5;
 
-    Widget cardContent = Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => Prayer22DetailsSheet.show(
-          context,
-          prayerType,
-          accentColor,
-          prayerTime: time,
-          isPassed: isPassed,
-          isCurrent: isCurrent,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-          decoration: BoxDecoration(
-            color: isCurrent
-                ? accentColor.withOpacity(palette.isDark ? 0.24 : 0.16)
-                : firdaws3DSurfaceColor(palette, opacity: palette.isDark ? 0.90 : 0.95),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isCurrent ? accentColor : palette.dividerColor,
-              width: isCurrent ? 2.0 : 1.0,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(palette.isDark ? 0.35 : 0.08),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
+    Widget cardContent = Firdaws4KCardShell(
+      backdrop: Background500Catalog.forExtraSection(extraSlot),
+      isDark: palette.isDark,
+      borderColor: isCurrent ? accentColor : palette.dividerColor,
+      borderRadius: 16,
+      borderWidth: isCurrent ? 2.0 : 1.0,
+      imageOpacity: palette.isDark ? 0.36 : 0.20,
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: EdgeInsets.zero,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => Prayer22DetailsSheet.show(
+            context,
+            prayerType,
+            accentColor,
+            prayerTime: time,
+            isPassed: isPassed,
+            isCurrent: isCurrent,
           ),
-          child: Row(
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+            decoration: isCurrent
+                ? BoxDecoration(
+                    color: accentColor.withOpacity(palette.isDark ? 0.16 : 0.10),
+                    borderRadius: BorderRadius.circular(16),
+                  )
+                : null,
+            child: Row(
             children: [
               AnimatedScale(
                 scale: isCurrent ? 1.2 : 1.0,
@@ -1267,6 +1305,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
           ),
         ),
       ),
+      ),
     );
 
     if (isCurrent) {
@@ -1371,21 +1410,29 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     final resolvedKey = _resolveSpecialInfoKey(name);
     final info = PrayerInfo.data[resolvedKey];
     final isPassed = time.isBefore(DateTime.now());
+    final bgSlot = resolvedKey.contains('الضحى')
+        ? 15
+        : resolvedKey.contains('منتصف')
+            ? 16
+            : 17;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _showPrayerDetails(context, resolvedKey, palette, time: time),
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 3),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: palette.cardColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: palette.dividerColor),
-          ),
-          child: Row(
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forHomeSection(bgSlot),
+      isDark: palette.isDark,
+      borderColor: palette.dividerColor,
+      borderRadius: 14,
+      borderWidth: 1.0,
+      imageOpacity: palette.isDark ? 0.34 : 0.18,
+      margin: const EdgeInsets.symmetric(vertical: 3),
+      padding: EdgeInsets.zero,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showPrayerDetails(context, resolvedKey, palette, time: time),
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
             children: [
               Icon(icon, color: accentColor, size: 18),
               const SizedBox(width: 10),
@@ -1431,6 +1478,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -1440,12 +1488,14 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     final claimable = hasanat.claimableMissionsCount;
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 2),
-      child: Firdaws3DCard(
-        palette: palette,
-        glowColor: accent,
-        padding: const EdgeInsets.all(14),
+      child: Firdaws4KCardShell(
+        backdrop: Background500Catalog.forHomeSection(7),
+        isDark: palette.isDark,
+        borderColor: accent.withOpacity(0.55),
         borderRadius: 22,
-        depth: 5.5,
+        borderWidth: 1.4,
+        imageOpacity: palette.isDark ? 0.45 : 0.25,
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1719,13 +1769,15 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     final accentColor = firdawsModernAccent(palette);
     final isDark = palette.isDark;
 
-    return Firdaws3DCard(
-      palette: palette,
-      glowColor: accentColor,
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forHomeSection(12),
+      isDark: isDark,
+      borderColor: accentColor.withOpacity(0.5),
+      borderRadius: 20,
+      borderWidth: 1.3,
+      imageOpacity: isDark ? 0.36 : 0.20,
       margin: const EdgeInsets.only(top: 4, bottom: 12),
       padding: const EdgeInsets.all(12),
-      borderRadius: 20,
-      depth: 4.5,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1752,6 +1804,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildHubActionItem(
+                bgSlotIndex: 0,
                 icon: Icons.quiz_rounded,
                 label: "مليون ١٠٠٠ سؤال",
                 color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0369A1),
@@ -1761,6 +1814,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 ),
               ),
               _buildHubActionItem(
+                bgSlotIndex: 1,
                 icon: Icons.sports_esports_rounded,
                 label: "٣٠ لعبة 3D",
                 color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF6D28D9),
@@ -1770,6 +1824,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 ),
               ),
               _buildHubActionItem(
+                bgSlotIndex: 2,
                 icon: Icons.emoji_events_rounded,
                 label: "تحدي العائلة",
                 color: isDark ? const Color(0xFF34D399) : const Color(0xFF047857),
@@ -1779,6 +1834,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 ),
               ),
               _buildHubActionItem(
+                bgSlotIndex: 3,
                 icon: Icons.palette_rounded,
                 label: "بوابة الثيمات",
                 color: isDark ? const Color(0xFFF472B6) : const Color(0xFFBE185D),
@@ -1794,6 +1850,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildHubActionItem(
+                bgSlotIndex: 4,
                 icon: Icons.menu_book_rounded,
                 label: "القرآن الكريم",
                 color: isDark ? const Color(0xFF38BDF8) : const Color(0xFFB45309),
@@ -1801,6 +1858,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 onTap: () => QuranAzkarSheet.showQuranReader(context, accentColor),
               ),
               _buildHubActionItem(
+                bgSlotIndex: 5,
                 icon: Icons.volunteer_activism_rounded,
                 label: "أذكار المسلم",
                 color: isDark ? const Color(0xFF34D399) : const Color(0xFF047857),
@@ -1808,6 +1866,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 onTap: () => QuranAzkarSheet.showAzkarReader(context, accentColor),
               ),
               _buildHubActionItem(
+                bgSlotIndex: 6,
                 icon: Icons.calendar_month_rounded,
                 label: "التقويم الهجري",
                 color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0369A1),
@@ -1817,6 +1876,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 },
               ),
               _buildHubActionItem(
+                bgSlotIndex: 7,
                 icon: Icons.explore_rounded,
                 label: "القبلة الذكية",
                 color: isDark ? const Color(0xFFF472B6) : const Color(0xFFBE185D),
@@ -1847,6 +1907,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildHubActionItem(
+                bgSlotIndex: 8,
                 icon: Icons.fact_check_rounded,
                 label: "سجل الصلوات",
                 color: isDark ? const Color(0xFF34D399) : const Color(0xFF047857),
@@ -1854,6 +1915,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 onTap: () => FirdawsNavBridge.jumpTo(1, journeyTab: 0),
               ),
               _buildHubActionItem(
+                bgSlotIndex: 9,
                 icon: Icons.task_alt_rounded,
                 label: "المهام والطاعات",
                 color: isDark ? const Color(0xFF38BDF8) : const Color(0xFFB45309),
@@ -1861,6 +1923,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 onTap: () => FirdawsNavBridge.jumpTo(1, journeyTab: 1),
               ),
               _buildHubActionItem(
+                bgSlotIndex: 10,
                 icon: Icons.workspace_premium_rounded,
                 label: "200 لقب ومسابقة",
                 color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF6D28D9),
@@ -1868,6 +1931,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 onTap: () => FirdawsNavBridge.jumpTo(1, journeyTab: 2),
               ),
               _buildHubActionItem(
+                bgSlotIndex: 11,
                 icon: Icons.edit_note_rounded,
                 label: "مذكرتي و500 عبارة",
                 color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0369A1),
@@ -1883,6 +1947,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildHubActionItem(
+                bgSlotIndex: 12,
                 icon: Icons.park_rounded,
                 label: "واحة جَنَّتِي",
                 color: isDark ? const Color(0xFF34D399) : const Color(0xFF047857),
@@ -1890,6 +1955,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 onTap: () => FirdawsNavBridge.jumpTo(5, jannatiTab: 0),
               ),
               _buildHubActionItem(
+                bgSlotIndex: 13,
                 icon: Icons.architecture_rounded,
                 label: "مُهندس الجنة",
                 color: isDark ? const Color(0xFF38BDF8) : const Color(0xFFB45309),
@@ -1897,6 +1963,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 onTap: () => FirdawsNavBridge.jumpTo(5, jannatiTab: 1),
               ),
               _buildHubActionItem(
+                bgSlotIndex: 14,
                 icon: Icons.auto_stories_rounded,
                 label: "أطلس الجنة",
                 color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF6D28D9),
@@ -1904,6 +1971,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 onTap: () => FirdawsNavBridge.jumpTo(5, jannatiTab: 2),
               ),
               _buildHubActionItem(
+                bgSlotIndex: 15,
                 icon: Icons.question_answer_rounded,
                 label: "٥٠٠ سؤال وجواب",
                 color: isDark ? const Color(0xFFF472B6) : const Color(0xFFBE185D),
@@ -1919,6 +1987,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildHubActionItem(
+                bgSlotIndex: 16,
                 icon: Icons.auto_stories_rounded,
                 label: "📖 القصص النبوية",
                 color: isDark ? const Color(0xFF38BDF8) : const Color(0xFFB45309),
@@ -1928,6 +1997,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 ),
               ),
               _buildHubActionItem(
+                bgSlotIndex: 17,
                 icon: Icons.verified_rounded,
                 label: "📜 صحيح البخاري",
                 color: isDark ? const Color(0xFF34D399) : const Color(0xFF047857),
@@ -1937,6 +2007,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 ),
               ),
               _buildHubActionItem(
+                bgSlotIndex: 18,
                 icon: Icons.download_for_offline_rounded,
                 label: "⬇️ مركز التحميل",
                 color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0369A1),
@@ -1944,6 +2015,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 onTap: () => showAudioDownloadManagerSheet(context),
               ),
               _buildHubActionItem(
+                bgSlotIndex: 19,
                 icon: Icons.favorite_rounded,
                 label: "🤲 عنّي والدعاء",
                 color: isDark ? const Color(0xFFF472B6) : const Color(0xFFBE185D),
@@ -1970,45 +2042,44 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     final phrase = userProv.getPersonalizedMotivation();
     final activeTitleLabel = userProv.activeTitleLabel;
 
-    return Firdaws3DCard(
-      palette: palette,
-      glowColor: accent,
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forHomeSection(0),
+      isDark: palette.isDark,
+      borderColor: accent.withOpacity(0.45),
+      borderRadius: 20,
+      borderWidth: 1.2,
+      imageOpacity: palette.isDark ? 0.36 : 0.20,
       margin: const EdgeInsets.fromLTRB(14, 4, 14, 6),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-      borderRadius: 20,
-      depth: 4.5,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Expanded(
-                child: GestureDetector(
-                  onTap: () => UserProfileEditorSheet.show(context),
-                  child: Row(
-                    children: [
-                      Icon(
-                        activeEffect.icon,
-                        color: activeEffect.accentColor,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          p.hasCustomName
-                              ? 'مرحباً يا ${userProv.displayName}${activeTitleLabel != null ? ' • $activeTitleLabel' : ''}'
-                              : 'اضغط هنا لتسجيل اسمك وتخصيص 500 عبارة تشجيعية لك',
-                          style: TextStyle(
-                            color: palette.textPrimary,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                child: Row(
+                  children: [
+                    Icon(
+                      activeEffect.icon,
+                      color: activeEffect.accentColor,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        p.hasCustomName
+                            ? 'مرحباً يا ${userProv.displayName}${activeTitleLabel != null ? ' • $activeTitleLabel' : ''}'
+                            : 'نفحات الفردوس اليومية ✨ • ${activeEffect.shortLabel}',
+                        style: TextStyle(
+                          color: palette.textPrimary,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.bold,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 6),
@@ -2070,7 +2141,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                   constraints: const BoxConstraints(),
                   padding: const EdgeInsets.all(4),
                   icon: Icon(Icons.shuffle_rounded, color: accent, size: 17),
-                  tooltip: 'عبارة تشجيعية جديدة باسمك',
+                  tooltip: 'عبارة تشجيعية جديدة',
                   onPressed: userProv.nextMotivation,
                 ),
               ],
@@ -2185,28 +2256,69 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
   }
 
   Widget _buildHubActionItem({
+    required int bgSlotIndex,
     required IconData icon,
     required String label,
     required Color color,
     required ThemePalette palette,
     required VoidCallback onTap,
   }) {
+    final photoEntry = Background500Catalog.forBagItem(bgSlotIndex);
     return Expanded(
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
           child: Column(
             children: [
               Container(
-                padding: const EdgeInsets.all(9),
+                width: 52,
+                height: 52,
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: color.withOpacity(0.16),
-                  border: Border.all(color: color.withOpacity(0.6), width: 1.2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: color.withOpacity(0.85), width: 1.6),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withOpacity(0.28),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-                child: Icon(icon, color: color, size: 20),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      FirdawsResilientImage.entry(photoEntry),
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withOpacity(0.10),
+                              Colors.black.withOpacity(0.62),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.bottomLeft,
+                        child: Container(
+                          margin: const EdgeInsets.all(3),
+                          padding: const EdgeInsets.all(3.5),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: color.withOpacity(0.92),
+                          ),
+                          child: Icon(icon, color: Colors.white, size: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 5),
               Text(
@@ -2232,13 +2344,14 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     final accentColor = firdawsModernAccent(palette);
     final headerColor = palette.isDark ? accentColor : palette.primaryColor;
 
-    return Firdaws3DCard(
-      palette: palette,
-      glowColor: headerColor,
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forHomeSection(13),
+      isDark: palette.isDark,
+      borderColor: headerColor.withOpacity(0.5),
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       borderRadius: 22,
-      depth: 4.5,
+      imageOpacity: palette.isDark ? 0.36 : 0.20,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2338,13 +2451,14 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     final dua = DailyDua.getTodayDua();
     final headerColor = palette.isDark ? const Color(0xFF34D399) : const Color(0xFF047857);
 
-    return Firdaws3DCard(
-      palette: palette,
-      glowColor: headerColor,
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forHomeSection(14),
+      isDark: palette.isDark,
+      borderColor: headerColor.withOpacity(0.5),
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       borderRadius: 22,
-      depth: 4.5,
+      imageOpacity: palette.isDark ? 0.36 : 0.20,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

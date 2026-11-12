@@ -92,6 +92,22 @@ class IbtihalAudioItem {
   });
 }
 
+class ParadiseBirdsongItem {
+  final String id;
+  final String title;
+  final String subtitle;
+  final String localAsset;
+  final String? streamUrl;
+
+  const ParadiseBirdsongItem({
+    required this.id,
+    required this.title,
+    required this.subtitle,
+    required this.localAsset,
+    this.streamUrl,
+  });
+}
+
 class IslamicAudioLibrary {
   static const List<AdhanVoiceInfo> adhanVoices = [
     AdhanVoiceInfo(
@@ -449,4 +465,40 @@ class IslamicAudioLibrary {
       streamUrl: 'https://archive.org/download/Tawashih/04.mp3',
     ),
   ];
+
+  static const List<ParadiseBirdsongItem> paradiseBirdsongTracks = [
+    ParadiseBirdsongItem(
+      id: 'birds_paradise',
+      title: 'تغريد عصافير الفردوس مع خَرِير الأنهار 🐦🌊',
+      subtitle: 'صوت طبيعي هادئ يعمل مباشرة بدون إنترنت',
+      localAsset: 'audio/birds_paradise.wav',
+    ),
+    ParadiseBirdsongItem(
+      id: 'birds_forest',
+      title: 'أنس بلابل الحدائق الغنّاء 🌿🎶',
+      subtitle: 'نغمات طيور نقية مدمجة بدون إنترنت',
+      localAsset: 'audio/birds_forest.wav',
+    ),
+    ParadiseBirdsongItem(
+      id: 'birds_dawn_brook',
+      title: 'فجر البستان وتسابيح الطيور الصباحية 🌅🕊️',
+      subtitle: 'بث طبيعة هادئ للاستجمام والخشوع (مع بديل أوفلاين)',
+      localAsset: 'audio/birds_paradise.wav',
+      streamUrl: 'https://archive.org/download/birds_singing_202104/birds_singing.mp3',
+    ),
+    ParadiseBirdsongItem(
+      id: 'birds_rain_garden',
+      title: 'زخات المطر في رياض الجنة وزقزقة العصافير 🌧️🌴',
+      subtitle: 'سكينة وهدوء نفسي عميق للتأمل والذكر',
+      localAsset: 'audio/birds_forest.wav',
+      streamUrl: 'https://archive.org/download/relaxing-nature-sounds/Forest%20Birds.mp3',
+    ),
+  ];
+
+  static ParadiseBirdsongItem getBirdsongById(String id) {
+    return paradiseBirdsongTracks.firstWhere(
+      (t) => t.id == id,
+      orElse: () => paradiseBirdsongTracks.first,
+    );
+  }
 }

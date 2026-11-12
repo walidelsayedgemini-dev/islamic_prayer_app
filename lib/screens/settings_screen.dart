@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:adhan/adhan.dart';
 import 'package:provider/provider.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/font_catalog.dart';
 import '../models/touch_effects_200.dart';
 import '../providers/firdaws_user_provider.dart';
@@ -12,8 +13,8 @@ import '../widgets/audio_download_manager_sheet.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/prayer_time_effects_canvas.dart';
 import '../widgets/real_mosque_background.dart';
-import '../widgets/firdaws_3d_ui.dart';
 import '../widgets/firdaws_brand_logo.dart';
+import '../widgets/firdaws_resilient_image.dart';
 import '../widgets/unified_theme_hub.dart';
 import '../widgets/user_profile_editor_sheet.dart';
 import '../widgets/wallpaper_70_picker_sheet.dart';
@@ -29,6 +30,161 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  Map<String, dynamic> _adhanDiag = const {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDiagnostics();
+  }
+
+  Future<void> _loadDiagnostics() async {
+    final diag = await FirdawsNativeService().getAdhanDiagnostics();
+    if (mounted) {
+      setState(() => _adhanDiag = diag);
+    }
+  }
+
+  void _showCitySearchSheet(
+    BuildContext context,
+    SettingsProvider settings,
+    ThemePalette palette,
+  ) {
+    String q = '';
+    final accent = palette.accentColor;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          final filtered = q.isEmpty
+              ? LocationService.presetCities
+              : LocationService.presetCities
+                  .where((c) => c.name.contains(q))
+                  .toList();
+          return DraggableScrollableSheet(
+            initialChildSize: 0.78,
+            minChildSize: 0.45,
+            maxChildSize: 0.94,
+            builder: (_, sc) => Container(
+              decoration: BoxDecoration(
+                color: palette.scaffoldColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+                border: Border.all(color: accent.withOpacity(0.5), width: 1.5),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 10),
+                  Container(
+                    width: 44,
+                    height: 4.5,
+                    decoration: BoxDecoration(
+                      color: palette.dividerColor,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 12, 18, 8),
+                    child: Row(
+                      children: [
+                        Icon(Icons.public_rounded, color: accent),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'اختر بلدك ومدينتك (${LocationService.presetCities.length} مدينة)',
+                            style: TextStyle(
+                              color: accent,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.close_rounded, color: palette.textMuted),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: TextField(
+                      style: TextStyle(color: palette.textPrimary, fontSize: 13),
+                      onChanged: (v) => setModalState(() => q = v.trim()),
+                      decoration: InputDecoration(
+                        hintText: 'ابحث باسم البلد أو المدينة (مثال: مصر، القاهرة، الرياض...)',
+                        hintStyle: TextStyle(color: palette.textMuted, fontSize: 12),
+                        prefixIcon: Icon(Icons.search_rounded, color: accent),
+                        isDense: true,
+                        filled: true,
+                        fillColor: palette.cardColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: palette.dividerColor),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: ListView.builder(
+                      controller: sc,
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                      itemCount: filtered.length,
+                      itemBuilder: (_, idx) {
+                        final city = filtered[idx];
+                        final selected = settings.cityName == city.name;
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? accent.withOpacity(0.16)
+                                : palette.cardColor,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: selected ? accent : palette.dividerColor,
+                            ),
+                          ),
+                          child: ListTile(
+                            dense: true,
+                            leading: Icon(
+                              Icons.location_city_rounded,
+                              color: selected ? accent : palette.textSecondary,
+                            ),
+                            title: Text(
+                              city.name,
+                              style: TextStyle(
+                                color: palette.textPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.5,
+                              ),
+                            ),
+                            trailing: selected
+                                ? Icon(Icons.check_circle_rounded, color: accent)
+                                : Icon(Icons.chevron_left_rounded,
+                                    color: palette.textMuted),
+                            onTap: () {
+                              settings.setManualLocation(
+                                city.latitude,
+                                city.longitude,
+                                city.name,
+                              );
+                              Navigator.pop(ctx);
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
   void _showTouchEffectsCatalogSheet(BuildContext context, ThemePalette palette) {
     TouchEffectCategory? activeCat;
     String query = '';
@@ -337,7 +493,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "مكتبة خطوط الفردوس الصافية (٣ خطوط واضحة)",
+                                    "مكتبة خطوط الفردوس الكاملة (٢٠ خطاً عربياً أصيلاً)",
                                     style: TextStyle(
                                       color: accent,
                                       fontSize: 16,
@@ -568,13 +724,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Consumer<FirdawsUserProvider>(
                   builder: (_, userProv, __) {
                     final avatarBytes = userProv.avatarBytes;
-                    return Container(
+                    return Firdaws4KCardShell(
+                      backdrop: Background500Catalog.forSettingsSection(0),
+                      isDark: isNight,
+                      borderColor: accentColor.withOpacity(0.55),
+                      borderRadius: 20,
+                      borderWidth: 1.4,
+                      imageOpacity: isNight ? 0.42 : 0.24,
                       padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: palette.cardColor.withOpacity(isNight ? 0.85 : 0.90),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: accentColor.withOpacity(0.5), width: 1.4),
-                      ),
                       child: Row(
                         children: [
                           FirdawsBrandLogo(
@@ -712,7 +869,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                             ),
                           ),
-                        ]),
+                        ], sectionIndex: 1),
                       ],
                     );
                   },
@@ -760,10 +917,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
-            ]),
+            ], sectionIndex: 2),
 
-            // 1. اختيار خط التطبيق من ٣ خطوط صافية ومريحة للعين
-            _buildSectionHeader("خط التطبيق الواضح (٣ خطوط هادئة)", accentColor),
+            // 1. اختيار خط التطبيق من ٢٠ خطاً عربياً أصيلاً
+            _buildSectionHeader("خط التطبيق والزخرفة (٢٠ خطاً عربياً أصيلاً)", accentColor),
             _buildCard(palette, [
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
@@ -795,7 +952,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                               ),
                               Text(
-                                "${currentFont.category} • (${FontCatalog.allFonts.length} خطوط صافية)",
+                                "${currentFont.category} • (${FontCatalog.allFonts.length} خطاً عربياً متوفراً)",
                                 style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
                               ),
                             ],
@@ -854,7 +1011,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    // شريط اختيار سريع للخطوط الصافية الثلاثة
+                    // شريط اختيار سريع للخطوط العربية العشرين
                     SizedBox(
                       height: 44,
                       child: ListView.builder(
@@ -898,74 +1055,134 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
               ),
-            ]),
+            ], sectionIndex: 3),
 
             // 3. تحديد الموقع الجغرافي
-            _buildSectionHeader("الموقع الجغرافي والمدينة", accentColor),
+            _buildSectionHeader("🌍 الموقع الجغرافي والبلد والمدينة", accentColor),
             _buildCard(palette, [
               SwitchListTile(
+                contentPadding: EdgeInsets.zero,
                 title: Text(
-                  "تحديد الموقع التلقائي (GPS)",
-                  style: TextStyle(color: palette.textPrimary, fontSize: 14),
+                  "تحديد الموقع والبلد تلقائياً (GPS + الشبكة)",
+                  style: TextStyle(color: palette.textPrimary, fontSize: 14, fontWeight: FontWeight.bold),
                 ),
                 subtitle: Text(
-                  settings.cityName,
-                  style: TextStyle(color: palette.textSecondary, fontSize: 12),
-                  maxLines: 1,
+                  "${settings.cityName}\nالحالة: ${settings.lastLocationStatus}",
+                  style: TextStyle(color: palette.textSecondary, fontSize: 11.5, height: 1.4),
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 value: settings.isAutoLocation,
                 activeTrackColor: accentColor,
                 onChanged: (val) async {
                   if (val) {
-                    await settings.refreshCurrentLocation();
+                    final messenger = ScaffoldMessenger.of(context);
+                    final res = await settings.refreshCurrentLocation();
+                    if (!mounted) return;
+                    messenger.showSnackBar(
+                      SnackBar(
+                        backgroundColor: palette.cardColor,
+                        behavior: SnackBarBehavior.floating,
+                        content: Text(
+                          res.succeeded
+                              ? "✅ تم تحديد موقعك: ${res.displayName} (${res.sourceLabel})"
+                              : "⚠️ ${res.errorMessage ?? 'تعذر الكشف التلقائي — اختر مدينتك يدوياً'}",
+                          style: TextStyle(color: palette.textPrimary),
+                        ),
+                      ),
+                    );
                   } else {
                     final makkah = LocationService.presetCities[0];
                     settings.setManualLocation(makkah.latitude, makkah.longitude, makkah.name);
                   }
                 },
               ),
-              if (!settings.isAutoLocation) ...[
-                Divider(color: palette.dividerColor),
-                ListTile(
-                  title: Text(
-                    "اختر مدينة من القائمة",
-                    style: TextStyle(color: palette.textPrimary, fontSize: 14),
+              if (settings.lastLocationError != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.14),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.amber.withOpacity(0.5)),
                   ),
-                  trailing: DropdownButton<CityPreset>(
-                    dropdownColor: palette.cardColor,
-                    underline: const SizedBox(),
-                    icon: Icon(Icons.arrow_drop_down, color: accentColor),
-                    hint: Text(
-                      settings.cityName,
-                      style: TextStyle(color: accentColor, fontSize: 13),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    items: LocationService.presetCities.map((city) {
-                      return DropdownMenuItem<CityPreset>(
-                        value: city,
-                        child: Text(
-                          city.name,
-                          style: TextStyle(color: palette.textPrimary, fontSize: 13),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (CityPreset? selected) {
-                      if (selected != null) {
-                        settings.setManualLocation(
-                          selected.latitude,
-                          selected.longitude,
-                          selected.name,
-                        );
-                      }
-                    },
+                  child: Text(
+                    settings.lastLocationError!,
+                    style: TextStyle(color: palette.textPrimary, fontSize: 11.5),
                   ),
                 ),
               ],
-            ]),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: settings.isDetectingLocation
+                          ? null
+                          : () async {
+                              final messenger = ScaffoldMessenger.of(context);
+                              final res = await settings.refreshCurrentLocation();
+                              if (!mounted) return;
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  backgroundColor: palette.cardColor,
+                                  behavior: SnackBarBehavior.floating,
+                                  content: Text(
+                                    res.succeeded
+                                        ? "✅ موقعك الحالي: ${res.displayName} (${res.sourceLabel})"
+                                        : "⚠️ ${res.errorMessage ?? 'تعذر التحديد التلقائي حالياً'}",
+                                    style: TextStyle(color: palette.textPrimary),
+                                  ),
+                                ),
+                              );
+                            },
+                      icon: settings.isDetectingLocation
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.my_location_rounded, size: 17),
+                      label: Text(
+                        settings.isDetectingLocation
+                            ? "جاري الكشف..."
+                            : "🛰️ تحديد موقعي وبلدي الآن",
+                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: accentColor,
+                        foregroundColor: palette.onAccentColor,
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showCitySearchSheet(context, settings, palette),
+                      icon: Icon(Icons.public_rounded, color: accentColor, size: 17),
+                      label: Text(
+                        "اختيار من ${LocationService.presetCities.length} مدينة",
+                        style: TextStyle(
+                          color: accentColor,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: accentColor),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ], sectionIndex: 4),
 
             // 4. الحساب الفلكي والمذهب
             _buildSectionHeader("طريقة الحساب الفلكي والمذهب", accentColor),
@@ -1027,7 +1244,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
                 onChanged: (val) => val != null ? settings.setMadhab(val) : null,
               ),
-            ]),
+            ], sectionIndex: 5),
 
             // 5. صوت الأذان والتنبيهات + منبه الأذان المتواصل
             _buildSectionHeader("🔊 صوت الأذان والتنبيهات (الأذان الكامل)", accentColor),
@@ -1085,6 +1302,97 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       "🔔 عند دخول وقت الصلاة يصدح الأذان متواصلاً فوق القفل ولا يتوقف إلا بزر رفع الصوت الجانبي أو السحب والضغط على إلغاء.",
                       style: TextStyle(color: palette.textSecondary, fontSize: 11, height: 1.35),
                     ),
+                    if (_adhanDiag.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: palette.elevatedCardColor.withOpacity(0.85),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: accentColor.withOpacity(0.35)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "🩺 فحص جاهزية الأذان الدقيق (${_adhanDiag['scheduledCount'] ?? 0} منبهات مجدولة):",
+                              style: TextStyle(
+                                color: accentColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11.5,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: [
+                                _diagPill(
+                                  "إشعارات النظام",
+                                  _adhanDiag['notificationsEnabled'] == true,
+                                  palette,
+                                ),
+                                _diagPill(
+                                  "المنبه الدقيق",
+                                  _adhanDiag['canScheduleExactAlarms'] == true,
+                                  palette,
+                                ),
+                                _diagPill(
+                                  "استثناء البطارية",
+                                  _adhanDiag['ignoringBatteryOptimizations'] == true,
+                                  palette,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: [
+                                if (_adhanDiag['canScheduleExactAlarms'] != true)
+                                  OutlinedButton(
+                                    onPressed: () async {
+                                      await FirdawsNativeService().requestExactAlarmPermission();
+                                      await Future<void>.delayed(const Duration(milliseconds: 600));
+                                      await _loadDiagnostics();
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      minimumSize: Size.zero,
+                                    ),
+                                    child: const Text("تفعيل المنبه الدقيق", style: TextStyle(fontSize: 10.5)),
+                                  ),
+                                if (_adhanDiag['ignoringBatteryOptimizations'] != true)
+                                  OutlinedButton(
+                                    onPressed: () async {
+                                      await FirdawsNativeService().requestBatteryOptimizationExemption();
+                                      await Future<void>.delayed(const Duration(milliseconds: 600));
+                                      await _loadDiagnostics();
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      minimumSize: Size.zero,
+                                    ),
+                                    child: const Text("استثناء البطارية", style: TextStyle(fontSize: 10.5)),
+                                  ),
+                                TextButton.icon(
+                                  onPressed: () async {
+                                    settings.syncAllNotifications();
+                                    await Future<void>.delayed(const Duration(milliseconds: 350));
+                                    await _loadDiagnostics();
+                                  },
+                                  icon: Icon(Icons.refresh_rounded, color: accentColor, size: 14),
+                                  label: Text(
+                                    "إعادة جدولة المنبهات الآن",
+                                    style: TextStyle(color: accentColor, fontSize: 10.5, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1130,7 +1438,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 activeTrackColor: accentColor,
                 onChanged: (val) => settings.setAutoMute(val),
               ),
-            ]),
+            ], sectionIndex: 6),
 
             // 5-ب. 200 تأثير للمس وحركة الماوس والمؤشر
             _buildSectionHeader("✨ 200 تأثير للمس وحركة المؤشر (Touch Waves)", accentColor),
@@ -1214,7 +1522,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               const SizedBox(height: 6),
-            ]),
+            ], sectionIndex: 7),
 
             // 5-ج. تذكير الصلاة على النبي ﷺ فوق كل التطبيقات
             _buildSectionHeader("🌹 الصلاة على النبي ﷺ فوق كل التطبيقات", accentColor),
@@ -1354,7 +1662,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
               const SizedBox(height: 6),
-            ]),
+            ], sectionIndex: 8),
 
             // 5-د. التحميل بدون إنترنت وعنّي والدعاء
             _buildSectionHeader("📥 مركز التحميل بدون نت وعنّي والدعاء", accentColor),
@@ -1396,7 +1704,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   MaterialPageRoute(builder: (_) => const AboutMeScreen()),
                 ),
               ),
-            ]),
+            ], sectionIndex: 9),
 
             // 6. ضبط يدوي لمواقيت الصلاة بالدقائق
             _buildSectionHeader("ضبط يدوي لمواقيت الصلاة (بالدقائق)", accentColor),
@@ -1406,13 +1714,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildOffsetSlider(settings, "العصر", 'asr', palette),
               _buildOffsetSlider(settings, "المغرب", 'maghrib', palette),
               _buildOffsetSlider(settings, "العشاء", 'isha', palette),
-            ]),
+            ], sectionIndex: 10),
           ],
         ),
       ),
     ],
   ),
 );
+  }
+
+  Widget _diagPill(String label, bool ok, ThemePalette palette) {
+    final c = ok ? const Color(0xFF10B981) : Colors.amber;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: c.withOpacity(0.16),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: c.withOpacity(0.6)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            ok ? Icons.check_circle_rounded : Icons.warning_amber_rounded,
+            size: 13,
+            color: c,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontSize: 10.5,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildSectionHeader(String title, Color accentColor) {
@@ -1425,11 +1764,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildCard(ThemePalette palette, List<Widget> children) {
-    return Firdaws3DCard(
-      palette: palette,
+  Widget _buildCard(
+    ThemePalette palette,
+    List<Widget> children, {
+    int sectionIndex = 1,
+  }) {
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forSettingsSection(sectionIndex),
+      isDark: palette.isDark,
+      borderColor: palette.accentColor.withOpacity(0.45),
       borderRadius: 20,
-      depth: 4.5,
+      borderWidth: 1.3,
+      imageOpacity: palette.isDark ? 0.36 : 0.20,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
