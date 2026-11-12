@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../theme/islamic_theme.dart';
+import '../widgets/firdaws_resilient_image.dart';
 
 class IslamicGreetingCard {
   final String id;
@@ -124,34 +126,44 @@ class _IslamicGreetingCardsSheetState extends State<IslamicGreetingCardsSheet> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: accent.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: accent),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+            child: Firdaws4KCardShell(
+              backdrop: Background500Catalog.forExtraSection(70),
+              isDark: palette.isDark,
+              borderRadius: 18,
+              borderColor: accent.withOpacity(0.45),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              imageOpacity: 0.45,
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: accent.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: accent),
+                    ),
+                    child: Icon(Icons.mark_email_read_rounded, color: accent, size: 20),
                   ),
-                  child: Icon(Icons.mark_email_read_rounded, color: accent, size: 20),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    "كروت التهنئة والأدعية الإسلامية",
-                    style: TextStyle(
-                      color: palette.textPrimary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      "كروت التهنئة والأدعية الإسلامية",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.close_rounded, color: palette.textMuted),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
+                  IconButton(
+                    icon: Icon(Icons.close_rounded, color: palette.textMuted),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
             ),
           ),
           SizedBox(
@@ -195,28 +207,14 @@ class _IslamicGreetingCardsSheetState extends State<IslamicGreetingCardsSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 18),
               child: Column(
                 children: [
-                  Container(
-                    width: double.infinity,
+                  Firdaws4KCardShell(
+                    backdrop: Background500Catalog.forExtraSection(71 + _selectedCardIndex),
+                    isDark: palette.isDark,
                     padding: const EdgeInsets.all(22),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topRight,
-                        end: Alignment.bottomLeft,
-                        colors: [
-                          palette.cardColor,
-                          palette.elevatedCardColor,
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: accent, width: 2.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: accent.withOpacity(0.22),
-                          blurRadius: 20,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
+                    borderRadius: 24,
+                    borderWidth: 2.0,
+                    borderColor: accent,
+                    imageOpacity: palette.isDark ? 0.56 : 0.44,
                     child: Column(
                       children: [
                         Container(
@@ -250,13 +248,13 @@ class _IslamicGreetingCardsSheetState extends State<IslamicGreetingCardsSheet> {
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 16),
-                        Container(
+                        Firdaws4KCardShell(
+                          backdrop: Background500Catalog.forExtraSection(80 + _selectedCardIndex),
+                          isDark: palette.isDark,
                           padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: palette.scaffoldColor.withOpacity(0.75),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: accent.withOpacity(0.35)),
-                          ),
+                          borderRadius: 14,
+                          borderColor: accent.withOpacity(0.45),
+                          imageOpacity: 0.34,
                           child: Text(
                             selectedCard.hadithOrDua,
                             style: TextStyle(

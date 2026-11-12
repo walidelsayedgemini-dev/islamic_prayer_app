@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import 'firdaws_brand_logo.dart';
+import 'firdaws_resilient_image.dart';
 
 class UserProfileEditorSheet extends StatefulWidget {
   const UserProfileEditorSheet({super.key});
@@ -214,18 +216,14 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                     padding: const EdgeInsets.fromLTRB(18, 14, 18, 28),
                     children: [
                       // بطاقة الصورة الشخصية العصرية من المعرض
-                      Container(
+                      Firdaws4KCardShell(
+                        backdrop: Background500Catalog.forExtraSection(42),
+                        isDark: palette.isDark,
+                        borderColor: accent.withOpacity(0.45),
+                        borderRadius: 20,
+                        borderWidth: 1.2,
                         padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              accent.withOpacity(0.14),
-                              palette.cardColor,
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: accent.withOpacity(0.45)),
-                        ),
+                        imageOpacity: 0.42,
                         child: Row(
                           children: [
                             Stack(
@@ -546,12 +544,14 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                         }).toList(),
                       ),
                       const SizedBox(height: 14),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: palette.cardColor,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: palette.dividerColor),
-                        ),
+                      Firdaws4KCardShell(
+                        backdrop: Background500Catalog.forExtraSection(43),
+                        isDark: palette.isDark,
+                        borderColor: palette.dividerColor,
+                        borderRadius: 16,
+                        borderWidth: 1.0,
+                        padding: EdgeInsets.zero,
+                        imageOpacity: 0.30,
                         child: Column(
                           children: [
                             SwitchListTile(

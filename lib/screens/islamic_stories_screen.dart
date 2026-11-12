@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:adhan/adhan.dart';
 import 'package:provider/provider.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/islamic_stories_data.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
+import '../widgets/firdaws_resilient_image.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/real_mosque_background.dart';
 import '../widgets/sacred_reference_widgets.dart';
@@ -93,14 +95,14 @@ class _IslamicStoriesScreenState extends State<IslamicStoriesScreen> {
 
     return Column(
       children: [
-        Container(
+        Firdaws4KCardShell(
+          backdrop: Background500Catalog.forExtraSection(90),
+          isDark: palette.isDark,
           margin: const EdgeInsets.fromLTRB(12, 8, 12, 6),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: palette.cardColor.withOpacity(0.92),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: accent.withOpacity(0.5)),
-          ),
+          borderRadius: 18,
+          borderColor: accent.withOpacity(0.55),
+          imageOpacity: 0.45,
           child: Row(
             children: [
               IconButton(
@@ -118,6 +120,8 @@ class _IslamicStoriesScreenState extends State<IslamicStoriesScreen> {
                   children: [
                     Text(
                       'القصص النبوية وسير الصالحين ✨',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: palette.textPrimary,
                         fontSize: 15.5,
@@ -221,26 +225,17 @@ class _IslamicStoriesScreenState extends State<IslamicStoriesScreen> {
             itemCount: stories.length,
             itemBuilder: (_, idx) {
               final s = stories[idx];
-              return GestureDetector(
+              return Firdaws4KCardShell(
+                backdrop: Background500Catalog.forExtraSection(92 + (idx % 30)),
+                isDark: palette.isDark,
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: EdgeInsets.zero,
+                borderRadius: 20,
+                borderWidth: 1.2,
+                borderColor: s.accentColor.withOpacity(0.55),
+                imageOpacity: palette.isDark ? 0.42 : 0.34,
                 onTap: () => setState(() => _activeStory = s),
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: palette.cardColor.withOpacity(palette.isDark ? 0.90 : 0.96),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: s.accentColor.withOpacity(0.55),
-                      width: 1.2,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: s.accentColor.withOpacity(0.14),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
+                child: Row(
                     children: [
                       ClipRRect(
                         borderRadius: const BorderRadius.horizontal(
@@ -344,7 +339,6 @@ class _IslamicStoriesScreenState extends State<IslamicStoriesScreen> {
                       const SizedBox(width: 8),
                     ],
                   ),
-                ),
               );
             },
           ),
@@ -361,14 +355,14 @@ class _IslamicStoriesScreenState extends State<IslamicStoriesScreen> {
   ) {
     return Column(
       children: [
-        Container(
+        Firdaws4KCardShell(
+          backdrop: Background500Catalog.forExtraSection(91),
+          isDark: palette.isDark,
           margin: const EdgeInsets.fromLTRB(12, 8, 12, 6),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: palette.cardColor.withOpacity(0.92),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: story.accentColor.withOpacity(0.55)),
-          ),
+          borderRadius: 18,
+          borderColor: story.accentColor.withOpacity(0.55),
+          imageOpacity: 0.45,
           child: Row(
             children: [
               IconButton(
@@ -447,13 +441,13 @@ class _IslamicStoriesScreenState extends State<IslamicStoriesScreen> {
                 ],
 
                 // العبر المستفادة
-                Container(
+                Firdaws4KCardShell(
+                  backdrop: Background500Catalog.forExtraSection(125),
+                  isDark: palette.isDark,
                   padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: story.accentColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: story.accentColor.withOpacity(0.5)),
-                  ),
+                  borderRadius: 18,
+                  borderColor: story.accentColor.withOpacity(0.55),
+                  imageOpacity: palette.isDark ? 0.36 : 0.30,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -503,13 +497,13 @@ class _IslamicStoriesScreenState extends State<IslamicStoriesScreen> {
     IslamicStory story,
     ThemePalette palette,
   ) {
-    return Container(
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forExtraSection(100 + number),
+      isDark: palette.isDark,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: palette.cardColor.withOpacity(palette.isDark ? 0.90 : 0.96),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: palette.dividerColor),
-      ),
+      borderRadius: 18,
+      borderColor: story.accentColor.withOpacity(0.45),
+      imageOpacity: palette.isDark ? 0.34 : 0.28,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

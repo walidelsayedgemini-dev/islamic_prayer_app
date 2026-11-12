@@ -21,8 +21,10 @@ class SettingsProvider extends ChangeNotifier {
   String _brightnessMode = 'night'; // 'night', 'day', 'auto'
   String? _selectedAppWallpaperAsset;
   String? _selectedGardenWallpaperAsset;
-  int _selectedJannatiSceneryIndex = 0; // 0..99 (من الـ 100 صورة 4K لجنتي)
-  bool _jannatiAutoCycleScenery = true;
+  int _selectedJannatiSceneryIndex = 0; // 0..99 (من الـ 100 صورة 4K لجنتي - اختيار يدوي فقط)
+  bool _jannatiAutoCycleScenery = false;
+  int _selectedTasbihBackdropIndex = 0; // 0..29 (تتغير تلقائياً كل 100 تسبيحة عبر 30 صورة إسلامية)
+  int _lastTasbihStageMilestone = 0;
   String _selectedBirdsongTrackId = 'birds_paradise';
   bool _gameSfxEnabled = true;
   String _adhanVoice = 'madinah';
@@ -66,6 +68,9 @@ class SettingsProvider extends ChangeNotifier {
   bool get jannatiAutoCycleScenery => _jannatiAutoCycleScenery;
   Background4KEntry get activeJannatiScenery =>
       Background500Catalog.jannatiByIndex(_selectedJannatiSceneryIndex);
+  int get selectedTasbihBackdropIndex => _selectedTasbihBackdropIndex;
+  Background4KEntry get activeTasbihBackdrop =>
+      Background500Catalog.forTasbihStage(_selectedTasbihBackdropIndex);
   String get selectedBirdsongTrackId => _selectedBirdsongTrackId;
   bool get gameSfxEnabled => _gameSfxEnabled;
   String get adhanVoice => _adhanVoice;
@@ -160,7 +165,11 @@ class SettingsProvider extends ChangeNotifier {
     _selectedJannatiSceneryIndex =
         (_prefs!.getInt('jannati_scenery_idx_100') ?? 0).clamp(0, 99);
     _jannatiAutoCycleScenery =
-        _prefs!.getBool('jannati_scenery_autocycle') ?? true;
+        _prefs!.getBool('jannati_scenery_autocycle_v2') ?? false;
+    _selectedTasbihBackdropIndex =
+        (_prefs!.getInt('tasbih_backdrop_idx_30') ?? 0).clamp(0, 29);
+    _lastTasbihStageMilestone =
+        _prefs!.getInt('tasbih_backdrop_milestone') ?? 0;
     _selectedBirdsongTrackId =
         _prefs!.getString('birdsong_track_id') ?? 'birds_paradise';
 
@@ -240,8 +249,39 @@ class SettingsProvider extends ChangeNotifier {
 
   void setJannatiAutoCycleScenery(bool enabled) {
     _jannatiAutoCycleScenery = enabled;
-    _prefs?.setBool('jannati_scenery_autocycle', enabled);
+    _prefs?.setBool('jannati_scenery_autocycle_v2', enabled);
     notifyListeners();
+  }
+
+  void setTasbihBackdropIndex(int index) {
+    final len = Background500Catalog.tasbihIslamic30.length;
+    final safe = ((index % len) + len) % len;
+    _selectedTasbihBackdropIndex = safe;
+    _prefs?.setInt('tasbih_backdrop_idx_30', safe);
+    notifyListeners();
+  }
+
+  void nextTasbihBackdrop() =>
+      setTasbihBackdropIndex(_selectedTasbihBackdropIndex + 1);
+
+  void previousTasbihBackdrop() =>
+      setTasbihBackdropIndex(_selectedTasbihBackdropIndex - 1);
+
+  /// يبدّل خلفية السبحة الإسلامية تلقائياً عبر ٣٠ صورة إسلامية عند كل ١٠٠ تسبيحة
+  /// ويعيد true إذا تم الانتقال لخلفية جديدة عند مضاعف الـ ١٠٠.
+  bool onTasbihCountChanged(int totalLifetimeTasbih) {
+    if (totalLifetimeTasbih <= 0) return false;
+    final milestone = totalLifetimeTasbih ~/ 100;
+    if (milestone > _lastTasbihStageMilestone) {
+      _lastTasbihStageMilestone = milestone;
+      _selectedTasbihBackdropIndex =
+          milestone % Background500Catalog.tasbihIslamic30.length;
+      _prefs?.setInt('tasbih_backdrop_milestone', _lastTasbihStageMilestone);
+      _prefs?.setInt('tasbih_backdrop_idx_30', _selectedTasbihBackdropIndex);
+      notifyListeners();
+      return true;
+    }
+    return false;
   }
 
   void setSelectedBirdsongTrackId(String id) {

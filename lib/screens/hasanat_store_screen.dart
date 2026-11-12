@@ -2,6 +2,7 @@ import 'package:adhan/adhan.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/hasanat_store_catalog.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/hasanat_provider.dart';
@@ -9,11 +10,12 @@ import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/firdaws_3d_ui.dart';
 import '../widgets/firdaws_portrait_avatar.dart';
+import '../widgets/firdaws_resilient_image.dart';
 import '../widgets/games/gfx/arena_3d_craft_painter.dart';
 import '../widgets/games/gfx/arena_4k_stage_compositor.dart';
 import '../widgets/real_mosque_background.dart';
 
-/// متجر الحسنات الرسمي: شراء وتجهيز 26 سكناً (بساتين، مركبات 3D، أزياء أبطال، إطارات، ومؤثرات)
+/// متجر الحسنات الرسمي: ٥٠٠ سكن لكل فئة (٨ فئات × ٥٠٠ = ٤٠٠٠ سكن إسلامي)
 class HasanatStoreScreen extends StatefulWidget {
   final StoreItemCategory? initialCategory;
 
@@ -28,11 +30,20 @@ class HasanatStoreScreen extends StatefulWidget {
 
 class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
   late StoreItemCategory _selectedCategory;
+  SkinRarity? _selectedRarity;
+  String _searchQuery = '';
+  final TextEditingController _searchCtrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _selectedCategory = widget.initialCategory ?? StoreItemCategory.gardenSkin;
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _onBuyOrEquip(
@@ -141,6 +152,7 @@ class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
                             child: Firdaws3DCard(
                               palette: palette,
                               glowColor: c,
+                              backdropSlot: 380 + (idx % 40),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                                 vertical: 10,
@@ -213,7 +225,22 @@ class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
     final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
     final isNight = settings.isNightEffective;
     final accent = firdawsModernAccent(palette);
-    final items = HasanatStoreCatalog.byCategory(_selectedCategory);
+
+    final allInCategory = HasanatStoreCatalog.byCategory(_selectedCategory);
+    final ownedInCat =
+        allInCategory.where((s) => hasanat.ownsSkin(s.id)).length;
+
+    final queryTrim = _searchQuery.trim().toLowerCase();
+    final items = allInCategory.where((s) {
+      if (_selectedRarity != null && s.rarity != _selectedRarity) return false;
+      if (queryTrim.isNotEmpty) {
+        final matchName = s.name.toLowerCase().contains(queryTrim);
+        final matchSub = s.subtitle.toLowerCase().contains(queryTrim);
+        if (!matchName && !matchSub) return false;
+      }
+      return true;
+    }).toList(growable: false);
+
     final equippedId = hasanat.equippedSkin(_selectedCategory).id;
 
     return Directionality(
@@ -238,52 +265,83 @@ class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
                   _buildHeaderBar(context, palette, accent, hasanat),
                   _buildWalletBanner(context, palette, accent, hasanat),
                   const SizedBox(height: 8),
-                  _buildCategoryChips(palette, accent, hasanat),
+                  _buildCategoryChips(palette, accent),
                   const SizedBox(height: 8),
+                  _buildSearchAndRarityBar(
+                    palette,
+                    accent,
+                    items.length,
+                    allInCategory.length,
+                    ownedInCat,
+                  ),
+                  const SizedBox(height: 6),
                   Expanded(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final isWide = constraints.maxWidth >= 560;
-                        if (isWide) {
-                          return GridView.builder(
-                            padding: const EdgeInsets.fromLTRB(14, 4, 14, 28),
-                            physics: const BouncingScrollPhysics(),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              mainAxisExtent: 268,
+                    child: items.isEmpty
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Firdaws3DCard(
+                                palette: palette,
+                                glowColor: accent,
+                                child: Text(
+                                  'لا توجد سكنات مطابقة للبحث في قسم «${_selectedCategory.arabicLabel}» 🔍',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: palette.textPrimary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
                             ),
-                            itemCount: items.length,
-                            itemBuilder: (_, idx) => _buildSkinCard(
-                              skin: items[idx],
-                              owned: hasanat.ownsSkin(items[idx].id),
-                              equipped: items[idx].id == equippedId,
-                              hasanat: hasanat,
-                              userProv: userProv,
-                              palette: palette,
-                            ),
-                          );
-                        }
-                        return ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(14, 4, 14, 28),
-                          physics: const BouncingScrollPhysics(),
-                          itemCount: items.length,
-                          itemBuilder: (_, idx) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _buildSkinCard(
-                              skin: items[idx],
-                              owned: hasanat.ownsSkin(items[idx].id),
-                              equipped: items[idx].id == equippedId,
-                              hasanat: hasanat,
-                              userProv: userProv,
-                              palette: palette,
-                            ),
+                          )
+                        : LayoutBuilder(
+                            builder: (context, constraints) {
+                              final isWide = constraints.maxWidth >= 560;
+                              if (isWide) {
+                                return GridView.builder(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(14, 4, 14, 28),
+                                  physics: const BouncingScrollPhysics(),
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: 12,
+                                    mainAxisExtent: 292,
+                                  ),
+                                  itemCount: items.length,
+                                  itemBuilder: (_, idx) => _buildSkinCard(
+                                    skin: items[idx],
+                                    cardIdx: idx,
+                                    owned: hasanat.ownsSkin(items[idx].id),
+                                    equipped: items[idx].id == equippedId,
+                                    hasanat: hasanat,
+                                    userProv: userProv,
+                                    palette: palette,
+                                  ),
+                                );
+                              }
+                              return ListView.builder(
+                                padding:
+                                    const EdgeInsets.fromLTRB(14, 4, 14, 28),
+                                physics: const BouncingScrollPhysics(),
+                                itemCount: items.length,
+                                itemBuilder: (_, idx) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: _buildSkinCard(
+                                    skin: items[idx],
+                                    cardIdx: idx,
+                                    owned: hasanat.ownsSkin(items[idx].id),
+                                    equipped: items[idx].id == equippedId,
+                                    hasanat: hasanat,
+                                    userProv: userProv,
+                                    palette: palette,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
                   ),
                 ],
               ),
@@ -350,13 +408,14 @@ class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
       child: Firdaws3DCard(
         palette: palette,
         glowColor: const Color(0xFFF59E0B),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        borderRadius: 22,
+        backdrop: Background500Catalog.forExtraSection(5),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        borderRadius: 20,
         child: Row(
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: const LinearGradient(
@@ -370,7 +429,7 @@ class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
                 ],
               ),
               child: const Center(
-                child: Text('🪙', style: TextStyle(fontSize: 24)),
+                child: Text('🪙', style: TextStyle(fontSize: 22)),
               ),
             ),
             const SizedBox(width: 12),
@@ -385,16 +444,16 @@ class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
                     style: TextStyle(
                       color: palette.textPrimary,
                       fontWeight: FontWeight.w900,
-                      fontSize: 16,
+                      fontSize: 15.5,
                     ),
                   ),
                   Text(
-                    'الإجمالي التراكمي: ${hasanat.lifetimeHasanat} • المملوكة: ${hasanat.ownedSkinIds.length} / ${HasanatStoreCatalog.allSkins.length}',
+                    'المملوكة: ${hasanat.ownedSkinIds.length} / ${HasanatStoreCatalog.allSkins.length} • التراكمي: ${hasanat.lifetimeHasanat}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: firdawsCrispSecondaryText(palette),
-                      fontSize: 11,
+                      fontSize: 10.5,
                     ),
                   ),
                   if (activeEv != null)
@@ -405,7 +464,7 @@ class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
                       style: TextStyle(
                         color: activeEv.primaryColor,
                         fontWeight: FontWeight.bold,
-                        fontSize: 11,
+                        fontSize: 10.5,
                       ),
                     ),
                 ],
@@ -417,71 +476,205 @@ class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
     );
   }
 
-  Widget _buildCategoryChips(
-    ThemePalette palette,
-    Color accent,
-    HasanatProvider hasanat,
-  ) {
+  Widget _buildCategoryChips(ThemePalette palette, Color accent) {
     return SizedBox(
-      height: 44,
-      child: ListView(
+      height: 42,
+      child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 14),
-        children: StoreItemCategory.values.map((cat) {
-          final isSel = _selectedCategory == cat;
-          return Padding(
-            padding: const EdgeInsets.only(left: 8),
-            child: InkWell(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                setState(() => _selectedCategory = cat);
-              },
-              borderRadius: BorderRadius.circular(18),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isSel
-                      ? accent
-                      : firdaws3DSurfaceColor(palette, opacity: 0.9),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: isSel ? accent : palette.dividerColor,
-                    width: isSel ? 1.5 : 1.0,
+        child: Row(
+          children: StoreItemCategory.values.map((cat) {
+            final isSel = _selectedCategory == cat;
+            return Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: InkWell(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _selectedCategory = cat);
+                },
+                borderRadius: BorderRadius.circular(18),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: isSel
+                        ? accent
+                        : firdaws3DSurfaceColor(palette, opacity: 0.9),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: isSel ? accent : palette.dividerColor,
+                      width: isSel ? 1.5 : 1.0,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        cat.icon,
+                        size: 16,
+                        color: isSel ? palette.onAccentColor : accent,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        cat.arabicLabel,
+                        style: TextStyle(
+                          color: isSel
+                              ? palette.onAccentColor
+                              : palette.textPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      cat.icon,
-                      size: 16,
-                      color: isSel ? palette.onAccentColor : accent,
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchAndRarityBar(
+    ThemePalette palette,
+    Color accent,
+    int filteredCount,
+    int totalInCat,
+    int ownedInCat,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Firdaws3DCard(
+            palette: palette,
+            glowColor: accent,
+            backdrop: Background500Catalog.forExtraSection(8),
+            borderRadius: 16,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+            depth: 2.5,
+            child: Row(
+              children: [
+                Icon(Icons.search_rounded, color: accent, size: 18),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: TextField(
+                    controller: _searchCtrl,
+                    style: TextStyle(color: palette.textPrimary, fontSize: 12.5),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      border: InputBorder.none,
+                      hintText:
+                          'ابحث في $totalInCat سكن (${_selectedCategory.arabicLabel})...',
+                      hintStyle:
+                          TextStyle(color: palette.textMuted, fontSize: 11.5),
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      cat.arabicLabel,
-                      style: TextStyle(
-                        color: isSel
-                            ? palette.onAccentColor
-                            : palette.textPrimary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                    onChanged: (v) => setState(() => _searchQuery = v),
+                  ),
+                ),
+                if (_searchQuery.isNotEmpty)
+                  InkWell(
+                    onTap: () {
+                      _searchCtrl.clear();
+                      setState(() => _searchQuery = '');
+                    },
+                    child: Icon(Icons.close_rounded,
+                        color: palette.textMuted, size: 17),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    children: [
+                      _rarityFilterChip(
+                        label: 'الكل ($totalInCat)',
+                        color: accent,
+                        selected: _selectedRarity == null,
+                        palette: palette,
+                        onTap: () => setState(() => _selectedRarity = null),
                       ),
-                    ),
-                  ],
+                      ...SkinRarity.values.map(
+                        (r) => Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: _rarityFilterChip(
+                            label: r.arabicLabel,
+                            color: r.badgeColor,
+                            selected: _selectedRarity == r,
+                            palette: palette,
+                            onTap: () => setState(() {
+                              _selectedRarity =
+                                  _selectedRarity == r ? null : r;
+                            }),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          );
-        }).toList(),
+              const SizedBox(width: 6),
+              Text(
+                '$filteredCount/$totalInCat • مملوك $ownedInCat',
+                style: TextStyle(
+                  color: firdawsCrispSecondaryText(palette),
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _rarityFilterChip({
+    required String label,
+    required Color color,
+    required bool selected,
+    required ThemePalette palette,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+        decoration: BoxDecoration(
+          color: selected
+              ? color.withOpacity(0.24)
+              : firdaws3DSurfaceColor(palette, opacity: 0.75),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? color : palette.dividerColor,
+            width: selected ? 1.4 : 0.9,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? color : palette.textSecondary,
+            fontWeight: FontWeight.bold,
+            fontSize: 10.5,
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildSkinCard({
     required HasanatSkinItem skin,
+    required int cardIdx,
     required bool owned,
     required bool equipped,
     required HasanatProvider hasanat,
@@ -523,37 +716,53 @@ class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
         ),
       );
     } else if (skin.category == StoreItemCategory.frameSkin) {
-      previewWidget = Container(
-        height: 106,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          gradient: LinearGradient(
-            colors: [
-              const Color(0xFF0A1426),
-              Color.lerp(const Color(0xFF0F1E38), skin.primaryColor, 0.25)!,
-            ],
-          ),
-        ),
-        child: Center(
-          child: FirdawsPortraitAvatar(
-            entityId: 'you',
-            displayName: userProv.displayName,
-            isFemale: userProv.isFemale,
-            customBytes: userProv.avatarBytes,
-            size: 74,
-            frameStyleKey: skin.styleKey,
-            showCrown: skin.rarity == SkinRarity.firdaws,
-            isHighlighted: true,
+      previewWidget = Firdaws4KCardShell(
+        backdrop: Background500Catalog.forExtraSection(cardIdx + 17),
+        isDark: true,
+        borderRadius: 14,
+        borderColor: skin.primaryColor.withOpacity(0.55),
+        imageOpacity: 0.45,
+        padding: const EdgeInsets.all(6),
+        child: SizedBox(
+          height: 92,
+          child: Center(
+            child: FirdawsPortraitAvatar(
+              entityId: 'you',
+              displayName: userProv.displayName,
+              isFemale: userProv.isFemale,
+              customBytes: userProv.avatarBytes,
+              size: 72,
+              frameStyleKey: skin.styleKey,
+              showCrown: skin.rarity == SkinRarity.firdaws,
+              isHighlighted: true,
+            ),
           ),
         ),
       );
     } else {
-      previewWidget = ArenaSkin3DPreviewWidget(
-        categoryName: skin.category.name,
-        styleKey: skin.styleKey,
-        primaryColor: skin.primaryColor,
-        secondaryColor: skin.secondaryColor,
-        height: 106,
+      previewWidget = Stack(
+        children: [
+          ArenaSkin3DPreviewWidget(
+            categoryName: skin.category.name,
+            styleKey: skin.styleKey,
+            primaryColor: skin.primaryColor,
+            secondaryColor: skin.secondaryColor,
+            height: 106,
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Opacity(
+                  opacity: 0.16,
+                  child: FirdawsResilientImage.entry(
+                    Background500Catalog.forExtraSection(cardIdx + 53),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       );
     }
 
@@ -572,6 +781,7 @@ class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
     return Firdaws3DCard(
       palette: palette,
       glowColor: equipped ? const Color(0xFF10B981) : skin.primaryColor,
+      backdrop: Background500Catalog.bySlot((cardIdx + skin.category.index * 59) % 500),
       padding: const EdgeInsets.all(12),
       borderRadius: 20,
       child: Column(

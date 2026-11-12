@@ -546,7 +546,10 @@ class _HelpMeScreenState extends State<HelpMeScreen>
                                 onTap: () => setState(() => _modeIndex = 0),
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 220),
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 8,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: _modeIndex == 0
                                         ? accentColor
@@ -563,20 +566,24 @@ class _HelpMeScreenState extends State<HelpMeScreen>
                                     children: [
                                       Icon(
                                         Icons.healing_rounded,
-                                        size: 16,
+                                        size: 15,
                                         color: _modeIndex == 0
                                             ? palette.onAccentColor
                                             : palette.textSecondary,
                                       ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        "صيدلية الروح",
-                                        style: TextStyle(
-                                          color: _modeIndex == 0
-                                              ? palette.onAccentColor
-                                              : palette.textPrimary,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
+                                      const SizedBox(width: 4),
+                                      Flexible(
+                                        child: Text(
+                                          "صيدلية الروح",
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: _modeIndex == 0
+                                                ? palette.onAccentColor
+                                                : palette.textPrimary,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 11.5,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -590,7 +597,10 @@ class _HelpMeScreenState extends State<HelpMeScreen>
                                 onTap: () => setState(() => _modeIndex = 1),
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 220),
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 8,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: _modeIndex == 1
                                         ? accentColor
@@ -607,20 +617,24 @@ class _HelpMeScreenState extends State<HelpMeScreen>
                                     children: [
                                       Icon(
                                         Icons.question_answer_rounded,
-                                        size: 16,
+                                        size: 15,
                                         color: _modeIndex == 1
                                             ? palette.onAccentColor
                                             : palette.textSecondary,
                                       ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        "٥٠٠ سؤال وجواب",
-                                        style: TextStyle(
-                                          color: _modeIndex == 1
-                                              ? palette.onAccentColor
-                                              : palette.textPrimary,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
+                                      const SizedBox(width: 4),
+                                      Flexible(
+                                        child: Text(
+                                          "٥٠٠ سؤال وجواب",
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: _modeIndex == 1
+                                                ? palette.onAccentColor
+                                                : palette.textPrimary,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 11.5,
+                                          ),
                                         ),
                                       ),
                                     ],

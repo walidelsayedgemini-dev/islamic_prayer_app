@@ -25,6 +25,7 @@ import 'package:islamic_prayer_app/models/touch_effects_200.dart';
 import 'package:islamic_prayer_app/providers/family_challenge_provider.dart';
 import 'package:islamic_prayer_app/providers/firdaws_user_provider.dart';
 import 'package:islamic_prayer_app/providers/jannati_provider.dart';
+import 'package:islamic_prayer_app/providers/settings_provider.dart';
 import 'package:islamic_prayer_app/services/location_service.dart';
 import 'package:islamic_prayer_app/services/notification_service.dart';
 import 'package:islamic_prayer_app/theme/islamic_theme.dart';
@@ -582,13 +583,21 @@ void main() {
     expect(userProv.creatorDuasCount, 1);
   });
 
-  test('500 unique 4K backgrounds, 100 Jannati Paradise images & 46+ disjoint persona portraits', () {
+  test('500 unique 4K backgrounds, 30 Tasbih Islamic 4K scenes, 100 Jannati Paradise images & 46+ disjoint persona portraits', () {
     const all500 = Background500Catalog.all500;
     expect(all500.length, 500);
     final urls500 = all500.map((e) => e.url).toSet();
     final ids500 = all500.map((e) => e.id).toSet();
     expect(urls500.length, 500);
     expect(ids500.length, 500);
+
+    const t30 = Background500Catalog.tasbihIslamic30;
+    expect(t30.length, 30);
+    final urlsT30 = t30.map((e) => e.url).toSet();
+    final idsT30 = t30.map((e) => e.id).toSet();
+    expect(urlsT30.length, 30);
+    expect(idsT30.length, 30);
+    expect(urls500.intersection(urlsT30), isEmpty);
 
     const j100 = Background500Catalog.jannati100;
     expect(j100.length, 100);
@@ -597,6 +606,14 @@ void main() {
     expect(urlsJ100.length, 100);
     expect(idsJ100.length, 100);
     expect(urls500.intersection(urlsJ100), isEmpty);
+    expect(urlsT30.intersection(urlsJ100), isEmpty);
+
+    for (final entry in [...all500, ...t30, ...j100]) {
+      expect(entry.url.contains('picsum.photos'), isFalse,
+          reason: 'Found banned picsum URL in ${entry.id}');
+      expect(entry.url.contains('paradise_garden_bg_'), isFalse,
+          reason: 'Found invalid paradise_garden_bg_ in ${entry.id}');
+    }
 
     const portraits = Background500Catalog.personaPortraits50;
     expect(portraits.length, greaterThanOrEqualTo(46));
@@ -640,13 +657,37 @@ void main() {
     expect(reloaded.bioNote, 'محافظ على قيام الليل');
   });
 
-  test('Birdsong Paradise audio tracks & assets, location nearest city & timezone config work cleanly',
+  test('Genuine MP3 Birdsong tracks, 100-Tasbih backdrop cycling, manual-only Jannati scenery, location & timezone config work cleanly',
       () async {
-    expect(IslamicAudioLibrary.paradiseBirdsongTracks.length, greaterThanOrEqualTo(4));
-    final birds1 = await rootBundle.load('assets/audio/birds_paradise.wav');
-    final birds2 = await rootBundle.load('assets/audio/birds_forest.wav');
-    expect(birds1.lengthInBytes, greaterThan(10000));
-    expect(birds2.lengthInBytes, greaterThan(10000));
+    expect(IslamicAudioLibrary.paradiseBirdsongTracks.length, 6);
+    for (final track in IslamicAudioLibrary.paradiseBirdsongTracks) {
+      expect(track.localAsset.endsWith('.mp3'), isTrue,
+          reason: 'Expected genuine MP3 track, found ${track.localAsset}');
+      expect(track.localAsset.endsWith('.wav'), isFalse);
+      final bytes = await rootBundle.load('assets/${track.localAsset}');
+      expect(bytes.lengthInBytes, greaterThan(10000),
+          reason: 'Birdsong MP3 asset ${track.localAsset} missing or empty');
+    }
+
+    final settings = SettingsProvider();
+    expect(settings.jannatiAutoCycleScenery, isFalse);
+    final initialJannati = settings.selectedJannatiSceneryIndex;
+    settings.cycleJannatiIfAuto();
+    expect(settings.selectedJannatiSceneryIndex, initialJannati);
+    settings.setJannatiSceneryIndex(17);
+    expect(settings.selectedJannatiSceneryIndex, 17);
+
+    expect(settings.selectedTasbihBackdropIndex, 0);
+    expect(settings.onTasbihCountChanged(99), isFalse);
+    expect(settings.selectedTasbihBackdropIndex, 0);
+    expect(settings.onTasbihCountChanged(100), isTrue);
+    expect(settings.selectedTasbihBackdropIndex, 1);
+    expect(settings.onTasbihCountChanged(150), isFalse);
+    expect(settings.selectedTasbihBackdropIndex, 1);
+    expect(settings.onTasbihCountChanged(200), isTrue);
+    expect(settings.selectedTasbihBackdropIndex, 2);
+    expect(settings.onTasbihCountChanged(3000), isTrue);
+    expect(settings.selectedTasbihBackdropIndex, 0);
 
     final nearestCairo = LocationService.findNearestPresetCity(30.05, 31.24);
     expect(nearestCairo, isNotNull);

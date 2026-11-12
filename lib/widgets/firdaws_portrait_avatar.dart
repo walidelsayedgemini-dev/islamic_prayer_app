@@ -141,7 +141,11 @@ class FirdawsPortraitAvatar extends StatelessWidget {
     return _maleAssets[hash % _maleAssets.length];
   }
 
-  List<Color> _frameColors(String key, Color? overrideRing) {
+  List<Color> _frameColors(
+    String key,
+    Color? overrideRing,
+    HasanatSkinItem? matchedSkin,
+  ) {
     if (overrideRing != null) {
       return [
         overrideRing,
@@ -164,7 +168,15 @@ class FirdawsPortraitAvatar extends StatelessWidget {
           Color(0xFF10B981),
         ];
       case 'frame_default':
+        return const [Color(0xFF10B981), Color(0xFFF59E0B), Color(0xFF059669)];
       default:
+        if (matchedSkin != null) {
+          return [
+            matchedSkin.primaryColor,
+            matchedSkin.secondaryColor,
+            Color.lerp(matchedSkin.primaryColor, Colors.white, 0.22)!,
+          ];
+        }
         return const [Color(0xFF10B981), Color(0xFFF59E0B), Color(0xFF059669)];
     }
   }
@@ -172,15 +184,18 @@ class FirdawsPortraitAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String activeFrame = frameStyleKey ?? 'frame_default';
+    HasanatSkinItem? resolvedSkin =
+        frameStyleKey != null ? HasanatStoreCatalog.byStyleKey(frameStyleKey!) : null;
     if (frameStyleKey == null) {
       try {
-        activeFrame = context
-            .watch<HasanatProvider>()
-            .equippedStyleKey(StoreItemCategory.frameSkin);
+        final equipped =
+            context.watch<HasanatProvider>().equippedSkin(StoreItemCategory.frameSkin);
+        activeFrame = equipped.styleKey;
+        resolvedSkin = equipped;
       } catch (_) {}
     }
 
-    final colors = _frameColors(activeFrame, ringColor);
+    final colors = _frameColors(activeFrame, ringColor, resolvedSkin);
     final pad = (size * 0.068).clamp(2.2, 5.0);
     final assetPath = resolveAssetFor(
       entityId,

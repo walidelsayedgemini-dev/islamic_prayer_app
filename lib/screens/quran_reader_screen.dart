@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:adhan/adhan.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/islamic_audio_data.dart';
 import '../models/quran_model.dart';
 import '../providers/audio_player_provider.dart';
@@ -12,6 +13,7 @@ import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/audio_download_manager_sheet.dart';
 import '../widgets/firdaws_brand_logo.dart';
+import '../widgets/firdaws_resilient_image.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/persistent_audio_player_bar.dart';
 import '../widgets/real_mosque_background.dart';
@@ -261,14 +263,14 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
     final accent = palette.accentColor;
     final inSurahView = _activeSurah != null;
 
-    return Container(
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forExtraSection(inSurahView ? 14 : 10),
+      isDark: palette.isDark,
       margin: const EdgeInsets.fromLTRB(12, 6, 12, 6),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: palette.cardColor.withOpacity(palette.isDark ? 0.84 : 0.92),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: accent.withOpacity(0.45)),
-      ),
+      borderRadius: 18,
+      borderColor: accent.withOpacity(0.55),
+      imageOpacity: 0.45,
       child: Row(
         children: [
           IconButton(
@@ -453,54 +455,53 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
       children: [
         // 1. بطاقة متابعة القراءة المحفوظة
         if (lastSurahObj != null && _searchQuery.isEmpty)
-          GestureDetector(
+          Firdaws4KCardShell(
+            backdrop: Background500Catalog.forExtraSection(11),
+            isDark: palette.isDark,
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            borderRadius: 18,
+            borderWidth: 1.4,
+            borderColor: accent,
+            imageOpacity: 0.46,
             onTap: () => _openSurah(lastSurahObj, highlightAyah: _lastReadAyah),
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: accent.withOpacity(palette.isDark ? 0.22 : 0.16),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: accent, width: 1.4),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.bookmark_rounded, color: accent, size: 24),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "متابعة آخر قراءة • سورة ${lastSurahObj.cleanName}",
-                          style: TextStyle(
-                            color: palette.textPrimary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13.5,
-                          ),
+            child: Row(
+              children: [
+                Icon(Icons.bookmark_rounded, color: accent, size: 24),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "متابعة آخر قراءة • سورة ${lastSurahObj.cleanName}",
+                        style: TextStyle(
+                          color: palette.textPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13.5,
                         ),
-                        Text(
-                          "توقفت عند الآية ${_lastReadAyah ?? 1} • اضغط للاستئناف",
-                          style: TextStyle(color: accent, fontSize: 11.5),
-                        ),
-                      ],
-                    ),
+                      ),
+                      Text(
+                        "توقفت عند الآية ${_lastReadAyah ?? 1} • اضغط للاستئناف",
+                        style: TextStyle(color: accent, fontSize: 11.5),
+                      ),
+                    ],
                   ),
-                  Icon(Icons.arrow_forward_ios_rounded, color: accent, size: 15),
-                ],
-              ),
+                ),
+                Icon(Icons.arrow_forward_ios_rounded, color: accent, size: 15),
+              ],
             ),
           ),
 
         // 2. شريط القارئ السريع أثناء التصفح
-        Container(
+        Firdaws4KCardShell(
+          backdrop: Background500Catalog.forExtraSection(12),
+          isDark: palette.isDark,
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: palette.cardColor.withOpacity(palette.isDark ? 0.84 : 0.92),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: palette.dividerColor),
-          ),
+          borderRadius: 14,
+          borderColor: accent.withOpacity(0.42),
+          imageOpacity: 0.36,
           child: Row(
             children: [
               Icon(Icons.record_voice_over_rounded, color: accent, size: 18),
@@ -606,13 +607,14 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
             ),
           ),
           ...ayahHits.map((hit) {
-            return Container(
+            return Firdaws4KCardShell(
+              backdrop: Background500Catalog.forExtraSection(13 + (hit.surah.number % 30)),
+              isDark: palette.isDark,
               margin: const EdgeInsets.only(bottom: 8),
-              decoration: BoxDecoration(
-                color: palette.cardColor.withOpacity(palette.isDark ? 0.84 : 0.92),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: accent.withOpacity(0.35)),
-              ),
+              padding: EdgeInsets.zero,
+              borderRadius: 14,
+              borderColor: accent.withOpacity(0.4),
+              imageOpacity: palette.isDark ? 0.30 : 0.24,
               child: ListTile(
                 onTap: () => _openSurah(hit.surah, highlightAyah: hit.ayah.number),
                 title: Text(
@@ -640,16 +642,15 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
               player.currentSurahNumber == surah.number && player.isPlaying;
           final isOffline = player.isSurahOfflineReady(surah.number);
 
-          return Container(
+          return Firdaws4KCardShell(
+            backdrop: Background500Catalog.forExtraSection(surah.number),
+            isDark: palette.isDark,
             margin: const EdgeInsets.only(bottom: 8),
-            decoration: BoxDecoration(
-              color: palette.cardColor.withOpacity(palette.isDark ? 0.84 : 0.92),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isPlayingThis ? accent : palette.dividerColor,
-                width: isPlayingThis ? 1.5 : 1.0,
-              ),
-            ),
+            padding: EdgeInsets.zero,
+            borderRadius: 16,
+            borderWidth: isPlayingThis ? 1.5 : 1.0,
+            borderColor: isPlayingThis ? accent : accent.withOpacity(0.28),
+            imageOpacity: palette.isDark ? 0.30 : 0.24,
             child: ListTile(
               onTap: () => _openSurah(surah),
               leading: Container(
@@ -786,14 +787,14 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
     return Column(
       children: [
         // شريط أدوات القراءة: حجم الخط، نوع خط المصحف، السورة السابقة/التالية
-        Container(
+        Firdaws4KCardShell(
+          backdrop: Background500Catalog.forExtraSection(13),
+          isDark: palette.isDark,
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            color: palette.cardColor.withOpacity(palette.isDark ? 0.84 : 0.92),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: palette.dividerColor),
-          ),
+          borderRadius: 14,
+          borderColor: accent.withOpacity(0.4),
+          imageOpacity: 0.34,
           child: Row(
             children: [
               Text(
@@ -902,14 +903,15 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
     final isPlayingThis =
         player.currentSurahNumber == surah.number && player.isPlaying;
 
-    return Container(
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.bySlot(200 + surah.number),
+      isDark: palette.isDark,
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: palette.cardColor.withOpacity(palette.isDark ? 0.88 : 0.94),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: accent.withOpacity(0.65), width: 1.6),
-      ),
+      borderRadius: 22,
+      borderWidth: 1.6,
+      borderColor: accent.withOpacity(0.65),
+      imageOpacity: 0.45,
       child: Column(
         children: [
           Text(
@@ -1049,15 +1051,16 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
     final firstAyahNum = pageAyahs.first.number;
     final lastAyahNum = pageAyahs.last.number;
 
-    return Container(
+    return Firdaws4KCardShell(
       key: GlobalObjectKey('page_${surah.number}_$pageNum'),
+      backdrop: Background500Catalog.bySlot(250 + (pageNum % 200)),
+      isDark: palette.isDark,
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-      decoration: BoxDecoration(
-        color: palette.cardColor.withOpacity(palette.isDark ? 0.88 : 0.94),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: accent.withOpacity(0.45), width: 1.3),
-      ),
+      borderRadius: 20,
+      borderWidth: 1.3,
+      borderColor: accent.withOpacity(0.45),
+      imageOpacity: palette.isDark ? 0.24 : 0.18,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1160,23 +1163,18 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
         _lastReadSurah == surah.number && _lastReadAyah == ayah.number;
     final isHighlighted = _highlightedAyahNumber == ayah.number;
 
-    return GestureDetector(
+    return Firdaws4KCardShell(
       key: GlobalObjectKey('ayah_${surah.number}_${ayah.number}'),
+      backdrop: Background500Catalog.bySlot(260 + ((surah.number + ayah.number) % 200)),
+      isDark: palette.isDark,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      borderRadius: 18,
+      borderWidth: (isHighlighted || isBookmarked) ? 1.6 : 1.0,
+      borderColor: (isHighlighted || isBookmarked) ? accent : accent.withOpacity(0.28),
+      imageOpacity: palette.isDark ? 0.26 : 0.20,
       onTap: () => _showAyahTafsirModal(surah, ayah),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: isHighlighted
-              ? accent.withOpacity(palette.isDark ? 0.22 : 0.16)
-              : palette.cardColor.withOpacity(palette.isDark ? 0.86 : 0.94),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: (isHighlighted || isBookmarked) ? accent : palette.dividerColor,
-            width: (isHighlighted || isBookmarked) ? 1.6 : 1.0,
-          ),
-        ),
-        child: Column(
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
@@ -1272,7 +1270,6 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 
@@ -1419,13 +1416,13 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Container(
+                          Firdaws4KCardShell(
+                            backdrop: Background500Catalog.forExtraSection(15),
+                            isDark: palette.isDark,
                             padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: accent.withOpacity(0.10),
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(color: accent.withOpacity(0.5)),
-                            ),
+                            borderRadius: 18,
+                            borderColor: accent.withOpacity(0.55),
+                            imageOpacity: palette.isDark ? 0.34 : 0.28,
                             child: SelectableText(
                               '${activeAyah.text} ﴿${toArabicIndicDigits(activeAyah.number)}﴾',
                               textAlign: TextAlign.center,
@@ -1459,13 +1456,13 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                               }
                               final text = snap.data ??
                                   'التفسير الميسر غير متوفر حالياً لهذه الآية.';
-                              return Container(
+                              return Firdaws4KCardShell(
+                                backdrop: Background500Catalog.forExtraSection(16),
+                                isDark: palette.isDark,
                                 padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: palette.cardColor,
-                                  borderRadius: BorderRadius.circular(18),
-                                  border: Border.all(color: palette.dividerColor),
-                                ),
+                                borderRadius: 18,
+                                borderColor: accent.withOpacity(0.35),
+                                imageOpacity: palette.isDark ? 0.26 : 0.20,
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [

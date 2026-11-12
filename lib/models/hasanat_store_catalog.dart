@@ -6,6 +6,9 @@ enum StoreItemCategory {
   heroSkin,
   frameSkin,
   vfxSkin,
+  tasbihSkin,
+  compassSkin,
+  cardSkin,
 }
 
 extension StoreItemCategoryExt on StoreItemCategory {
@@ -21,6 +24,12 @@ extension StoreItemCategoryExt on StoreItemCategory {
         return 'إطارات الصور';
       case StoreItemCategory.vfxSkin:
         return 'مؤثرات الانطلاق';
+      case StoreItemCategory.tasbihSkin:
+        return 'سكنات المسبحة';
+      case StoreItemCategory.compassSkin:
+        return 'سكنات القبلة';
+      case StoreItemCategory.cardSkin:
+        return 'سكنات القوالب';
     }
   }
 
@@ -36,6 +45,12 @@ extension StoreItemCategoryExt on StoreItemCategory {
         return Icons.portrait_rounded;
       case StoreItemCategory.vfxSkin:
         return Icons.auto_awesome_rounded;
+      case StoreItemCategory.tasbihSkin:
+        return Icons.radio_button_checked_rounded;
+      case StoreItemCategory.compassSkin:
+        return Icons.explore_rounded;
+      case StoreItemCategory.cardSkin:
+        return Icons.style_rounded;
     }
   }
 }
@@ -106,8 +121,10 @@ class HasanatSkinItem {
 class HasanatStoreCatalog {
   HasanatStoreCatalog._();
 
-  static const List<HasanatSkinItem> allSkins = [
-    // ================= 1. بساتين جنتي الواقعية (6) =================
+  static const int skinsPerCategory = 500;
+
+  static const List<HasanatSkinItem> _coreSkins = [
+    // ================= 1. بساتين جنتي الواقعية =================
     HasanatSkinItem(
       id: 'garden_paradise_day',
       name: 'روضة النخيل والشلال الصباحي',
@@ -182,7 +199,7 @@ class HasanatStoreCatalog {
       styleKey: 'garden_alhambra',
     ),
 
-    // ================= 2. المركبات الثلاثية الأبعاد (6) =================
+    // ================= 2. المركبات الثلاثية الأبعاد =================
     HasanatSkinItem(
       id: 'craft_emerald_wings',
       name: 'مركبة الفجر الزمردية',
@@ -251,7 +268,7 @@ class HasanatStoreCatalog {
       styleKey: 'firdaws_crown',
     ),
 
-    // ================= 3. أزياء وقدرات الأبطال (5) =================
+    // ================= 3. أزياء وقدرات الأبطال =================
     HasanatSkinItem(
       id: 'hero_classic_guardian',
       name: 'وشاح الحارس المتزن',
@@ -309,7 +326,7 @@ class HasanatStoreCatalog {
       styleKey: 'diamond_conqueror',
     ),
 
-    // ================= 4. إطارات الصور الشخصية الواقعية (5) =================
+    // ================= 4. إطارات الصور الشخصية الواقعية =================
     HasanatSkinItem(
       id: 'frame_emerald_gold',
       name: 'الإطار الزمردي المذهب',
@@ -367,7 +384,7 @@ class HasanatStoreCatalog {
       styleKey: 'frame_prism',
     ),
 
-    // ================= 5. مؤثرات الانطلاق والاحتفال (4) =================
+    // ================= 5. مؤثرات الانطلاق والاحتفال =================
     HasanatSkinItem(
       id: 'vfx_golden_sparks',
       name: 'شرارات النور الذهبية',
@@ -413,23 +430,365 @@ class HasanatStoreCatalog {
       secondaryColor: Color(0xFFFBBF24),
       styleKey: 'vfx_meteors',
     ),
+
+    // ================= 6. سكنات المسبحة الإلكترونية =================
+    HasanatSkinItem(
+      id: 'tasbih_emerald_pearl',
+      name: 'مسبحة الزمرد اللؤلؤية',
+      subtitle: 'قرص سبحة نوراني بلمعان زمردي وحلقة ذهبية للذاكرين',
+      category: StoreItemCategory.tasbihSkin,
+      rarity: SkinRarity.common,
+      price: 0,
+      primaryColor: Color(0xFF10B981),
+      secondaryColor: Color(0xFFF59E0B),
+      styleKey: 'tasbih_pearl',
+      isDefaultUnlocked: true,
+    ),
+    HasanatSkinItem(
+      id: 'tasbih_sapphire_crystal',
+      name: 'مسبحة الياقوت الأزرق السماوي',
+      subtitle: 'حبات كوارتز زرقاء بوهج سحري يضيء حلقة التسبيح الدائرية',
+      category: StoreItemCategory.tasbihSkin,
+      rarity: SkinRarity.rare,
+      price: 140,
+      primaryColor: Color(0xFF0EA5E9),
+      secondaryColor: Color(0xFF6366F1),
+      styleKey: 'tasbih_sapphire',
+    ),
+    HasanatSkinItem(
+      id: 'tasbih_oud_royal',
+      name: 'مسبحة العود والمسك الدمشقي',
+      subtitle: 'مظهر خشب العود الملكي المطعّم بالذهب الأندلسي العريق',
+      category: StoreItemCategory.tasbihSkin,
+      rarity: SkinRarity.epic,
+      price: 290,
+      primaryColor: Color(0xFFD97706),
+      secondaryColor: Color(0xFFFDE047),
+      styleKey: 'tasbih_oud',
+    ),
+    HasanatSkinItem(
+      id: 'tasbih_firdaws_nur',
+      name: 'مسبحة نور الفردوس الماسي 👑',
+      subtitle: 'أفخم حلقة ذكر مرصعة بهالة الفردوس الذهبية والزمردية',
+      category: StoreItemCategory.tasbihSkin,
+      rarity: SkinRarity.firdaws,
+      price: 560,
+      primaryColor: Color(0xFFFBBF24),
+      secondaryColor: Color(0xFF2DD4BF),
+      styleKey: 'tasbih_nur',
+    ),
+
+    // ================= 7. سكنات بوصلة القبلة الذكية =================
+    HasanatSkinItem(
+      id: 'compass_kaaba_classic',
+      name: 'بوصلة الكعبة والزمرد النقية',
+      subtitle: 'قرص كلاسيكي فائق الوضوح لتحديد اتجاه القبلة بدقة متناهية',
+      category: StoreItemCategory.compassSkin,
+      rarity: SkinRarity.common,
+      price: 0,
+      primaryColor: Color(0xFF10B981),
+      secondaryColor: Color(0xFFF59E0B),
+      styleKey: 'compass_kaaba_classic',
+      isDefaultUnlocked: true,
+    ),
+    HasanatSkinItem(
+      id: 'compass_astrolabe_gold',
+      name: 'بوصلة الإسطرلاب الأندلسي الذهبي',
+      subtitle: 'إطار نحاسي ذهبي مستوحى من مراصد الفلك الإسلامية التاريخية',
+      category: StoreItemCategory.compassSkin,
+      rarity: SkinRarity.rare,
+      price: 160,
+      primaryColor: Color(0xFFD4AF37),
+      secondaryColor: Color(0xFF0F766E),
+      styleKey: 'compass_astrolabe',
+    ),
+    HasanatSkinItem(
+      id: 'compass_haram_marble',
+      name: 'بوصلة رخام الحرم الفضي',
+      subtitle: 'رخام أبيض سماوي محاط بإطار تركوازي وهالة مضيئة نحو مكة',
+      category: StoreItemCategory.compassSkin,
+      rarity: SkinRarity.epic,
+      price: 340,
+      primaryColor: Color(0xFF38BDF8),
+      secondaryColor: Color(0xFF10B981),
+      styleKey: 'compass_marble',
+    ),
+    HasanatSkinItem(
+      id: 'compass_qibla_crown',
+      name: 'بوصلة القبلة التاجية الملكية 👑',
+      subtitle: 'درع كروي متوهج بنقوش مذهبة يتوهج بالزمرد عند مواجهة مكة',
+      category: StoreItemCategory.compassSkin,
+      rarity: SkinRarity.firdaws,
+      price: 620,
+      primaryColor: Color(0xFFF59E0B),
+      secondaryColor: Color(0xFFA855F7),
+      styleKey: 'compass_crown',
+    ),
+
+    // ================= 8. سكنات القوالب والبطاقات الإسلامية =================
+    HasanatSkinItem(
+      id: 'card_firdaws_classic',
+      name: 'قالب الفردوس المعماري الكلاسيكي',
+      subtitle: 'إطار بطاقات إسلامي أنيق يمزج الخلفيات التاريخية بالشفافية المتزنة',
+      category: StoreItemCategory.cardSkin,
+      rarity: SkinRarity.common,
+      price: 0,
+      primaryColor: Color(0xFF10B981),
+      secondaryColor: Color(0xFF38BDF8),
+      styleKey: 'card_classic',
+      isDefaultUnlocked: true,
+    ),
+    HasanatSkinItem(
+      id: 'card_andalus_arch',
+      name: 'قالب أقواس الحمراء الأندلسي',
+      subtitle: 'حواف عنبرية وتوهج دافئ مستوحى من محاريب قرطبة وغرناطة',
+      category: StoreItemCategory.cardSkin,
+      rarity: SkinRarity.rare,
+      price: 150,
+      primaryColor: Color(0xFFF59E0B),
+      secondaryColor: Color(0xFFEF4444),
+      styleKey: 'card_andalus',
+    ),
+    HasanatSkinItem(
+      id: 'card_samarkand_turquoise',
+      name: 'قالب فسيفساء سمرقند الفيروزي',
+      subtitle: 'بريق الفيروز واللازورد الإسلامي عبر جميع بطاقات وقوالب التطبيق',
+      category: StoreItemCategory.cardSkin,
+      rarity: SkinRarity.epic,
+      price: 320,
+      primaryColor: Color(0xFF06B6D4),
+      secondaryColor: Color(0xFF8B5CF6),
+      styleKey: 'card_samarkand',
+    ),
+    HasanatSkinItem(
+      id: 'card_makkah_gold',
+      name: 'قالب الحرم المكي المذهب 👑',
+      subtitle: 'إضاءة ملكية وبريق ذهبي زمردي فاخر يحيط بكل قالب وبطاقة',
+      category: StoreItemCategory.cardSkin,
+      rarity: SkinRarity.firdaws,
+      price: 580,
+      primaryColor: Color(0xFFFBBF24),
+      secondaryColor: Color(0xFF10B981),
+      styleKey: 'card_makkah',
+    ),
   ];
 
+  static const List<String> _verifiedGardenAssets = [
+    'assets/images/garden/garden_day_paradise.jpg',
+    'assets/images/garden/garden_sunset_eden.jpg',
+    'assets/images/garden/garden_emerald_falls.jpg',
+    'assets/images/garden/garden_sidrat_sunbeams.jpg',
+    'assets/images/garden/garden_night_starlight.jpg',
+    'assets/images/garden/garden_alhambra_fountains.jpg',
+    'assets/images/themes/firdaws_waterfall.jpg',
+    'assets/images/themes/salsabil_spring.jpg',
+    'assets/images/themes/kawthar_silver.jpg',
+    'assets/images/themes/sidrat_muntaha.jpg',
+    'assets/images/themes/alhambra_granada.jpg',
+    'assets/images/themes/andalus_orange_blossom.jpg',
+    'assets/images/themes/olive_palestine.jpg',
+    'assets/images/themes/baqi_serenity.jpg',
+    'assets/images/themes/zamzam_spring.jpg',
+    'assets/images/themes/celestial_rayyan.jpg',
+  ];
+
+  static const List<String> _islamicPlacesAndGems = [
+    'الفردوس',
+    'الأندلس',
+    'قرطبة',
+    'غرناطة',
+    'سمرقند',
+    'بخارى',
+    'القيروان',
+    'الأزهر',
+    'الأقصى',
+    'قباء',
+    'طيبة',
+    'الحرمين',
+    'بغداد',
+    'دمشق',
+    'حلب',
+    'إسطنبول',
+    'لاهور',
+    'مسقط',
+    'فاس',
+    'السلسبيل',
+    'الكوثر',
+    'الزمرد',
+    'المرجان',
+    'العقيق',
+    'اللازورد',
+    'الياقوت',
+    'الفيروز',
+    'المسك',
+    'العود',
+    'اللؤلؤ',
+    'النور',
+    'الضحى',
+    'السحر',
+    'الريان',
+    'السدرة',
+  ];
+
+  static const List<String> _adjectives = [
+    'الملكي',
+    'المضيء',
+    'الأثري',
+    'العريق',
+    'النوراني',
+    'الزاهي',
+    'المتألق',
+    'السماوي',
+    'الهادئ',
+    'المذهّب',
+    'المصقول',
+    'المبارك',
+    'الخالد',
+    'الرفيع',
+    'البهيّ',
+  ];
+
+  static String _categoryPrefixNoun(StoreItemCategory category) {
+    switch (category) {
+      case StoreItemCategory.gardenSkin:
+        return 'روضة وبستان';
+      case StoreItemCategory.craftSkin:
+        return 'مركبة طواف';
+      case StoreItemCategory.heroSkin:
+        return 'درع ووشاح';
+      case StoreItemCategory.frameSkin:
+        return 'إطار زينة';
+      case StoreItemCategory.vfxSkin:
+        return 'هالة وأثر';
+      case StoreItemCategory.tasbihSkin:
+        return 'مسبحة ذكر';
+      case StoreItemCategory.compassSkin:
+        return 'بوصلة قبلة';
+      case StoreItemCategory.cardSkin:
+        return 'قالب زخرفة';
+    }
+  }
+
+  static String _categorySubtitle(StoreItemCategory category, String gem, String adj, int num) {
+    switch (category) {
+      case StoreItemCategory.gardenSkin:
+        return 'مظهر بستان إسلامي بطابع $gem $adj • الإصدار #$num لغرس الأنهار والأشجار';
+      case StoreItemCategory.craftSkin:
+        return 'هيكل ثلاثي الأبعاد مستوحى من تراث $gem $adj • الطراز #$num للسباقات';
+      case StoreItemCategory.heroSkin:
+        return 'طقم بطولي منقوش بألوان $gem $adj • الطراز #$num في تحديات الميادين';
+      case StoreItemCategory.frameSkin:
+        return 'إطار دائري متدرج بنور $gem $adj • الإصدار #$num حول صورتك وصور العائلة';
+      case StoreItemCategory.vfxSkin:
+        return 'تأثير جسيمات ضوئية مستلهم من $gem $adj • الإصدار #$num عند الفوز والتسبيح';
+      case StoreItemCategory.tasbihSkin:
+        return 'تصميم مسبحة نوراني بطابع $gem $adj • الطراز #$num لحلقة الذكر والورد';
+      case StoreItemCategory.compassSkin:
+        return 'قرص بوصلة هندسي بزخارف $gem $adj • الطراز #$num لتحديد القبلة بدقة';
+      case StoreItemCategory.cardSkin:
+        return 'كسوة قوالب وبطاقات بنفحات $gem $adj • الإصدار #$num لعرض إسلامي فخم';
+    }
+  }
+
+  static Color _colorFromHue(double hue, double sat, double light) {
+    return HSLColor.fromAHSL(1.0, hue % 360.0, sat.clamp(0.35, 0.92), light.clamp(0.38, 0.70)).toColor();
+  }
+
+  static List<HasanatSkinItem> _buildAllSkins() {
+    final List<HasanatSkinItem> all = List<HasanatSkinItem>.from(_coreSkins);
+
+    for (final cat in StoreItemCategory.values) {
+      final existingCount = all.where((s) => s.category == cat).length;
+      final needed = skinsPerCategory - existingCount;
+      final noun = _categoryPrefixNoun(cat);
+
+      for (int i = 0; i < needed; i++) {
+        final ordinal = existingCount + i + 1; // e.g., 7..500
+        final placeIdx = (i + cat.index * 7) % _islamicPlacesAndGems.length;
+        final adjIdx = ((i ~/ _islamicPlacesAndGems.length) + i * 3 + cat.index) % _adjectives.length;
+        final place = _islamicPlacesAndGems[placeIdx];
+        final adj = _adjectives[adjIdx];
+
+        final SkinRarity rarity;
+        final int price;
+        if (i % 10 == 9) {
+          rarity = SkinRarity.firdaws;
+          price = 460 + ((i * 19) % 490);
+        } else if (i % 4 == 3) {
+          rarity = SkinRarity.epic;
+          price = 250 + ((i * 17) % 210);
+        } else if (i % 2 == 1) {
+          rarity = SkinRarity.rare;
+          price = 110 + ((i * 13) % 140);
+        } else {
+          rarity = SkinRarity.common;
+          price = 35 + ((i * 11) % 70);
+        }
+
+        final baseHue = (ordinal * 29.5 + cat.index * 47.0) % 360.0;
+        final pColor = _colorFromHue(baseHue, 0.72 + (ordinal % 4) * 0.05, 0.50);
+        final sColor = _colorFromHue(baseHue + 42.0 + (ordinal % 5) * 18.0, 0.78, 0.56);
+
+        all.add(
+          HasanatSkinItem(
+            id: '${cat.name}_gen_${ordinal.toString().padLeft(3, '0')}',
+            name: '$noun $place $adj ($ordinal)',
+            subtitle: _categorySubtitle(cat, place, adj, ordinal),
+            category: cat,
+            rarity: rarity,
+            price: price,
+            primaryColor: pColor,
+            secondaryColor: sColor,
+            previewAsset: cat == StoreItemCategory.gardenSkin
+                ? _verifiedGardenAssets[ordinal % _verifiedGardenAssets.length]
+                : null,
+            styleKey: '${cat.name}_style_$ordinal',
+          ),
+        );
+      }
+    }
+
+    return List<HasanatSkinItem>.unmodifiable(all);
+  }
+
+  static final List<HasanatSkinItem> allSkins = _buildAllSkins();
+
+  static final Map<String, HasanatSkinItem> _byIdMap = {
+    for (final s in allSkins) s.id: s,
+  };
+
+  static final Map<String, HasanatSkinItem> _byStyleKeyMap = {
+    for (final s in allSkins) s.styleKey: s,
+  };
+
+  static final Map<StoreItemCategory, List<HasanatSkinItem>> _byCategoryMap = {
+    for (final c in StoreItemCategory.values)
+      c: List<HasanatSkinItem>.unmodifiable(
+        allSkins.where((s) => s.category == c),
+      ),
+  };
+
+  static final Map<StoreItemCategory, HasanatSkinItem> _defaultsMap = {
+    for (final c in StoreItemCategory.values)
+      c: _byCategoryMap[c]!.firstWhere(
+        (s) => s.isDefaultUnlocked,
+        orElse: () => _byCategoryMap[c]!.first,
+      ),
+  };
+
   static HasanatSkinItem byId(String id) {
-    return allSkins.firstWhere(
-      (s) => s.id == id,
-      orElse: () => allSkins.first,
-    );
+    return _byIdMap[id] ?? allSkins.first;
+  }
+
+  static HasanatSkinItem? byStyleKey(String styleKey) {
+    return _byStyleKeyMap[styleKey];
   }
 
   static List<HasanatSkinItem> byCategory(StoreItemCategory category) {
-    return allSkins.where((s) => s.category == category).toList(growable: false);
+    return _byCategoryMap[category] ?? const [];
   }
 
   static HasanatSkinItem defaultForCategory(StoreItemCategory category) {
-    return allSkins.firstWhere(
-      (s) => s.category == category && s.isDefaultUnlocked,
-      orElse: () => allSkins.firstWhere((s) => s.category == category),
-    );
+    return _defaultsMap[category] ?? allSkins.first;
   }
 }

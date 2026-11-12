@@ -21,16 +21,24 @@ import 'package:islamic_prayer_app/providers/firdaws_user_provider.dart';
 import 'package:islamic_prayer_app/providers/hasanat_provider.dart';
 import 'package:islamic_prayer_app/providers/jannati_provider.dart';
 import 'package:islamic_prayer_app/providers/settings_provider.dart';
+import 'package:islamic_prayer_app/screens/about_me_screen.dart';
 import 'package:islamic_prayer_app/screens/arena_game_play_screen.dart';
 import 'package:islamic_prayer_app/screens/arena_hub_screen.dart';
+import 'package:islamic_prayer_app/screens/calendar_screen.dart';
 import 'package:islamic_prayer_app/screens/events_missions_screen.dart';
 import 'package:islamic_prayer_app/screens/family_challenge_screen.dart';
 import 'package:islamic_prayer_app/screens/firdaws_journey_screen.dart';
 import 'package:islamic_prayer_app/screens/hasanat_store_screen.dart';
+import 'package:islamic_prayer_app/screens/help_me_screen.dart';
+import 'package:islamic_prayer_app/screens/islamic_stories_screen.dart';
 import 'package:islamic_prayer_app/screens/jannati_screen.dart';
 import 'package:islamic_prayer_app/screens/main_navigation_screen.dart';
 import 'package:islamic_prayer_app/screens/millionaire_quiz_screen.dart';
 import 'package:islamic_prayer_app/screens/prayer_home_screen.dart';
+import 'package:islamic_prayer_app/screens/qibla_screen.dart';
+import 'package:islamic_prayer_app/screens/quran_reader_screen.dart';
+import 'package:islamic_prayer_app/screens/sahih_hadith_screen.dart';
+import 'package:islamic_prayer_app/screens/settings_screen.dart';
 import 'package:islamic_prayer_app/screens/tasbih_screen.dart';
 import 'package:islamic_prayer_app/theme/islamic_theme.dart';
 import 'package:islamic_prayer_app/widgets/firdaws_3d_ui.dart';
@@ -455,12 +463,17 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  test('Hasanat currency, 26-skin Store catalog, 16 Missions & 8 unlockable Events work end-to-end',
+  test('Hasanat currency, 4000-skin Store catalog (500 per category), 16 Missions & 8 unlockable Events work end-to-end',
       () async {
     SharedPreferences.setMockInitialValues({});
-    expect(HasanatStoreCatalog.allSkins.length, 26);
+    expect(HasanatStoreCatalog.skinsPerCategory, 500);
+    expect(StoreItemCategory.values.length, 8);
+    expect(HasanatStoreCatalog.allSkins.length, 4000);
+    expect(HasanatStoreCatalog.allSkins.map((s) => s.id).toSet().length, 4000);
+    expect(HasanatStoreCatalog.allSkins.map((s) => s.styleKey).toSet().length, 4000);
     for (final cat in StoreItemCategory.values) {
-      expect(HasanatStoreCatalog.byCategory(cat), isNotEmpty);
+      final byCat = HasanatStoreCatalog.byCategory(cat);
+      expect(byCat.length, 500, reason: 'Category ${cat.name} must have 500 skins');
       expect(HasanatStoreCatalog.defaultForCategory(cat).isDefaultUnlocked, isTrue);
     }
     expect(EventsMissionsCatalog.missions.length, 16);
@@ -509,12 +522,24 @@ void main() {
     expect(hp.equippedSkin(StoreItemCategory.craftSkin).id, goldCraft.id);
     expect(hp.hasanatBalance, 360 - 150);
 
+    // شراء وتجهيز سكن المسبحة من فئة tasbihSkin (140 حسنة) وفحص styleKey للفئات الجديدة
+    final sapphireTasbih = HasanatStoreCatalog.byStyleKey('tasbih_sapphire')!;
+    final buyTasbih = await hp.buyOrEquipSkin(sapphireTasbih);
+    expect(buyTasbih.success, isTrue);
+    expect(hp.equippedSkin(StoreItemCategory.tasbihSkin).id, sapphireTasbih.id);
+    expect(HasanatStoreCatalog.byId('compass_astrolabe_gold').category,
+        StoreItemCategory.compassSkin);
+    expect(HasanatStoreCatalog.byId('card_andalus_arch').category,
+        StoreItemCategory.cardSkin);
+
     // التحقق من استمرارية الحفظ في SharedPreferences
     final reloaded = HasanatProvider();
     await reloaded.init();
-    expect(reloaded.hasanatBalance, 210);
+    expect(reloaded.hasanatBalance, 70);
     expect(reloaded.ownsSkin(goldCraft.id), isTrue);
+    expect(reloaded.ownsSkin(sapphireTasbih.id), isTrue);
     expect(reloaded.equippedSkin(StoreItemCategory.craftSkin).id, goldCraft.id);
+    expect(reloaded.equippedSkin(StoreItemCategory.tasbihSkin).id, sapphireTasbih.id);
     expect(reloaded.isEventUnlocked('event_dawn_racers'), isTrue);
   });
 
@@ -643,6 +668,14 @@ void main() {
     final List<MapEntry<String, Widget>> screens = [
       const MapEntry('PrayerHomeScreen', PrayerHomeScreen()),
       const MapEntry('MainNavigationScreen', MainNavigationScreen()),
+      const MapEntry('QiblaScreen', QiblaScreen()),
+      const MapEntry('CalendarScreen', CalendarScreen()),
+      const MapEntry('QuranReaderScreen', QuranReaderScreen()),
+      const MapEntry('SahihHadithScreen', SahihHadithScreen()),
+      const MapEntry('IslamicStoriesScreen', IslamicStoriesScreen()),
+      const MapEntry('AboutMeScreen', AboutMeScreen()),
+      const MapEntry('HelpMeScreen', HelpMeScreen()),
+      const MapEntry('SettingsScreen', SettingsScreen()),
       const MapEntry('TasbihScreen', TasbihScreen()),
       const MapEntry('JannatiScreen', JannatiScreen()),
       const MapEntry('FirdawsJourneyScreen', FirdawsJourneyScreen()),

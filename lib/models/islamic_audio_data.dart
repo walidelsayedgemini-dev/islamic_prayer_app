@@ -469,29 +469,39 @@ class IslamicAudioLibrary {
   static const List<ParadiseBirdsongItem> paradiseBirdsongTracks = [
     ParadiseBirdsongItem(
       id: 'birds_paradise',
-      title: 'تغريد عصافير الفردوس مع خَرِير الأنهار 🐦🌊',
-      subtitle: 'صوت طبيعي هادئ يعمل مباشرة بدون إنترنت',
-      localAsset: 'audio/birds_paradise.wav',
+      title: 'تغريد العندليب النقي في رياض الجنة 🐦🌿',
+      subtitle: 'تسجيل طبيعي حقيقي عالي النقاء يعمل مباشرة بدون إنترنت',
+      localAsset: 'audio/birds_nightingale_garden.mp3',
     ),
     ParadiseBirdsongItem(
       id: 'birds_forest',
-      title: 'أنس بلابل الحدائق الغنّاء 🌿🎶',
-      subtitle: 'نغمات طيور نقية مدمجة بدون إنترنت',
-      localAsset: 'audio/birds_forest.wav',
+      title: 'أنس طيور الصباح في الغابات الهادئة 🌳🎶',
+      subtitle: 'تسجيل طبيعي حقيقي لطيور الصباح بدون أي أصوات مزعجة',
+      localAsset: 'audio/birds_woods_morning.mp3',
     ),
     ParadiseBirdsongItem(
       id: 'birds_dawn_brook',
-      title: 'فجر البستان وتسابيح الطيور الصباحية 🌅🕊️',
-      subtitle: 'بث طبيعة هادئ للاستجمام والخشوع (مع بديل أوفلاين)',
-      localAsset: 'audio/birds_paradise.wav',
-      streamUrl: 'https://archive.org/download/birds_singing_202104/birds_singing.mp3',
+      title: 'صداح البلبل المغرد والنسيم اللطيف 🌅🕊️',
+      subtitle: 'تغريد طبيعي نقي للتأمل والذكر (مدمج أوفلاين)',
+      localAsset: 'audio/birds_nightingale.mp3',
     ),
     ParadiseBirdsongItem(
       id: 'birds_rain_garden',
-      title: 'زخات المطر في رياض الجنة وزقزقة العصافير 🌧️🌴',
-      subtitle: 'سكينة وهدوء نفسي عميق للتأمل والذكر',
-      localAsset: 'audio/birds_forest.wav',
-      streamUrl: 'https://archive.org/download/relaxing-nature-sounds/Forest%20Birds.mp3',
+      title: 'ترنيمة الشحرور الهادئة للخشوع والسكينة 🌴🎵',
+      subtitle: 'شدو طبيعي حقيقي لصفاء الذهن والراحة النفسية',
+      localAsset: 'audio/birds_blackbird.mp3',
+    ),
+    ParadiseBirdsongItem(
+      id: 'birds_blackcap',
+      title: 'شدو طائر الحدائق في أفياء السلام 🌺🕊️',
+      subtitle: 'تسجيل طبيعي هادئ ونقي يعمل أوفلاين بالكامل',
+      localAsset: 'audio/birds_blackcap.mp3',
+    ),
+    ParadiseBirdsongItem(
+      id: 'birds_robin',
+      title: 'تغريد أبي الحناء الصباحي اللطيف 💚🎶',
+      subtitle: 'صوت طبيعي مريح وهادئ يعمل مباشرة بدون إنترنت',
+      localAsset: 'audio/birds_robin.mp3',
     ),
   ];
 

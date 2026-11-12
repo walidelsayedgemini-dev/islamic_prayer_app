@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/tasbih_3d_phrases_200.dart';
+import 'firdaws_resilient_image.dart';
 
 /// 20 تأثيراً بصرياً احتفالياً عند الوصول للهدف في السبحة
 enum TasbihGoalEffectType {
@@ -1021,27 +1023,47 @@ class _Tasbih3DMotivationBannerState extends State<Tasbih3DMotivationBanner>
                 spreadRadius: 2,
               ),
             ],
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                p.gradientColors.first,
-                p.gradientColors[1],
-                p.gradientColors.first.withOpacity(0.95),
-              ],
-            ),
             border: Border.all(
               color: const Color(0xFF38BDF8).withOpacity(0.55),
               width: 1.8,
             ),
           ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(22.2),
+            child: Stack(
               children: [
-                Row(
-                  children: [
+                Positioned.fill(
+                  child: Opacity(
+                    opacity: 0.34,
+                    child: FirdawsResilientImage.entry(
+                      Background500Catalog.forTasbihStage(
+                        widget.achievedCount % 30,
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          p.gradientColors.first.withOpacity(0.84),
+                          p.gradientColors[1].withOpacity(0.80),
+                          p.gradientColors.first.withOpacity(0.88),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
@@ -1154,6 +1176,9 @@ class _Tasbih3DMotivationBannerState extends State<Tasbih3DMotivationBanner>
                     ),
                   ],
                 ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -1261,30 +1286,19 @@ void showTasbih200PhrasesExplorerSheet(
                           onSelectPhrase(item);
                           Navigator.of(ctx).pop();
                         },
-                        child: Container(
+                        child: Firdaws4KCardShell(
+                          backdrop: Background500Catalog.forTasbihStage(
+                            item.number % 30,
+                          ),
+                          isDark: true,
+                          borderColor: isSel
+                              ? const Color(0xFF38BDF8)
+                              : Colors.white.withOpacity(0.18),
+                          borderRadius: 18,
+                          borderWidth: isSel ? 1.8 : 1.0,
                           margin: const EdgeInsets.only(bottom: 10),
                           padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(18),
-                            gradient: LinearGradient(
-                              colors: [
-                                item.gradientColors.first.withOpacity(isSel ? 0.95 : 0.72),
-                                item.gradientColors[1].withOpacity(isSel ? 0.85 : 0.48),
-                              ],
-                            ),
-                            border: Border.all(
-                              color: isSel
-                                  ? const Color(0xFF38BDF8)
-                                  : Colors.white.withOpacity(0.18),
-                              width: isSel ? 1.8 : 1.0,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: item.gradientColors.first.withOpacity(0.5),
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
+                          imageOpacity: isSel ? 0.44 : 0.30,
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [

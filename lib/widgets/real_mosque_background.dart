@@ -11,6 +11,7 @@ class RealMosqueBackground extends StatefulWidget {
   final double? simulatedHour;
   final String? customAssetOverride;
   final double dimFactor;
+  final bool enableMotion;
 
   const RealMosqueBackground({
     super.key,
@@ -20,6 +21,7 @@ class RealMosqueBackground extends StatefulWidget {
     this.simulatedHour,
     this.customAssetOverride,
     this.dimFactor = 1.0,
+    this.enableMotion = true,
   });
 
   @override
@@ -36,7 +38,23 @@ class _RealMosqueBackgroundState extends State<RealMosqueBackground>
     _breathingController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 22),
-    )..repeat(reverse: true);
+    );
+    if (widget.enableMotion) {
+      _breathingController.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant RealMosqueBackground oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.enableMotion != oldWidget.enableMotion) {
+      if (widget.enableMotion) {
+        _breathingController.repeat(reverse: true);
+      } else {
+        _breathingController.stop();
+        _breathingController.value = 0.0;
+      }
+    }
   }
 
   @override
@@ -76,30 +94,47 @@ class _RealMosqueBackgroundState extends State<RealMosqueBackground>
     return Stack(
       fit: StackFit.expand,
       children: [
-        // 1. الصورة الفوتوغرافية 4K الحقيقية مع حركة تنفس هادئة
-        AnimatedBuilder(
-          animation: _breathingController,
-          builder: (context, child) {
-            final scale = 1.0 + _breathingController.value * 0.045;
-            return Transform.scale(
-              scale: scale,
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 700),
-                child: Image.asset(
-                  assetPath,
-                  key: ValueKey<String>('${assetPath}_${widget.isNightMode}'),
-                  fit: BoxFit.cover,
-                  filterQuality: FilterQuality.medium,
-                  width: double.infinity,
-                  height: double.infinity,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(color: palette.scaffoldColor);
-                  },
-                ),
+        // 1. الصورة الفوتوغرافية 4K الحقيقية (متحركة بهدوء أو ثابتة حسب enableMotion)
+        if (widget.enableMotion)
+          AnimatedBuilder(
+            animation: _breathingController,
+            builder: (context, child) {
+              final scale = 1.0 + _breathingController.value * 0.045;
+              return Transform.scale(
+                scale: scale,
+                child: child,
+              );
+            },
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 700),
+              child: Image.asset(
+                assetPath,
+                key: ValueKey<String>('${assetPath}_${widget.isNightMode}'),
+                fit: BoxFit.cover,
+                filterQuality: FilterQuality.medium,
+                width: double.infinity,
+                height: double.infinity,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(color: palette.scaffoldColor);
+                },
               ),
-            );
-          },
-        ),
+            ),
+          )
+        else
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 500),
+            child: Image.asset(
+              assetPath,
+              key: ValueKey<String>('${assetPath}_${widget.isNightMode}_static'),
+              fit: BoxFit.cover,
+              filterQuality: FilterQuality.medium,
+              width: double.infinity,
+              height: double.infinity,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(color: palette.scaffoldColor);
+              },
+            ),
+          ),
 
         // 2. غلاف تباين مخفف بعناية ليبرز وضوح الـ 4K مع قراءة واضحة للنصوص
         Container(

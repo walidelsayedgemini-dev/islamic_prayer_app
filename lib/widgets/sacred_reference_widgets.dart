@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/islamic_audio_data.dart';
 import '../models/sacred_reference_parser.dart';
 import '../providers/jannati_provider.dart';
@@ -8,6 +9,7 @@ import '../screens/quran_reader_screen.dart';
 import '../screens/sahih_hadith_screen.dart';
 import '../theme/islamic_theme.dart';
 import 'firdaws_brand_logo.dart';
+import 'firdaws_resilient_image.dart';
 
 class SacredNavigator {
   /// يفتح المصحف الشريف مباشرةً عند السورة والآية المحددة مع التمرير والتظليل + فتح التفسير الموثق اختيارياً
@@ -122,13 +124,16 @@ class SacredNavigator {
                   style: TextStyle(color: palette.textSecondary, fontSize: 12),
                 ),
                 const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: accent.withOpacity(0.11),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: accent.withOpacity(0.48)),
+                Firdaws4KCardShell(
+                  backdrop: Background500Catalog.bySlot(
+                    400 + (resolved.id.hashCode.abs() % 80),
                   ),
+                  isDark: palette.isDark,
+                  borderColor: accent.withOpacity(0.48),
+                  borderRadius: 18,
+                  borderWidth: 1.1,
+                  padding: const EdgeInsets.all(14),
+                  imageOpacity: 0.36,
                   child: SelectableText(
                     verbatimText != null && verbatimText.trim().isNotEmpty
                         ? verbatimText
@@ -160,13 +165,14 @@ class SacredNavigator {
                   ),
                 ),
                 const SizedBox(height: 10),
-                Container(
+                Firdaws4KCardShell(
+                  backdrop: Background500Catalog.forExtraSection(118),
+                  isDark: palette.isDark,
+                  borderColor: palette.dividerColor,
+                  borderRadius: 14,
+                  borderWidth: 1.0,
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: palette.cardColor,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: palette.dividerColor),
-                  ),
+                  imageOpacity: 0.30,
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -300,13 +306,14 @@ class QuranRefBadge extends StatelessWidget {
         openTafsirOnStart: openTafsir,
       ),
       borderRadius: BorderRadius.circular(14),
-      child: Container(
+      child: Firdaws4KCardShell(
+        backdrop: Background500Catalog.forExtraSection(surahNumber),
+        isDark: palette.isDark,
+        borderColor: accent.withOpacity(0.55),
+        borderRadius: 14,
+        borderWidth: 1.0,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: accent.withOpacity(0.14),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: accent.withOpacity(0.55)),
-        ),
+        imageOpacity: 0.28,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -371,13 +378,16 @@ class HadithRefBadge extends StatelessWidget {
         trackInJannati: trackInJannati,
       ),
       borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: accent.withOpacity(0.14),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: accent.withOpacity(0.5)),
+      child: Firdaws4KCardShell(
+        backdrop: Background500Catalog.forExtraSection(
+          119 + (referenceText.hashCode.abs() % 10),
         ),
+        isDark: palette.isDark,
+        borderColor: accent.withOpacity(0.5),
+        borderRadius: 14,
+        borderWidth: 1.0,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        imageOpacity: 0.26,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

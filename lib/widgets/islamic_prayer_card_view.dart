@@ -431,15 +431,14 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
             ),
             Flexible(
               flex: 4,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 11, vertical: 3),
-                decoration: BoxDecoration(
-                  color: palette.cardColor
-                      .withOpacity(palette.isDark ? 0.55 : 0.85),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: accent.withOpacity(0.4)),
-                ),
+              child: Firdaws4KCardShell(
+                backdrop: Background500Catalog.forHomeSection(19),
+                isDark: palette.isDark,
+                borderColor: accent.withOpacity(0.4),
+                borderRadius: 14,
+                borderWidth: 1.0,
+                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 3),
+                imageOpacity: 0.30,
                 child: Text(
                   "اسحب البطاقة لتصفح الصلوات • حيّ على الفلاح",
                   maxLines: 1,

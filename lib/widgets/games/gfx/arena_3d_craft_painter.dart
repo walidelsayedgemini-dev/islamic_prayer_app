@@ -1,8 +1,9 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../../models/hasanat_store_catalog.dart';
 
 /// رسّام المركبات والوحدات والأجسام ثلاثية الأبعاد بظلال واضاءة معدنية
-/// يطبق مظهر السكن المجهَّز من «متجر السكنات» (6 مركبات + 5 أزياء أبطال + 4 مؤثرات)
+/// يطبق مظهر السكن المجهَّز من «متجر السكنات» (500 مركبة + 500 زي بطل + 500 مؤثر انطلاق)
 class Arena3DCraftPainterUtils {
   Arena3DCraftPainterUtils._();
 
@@ -19,8 +20,9 @@ class Arena3DCraftPainterUtils {
       case 'firdaws_crown':
         return const Color(0xFFFBBF24);
       case 'emerald_wings':
-      default:
         return fallback;
+      default:
+        return HasanatStoreCatalog.byStyleKey(craftKey)?.primaryColor ?? fallback;
     }
   }
 
@@ -37,8 +39,10 @@ class Arena3DCraftPainterUtils {
       case 'firdaws_crown':
         return const Color(0xFF10B981);
       case 'emerald_wings':
-      default:
         return fallback;
+      default:
+        return HasanatStoreCatalog.byStyleKey(craftKey)?.secondaryColor ??
+            fallback;
     }
   }
 
@@ -53,8 +57,9 @@ class Arena3DCraftPainterUtils {
       case 'diamond_conqueror':
         return const Color(0xFFF59E0B);
       case 'classic_guardian':
-      default:
         return fallback;
+      default:
+        return HasanatStoreCatalog.byStyleKey(heroKey)?.primaryColor ?? fallback;
     }
   }
 
@@ -420,6 +425,124 @@ class _SkinPreviewPainter extends CustomPainter {
         center: c,
         radius: 14,
         baseColor: primaryColor,
+        rimColor: secondaryColor,
+      );
+    } else if (categoryName == 'tasbihSkin') {
+      final ringR = math.min(size.width, size.height) * 0.34;
+      canvas.drawCircle(
+        c,
+        ringR,
+        Paint()
+          ..color = secondaryColor.withOpacity(0.35)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.0,
+      );
+      const beadCount = 12;
+      for (int i = 0; i < beadCount; i++) {
+        final angle = (i / beadCount) * math.pi * 2 - math.pi / 2;
+        final pos = c + Offset(math.cos(angle) * ringR, math.sin(angle) * ringR);
+        Arena3DCraftPainterUtils.paint3DOrb(
+          canvas: canvas,
+          center: pos,
+          radius: i == 0 ? 6.5 : 4.8,
+          baseColor: i.isEven ? primaryColor : secondaryColor,
+        );
+      }
+      Arena3DCraftPainterUtils.paint3DOrb(
+        canvas: canvas,
+        center: c,
+        radius: 13.5,
+        baseColor: primaryColor,
+        rimColor: Color.lerp(secondaryColor, Colors.black, 0.35),
+      );
+    } else if (categoryName == 'compassSkin') {
+      final dialR = math.min(size.width, size.height) * 0.36;
+      canvas.drawCircle(
+        c,
+        dialR + 4,
+        Paint()..color = primaryColor.withOpacity(0.20),
+      );
+      canvas.drawCircle(
+        c,
+        dialR,
+        Paint()
+          ..shader = RadialGradient(
+            colors: [
+              Color.lerp(primaryColor, Colors.black, 0.72)!,
+              Color.lerp(secondaryColor, Colors.black, 0.84)!,
+            ],
+          ).createShader(Rect.fromCircle(center: c, radius: dialR)),
+      );
+      canvas.drawCircle(
+        c,
+        dialR,
+        Paint()
+          ..color = primaryColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.6,
+      );
+      for (int i = 0; i < 8; i++) {
+        final a = i * math.pi / 4;
+        final p1 = c + Offset(math.cos(a) * (dialR - 5), math.sin(a) * (dialR - 5));
+        final p2 = c + Offset(math.cos(a) * (dialR - 1), math.sin(a) * (dialR - 1));
+        canvas.drawLine(
+          p1,
+          p2,
+          Paint()
+            ..color = secondaryColor
+            ..strokeWidth = 1.6,
+        );
+      }
+      final needle = Path()
+        ..moveTo(c.dx, c.dy - dialR * 0.68)
+        ..lineTo(c.dx + 6, c.dy + 2)
+        ..lineTo(c.dx, c.dy - 4)
+        ..lineTo(c.dx - 6, c.dy + 2)
+        ..close();
+      canvas.drawPath(needle, Paint()..color = secondaryColor);
+      canvas.drawCircle(c, 5.0, Paint()..color = primaryColor);
+    } else if (categoryName == 'cardSkin') {
+      final cardRect = RRect.fromRectAndRadius(
+        Rect.fromCenter(center: c, width: size.width * 0.62, height: size.height * 0.72),
+        const Radius.circular(14),
+      );
+      canvas.drawRRect(
+        cardRect,
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              primaryColor.withOpacity(0.55),
+              secondaryColor.withOpacity(0.45),
+              const Color(0xFF0A1426),
+            ],
+          ).createShader(cardRect.outerRect),
+      );
+      canvas.drawRRect(
+        cardRect,
+        Paint()
+          ..color = primaryColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.0,
+      );
+      final innerRect = RRect.fromRectAndRadius(
+        cardRect.outerRect.deflate(6),
+        const Radius.circular(10),
+      );
+      canvas.drawRRect(
+        innerRect,
+        Paint()
+          ..color = secondaryColor.withOpacity(0.65)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.1,
+      );
+      Arena3DCraftPainterUtils.paint3DOrb(
+        canvas: canvas,
+        center: c,
+        radius: 11,
+        baseColor: secondaryColor,
+        rimColor: primaryColor,
       );
     } else {
       // heroSkin preview

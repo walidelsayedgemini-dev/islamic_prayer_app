@@ -223,17 +223,14 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
               ),
               const SizedBox(height: 18),
               if (time != null) ...[
-                Container(
-                  width: double.infinity,
+                Firdaws4KCardShell(
+                  backdrop: Background500Catalog.forExtraSection(58),
+                  isDark: palette.isDark,
+                  borderColor: (isPassed ? passedBadgeColor : accentColor).withOpacity(0.45),
+                  borderRadius: 12,
+                  borderWidth: 1.0,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: (isPassed ? passedBadgeColor : accentColor)
-                        .withOpacity(palette.isDark ? 0.14 : 0.10),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: (isPassed ? passedBadgeColor : accentColor).withOpacity(0.45),
-                    ),
-                  ),
+                  imageOpacity: 0.34,
                   child: Row(
                     children: [
                       Icon(
@@ -282,13 +279,14 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 palette,
               ),
               const SizedBox(height: 14),
-              Container(
+              Firdaws4KCardShell(
+                backdrop: Background500Catalog.forExtraSection(62),
+                isDark: palette.isDark,
+                borderColor: accentColor.withOpacity(0.28),
+                borderRadius: 16,
+                borderWidth: 1.1,
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: palette.cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: accentColor.withOpacity(0.25)),
-                ),
+                imageOpacity: 0.36,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -495,21 +493,14 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                   // شريط الموقع والتاريخ وبوابة الثيمات الموحدة وزر تبديل النهار والليل
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                    child: Container(
+                    child: Firdaws4KCardShell(
+                      backdrop: Background500Catalog.forHomeSection(18),
+                      isDark: isNight,
+                      borderColor: accentColor.withOpacity(0.45),
+                      borderRadius: 20,
+                      borderWidth: 1.2,
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: firdaws3DSurfaceColor(palette, opacity: isNight ? 0.84 : 0.92),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: accentColor.withOpacity(0.45)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: (isNight ? Colors.black : palette.primaryColor)
-                                .withOpacity(isNight ? 0.5 : 0.16),
-                            blurRadius: 14,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
+                      imageOpacity: isNight ? 0.34 : 0.20,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -1332,25 +1323,25 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
         ? accentColor
         : (isPassed ? accentColor.withOpacity(0.32) : palette.dividerColor);
 
-    return Container(
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forCalendarPrayer(name),
+      isDark: palette.isDark,
+      borderColor: chipBorderColor,
+      borderRadius: 12,
+      borderWidth: isCurrent ? 1.5 : 1.0,
       margin: const EdgeInsets.only(left: 8),
+      padding: EdgeInsets.zero,
+      imageOpacity: isCurrent ? 0.42 : 0.26,
       child: Material(
         color: isCurrent
-            ? accentColor.withOpacity(palette.isDark ? 0.25 : 0.16)
-            : palette.cardColor,
+            ? accentColor.withOpacity(palette.isDark ? 0.18 : 0.12)
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: () => _openPrayerSheet(context, name, palette, prayerData),
           borderRadius: BorderRadius.circular(12),
-          child: Container(
+          child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: chipBorderColor,
-                width: isCurrent ? 1.5 : 1.0,
-              ),
-            ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -1704,7 +1695,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                           ),
                         ),
                         Text(
-                          'رصيدك: ${hasanat.hasanatBalance} • ٢٦ سكناً',
+                          'رصيدك: ${hasanat.hasanatBalance} • ٤٠٠٠ سكن',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(

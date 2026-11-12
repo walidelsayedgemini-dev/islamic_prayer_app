@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../theme/islamic_theme.dart';
+import '../widgets/firdaws_resilient_image.dart';
 
 class IslamicBookChapter {
   final int number;
@@ -144,34 +146,44 @@ class _IslamicBooksSheetState extends State<IslamicBooksSheet> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: accent.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: accent),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Firdaws4KCardShell(
+              backdrop: Background500Catalog.forExtraSection(38),
+              isDark: palette.isDark,
+              borderRadius: 18,
+              borderColor: accent.withOpacity(0.45),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              imageOpacity: 0.45,
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: accent.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: accent),
+                    ),
+                    child: Icon(Icons.auto_stories_rounded, color: accent, size: 20),
                   ),
-                  child: Icon(Icons.auto_stories_rounded, color: accent, size: 20),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    "المكتبة الإسلامية والتفاسير الشريفة",
-                    style: TextStyle(
-                      color: palette.textPrimary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      "المكتبة الإسلامية والتفاسير الشريفة",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.close_rounded, color: palette.textMuted),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
+                  IconButton(
+                    icon: Icon(Icons.close_rounded, color: palette.textMuted),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
             ),
           ),
           SizedBox(
@@ -217,22 +229,14 @@ class _IslamicBooksSheetState extends State<IslamicBooksSheet> {
               itemCount: chapters.length,
               itemBuilder: (context, idx) {
                 final ch = chapters[idx];
-                return Container(
+                return Firdaws4KCardShell(
+                  backdrop: Background500Catalog.forExtraSection(39 + idx),
+                  isDark: palette.isDark,
                   margin: const EdgeInsets.only(bottom: 14),
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: palette.cardColor,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: accent.withOpacity(0.35)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (palette.isDark ? Colors.black : palette.primaryColor)
-                            .withOpacity(palette.isDark ? 0.35 : 0.10),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
+                  borderRadius: 18,
+                  borderColor: accent.withOpacity(0.45),
+                  imageOpacity: palette.isDark ? 0.45 : 0.35,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -271,13 +275,13 @@ class _IslamicBooksSheetState extends State<IslamicBooksSheet> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      Container(
+                      Firdaws4KCardShell(
+                        backdrop: Background500Catalog.forExtraSection(50 + idx),
+                        isDark: palette.isDark,
                         padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: palette.elevatedCardColor,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: palette.dividerColor),
-                        ),
+                        borderRadius: 12,
+                        borderColor: palette.dividerColor,
+                        imageOpacity: 0.30,
                         child: Text(
                           ch.contentArabic,
                           style: TextStyle(

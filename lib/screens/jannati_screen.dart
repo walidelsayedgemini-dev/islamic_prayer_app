@@ -231,10 +231,6 @@ class _JannatiScreenState extends State<JannatiScreen>
     _triggerPulse();
     if (outcome.completedCycle) {
       HapticFeedback.mediumImpact();
-      try {
-        Provider.of<SettingsProvider>(context, listen: false)
-            .cycleJannatiIfAuto();
-      } catch (_) {}
     } else {
       HapticFeedback.lightImpact();
     }
@@ -480,21 +476,27 @@ class _JannatiScreenState extends State<JannatiScreen>
                     ],
                   ),
                   const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: palette.elevatedCardColor,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: c.withOpacity(0.45)),
+                  Firdaws4KCardShell(
+                    backdrop: Background500Catalog.forExtraSection(
+                      74 + (inv.id.hashCode.abs() % 12),
                     ),
-                    child: Text(
-                      inv.dhikrOrAction,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: palette.isDark ? const Color(0xFFF1F5F9) : palette.primaryColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        height: 1.5,
+                    isDark: palette.isDark,
+                    borderColor: c.withOpacity(0.45),
+                    borderRadius: 16,
+                    borderWidth: 1.0,
+                    padding: const EdgeInsets.all(14),
+                    imageOpacity: 0.30,
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: Text(
+                        inv.dhikrOrAction,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: palette.isDark ? const Color(0xFFF1F5F9) : palette.primaryColor,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          height: 1.5,
+                        ),
                       ),
                     ),
                   ),
@@ -531,13 +533,14 @@ class _JannatiScreenState extends State<JannatiScreen>
                     palette: palette,
                   ),
                   const SizedBox(height: 12),
-                  Container(
+                  Firdaws4KCardShell(
+                    backdrop: Background500Catalog.forExtraSection(86),
+                    isDark: palette.isDark,
+                    borderColor: palette.dividerColor,
+                    borderRadius: 14,
+                    borderWidth: 1.0,
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: palette.cardColor,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: palette.dividerColor),
-                    ),
+                    imageOpacity: 0.28,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -664,14 +667,17 @@ class _JannatiScreenState extends State<JannatiScreen>
               ...focused.map((inv) {
                 final c = inv.colorFor(palette.isDark);
                 final cnt = jannati.countFor(inv.id);
-                return Container(
+                return Firdaws4KCardShell(
+                  backdrop: Background500Catalog.forExtraSection(
+                    56 + (inv.id.hashCode.abs() % 18),
+                  ),
+                  isDark: palette.isDark,
+                  borderColor: c.withOpacity(0.45),
+                  borderRadius: 16,
+                  borderWidth: 1.0,
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: palette.cardColor,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: c.withOpacity(0.45)),
-                  ),
+                  imageOpacity: 0.34,
                   child: Row(
                     children: [
                       Icon(inv.icon, color: c, size: 22),
@@ -776,14 +782,17 @@ class _JannatiScreenState extends State<JannatiScreen>
                   ),
                   const SizedBox(height: 14),
                   ...JannatiCatalog.riversAndSprings.map((river) {
-                    return Container(
+                    return Firdaws4KCardShell(
+                      backdrop: Background500Catalog.forExtraSection(
+                        1 + (river.name.hashCode.abs() % 30),
+                      ),
+                      isDark: palette.isDark,
+                      borderColor: river.riverColor.withOpacity(0.5),
+                      borderRadius: 16,
+                      borderWidth: 1.1,
                       margin: const EdgeInsets.only(bottom: 10),
                       padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: palette.cardColor,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: river.riverColor.withOpacity(0.5)),
-                      ),
+                      imageOpacity: 0.36,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -866,13 +875,16 @@ class _JannatiScreenState extends State<JannatiScreen>
     required Color color,
     required ThemePalette palette,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: palette.cardColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withOpacity(0.35)),
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forExtraSection(
+        87 + (title.hashCode.abs() % 14),
       ),
+      isDark: palette.isDark,
+      borderColor: color.withOpacity(0.35),
+      borderRadius: 14,
+      borderWidth: 1.0,
+      padding: const EdgeInsets.all(12),
+      imageOpacity: 0.28,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -923,6 +935,7 @@ class _JannatiScreenState extends State<JannatiScreen>
               currentPrayer: isNight ? Prayer.isha : Prayer.dhuhr,
               themeOption: themeOption,
               isNightMode: isNight,
+              enableMotion: false,
             ),
           ),
           Positioned.fill(
@@ -1370,10 +1383,6 @@ class _JannatiScreenState extends State<JannatiScreen>
               hasanat.recordMetric(EventMissionMetric.tasbihCount, delta: 1);
               hasanat.recordMetric(EventMissionMetric.jannahDeedsCount, delta: 1);
             } catch (_) {}
-            try {
-              Provider.of<SettingsProvider>(context, listen: false)
-                  .cycleJannatiIfAuto();
-            } catch (_) {}
             _triggerPulse();
           },
           onOpenSceneryGallery: () => _showJannati100ScenerySheet(context, palette),
@@ -1746,17 +1755,19 @@ class _JannatiScreenState extends State<JannatiScreen>
               children: JannatiCatalog.investments.map((inv) {
                 final c = inv.colorFor(palette.isDark);
                 final cnt = jannati.countFor(inv.id);
-                return InkWell(
-                  onTap: () => _handleInvestmentTap(inv, palette),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    width: 102,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: palette.cardColor.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: c.withOpacity(0.45)),
+                return SizedBox(
+                  width: 102,
+                  child: Firdaws4KCardShell(
+                    backdrop: Background500Catalog.forExtraSection(
+                      56 + (inv.id.hashCode.abs() % 18),
                     ),
+                    isDark: palette.isDark,
+                    borderColor: c.withOpacity(0.45),
+                    borderRadius: 12,
+                    borderWidth: 1.0,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    imageOpacity: 0.34,
+                    onTap: () => _handleInvestmentTap(inv, palette),
                     child: Column(
                       children: [
                         Icon(inv.icon, color: c, size: 18),
@@ -1991,22 +2002,27 @@ class _JannatiScreenState extends State<JannatiScreen>
             ],
           ),
           const SizedBox(height: 10),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: firdaws3DElevatedSurfaceColor(palette),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: c.withOpacity(0.35)),
+          Firdaws4KCardShell(
+            backdrop: Background500Catalog.forExtraSection(
+              74 + (inv.id.hashCode.abs() % 12),
             ),
-            child: Text(
-              inv.dhikrOrAction,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: palette.isDark ? const Color(0xFFF1F5F9) : palette.primaryColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 14.5,
-                height: 1.4,
+            isDark: palette.isDark,
+            borderColor: c.withOpacity(0.35),
+            borderRadius: 14,
+            borderWidth: 1.0,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            imageOpacity: 0.28,
+            child: SizedBox(
+              width: double.infinity,
+              child: Text(
+                inv.dhikrOrAction,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: palette.isDark ? const Color(0xFFF1F5F9) : palette.primaryColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14.5,
+                  height: 1.4,
+                ),
               ),
             ),
           ),
@@ -2157,13 +2173,17 @@ class _JannatiScreenState extends State<JannatiScreen>
                 timeLabel =
                     '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
               } catch (_) {}
-              return Container(
+              return Firdaws4KCardShell(
+                backdrop: Background500Catalog.forExtraSection(
+                  20 + (log.title.hashCode.abs() % 20),
+                ),
+                isDark: palette.isDark,
+                borderColor: accent.withOpacity(0.28),
+                borderRadius: 12,
+                borderWidth: 0.9,
                 margin: const EdgeInsets.only(bottom: 6),
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                decoration: BoxDecoration(
-                  color: palette.elevatedCardColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                imageOpacity: 0.24,
                 child: Row(
                   children: [
                     Icon(
@@ -2235,14 +2255,17 @@ class _JannatiScreenState extends State<JannatiScreen>
           ),
           const SizedBox(height: 10),
           ..._paradiseDuas.map((dua) {
-            return Container(
+            return Firdaws4KCardShell(
+              backdrop: Background500Catalog.forExtraSection(
+                31 + (dua.title.hashCode.abs() % 18),
+              ),
+              isDark: palette.isDark,
+              borderColor: palette.dividerColor,
+              borderRadius: 14,
+              borderWidth: 1.0,
               margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: palette.elevatedCardColor,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: palette.dividerColor),
-              ),
+              imageOpacity: 0.30,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -2615,21 +2638,31 @@ class _JannatiScreenState extends State<JannatiScreen>
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        child: SwitchListTile(
-                          dense: true,
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(
-                            'تبديل منظر البستان تلقائياً مع التسبيح والإنجاز',
-                            style: TextStyle(
-                              color: palette.textPrimary,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                            ),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: accent.withOpacity(0.10),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: accent.withOpacity(0.32)),
                           ),
-                          value: settings.jannatiAutoCycleScenery,
-                          activeTrackColor: accent,
-                          onChanged: settings.setJannatiAutoCycleScenery,
+                          child: Row(
+                            children: [
+                              Icon(Icons.touch_app_rounded, color: accent, size: 17),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'صور جنتي ثابتة وهادئة تتبدّل باختيارك اليدوي فقط دون ارتباط بالتسبيح ✨',
+                                  style: TextStyle(
+                                    color: palette.textPrimary,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 11.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       Padding(

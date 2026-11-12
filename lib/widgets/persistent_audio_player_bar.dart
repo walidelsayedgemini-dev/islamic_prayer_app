@@ -1,9 +1,11 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../providers/audio_player_provider.dart';
 import '../screens/quran_reader_screen.dart';
 import '../theme/islamic_theme.dart';
+import 'firdaws_resilient_image.dart';
 
 class PersistentAudioPlayerBar extends StatefulWidget {
   final ThemeOption themeOption;
@@ -50,11 +52,13 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
     final palette = widget.themeOption.resolve(isNight: widget.isNightMode);
     final accent = palette.accentColor;
 
+    final backdrop = Background500Catalog.forExtraSection(
+      (player.currentSurahNumber ?? 6) + 2,
+    );
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: palette.cardColor.withOpacity(0.96),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: accent.withOpacity(0.55), width: 1.5),
         boxShadow: [
@@ -71,9 +75,35 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
           ),
         ],
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20.5),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Opacity(
+                opacity: palette.isDark ? 0.34 : 0.22,
+                child: FirdawsResilientImage.entry(backdrop),
+              ),
+            ),
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                    colors: [
+                      palette.cardColor.withOpacity(palette.isDark ? 0.86 : 0.88),
+                      palette.scaffoldColor.withOpacity(palette.isDark ? 0.78 : 0.84),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
           if (player.errorMessage != null)
             Container(
               margin: const EdgeInsets.only(bottom: 8),
@@ -301,6 +331,10 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
             ],
           ),
         ],
+      ),
+            ),
+          ],
+        ),
       ),
     );
   }

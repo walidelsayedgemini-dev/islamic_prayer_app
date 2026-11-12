@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:adhan/adhan.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/firdaws_brand_logo.dart';
+import '../widgets/firdaws_resilient_image.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/real_mosque_background.dart';
 
@@ -208,15 +210,15 @@ class _AboutMeScreenState extends State<AboutMeScreen>
           SafeArea(
             child: Column(
               children: [
-                // الشريط العلوي
-                Container(
+                // الشريط العلوي بخلفية إسلامية 4K
+                Firdaws4KCardShell(
+                  backdrop: Background500Catalog.forExtraSection(30),
+                  isDark: isNight,
                   margin: const EdgeInsets.fromLTRB(12, 8, 12, 6),
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: palette.cardColor.withOpacity(0.92),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: accent.withOpacity(0.5)),
-                  ),
+                  borderRadius: 18,
+                  borderColor: accent.withOpacity(0.55),
+                  imageOpacity: 0.48,
                   child: Row(
                     children: [
                       IconButton(
@@ -231,6 +233,8 @@ class _AboutMeScreenState extends State<AboutMeScreen>
                       Expanded(
                         child: Text(
                           'عنّي وبياناتي والدعاء 🤲 ${themeOpt.primaryEmoji}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: palette.textPrimary,
                             fontSize: 15.5,
@@ -255,21 +259,15 @@ class _AboutMeScreenState extends State<AboutMeScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // بطاقة الهوية والصورة الشخصية من المعرض
-                        Container(
+                        // بطاقة الهوية والصورة الشخصية من المعرض بخلفية 4K
+                        Firdaws4KCardShell(
+                          backdrop: Background500Catalog.forExtraSection(31),
+                          isDark: isNight,
                           padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: palette.cardColor.withOpacity(0.92),
-                            borderRadius: BorderRadius.circular(26),
-                            border: Border.all(color: accent.withOpacity(0.65), width: 1.5),
-                            boxShadow: [
-                              BoxShadow(
-                                color: accent.withOpacity(0.18),
-                                blurRadius: 18,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
+                          borderRadius: 26,
+                          borderWidth: 1.5,
+                          borderColor: accent.withOpacity(0.65),
+                          imageOpacity: isNight ? 0.50 : 0.38,
                           child: Column(
                             children: [
                               Stack(
@@ -359,19 +357,27 @@ class _AboutMeScreenState extends State<AboutMeScreen>
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  OutlinedButton.icon(
-                                    onPressed: () => _pickPhotoFromGallery(userProv),
-                                    icon: Icon(Icons.photo_library_rounded, color: accent, size: 17),
-                                    label: Text(
-                                      avatarBytes == null
-                                          ? 'رفع صورتي من المعرض 📸'
-                                          : 'تغيير الصورة 📸',
-                                      style: TextStyle(color: accent, fontSize: 11.5),
-                                    ),
-                                    style: OutlinedButton.styleFrom(
-                                      side: BorderSide(color: accent.withOpacity(0.5)),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                  Flexible(
+                                    child: OutlinedButton.icon(
+                                      onPressed: () => _pickPhotoFromGallery(userProv),
+                                      icon: Icon(Icons.photo_library_rounded, color: accent, size: 17),
+                                      label: Text(
+                                        avatarBytes == null
+                                            ? 'رفع صورتي من المعرض 📸'
+                                            : 'تغيير الصورة 📸',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(color: accent, fontSize: 11.5),
+                                      ),
+                                      style: OutlinedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 10,
+                                        ),
+                                        side: BorderSide(color: accent.withOpacity(0.5)),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -400,15 +406,16 @@ class _AboutMeScreenState extends State<AboutMeScreen>
                               ),
                               if (userProv.aboutContactInfo.isNotEmpty) ...[
                                 const SizedBox(height: 10),
-                                Container(
+                                Firdaws4KCardShell(
+                                  backdrop: Background500Catalog.forExtraSection(32),
+                                  isDark: isNight,
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 12,
                                     vertical: 6,
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: palette.elevatedCardColor,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
+                                  borderRadius: 12,
+                                  borderColor: accent.withOpacity(0.35),
+                                  imageOpacity: 0.36,
                                   child: Text(
                                     '💌 ${userProv.aboutContactInfo}',
                                     style: TextStyle(
@@ -424,21 +431,15 @@ class _AboutMeScreenState extends State<AboutMeScreen>
                         ),
                         const SizedBox(height: 14),
 
-                        // بطاقة طلب الدعاء الصادق بظهر الغيب
-                        Container(
+                        // بطاقة طلب الدعاء الصادق بظهر الغيب بخلفية 4K
+                        Firdaws4KCardShell(
+                          backdrop: Background500Catalog.forExtraSection(33),
+                          isDark: isNight,
                           padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topRight,
-                              end: Alignment.bottomLeft,
-                              colors: [
-                                accent.withOpacity(palette.isDark ? 0.24 : 0.14),
-                                palette.cardColor.withOpacity(0.95),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: accent, width: 1.6),
-                          ),
+                          borderRadius: 24,
+                          borderWidth: 1.6,
+                          borderColor: accent,
+                          imageOpacity: isNight ? 0.54 : 0.40,
                           child: Column(
                             children: [
                               const Text('🤲💛🌙', style: TextStyle(fontSize: 28)),
@@ -502,20 +503,40 @@ class _AboutMeScreenState extends State<AboutMeScreen>
                         ),
                         const SizedBox(height: 12),
 
-                        // إحصائية ملف المستخدم الشخصي في التطبيق
-                        Container(
+                        // إحصائية ملف المستخدم الشخصي في التطبيق بخلفية 4K
+                        Firdaws4KCardShell(
+                          backdrop: Background500Catalog.forExtraSection(34),
+                          isDark: isNight,
                           padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: palette.cardColor.withOpacity(0.9),
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: palette.dividerColor),
-                          ),
+                          borderRadius: 18,
+                          borderColor: accent.withOpacity(0.42),
+                          imageOpacity: isNight ? 0.48 : 0.36,
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              _statItem('🕌 الصلوات', '${userProv.totalPrayersLogged}', palette, accent),
-                              _statItem('📿 الأذكار', '${userProv.totalDhikr}', palette, accent),
-                              _statItem('🤲 الدعوات', '${userProv.creatorDuasCount}', palette, accent),
+                              Expanded(
+                                child: _statItem(
+                                  '🕌 الصلوات',
+                                  '${userProv.totalPrayersLogged}',
+                                  palette,
+                                  accent,
+                                ),
+                              ),
+                              Expanded(
+                                child: _statItem(
+                                  '📿 الأذكار',
+                                  '${userProv.totalDhikr}',
+                                  palette,
+                                  accent,
+                                ),
+                              ),
+                              Expanded(
+                                child: _statItem(
+                                  '🤲 الدعوات',
+                                  '${userProv.creatorDuasCount}',
+                                  palette,
+                                  accent,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -533,9 +554,13 @@ class _AboutMeScreenState extends State<AboutMeScreen>
 
   Widget _statItem(String label, String val, ThemePalette palette, Color accent) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           val,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
           style: TextStyle(
             color: accent,
             fontSize: 17,
@@ -545,6 +570,9 @@ class _AboutMeScreenState extends State<AboutMeScreen>
         const SizedBox(height: 2),
         Text(
           label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
           style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
         ),
       ],

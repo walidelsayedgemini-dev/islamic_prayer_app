@@ -3,10 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:adhan/adhan.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:provider/provider.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/prayer_identity_model.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
+import '../widgets/firdaws_resilient_image.dart';
 import '../widgets/sacred_reference_widgets.dart';
 
 class Prayer22DetailsSheet extends StatefulWidget {
@@ -209,47 +211,60 @@ class _Prayer22DetailsSheetState extends State<Prayer22DetailsSheet> {
                 ),
               ),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: accent.withOpacity(0.18),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: accent, width: 1.5),
-                    ),
-                    child: Icon(info.visualIcon, color: accent, size: 28),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              Firdaws4KCardShell(
+                backdrop: Background500Catalog.forExtraSection(57),
+                isDark: palette.isDark,
+                padding: const EdgeInsets.all(14),
+                borderRadius: 18,
+                borderColor: accent.withOpacity(0.45),
+                imageOpacity: 0.45,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Text(
-                          info.arabicName,
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: accent,
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: accent.withOpacity(0.18),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: accent, width: 1.5),
                           ),
+                          child: Icon(info.visualIcon, color: accent, size: 28),
                         ),
-                        Text(
-                          info.celebrationBadge,
-                          style: TextStyle(
-                            color: badgeColor,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                info.arabicName,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: accent,
+                                ),
+                              ),
+                              Text(
+                                info.celebrationBadge,
+                                style: TextStyle(
+                                  color: badgeColor,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                info.subtitle,
-                style: TextStyle(color: palette.textSecondary, fontSize: 13, height: 1.4),
+                    const SizedBox(height: 10),
+                    Text(
+                      info.subtitle,
+                      style: TextStyle(color: palette.textSecondary, fontSize: 13, height: 1.4),
+                    ),
+                  ],
+                ),
               ),
               if (widget.prayerTime != null || widget.isPassed || widget.isCurrent) ...[
                 const SizedBox(height: 12),
@@ -258,13 +273,13 @@ class _Prayer22DetailsSheetState extends State<Prayer22DetailsSheet> {
               const SizedBox(height: 16),
               Divider(color: palette.dividerColor),
               const SizedBox(height: 8),
-              Container(
+              Firdaws4KCardShell(
+                backdrop: Background500Catalog.forExtraSection(58),
+                isDark: palette.isDark,
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: accent.withOpacity(palette.isDark ? 0.12 : 0.10),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: accent.withOpacity(0.35)),
-                ),
+                borderRadius: 18,
+                borderColor: accent.withOpacity(0.45),
+                imageOpacity: palette.isDark ? 0.36 : 0.30,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -326,17 +341,29 @@ class _Prayer22DetailsSheetState extends State<Prayer22DetailsSheet> {
               const SizedBox(height: 10),
               _buildSectionBox("الحديث النبوي الشريف", info.hadithVirtue, Icons.format_quote_rounded, palette),
               const SizedBox(height: 14),
-              _buildInfoRow(Icons.access_time_rounded, "الوقت الفلكي", info.astronomicalDefinition, palette),
-              _buildInfoRow(Icons.layers_rounded, "عدد الركعات", info.rakatsDetail, palette),
-              _buildInfoRow(Icons.auto_awesome_rounded, "السنن الرواتب", info.sunnahRawatib, palette),
-              _buildInfoRow(Icons.groups_rounded, "فضل الجماعة", info.congregationVirtue, palette),
-              _buildInfoRow(Icons.visibility_rounded, "شهادة الملائكة", info.angelWitnessRole, palette),
-              _buildInfoRow(Icons.favorite_rounded, "الأثر القلبي", info.spiritualFeeling, palette),
-              _buildInfoRow(Icons.health_and_safety_rounded, "الفائدة الصحية", info.healthBenefit, palette),
-              _buildInfoRow(Icons.child_care_rounded, "معلومة محببة للصغار", info.funChildFact, palette),
-              _buildInfoRow(Icons.hearing_rounded, "نداء الأذان", info.adhanFeature, palette),
-              _buildInfoRow(Icons.star_rounded, "السور المستحبة", info.recommendedSurahs, palette),
-              _buildInfoRow(Icons.history_edu_rounded, "حدث تاريخي إسلامي", info.historicalEvent, palette),
+              Firdaws4KCardShell(
+                backdrop: Background500Catalog.forExtraSection(63),
+                isDark: palette.isDark,
+                padding: const EdgeInsets.fromLTRB(14, 14, 14, 4),
+                borderRadius: 18,
+                borderColor: accent.withOpacity(0.35),
+                imageOpacity: palette.isDark ? 0.30 : 0.24,
+                child: Column(
+                  children: [
+                    _buildInfoRow(Icons.access_time_rounded, "الوقت الفلكي", info.astronomicalDefinition, palette),
+                    _buildInfoRow(Icons.layers_rounded, "عدد الركعات", info.rakatsDetail, palette),
+                    _buildInfoRow(Icons.auto_awesome_rounded, "السنن الرواتب", info.sunnahRawatib, palette),
+                    _buildInfoRow(Icons.groups_rounded, "فضل الجماعة", info.congregationVirtue, palette),
+                    _buildInfoRow(Icons.visibility_rounded, "شهادة الملائكة", info.angelWitnessRole, palette),
+                    _buildInfoRow(Icons.favorite_rounded, "الأثر القلبي", info.spiritualFeeling, palette),
+                    _buildInfoRow(Icons.health_and_safety_rounded, "الفائدة الصحية", info.healthBenefit, palette),
+                    _buildInfoRow(Icons.child_care_rounded, "معلومة محببة للصغار", info.funChildFact, palette),
+                    _buildInfoRow(Icons.hearing_rounded, "نداء الأذان", info.adhanFeature, palette),
+                    _buildInfoRow(Icons.star_rounded, "السور المستحبة", info.recommendedSurahs, palette),
+                    _buildInfoRow(Icons.history_edu_rounded, "حدث تاريخي إسلامي", info.historicalEvent, palette),
+                  ],
+                ),
+              ),
             ],
           ),
         );
@@ -367,13 +394,13 @@ class _Prayer22DetailsSheetState extends State<Prayer22DetailsSheet> {
             ? "من نام عن صلاة أو نسيها فليصلها إذا ذكرها، وتصفح فضائلها وسننها وأذكارها أدناه."
             : "استعد لها بإسباغ الوضوء وترديد الأذان والدعاء بعده.");
 
-    return Container(
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forExtraSection(59),
+      isDark: palette.isDark,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-      decoration: BoxDecoration(
-        color: statusColor.withOpacity(palette.isDark ? 0.14 : 0.10),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: statusColor.withOpacity(0.5)),
-      ),
+      borderRadius: 16,
+      borderColor: statusColor.withOpacity(0.55),
+      imageOpacity: 0.42,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -436,13 +463,13 @@ class _Prayer22DetailsSheetState extends State<Prayer22DetailsSheet> {
     ThemePalette palette,
   ) {
     final accent = palette.accentColor;
-    return Container(
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forExtraSection(60 + (title.hashCode.abs() % 18)),
+      isDark: palette.isDark,
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: palette.cardColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: palette.dividerColor),
-      ),
+      borderRadius: 14,
+      borderColor: accent.withOpacity(0.35),
+      imageOpacity: palette.isDark ? 0.34 : 0.28,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

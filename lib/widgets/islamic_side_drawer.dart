@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/islamic_audio_data.dart';
 import '../providers/audio_player_provider.dart';
 import '../providers/firdaws_user_provider.dart';
@@ -17,6 +18,7 @@ import '../theme/islamic_theme.dart';
 import 'audio_download_manager_sheet.dart';
 import 'firdaws_3d_ui.dart';
 import 'firdaws_brand_logo.dart';
+import 'firdaws_resilient_image.dart';
 import 'unified_theme_hub.dart';
 import 'user_profile_editor_sheet.dart';
 
@@ -74,12 +76,14 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
         child: Column(
           children: [
             // 1. رأس القائمة الفاخر مع اسم التطبيق "الفردوس" وصورة المستخدم وبياناته واللقب
-            Container(
+            Firdaws4KCardShell(
+              backdrop: Background500Catalog.forExtraSection(1),
+              isDark: palette.isDark,
+              borderColor: accent.withOpacity(0.35),
+              borderRadius: 0,
+              borderWidth: 1.0,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: palette.cardColor.withOpacity(0.95),
-                border: Border(bottom: BorderSide(color: accent.withOpacity(0.35))),
-              ),
+              imageOpacity: 0.40,
               child: Column(
                 children: [
                   Row(
@@ -586,19 +590,15 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                   nav.pop();
                   nav.push(MaterialPageRoute(builder: (_) => const QuranReaderScreen()));
                 },
-                child: Container(
+                child: Firdaws4KCardShell(
+                  backdrop: Background500Catalog.forExtraSection(1),
+                  isDark: palette.isDark,
+                  borderColor: accent,
+                  borderRadius: 16,
+                  borderWidth: 1.4,
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        accent.withOpacity(palette.isDark ? 0.28 : 0.18),
-                        palette.cardColor,
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: accent, width: 1.4),
-                  ),
+                  imageOpacity: 0.42,
                   child: Row(
                     children: [
                       Container(
@@ -640,14 +640,15 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                     Navigator.of(context).pop();
                     showAudioDownloadManagerSheet(context);
                   },
-                  child: Container(
+                  child: Firdaws4KCardShell(
+                    backdrop: Background500Catalog.forExtraSection(3),
+                    isDark: palette.isDark,
+                    borderColor: offlineBadgeColor.withOpacity(0.55),
+                    borderRadius: 14,
+                    borderWidth: 1.1,
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                    decoration: BoxDecoration(
-                      color: offlineBadgeColor.withOpacity(0.14),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: offlineBadgeColor.withOpacity(0.55)),
-                    ),
+                    imageOpacity: 0.34,
                     child: Row(
                       children: [
                         Icon(Icons.download_for_offline_rounded, color: offlineBadgeColor, size: 20),
@@ -686,18 +687,15 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
         final isOfflineReady = player.isSurahOfflineReady(surah.number);
         final downloadProg = player.downloadProgressFor(cacheKey);
 
-        return Container(
+        return Firdaws4KCardShell(
+          backdrop: Background500Catalog.forExtraSection(surah.number),
+          isDark: palette.isDark,
+          borderColor: isCurrent ? accent : palette.dividerColor,
+          borderRadius: 14,
+          borderWidth: isCurrent ? 1.4 : 0.8,
           margin: const EdgeInsets.only(bottom: 6),
-          decoration: BoxDecoration(
-            color: isCurrent
-                ? accent.withOpacity(palette.isDark ? 0.18 : 0.14)
-                : palette.cardColor.withOpacity(0.85),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isCurrent ? accent : palette.dividerColor,
-              width: isCurrent ? 1.4 : 0.8,
-            ),
-          ),
+          padding: EdgeInsets.zero,
+          imageOpacity: isCurrent ? 0.38 : 0.25,
           child: ListTile(
             dense: true,
             contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
@@ -862,19 +860,15 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
         final isOfflineReady = player.isItemOfflineReady(item.id, item.localAsset);
         final downloadProg = player.downloadProgressFor(item.id);
 
-        return Container(
+        return Firdaws4KCardShell(
+          backdrop: Background500Catalog.forExtraSection(10 + idx),
+          isDark: palette.isDark,
+          borderColor: isCurrent ? accent : palette.dividerColor,
+          borderRadius: 16,
+          borderWidth: isCurrent ? 1.5 : 1.0,
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: isCurrent
-                ? accent.withOpacity(palette.isDark ? 0.18 : 0.14)
-                : palette.cardColor.withOpacity(0.90),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isCurrent ? accent : palette.dividerColor,
-              width: isCurrent ? 1.5 : 1.0,
-            ),
-          ),
+          imageOpacity: isCurrent ? 0.40 : 0.28,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1037,18 +1031,15 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
         final isOfflineReady = player.isItemOfflineReady(item.id, item.localAsset);
         final downloadProg = player.downloadProgressFor(item.id);
 
-        return Container(
+        return Firdaws4KCardShell(
+          backdrop: Background500Catalog.forExtraSection(25 + idx),
+          isDark: palette.isDark,
+          borderColor: isCurrent ? accent : palette.dividerColor,
+          borderRadius: 14,
+          borderWidth: isCurrent ? 1.4 : 0.8,
           margin: const EdgeInsets.only(bottom: 8),
-          decoration: BoxDecoration(
-            color: isCurrent
-                ? accent.withOpacity(palette.isDark ? 0.18 : 0.14)
-                : palette.cardColor.withOpacity(0.88),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isCurrent ? accent : palette.dividerColor,
-              width: isCurrent ? 1.4 : 0.8,
-            ),
-          ),
+          padding: EdgeInsets.zero,
+          imageOpacity: isCurrent ? 0.38 : 0.26,
           child: ListTile(
             dense: true,
             leading: Icon(Icons.music_note_rounded, color: isCurrent ? accent : palette.textSecondary),

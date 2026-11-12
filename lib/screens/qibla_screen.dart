@@ -5,11 +5,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:adhan/adhan.dart';
 import 'package:provider/provider.dart';
+import '../models/backgrounds_500_catalog.dart';
+import '../models/hasanat_store_catalog.dart';
+import '../providers/hasanat_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../utils/compass_utils.dart';
+import '../widgets/firdaws_resilient_image.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/real_mosque_background.dart';
+import 'hasanat_store_screen.dart';
 
 enum CompassSkinStyle {
   whiteSmartDial, // الأبيض الناصع الذكي
@@ -66,6 +71,12 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
     final myLocation = Coordinates(settings.latitude, settings.longitude);
     final qiblaDirection = Qibla(myLocation).direction;
 
+    HasanatSkinItem? storeCompassSkin;
+    try {
+      storeCompassSkin = Provider.of<HasanatProvider>(context)
+          .equippedSkin(StoreItemCategory.compassSkin);
+    } catch (_) {}
+
     return Scaffold(
       backgroundColor: palette.scaffoldColor,
       extendBodyBehindAppBar: true,
@@ -75,9 +86,28 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
         centerTitle: true,
         title: const Text(
           "بوصلة القبلة الذكية • الفردوس",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
         ),
         actions: [
+          IconButton(
+            tooltip: 'متجر ٥٠٠ سكن للقبلة 🧭',
+            icon: Icon(
+              Icons.palette_rounded,
+              color: (storeCompassSkin != null &&
+                      !storeCompassSkin.isDefaultUnlocked)
+                  ? storeCompassSkin.primaryColor
+                  : accentColor,
+            ),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const HasanatStoreScreen(
+                  initialCategory: StoreItemCategory.compassSkin,
+                ),
+              ),
+            ),
+          ),
           if (kIsWeb)
             IconButton(
               icon: Icon(
@@ -115,6 +145,7 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
                     palette: palette,
                     fontFamily: settings.selectedFont,
                     isSimulated: true,
+                    storeCompassSkin: storeCompassSkin,
                   )
                 : StreamBuilder<CompassEvent>(
                     stream: FlutterCompass.events,
@@ -123,13 +154,13 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
                         return Center(
                           child: Padding(
                             padding: const EdgeInsets.all(24),
-                            child: Container(
+                            child: Firdaws4KCardShell(
+                              backdrop: Background500Catalog.forExtraSection(20),
+                              isDark: isNight,
+                              borderRadius: 22,
+                              borderColor: accentColor.withOpacity(0.45),
                               padding: const EdgeInsets.all(22),
-                              decoration: BoxDecoration(
-                                color: palette.cardColor.withOpacity(isNight ? 0.84 : 0.92),
-                                borderRadius: BorderRadius.circular(22),
-                                border: Border.all(color: accentColor.withOpacity(0.4)),
-                              ),
+                              imageOpacity: isNight ? 0.50 : 0.38,
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -176,6 +207,7 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
                         palette: palette,
                         fontFamily: settings.selectedFont,
                         isSimulated: false,
+                        storeCompassSkin: storeCompassSkin,
                       );
                     },
                   ),
@@ -192,8 +224,14 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
     required ThemePalette palette,
     required String fontFamily,
     required bool isSimulated,
+    HasanatSkinItem? storeCompassSkin,
   }) {
-    final accentColor = palette.accentColor;
+    final bool hasStoreSkin =
+        storeCompassSkin != null && !storeCompassSkin.isDefaultUnlocked;
+    final Color accentColor =
+        hasStoreSkin ? storeCompassSkin.primaryColor : palette.accentColor;
+    final Color secondarySkinColor =
+        hasStoreSkin ? storeCompassSkin.secondaryColor : palette.primaryColor;
 
     // الفرق الموجّه (-180..+180): موجب = أدر يميناً، سالب = أدر يساراً
     final double signedDiff = ((qiblaDirection - heading + 540) % 360) - 180;
@@ -219,40 +257,81 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 95),
       child: Column(
         children: [
-          // 1. بطاقة الإحداثيات والتوجيه العلوي الواضح
+          // 1. بطاقة الإحداثيات والتوجيه العلوي الواضح بخلفية إسلامية 4K
           _buildDirectionStatsHeader(
             qiblaDirection: qiblaDirection,
             heading: heading,
             signedDiff: signedDiff,
             isFacingMecca: isFacingMecca,
             palette: palette,
+            skinAccent: accentColor,
           ),
 
           const SizedBox(height: 8),
 
-          // شارة الثيم النشط وخلفية 4K المرافقة للبوصلة
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: palette.cardColor.withOpacity(palette.isDark ? 0.80 : 0.90),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: accentColor.withOpacity(0.38)),
+          // شارة الثيم النشط + سكن القبلة (500 سكن) داخل قالب 4K إسلامي
+          Firdaws4KCardShell(
+            backdrop: Background500Catalog.forExtraSection(23),
+            isDark: palette.isDark,
+            borderRadius: 16,
+            borderColor: accentColor.withOpacity(0.45),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            imageOpacity: palette.isDark ? 0.50 : 0.38,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const HasanatStoreScreen(
+                  initialCategory: StoreItemCategory.compassSkin,
+                ),
+              ),
             ),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(themeOption.icon, color: accentColor, size: 15),
+                Icon(themeOption.icon, color: accentColor, size: 16),
                 const SizedBox(width: 6),
-                Flexible(
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'أجواء القبلة: ${themeOption.name} • ${themeOption.landmarkName}',
+                        style: TextStyle(
+                          color: palette.textPrimary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        hasStoreSkin
+                            ? '🧭 السكن المجهّز: ${storeCompassSkin.name}'
+                            : '🎨 متاح ٥٠٠ سكن بوصلة في المتجر — اضغط للتخصيص',
+                        style: TextStyle(
+                          color: accentColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: accentColor.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: accentColor.withOpacity(0.5)),
+                  ),
                   child: Text(
-                    'أجواء القبلة: ${themeOption.name} • ${themeOption.landmarkName}',
+                    '٥٠٠ سكن',
                     style: TextStyle(
-                      color: palette.textSecondary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
+                      color: accentColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 10,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -261,11 +340,12 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
 
           const SizedBox(height: 10),
 
-          // 2. شارة السهم العلوي الإرشادية الصريحة ("سهم للسهولة")
+          // 2. شارة السهم العلوي الإرشادية الصريحة ("سهم للسهولة") بخلفية 4K
           _buildTurnGuidanceBanner(
             signedDiff: signedDiff,
             isFacingMecca: isFacingMecca,
             palette: palette,
+            skinAccent: accentColor,
           ),
 
           const SizedBox(height: 10),
@@ -290,14 +370,14 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
             ],
           ),
 
-          // 4. البوصلة المكبّرة + سهم القبلة الكبير + أسهم الدوران المنحنية حول الإطار
+          // 4. البوصلة المكبّرة + إطار إسلامي 4K دائري + سهم القبلة الكبير + أسهم الدوران
           SizedBox(
             width: outerSize,
             height: outerSize,
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // هالة الإشعاع عند مواجهة القبلة
+                // هالة الإشعاع عند مواجهة القبلة أو سكن المتجر
                 AnimatedBuilder(
                   animation: _glowAnimation,
                   builder: (context, _) {
@@ -317,13 +397,30 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
                               ]
                             : [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(palette.isDark ? 0.55 : 0.16),
-                                  blurRadius: 22,
+                                  color: hasStoreSkin
+                                      ? accentColor.withOpacity(0.32)
+                                      : Colors.black.withOpacity(palette.isDark ? 0.55 : 0.16),
+                                  blurRadius: 24,
+                                  spreadRadius: hasStoreSkin ? 2 : 0,
                                 ),
                               ],
                       ),
                     );
                   },
+                ),
+
+                // طبقة دائرية إسلامية 4K كإطار زخرفي خلف القرص
+                ClipOval(
+                  child: SizedBox(
+                    width: dialSize + 12,
+                    height: dialSize + 12,
+                    child: Opacity(
+                      opacity: 0.42,
+                      child: FirdawsResilientImage.entry(
+                        Background500Catalog.forExtraSection(22),
+                      ),
+                    ),
+                  ),
                 ),
 
                 // أسهم التوجيه المنحنية الخارجية (يميناً أو يساراً) حول الإطار
@@ -342,7 +439,7 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
                     },
                   ),
 
-                // قرص البوصلة الدوّار بالمقاسات الكبيرة والواضحة والدرجات
+                // قرص البوصلة الدوّار بالمقاسات الكبيرة والواضحة والدرجات + بصمة السكن
                 Transform.rotate(
                   angle: dialAngle,
                   child: CustomPaint(
@@ -350,7 +447,9 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
                     painter: _LargeDialPainter(
                       skin: _selectedSkin,
                       fontFamily: fontFamily,
-                      themeAccent: palette.accentColor,
+                      themeAccent: accentColor,
+                      customRimColor: hasStoreSkin ? accentColor : null,
+                      customSubtleRing: hasStoreSkin ? secondarySkinColor : null,
                     ),
                   ),
                 ),
@@ -372,21 +471,14 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
 
           const SizedBox(height: 16),
 
-          // 5. شريط أشكال البوصلة الخمسة
-          Container(
+          // 5. شريط أشكال البوصلة الخمسة داخل قالب إسلامي 4K
+          Firdaws4KCardShell(
+            backdrop: Background500Catalog.forExtraSection(25),
+            isDark: palette.isDark,
+            borderRadius: 28,
+            borderColor: accentColor.withOpacity(0.45),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: palette.cardColor.withOpacity(palette.isDark ? 0.84 : 0.90),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: palette.dividerColor),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(palette.isDark ? 0.45 : 0.10),
-                  blurRadius: 14,
-                  offset: const Offset(0, 4),
-                )
-              ],
-            ),
+            imageOpacity: palette.isDark ? 0.50 : 0.36,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -425,16 +517,16 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
             ),
           ),
 
-          // 6. محاكي التدوير اليدوي (مفيد في الويب والمعاينة)
+          // 6. محاكي التدوير اليدوي (مفيد في الويب والمعاينة) بخلفية إسلامية 4K
           if (isSimulated) ...[
             const SizedBox(height: 14),
-            Container(
+            Firdaws4KCardShell(
+              backdrop: Background500Catalog.forExtraSection(26),
+              isDark: palette.isDark,
+              borderRadius: 18,
+              borderColor: accentColor.withOpacity(0.45),
               padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: palette.cardColor.withOpacity(palette.isDark ? 0.84 : 0.90),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: accentColor.withOpacity(0.4)),
-              ),
+              imageOpacity: palette.isDark ? 0.45 : 0.34,
               child: Column(
                 children: [
                   Row(
@@ -485,51 +577,54 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
     required double signedDiff,
     required bool isFacingMecca,
     required ThemePalette palette,
+    Color? skinAccent,
   }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: palette.cardColor.withOpacity(palette.isDark ? 0.84 : 0.90),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: (isFacingMecca ? const Color(0xFF10B981) : palette.accentColor)
-              .withOpacity(0.45),
-          width: 1.4,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(palette.isDark ? 0.45 : 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          )
-        ],
-      ),
+    final effectiveAccent = skinAccent ?? palette.accentColor;
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forExtraSection(21),
+      isDark: palette.isDark,
+      borderRadius: 20,
+      borderWidth: 1.4,
+      borderColor:
+          (isFacingMecca ? const Color(0xFF10B981) : effectiveAccent)
+              .withOpacity(0.55),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      imageOpacity: palette.isDark ? 0.48 : 0.36,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatPill(
-            label: "زاوية القبلة",
-            value: "${qiblaDirection.toStringAsFixed(1)}°",
-            icon: Icons.mosque_rounded,
-            color: palette.accentColor,
-            palette: palette,
+          Expanded(
+            child: _buildStatPill(
+              label: "زاوية القبلة",
+              value: "${qiblaDirection.toStringAsFixed(1)}°",
+              icon: Icons.mosque_rounded,
+              color: effectiveAccent,
+              palette: palette,
+            ),
           ),
           Container(width: 1, height: 34, color: palette.dividerColor),
-          _buildStatPill(
-            label: "اتجاه الهاتف",
-            value: "${((heading % 360) + 360) % 360 ~/ 1}°",
-            icon: Icons.explore_rounded,
-            color: palette.textPrimary,
-            palette: palette,
+          Expanded(
+            child: _buildStatPill(
+              label: "اتجاه الهاتف",
+              value: "${((heading % 360) + 360) % 360 ~/ 1}°",
+              icon: Icons.explore_rounded,
+              color: palette.textPrimary,
+              palette: palette,
+            ),
           ),
           Container(width: 1, height: 34, color: palette.dividerColor),
-          _buildStatPill(
-            label: "زاوية الدوران",
-            value: "${signedDiff.abs().round()}°",
-            icon: isFacingMecca ? Icons.verified_rounded : Icons.rotate_right_rounded,
-            color: isFacingMecca ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
-            palette: palette,
+          Expanded(
+            child: _buildStatPill(
+              label: "زاوية الدوران",
+              value: "${signedDiff.abs().round()}°",
+              icon: isFacingMecca
+                  ? Icons.verified_rounded
+                  : Icons.rotate_right_rounded,
+              color: isFacingMecca
+                  ? const Color(0xFF10B981)
+                  : const Color(0xFFF59E0B),
+              palette: palette,
+            ),
           ),
         ],
       ),
@@ -551,15 +646,21 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
           children: [
             Icon(icon, color: color, size: 15),
             const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(color: palette.textMuted, fontSize: 11),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: palette.textMuted, fontSize: 11),
+              ),
             ),
           ],
         ),
         const SizedBox(height: 3),
         Text(
           value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             color: color,
             fontSize: 16,
@@ -574,75 +675,73 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
     required double signedDiff,
     required bool isFacingMecca,
     required ThemePalette palette,
+    Color? skinAccent,
   }) {
     final bool turnRight = signedDiff > 0;
     final int deg = signedDiff.abs().round();
+    final Color activeAccent = skinAccent ?? palette.accentColor;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: isFacingMecca
-            ? const Color(0xFF10B981)
-            : palette.accentColor.withOpacity(palette.isDark ? 0.16 : 0.12),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isFacingMecca ? const Color(0xFF34D399) : palette.accentColor,
-          width: 1.6,
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forExtraSection(24),
+      isDark: palette.isDark || isFacingMecca,
+      borderRadius: 18,
+      borderWidth: 1.6,
+      borderColor: isFacingMecca ? const Color(0xFF34D399) : activeAccent,
+      padding: EdgeInsets.zero,
+      imageOpacity: isFacingMecca ? 0.56 : (palette.isDark ? 0.45 : 0.35),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isFacingMecca
+              ? const Color(0xFF10B981).withOpacity(0.68)
+              : activeAccent.withOpacity(palette.isDark ? 0.14 : 0.08),
+          borderRadius: BorderRadius.circular(18),
         ),
-        boxShadow: isFacingMecca
-            ? [
-                BoxShadow(
-                  color: const Color(0xFF10B981).withOpacity(0.45),
-                  blurRadius: 16,
-                  spreadRadius: 1,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (!isFacingMecca && !turnRight)
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Icon(
+                  Icons.arrow_circle_left_rounded,
+                  color: activeAccent,
+                  size: 28,
                 ),
-              ]
-            : null,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (!isFacingMecca && !turnRight)
-            Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: Icon(
-                Icons.arrow_circle_left_rounded,
-                color: palette.accentColor,
-                size: 28,
+              ),
+            if (isFacingMecca)
+              const Padding(
+                padding: EdgeInsets.only(left: 8),
+                child: Icon(Icons.check_circle_rounded, color: Colors.white, size: 24),
+              ),
+            Flexible(
+              child: Text(
+                isFacingMecca
+                    ? "أنت الآن تواجه الكعبة المشرفة مباشرة 🕋"
+                    : (turnRight
+                        ? "أدر الهاتف لليمين بمقدار $deg° نحو السهم الأخضر"
+                        : "أدر الهاتف لليسار بمقدار $deg° نحو السهم الأخضر"),
+                style: TextStyle(
+                  color: isFacingMecca ? Colors.white : palette.textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
               ),
             ),
-          if (isFacingMecca)
-            const Padding(
-              padding: EdgeInsets.only(left: 8),
-              child: Icon(Icons.check_circle_rounded, color: Colors.white, size: 24),
-            ),
-          Flexible(
-            child: Text(
-              isFacingMecca
-                  ? "أنت الآن تواجه الكعبة المشرفة مباشرة 🕋"
-                  : (turnRight
-                      ? "أدر الهاتف لليمين بمقدار $deg° نحو السهم الأخضر"
-                      : "أدر الهاتف لليسار بمقدار $deg° نحو السهم الأخضر"),
-              style: TextStyle(
-                color: isFacingMecca ? Colors.white : palette.textPrimary,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
+            if (!isFacingMecca && turnRight)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Icon(
+                  Icons.arrow_circle_right_rounded,
+                  color: activeAccent,
+                  size: 28,
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          if (!isFacingMecca && turnRight)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: Icon(
-                Icons.arrow_circle_right_rounded,
-                color: palette.accentColor,
-                size: 28,
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -697,11 +796,15 @@ class _LargeDialPainter extends CustomPainter {
   final CompassSkinStyle skin;
   final String fontFamily;
   final Color themeAccent;
+  final Color? customRimColor;
+  final Color? customSubtleRing;
 
   _LargeDialPainter({
     required this.skin,
     required this.fontFamily,
     required this.themeAccent,
+    this.customRimColor,
+    this.customSubtleRing,
   });
 
   @override
@@ -751,6 +854,13 @@ class _LargeDialPainter extends CustomPainter {
         cardinalColor = Colors.white;
         subtleRingColor = const Color(0xFF1E293B);
         break;
+    }
+
+    if (customRimColor != null) {
+      rimColor = customRimColor!;
+    }
+    if (customSubtleRing != null) {
+      subtleRingColor = customSubtleRing!.withOpacity(0.55);
     }
 
     // الإطار والوجه
@@ -874,7 +984,9 @@ class _LargeDialPainter extends CustomPainter {
   bool shouldRepaint(covariant _LargeDialPainter oldDelegate) {
     return oldDelegate.skin != skin ||
         oldDelegate.fontFamily != fontFamily ||
-        oldDelegate.themeAccent != themeAccent;
+        oldDelegate.themeAccent != themeAccent ||
+        oldDelegate.customRimColor != customRimColor ||
+        oldDelegate.customSubtleRing != customSubtleRing;
   }
 }
 

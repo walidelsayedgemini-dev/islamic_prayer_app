@@ -135,17 +135,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       itemBuilder: (_, idx) {
                         final city = filtered[idx];
                         final selected = settings.cityName == city.name;
-                        return Container(
+                        return Firdaws4KCardShell(
+                          backdrop: Background500Catalog.forSettingsSection(idx % 30),
+                          isDark: palette.isDark,
+                          borderColor: selected ? accent : palette.dividerColor,
+                          borderRadius: 14,
+                          borderWidth: selected ? 1.5 : 1.0,
                           margin: const EdgeInsets.only(bottom: 8),
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? accent.withOpacity(0.16)
-                                : palette.cardColor,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: selected ? accent : palette.dividerColor,
-                            ),
-                          ),
+                          padding: EdgeInsets.zero,
+                          imageOpacity: selected ? 0.36 : 0.24,
                           child: ListTile(
                             dense: true,
                             leading: Icon(
@@ -354,18 +352,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           itemBuilder: (_, idx) {
                             final fx = filtered[idx];
                             final isSel = settings.touchEffectNumber == fx.number;
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              decoration: BoxDecoration(
-                                color: isSel
-                                    ? fx.primaryColor.withOpacity(0.16)
-                                    : palette.cardColor,
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                  color: isSel ? fx.primaryColor : palette.dividerColor,
-                                  width: isSel ? 1.8 : 1.0,
-                                ),
+                            return Firdaws4KCardShell(
+                              backdrop: Background500Catalog.forSettingsSection(
+                                fx.number % 30,
                               ),
+                              isDark: palette.isDark,
+                              borderColor: isSel ? fx.primaryColor : palette.dividerColor,
+                              borderRadius: 14,
+                              borderWidth: isSel ? 1.8 : 1.0,
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: EdgeInsets.zero,
+                              imageOpacity: isSel ? 0.38 : 0.26,
                               child: ListTile(
                                 dense: true,
                                 leading: Container(
@@ -561,24 +558,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             final isSelected = settings.selectedFont == font.family;
                             final fontNumber = FontCatalog.allFonts.indexOf(font) + 1;
 
-                            return GestureDetector(
+                            return Firdaws4KCardShell(
+                              backdrop: Background500Catalog.forSettingsSection(
+                                fontNumber % 30,
+                              ),
+                              isDark: palette.isDark,
+                              borderColor: isSelected ? accent : palette.dividerColor,
+                              borderRadius: 18,
+                              borderWidth: isSelected ? 2.0 : 1.0,
+                              margin: const EdgeInsets.only(bottom: 10),
+                              padding: const EdgeInsets.all(14),
+                              imageOpacity: isSelected ? 0.40 : 0.28,
                               onTap: () {
                                 settings.setFont(font.family);
                               },
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 10),
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? accent.withOpacity(palette.isDark ? 0.16 : 0.12)
-                                      : palette.cardColor,
-                                  borderRadius: BorderRadius.circular(18),
-                                  border: Border.all(
-                                    color: isSelected ? accent : palette.dividerColor,
-                                    width: isSelected ? 2.0 : 1.0,
-                                  ),
-                                ),
-                                child: Column(
+                              child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
@@ -635,25 +629,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ],
                                     ),
                                     const SizedBox(height: 8),
-                                    Container(
-                                      width: double.infinity,
+                                    Firdaws4KCardShell(
+                                      backdrop: Background500Catalog.forExtraSection(
+                                        fontNumber,
+                                      ),
+                                      isDark: palette.isDark,
+                                      borderColor: palette.dividerColor,
+                                      borderRadius: 12,
+                                      borderWidth: 1.0,
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 12,
                                         vertical: 9,
                                       ),
-                                      decoration: BoxDecoration(
-                                        color: palette.elevatedCardColor,
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(color: palette.dividerColor),
-                                      ),
-                                      child: Text(
-                                        "الفَرْدَوْسُ • سُبْحَانَ اللَّهِ وَبِحَمْدِهِ ١٢:٤٥",
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontFamily: font.family,
-                                          color: palette.textPrimary,
-                                          fontSize: 15.5,
-                                          height: 1.5,
+                                      imageOpacity: 0.25,
+                                      child: SizedBox(
+                                        width: double.infinity,
+                                        child: Text(
+                                          "الفَرْدَوْسُ • سُبْحَانَ اللَّهِ وَبِحَمْدِهِ ١٢:٤٥",
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontFamily: font.family,
+                                            color: palette.textPrimary,
+                                            fontSize: 15.5,
+                                            height: 1.5,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -667,8 +666,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ),
                                   ],
                                 ),
-                              ),
-                            );
+                              );
                           },
                         ),
                       ),
@@ -1501,23 +1499,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
               const SizedBox(height: 8),
-              Container(
+              SizedBox(
                 height: 76,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      accentColor.withOpacity(0.14),
-                      palette.elevatedCardColor,
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: accentColor.withOpacity(0.45)),
-                ),
-                child: Center(
-                  child: Text(
-                    "🎨✨ المس أو اسحب أصبعك / الماوس هنا لتجربة التأثير النشط مباشرة!",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 12),
+                child: Firdaws4KCardShell(
+                  backdrop: Background500Catalog.forSettingsSection(18),
+                  isDark: palette.isDark,
+                  borderColor: accentColor.withOpacity(0.45),
+                  borderRadius: 14,
+                  borderWidth: 1.1,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  imageOpacity: 0.36,
+                  child: Center(
+                    child: Text(
+                      "🎨✨ المس أو اسحب أصبعك / الماوس هنا لتجربة التأثير النشط مباشرة!",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
                   ),
                 ),
               ),

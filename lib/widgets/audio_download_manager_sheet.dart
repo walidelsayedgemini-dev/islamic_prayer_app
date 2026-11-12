@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/islamic_audio_data.dart';
 import '../providers/audio_player_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
+import 'firdaws_resilient_image.dart';
 
 void showAudioDownloadManagerSheet(BuildContext context) {
   showModalBottomSheet(
@@ -112,31 +114,36 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
           if (!player.supportsOfflineDownload)
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Container(
+              child: Firdaws4KCardShell(
+                backdrop: Background500Catalog.forExtraSection(3),
+                isDark: palette.isDark,
+                borderColor: accent.withOpacity(0.45),
+                borderRadius: 16,
+                borderWidth: 1.0,
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: palette.cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: accent.withOpacity(0.45)),
-                ),
-                child: Text(
-                  'ميزة تنزيل السور على الهاتف متاحة داخل تطبيق الأندرويد؛ وعلى الويب يتم البث المباشر الفوري.',
-                  style: TextStyle(color: palette.textPrimary, fontSize: 12.5),
-                  textAlign: TextAlign.center,
+                imageOpacity: 0.36,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Text(
+                    'ميزة تنزيل السور على الهاتف متاحة داخل تطبيق الأندرويد؛ وعلى الويب يتم البث المباشر الفوري.',
+                    style: TextStyle(color: palette.textPrimary, fontSize: 12.5),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
             )
           else ...[
             // شريط التحميل الجماعي النشط
             if (player.isBatchDownloading)
-              Container(
+              Firdaws4KCardShell(
+                backdrop: Background500Catalog.forExtraSection(4),
+                isDark: palette.isDark,
+                borderColor: accent,
+                borderRadius: 16,
+                borderWidth: 1.2,
                 margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: accent.withOpacity(0.14),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: accent),
-                ),
+                imageOpacity: 0.38,
                 child: Column(
                   children: [
                     Row(
@@ -363,18 +370,17 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
           final isDownloaded = player.isTrackDownloaded(key);
           final progress = player.downloadProgressFor(key);
 
-          return Container(
+          return Firdaws4KCardShell(
+            backdrop: Background500Catalog.forExtraSection(s.number),
+            isDark: palette.isDark,
+            borderColor: (isBundled || isDownloaded)
+                ? accent.withOpacity(0.55)
+                : palette.dividerColor,
+            borderRadius: 14,
+            borderWidth: 1.0,
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: palette.cardColor,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: (isBundled || isDownloaded)
-                    ? accent.withOpacity(0.55)
-                    : palette.dividerColor,
-              ),
-            ),
+            imageOpacity: (isBundled || isDownloaded) ? 0.36 : 0.25,
             child: Row(
               children: [
                 CircleAvatar(
@@ -534,16 +540,17 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
     final downloaded = player.isTrackDownloaded(id);
     final progress = player.downloadProgressFor(id);
 
-    return Container(
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forExtraSection(
+        10 + (id.hashCode.abs() % 30),
+      ),
+      isDark: palette.isDark,
+      borderColor: downloaded ? accent.withOpacity(0.55) : palette.dividerColor,
+      borderRadius: 16,
+      borderWidth: 1.0,
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: palette.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: downloaded ? accent.withOpacity(0.55) : palette.dividerColor,
-        ),
-      ),
+      imageOpacity: downloaded ? 0.38 : 0.28,
       child: Row(
         children: [
           IconButton(

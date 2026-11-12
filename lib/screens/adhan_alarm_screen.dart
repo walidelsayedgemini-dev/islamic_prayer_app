@@ -3,9 +3,11 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/islamic_audio_data.dart';
 import '../providers/settings_provider.dart';
 import '../services/firdaws_native_service.dart';
+import '../widgets/firdaws_resilient_image.dart';
 
 /// شاشة منبه الأذان المتواصل بصوت المؤذن المختار
 /// لا تتوقف إلا عند:
@@ -175,20 +177,19 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen>
                   child: Column(
                     children: [
                       const SizedBox(height: 10),
-                      Container(
+                      Firdaws4KCardShell(
+                        backdrop: Background500Catalog.forExtraSection(35),
+                        isDark: true,
+                        borderRadius: 24,
+                        borderColor: const Color(0xFF38BDF8).withOpacity(0.55),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 14,
                           vertical: 7,
                         ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF38BDF8).withOpacity(0.16),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: const Color(0xFF38BDF8).withOpacity(0.45),
-                          ),
-                        ),
+                        imageOpacity: 0.45,
                         child: const Text(
                           '🕌 منبه الأذان المتواصل • حيّ على الفلاح',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Color(0xFFE0F2FE),
                             fontSize: 13,
@@ -254,18 +255,16 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen>
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Container(
+                      Firdaws4KCardShell(
+                        backdrop: Background500Catalog.forExtraSection(36),
+                        isDark: true,
+                        borderRadius: 16,
+                        borderColor: Colors.white.withOpacity(0.28),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 14,
                           vertical: 10,
                         ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.18),
-                          ),
-                        ),
+                        imageOpacity: 0.42,
                         child: Text(
                           _statusBanner,
                           textAlign: TextAlign.center,
@@ -276,7 +275,7 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen>
                         ),
                       ),
                       const Spacer(),
-                      // شريط السحب + تفعيل زر الإلغاء الإلزامي
+                      // شريط السحب + تفعيل زر الإلغاء الإلزامي بخلفية 4K إسلامية
                       if (!_swipedReady)
                         Dismissible(
                           key: const ValueKey('adhan_swipe_unlock'),
@@ -291,25 +290,17 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen>
                           },
                           background: _swipeBg(Alignment.centerLeft),
                           secondaryBackground: _swipeBg(Alignment.centerRight),
-                          child: Container(
-                            width: double.infinity,
+                          child: Firdaws4KCardShell(
+                            backdrop: Background500Catalog.forExtraSection(37),
+                            isDark: true,
+                            borderRadius: 22,
+                            borderWidth: 1.5,
+                            borderColor: const Color(0xFFD4AF37),
                             padding: const EdgeInsets.symmetric(
                               horizontal: 18,
                               vertical: 18,
                             ),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [
-                                  Color(0xFF0F3E32),
-                                  Color(0xFF14532D),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(22),
-                              border: Border.all(
-                                color: const Color(0xFFD4AF37),
-                                width: 1.5,
-                              ),
-                            ),
+                            imageOpacity: 0.55,
                             child: const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [

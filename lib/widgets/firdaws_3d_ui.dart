@@ -1,7 +1,12 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../models/backgrounds_500_catalog.dart';
+import '../models/hasanat_store_catalog.dart';
+import '../providers/hasanat_provider.dart';
 import '../theme/islamic_theme.dart';
+import 'firdaws_resilient_image.dart';
 
 /// دالة مساعدة لضبط التمييز النحوي العربي الصحيح للأعداد (مفرد، مثنى، جمع قلة، تمييز منصوب).
 String firdawsCountLabel(
@@ -88,7 +93,7 @@ Color firdawsCrispSecondaryText(ThemePalette palette) {
   return palette.textSecondary;
 }
 
-/// بطاقة حجمية حديثة ثلاثية الأبعاد (3D Volumetric Card) بحافة علوية لامعة وبروز سفلي عميق.
+/// بطاقة حجمية حديثة ثلاثية الأبعاد (3D Volumetric Card) بحافة علوية لامعة وبروز سفلي عميق وخلفية إسلامية 4K لكل قالب.
 class Firdaws3DCard extends StatelessWidget {
   final Widget child;
   final ThemePalette palette;
@@ -99,6 +104,10 @@ class Firdaws3DCard extends StatelessWidget {
   final VoidCallback? onTap;
   final bool useBlur;
   final double depth;
+  final Background4KEntry? backdrop;
+  final int? backdropSlot;
+  final bool showBackdrop;
+  final double backdropOpacity;
 
   const Firdaws3DCard({
     super.key,
@@ -111,35 +120,105 @@ class Firdaws3DCard extends StatelessWidget {
     this.onTap,
     this.useBlur = false,
     this.depth = 5.0,
+    this.backdrop,
+    this.backdropSlot,
+    this.showBackdrop = true,
+    this.backdropOpacity = 0.25,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = palette.isDark;
-    final accent = glowColor ?? firdawsModernAccent(palette);
-    final topColor = firdaws3DElevatedSurfaceColor(palette, opacity: isDark ? 0.90 : 0.96);
-    final bottomColor = firdaws3DSurfaceColor(palette, opacity: isDark ? 0.94 : 0.98);
+    HasanatSkinItem? cardSkin;
+    try {
+      cardSkin =
+          Provider.of<HasanatProvider>(context).equippedSkin(StoreItemCategory.cardSkin);
+    } catch (_) {}
+
+    final bool hasCustomCardSkin =
+        cardSkin != null && !cardSkin.isDefaultUnlocked;
+    final Color accent = glowColor ??
+        (hasCustomCardSkin ? cardSkin.primaryColor : firdawsModernAccent(palette));
+
+    final topColor = firdaws3DElevatedSurfaceColor(
+      palette,
+      opacity: showBackdrop ? (isDark ? 0.78 : 0.84) : (isDark ? 0.90 : 0.96),
+    );
+    final bottomColor = firdaws3DSurfaceColor(
+      palette,
+      opacity: showBackdrop ? (isDark ? 0.86 : 0.90) : (isDark ? 0.94 : 0.98),
+    );
+    final tintedTop = hasCustomCardSkin
+        ? Color.lerp(topColor, cardSkin.primaryColor, isDark ? 0.14 : 0.08)!
+        : topColor;
+    final tintedBottom = hasCustomCardSkin
+        ? Color.lerp(bottomColor, cardSkin.secondaryColor, isDark ? 0.10 : 0.06)!
+        : bottomColor;
     final baseRimColor = isDark
         ? Color.lerp(Colors.black, accent, 0.18)!
         : Color.lerp(palette.dividerColor, accent, 0.22)!;
 
-    Widget surface = Container(
-      padding: padding ?? const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(borderRadius),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [topColor, bottomColor],
+    final resolvedBackdrop = showBackdrop
+        ? (backdrop ??
+            (backdropSlot != null
+                ? Background500Catalog.bySlot(backdropSlot!)
+                : Background500Catalog.forExtraSection(
+                    ((glowColor?.value ?? 0) +
+                            borderRadius.round() * 7 +
+                            palette.primaryColor.value)
+                        .abs(),
+                  )))
+        : null;
+
+    final radius = BorderRadius.circular(borderRadius);
+    final resolvedPadding = padding ?? const EdgeInsets.all(15);
+
+    Widget innerContent = Stack(
+      fit: StackFit.passthrough,
+      children: [
+        if (resolvedBackdrop != null)
+          Positioned.fill(
+            child: Opacity(
+              opacity: backdropOpacity.clamp(0.10, 0.65),
+              child: FirdawsResilientImage.entry(resolvedBackdrop),
+            ),
+          ),
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [tintedTop, tintedBottom],
+              ),
+            ),
+          ),
         ),
+        Padding(
+          padding: resolvedPadding,
+          child: child,
+        ),
+      ],
+    );
+
+    if (useBlur) {
+      innerContent = BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: innerContent,
+      );
+    }
+
+    Widget surface = Container(
+      decoration: BoxDecoration(
+        borderRadius: radius,
         border: Border.all(
-          color: accent.withOpacity(isDark ? 0.34 : 0.26),
-          width: 1.2,
+          color: accent.withOpacity(isDark ? 0.38 : 0.28),
+          width: hasCustomCardSkin ? 1.45 : 1.2,
         ),
         boxShadow: [
           // انعكاس إضاءة علوي ثلاثي الأبعاد
           BoxShadow(
-            color: (isDark ? Colors.white : Colors.white).withOpacity(isDark ? 0.08 : 0.75),
+            color: Colors.white.withOpacity(isDark ? 0.08 : 0.75),
             blurRadius: 0,
             offset: const Offset(0, -1.2),
           ),
@@ -157,30 +236,23 @@ class Firdaws3DCard extends StatelessWidget {
           ),
           // توهج لوني خفيف
           BoxShadow(
-            color: accent.withOpacity(isDark ? 0.14 : 0.08),
+            color: accent.withOpacity(isDark ? 0.16 : 0.09),
             blurRadius: 22,
             spreadRadius: -2,
           ),
         ],
       ),
-      child: child,
+      child: ClipRRect(
+        borderRadius: radius,
+        child: innerContent,
+      ),
     );
-
-    if (useBlur) {
-      surface = ClipRRect(
-        borderRadius: BorderRadius.circular(borderRadius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: surface,
-        ),
-      );
-    }
 
     if (onTap != null) {
       surface = Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(borderRadius),
+          borderRadius: radius,
           onTap: () {
             HapticFeedback.selectionClick();
             onTap?.call();

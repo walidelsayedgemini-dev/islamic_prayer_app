@@ -69,11 +69,11 @@ class _JannatiGardenCanvasState extends State<JannatiGardenCanvas>
   late AnimationController _sproutController;
   final List<_GardenSpark> _tapBursts = [];
 
-  double _yaw = -0.10;
+  double _yaw = 0.0;
   double _pitch = 0.42;
-  double _zoom = 1.04;
+  double _zoom = 1.0;
   int _activeCameraPreset = 0;
-  bool _autoOrbit = true;
+  bool _autoOrbit = false;
   int _lastTreeCount = 0;
   String? _lastWarmBackdrop;
 
@@ -82,10 +82,12 @@ class _JannatiGardenCanvasState extends State<JannatiGardenCanvas>
     super.initState();
     _lastTreeCount =
         widget.palmsCount + widget.grovesCount + widget.tasbihOrchardTrees;
+    // إيقاف الحركة المستمرة لصور جنتي: تبقى ثابتة وهادئة بالاختيار اليدوي فقط
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 26),
-    )..repeat();
+      value: 0.0,
+    );
 
     _sproutController = AnimationController(
       vsync: this,
@@ -152,10 +154,10 @@ class _JannatiGardenCanvasState extends State<JannatiGardenCanvas>
           _autoOrbit = false;
           break;
         default:
-          _yaw = -0.10;
+          _yaw = 0.0;
           _pitch = 0.42;
-          _zoom = 1.04;
-          _autoOrbit = true;
+          _zoom = 1.0;
+          _autoOrbit = false;
           break;
       }
     });
@@ -252,26 +254,8 @@ class _JannatiGardenCanvasState extends State<JannatiGardenCanvas>
                   children: [
                     if (!hasCustomWp)
                       Positioned.fill(
-                        child: AnimatedBuilder(
-                          animation: _animController,
-                          builder: (context, child) {
-                            final orbitOffset = _autoOrbit
-                                ? math.sin(_animController.value * math.pi * 2) *
-                                    0.16
-                                : 0.0;
-                            final shiftX =
-                                (-((_yaw + orbitOffset) * 26.0)).clamp(-36.0, 36.0);
-                            final shiftY =
-                                ((_pitch - 0.42) * 20.0).clamp(-18.0, 18.0);
-                            final sc = 1.12 * _zoom.clamp(0.90, 1.35);
-                            return Transform.translate(
-                              offset: Offset(shiftX, shiftY),
-                              child: Transform.scale(
-                                scale: sc,
-                                child: child,
-                              ),
-                            );
-                          },
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 360),
                           child: FirdawsResilientImage.entry(
                             activeScenery,
                             key: ValueKey('jannati_bg_${activeScenery.id}'),

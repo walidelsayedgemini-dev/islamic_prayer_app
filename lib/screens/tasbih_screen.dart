@@ -4,7 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:adhan/adhan.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/events_missions_catalog.dart';
+import '../models/hasanat_store_catalog.dart';
 import '../models/tasbih_3d_phrases_200.dart';
 import '../models/tasbih_challenge.dart';
 import '../providers/firdaws_user_provider.dart';
@@ -15,6 +17,7 @@ import '../providers/family_challenge_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/firdaws_3d_ui.dart';
+import '../widgets/firdaws_resilient_image.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/real_mosque_background.dart';
 import '../widgets/tasbih_goal_effects.dart';
@@ -288,13 +291,218 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
       hasanat.recordMetric(EventMissionMetric.tasbihCount, delta: 1);
     } catch (_) {}
 
+    final settingsProv = Provider.of<SettingsProvider>(context, listen: false);
+    final bool backdropSwitched =
+        settingsProv.onTasbihCountChanged(_totalLifetimeTasbih);
+
     if (shouldTriggerEffect) {
       HapticFeedback.heavyImpact();
       _triggerGoalEffect(
         message: pendingEffectMessage,
       );
+    } else if (backdropSwitched) {
+      HapticFeedback.mediumImpact();
+      _showCelebrationBanner(
+        "🕌 ما شاء الله! أتممت $_totalLifetimeTasbih تسبيحة وتبدلت خلفية المسبحة إلى: ${settingsProv.activeTasbihBackdrop.title} (${settingsProv.selectedTasbihBackdropIndex + 1}/30)",
+      );
     }
     _saveTasbihState();
+  }
+
+  void _showTasbih30BackdropsSheet(
+    ThemePalette palette,
+    SettingsProvider settings,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (modalCtx) {
+        return StatefulBuilder(
+          builder: (modalCtx, setModalState) {
+            const entries = Background500Catalog.tasbihIslamic30;
+            final currentIdx = settings.selectedTasbihBackdropIndex;
+            final isDark = palette.isDark;
+            final remaining = 100 - (_totalLifetimeTasbih % 100);
+
+            return Directionality(
+              textDirection: TextDirection.rtl,
+              child: Container(
+                height: MediaQuery.of(context).size.height * 0.84,
+                decoration: BoxDecoration(
+                  color: palette.scaffoldColor,
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(28)),
+                  border: Border.all(
+                    color: palette.accentColor.withOpacity(0.45),
+                    width: 1.5,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    Container(
+                      width: 44,
+                      height: 4.5,
+                      decoration: BoxDecoration(
+                        color: palette.dividerColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                      child: Firdaws4KCardShell(
+                        backdrop: Background500Catalog.forTasbihStage(currentIdx),
+                        isDark: isDark,
+                        borderColor: palette.accentColor.withOpacity(0.55),
+                        padding: const EdgeInsets.all(12),
+                        imageOpacity: 0.48,
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.collections_rounded,
+                              color: palette.accentColor,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '٣٠ خلفية إسلامية للسبحة (${currentIdx + 1}/٣٠)',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: palette.textPrimary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14.5,
+                                    ),
+                                  ),
+                                  Text(
+                                    'تتبدل الخلفية تلقائياً كل ١٠٠ تسبيحة • المتبقي: $remaining تسبيحة',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: palette.accentColor,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: GridView.builder(
+                        padding: const EdgeInsets.fromLTRB(14, 4, 14, 24),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          mainAxisExtent: 152,
+                        ),
+                        itemCount: entries.length,
+                        itemBuilder: (_, idx) {
+                          final entry = entries[idx];
+                          final isSel = idx == currentIdx;
+                          return Firdaws4KCardShell(
+                            backdrop: entry,
+                            isDark: true,
+                            borderRadius: 16,
+                            borderWidth: isSel ? 2.2 : 1.1,
+                            borderColor: isSel
+                                ? palette.accentColor
+                                : Colors.white.withOpacity(0.22),
+                            imageOpacity: 0.85,
+                            padding: const EdgeInsets.all(8),
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              settings.setTasbihBackdropIndex(idx);
+                              setModalState(() {});
+                              Navigator.pop(modalCtx);
+                            },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 7,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.65),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        '#${idx + 1}/30',
+                                        style: TextStyle(
+                                          color: palette.accentColor,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 10.5,
+                                        ),
+                                      ),
+                                    ),
+                                    if (isSel)
+                                      Container(
+                                        padding: const EdgeInsets.all(3),
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFF10B981),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.check_rounded,
+                                          color: Colors.white,
+                                          size: 13,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.62),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    entry.title,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.bold,
+                                      height: 1.25,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   void _showCelebrationBanner(String text) {
@@ -378,45 +586,57 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-                    child: Row(
-                      children: [
-                        Icon(Icons.emoji_events_rounded, color: palette.accentColor, size: 24),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "تحديات السبحة الإيمانية",
-                                style: TextStyle(
-                                  color: palette.accentColor,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 17,
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    child: Firdaws4KCardShell(
+                      backdrop: Background500Catalog.forExtraSection(18),
+                      isDark: palette.isDark,
+                      borderColor: palette.accentColor.withOpacity(0.45),
+                      padding: const EdgeInsets.all(12),
+                      imageOpacity: palette.isDark ? 0.45 : 0.35,
+                      child: Row(
+                        children: [
+                          Icon(Icons.emoji_events_rounded, color: palette.accentColor, size: 24),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "تحديات السبحة الإيمانية",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: palette.accentColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16.5,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                "الإجمالي: $_totalLifetimeTasbih تسبيحة • التحديات المنجزة: $_completedChallengesCount",
-                                style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
-                              ),
-                            ],
+                                Text(
+                                  "الإجمالي: $_totalLifetimeTasbih تسبيحة • التحديات المنجزة: $_completedChallengesCount",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(color: palette.textSecondary, fontSize: 11),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            _showCreateCustomChallengeDialog(palette);
-                          },
-                          icon: const Icon(Icons.add_rounded, size: 16),
-                          label: const Text("مخصص", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: palette.accentColor,
-                            foregroundColor: palette.onAccentColor,
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          const SizedBox(width: 6),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _showCreateCustomChallengeDialog(palette);
+                            },
+                            icon: const Icon(Icons.add_rounded, size: 16),
+                            label: const Text("مخصص", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: palette.accentColor,
+                              foregroundColor: palette.onAccentColor,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                   if (_activeChallengeId != null)
@@ -453,21 +673,17 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                         final isDone = prog >= ch.targetCount;
                         final isActive = _activeChallengeId == ch.id;
 
-                        return Container(
+                        return Firdaws4KCardShell(
+                          backdrop: Background500Catalog.forMissionItem(idx),
+                          isDark: palette.isDark,
                           margin: const EdgeInsets.only(bottom: 10),
                           padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: isActive
-                                ? palette.accentColor.withOpacity(0.14)
-                                : palette.cardColor,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: isActive
-                                  ? palette.accentColor
-                                  : (isDone ? const Color(0xFF10B981) : palette.dividerColor),
-                              width: isActive ? 2.0 : 1.0,
-                            ),
-                          ),
+                          borderRadius: 18,
+                          borderWidth: isActive ? 2.0 : 1.1,
+                          borderColor: isActive
+                              ? palette.accentColor
+                              : (isDone ? const Color(0xFF10B981) : palette.dividerColor),
+                          imageOpacity: palette.isDark ? 0.42 : 0.34,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -775,14 +991,21 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                         crossAxisCount: 2,
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
-                        childAspectRatio: 1.08,
+                        mainAxisExtent: 158,
                       ),
                       itemCount: TasbihGoalEffectsCatalog.allEffects.length,
                       itemBuilder: (context, idx) {
                         final eff = TasbihGoalEffectsCatalog.allEffects[idx];
                         final isSel = _selectedEffectIndex == idx;
 
-                        return InkWell(
+                        return Firdaws4KCardShell(
+                          backdrop: Background500Catalog.forExtraSection(60 + idx),
+                          isDark: palette.isDark,
+                          borderRadius: 16,
+                          borderWidth: isSel ? 2.0 : 1.1,
+                          borderColor: isSel ? palette.accentColor : palette.dividerColor,
+                          imageOpacity: palette.isDark ? 0.45 : 0.36,
+                          padding: const EdgeInsets.all(10),
                           onTap: () {
                             setState(() {
                               _selectedEffectIndex = idx;
@@ -795,62 +1018,50 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                               message: "معاينة التأثير (${eff.number}/20): ${eff.name} ✨",
                             );
                           },
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: isSel
-                                  ? palette.accentColor.withOpacity(0.16)
-                                  : palette.cardColor,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isSel ? palette.accentColor : palette.dividerColor,
-                                width: isSel ? 2.0 : 1.0,
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(
-                                        color: eff.primaryColor.withOpacity(0.20),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(eff.icon, color: eff.primaryColor, size: 18),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: eff.primaryColor.withOpacity(0.22),
+                                      shape: BoxShape.circle,
                                     ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: palette.accentColor.withOpacity(0.15),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        "#${eff.number}",
-                                        style: TextStyle(
-                                          color: palette.accentColor,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 11,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Text(
-                                  eff.name,
-                                  style: TextStyle(
-                                    color: palette.textPrimary,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12.5,
+                                    child: Icon(eff.icon, color: eff.primaryColor, size: 18),
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: palette.accentColor.withOpacity(0.18),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      "#${eff.number}",
+                                      style: TextStyle(
+                                        color: palette.accentColor,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                eff.name,
+                                style: TextStyle(
+                                  color: palette.textPrimary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12.5,
                                 ),
-                                Text(
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Flexible(
+                                child: Text(
                                   eff.subtitle,
                                   style: TextStyle(
                                     color: palette.textMuted,
@@ -859,8 +1070,8 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         );
                       },
@@ -893,6 +1104,21 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
         : 0.0;
 
     final currentEffect = TasbihGoalEffectsCatalog.getByIndex(_selectedEffectIndex);
+    final activeTasbihBackdrop = settings.activeTasbihBackdrop;
+    final int remainingForBackdrop = 100 - (_totalLifetimeTasbih % 100);
+
+    HasanatSkinItem? equippedTasbihSkin;
+    try {
+      equippedTasbihSkin = Provider.of<HasanatProvider>(context)
+          .equippedSkin(StoreItemCategory.tasbihSkin);
+    } catch (_) {}
+    final bool hasCustomTasbihSkin =
+        equippedTasbihSkin != null && !equippedTasbihSkin.isDefaultUnlocked;
+    final Color orbAccent =
+        hasCustomTasbihSkin ? equippedTasbihSkin.primaryColor : accentColor;
+    final Color orbSecondary = hasCustomTasbihSkin
+        ? equippedTasbihSkin.secondaryColor
+        : palette.primaryColor;
 
     return Scaffold(
       backgroundColor: palette.scaffoldColor,
@@ -929,7 +1155,9 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                     palette: palette,
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => const HasanatStoreScreen(),
+                        builder: (_) => const HasanatStoreScreen(
+                          initialCategory: StoreItemCategory.tasbihSkin,
+                        ),
                       ),
                     ),
                   ),
@@ -959,6 +1187,37 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
               currentPrayer: isNight ? Prayer.isha : Prayer.dhuhr,
               themeOption: themeOption,
               isNightMode: isNight,
+              dimFactor: 0.78,
+            ),
+          ),
+          Positioned.fill(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 550),
+              child: SizedBox.expand(
+                key: ValueKey<String>(activeTasbihBackdrop.id),
+                child: FirdawsResilientImage.entry(activeTasbihBackdrop),
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: isNight
+                      ? [
+                          Colors.black.withOpacity(0.64),
+                          const Color(0xFF040B14).withOpacity(0.56),
+                          Colors.black.withOpacity(0.74),
+                        ]
+                      : [
+                          Colors.white.withOpacity(0.58),
+                          const Color(0xFFF4F9F6).withOpacity(0.48),
+                          Colors.white.withOpacity(0.66),
+                        ],
+                ),
+              ),
             ),
           ),
           Positioned.fill(
@@ -978,265 +1237,52 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // 1. شريط التحديات الـ +20 تأثير في الأعلى
+                        // 1. شريط التحديات الـ +20 تأثير في الأعلى بخلفية إسلامية 4K لكل قالب
                         Row(
                           children: [
                             Expanded(
-                              child: InkWell(
-                                onTap: () => _showChallengesSheet(palette),
-                                borderRadius: BorderRadius.circular(16),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                                  decoration: BoxDecoration(
-                                    color: activeChallenge != null
-                                        ? accentColor.withOpacity(0.20)
-                                        : palette.cardColor.withOpacity(isNight ? 0.84 : 0.90),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: activeChallenge != null
-                                          ? accentColor
-                                          : palette.dividerColor,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.emoji_events_rounded,
-                                        color: accentColor,
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              activeChallenge?.title ?? "🏆 التحديات الإيمانية",
-                                              style: TextStyle(
-                                                color: palette.textPrimary,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 12,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            Text(
-                                              activeChallenge != null
-                                                  ? "🎯 $_counter / ${activeChallenge.targetCount}"
-                                                  : "✨ 12 تحدياً + تحدٍ مخصص",
-                                              style: TextStyle(
-                                                color: accentColor,
-                                                fontSize: 10.5,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Icon(Icons.chevron_left_rounded, color: palette.textMuted, size: 18),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: InkWell(
-                                onTap: () => _showGoalEffectsSheet(palette),
-                                borderRadius: BorderRadius.circular(16),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                                  decoration: BoxDecoration(
-                                    color: palette.cardColor.withOpacity(isNight ? 0.84 : 0.90),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: palette.dividerColor),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(currentEffect.icon, color: accentColor, size: 20),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              "🎆 تأثيرات الهدف (20)",
-                                              style: TextStyle(
-                                                color: palette.textPrimary,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 12,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            Text(
-                                              _autoCycleEffects
-                                                  ? "🔄 تلقائي: #${currentEffect.number} + 200 عبارة 3D"
-                                                  : "#${currentEffect.number}: ${currentEffect.name}",
-                                              style: TextStyle(
-                                                color: accentColor,
-                                                fontSize: 10.5,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Icon(Icons.chevron_left_rounded, color: palette.textMuted, size: 18),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                          const SizedBox(height: 10),
-
-                          // 2. قائمة اختيار الذكر الحر أو شريط تقدم التحدي
-                          if (activeChallenge == null)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: palette.cardColor,
-                                borderRadius: BorderRadius.circular(18),
-                                border: Border.all(color: accentColor.withOpacity(0.35)),
-                              ),
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton<int>(
-                                  value: _selectedDhikrIndex,
-                                  isExpanded: true,
-                                  dropdownColor: palette.cardColor,
-                                  icon: Icon(Icons.keyboard_arrow_down_rounded, color: accentColor),
-                                  items: List.generate(_dhikrList.length, (index) {
-                                    return DropdownMenuItem<int>(
-                                      value: index,
-                                      child: Text(
-                                        _dhikrList[index],
-                                        style: TextStyle(fontSize: 14, color: palette.textPrimary),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    );
-                                  }),
-                                  onChanged: (val) {
-                                    if (val != null) {
-                                      setState(() {
-                                        _selectedDhikrIndex = val;
-                                        _counter = 0;
-                                      });
-                                      _saveTasbihState();
-                                    }
-                                  },
-                                ),
-                              ),
-                            )
-                          else
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: palette.cardColor,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: accentColor.withOpacity(0.5)),
-                              ),
-                              child: Column(
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          activeChallenge.badge,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: accentColor,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        "المتبقي: ${(activeChallenge.targetCount - _counter).clamp(0, activeChallenge.targetCount)}",
-                                        style: TextStyle(
-                                          color: palette.textSecondary,
-                                          fontSize: 11.5,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 6),
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(6),
-                                    child: LinearProgressIndicator(
-                                      value: (_counter / activeChallenge.targetCount).clamp(0.0, 1.0),
-                                      minHeight: 6,
-                                      backgroundColor: palette.dividerColor,
-                                      color: accentColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                          const SizedBox(height: 8),
-
-                          // شارة النمو الفوري لبستان جنتي 3D مع كل تسبيحة
-                          Builder(
-                            builder: (ctx) {
-                              int trees = 0;
-                              String treeName = 'نخلة التوحيد الذهبية';
-                              try {
-                                final jp = Provider.of<JannatiProvider>(ctx);
-                                trees = jp.totalGardenTrees;
-                                treeName = jp.lastTasbihTreeName;
-                              } catch (_) {}
-                              return Firdaws3DCard(
-                                palette: palette,
-                                glowColor: const Color(0xFF10B981),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 8),
+                              child: Firdaws4KCardShell(
+                                backdrop: Background500Catalog.forExtraSection(11),
+                                isDark: isNight,
                                 borderRadius: 16,
-                                depth: 3.5,
-                                onTap: () => FirdawsNavBridge.jumpTo(5, jannatiTab: 0),
+                                borderColor: activeChallenge != null
+                                    ? accentColor
+                                    : palette.dividerColor,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 9,
+                                ),
+                                imageOpacity: isNight ? 0.48 : 0.38,
+                                onTap: () => _showChallengesSheet(palette),
                                 child: Row(
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF10B981).withOpacity(0.20),
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                            color: const Color(0xFF34D399)),
-                                      ),
-                                      child: const Icon(Icons.forest_rounded,
-                                          color: Color(0xFF34D399), size: 17),
+                                    Icon(
+                                      Icons.emoji_events_rounded,
+                                      color: accentColor,
+                                      size: 20,
                                     ),
-                                    const SizedBox(width: 9),
+                                    const SizedBox(width: 8),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            'بستان جنتي 3D يزدان بكل تسبيحة: $trees شجرة 🌳',
+                                            activeChallenge?.title ?? "🏆 التحديات الإيمانية",
                                             style: TextStyle(
                                               color: palette.textPrimary,
                                               fontWeight: FontWeight.bold,
-                                              fontSize: 11.5,
+                                              fontSize: 12,
                                             ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                           Text(
-                                            treeName,
-                                            style: const TextStyle(
-                                              color: Color(0xFF34D399),
-                                              fontSize: 10,
+                                            activeChallenge != null
+                                                ? "🎯 $_counter / ${activeChallenge.targetCount}"
+                                                : "✨ 12 تحدياً + تحدٍ مخصص",
+                                            style: TextStyle(
+                                              color: accentColor,
+                                              fontSize: 10.5,
                                               fontWeight: FontWeight.w600,
                                             ),
                                             maxLines: 1,
@@ -1245,272 +1291,608 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                                         ],
                                       ),
                                     ),
-                                    const Flexible(
-                                      fit: FlexFit.loose,
-                                      child: Text(
-                                        'شاهد البستان ⬅️',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          color: Color(0xFF38BDF8),
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 10.5,
-                                        ),
+                                    Icon(
+                                      Icons.chevron_left_rounded,
+                                      color: palette.textMuted,
+                                      size: 18,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Firdaws4KCardShell(
+                                backdrop: Background500Catalog.forExtraSection(12),
+                                isDark: isNight,
+                                borderRadius: 16,
+                                borderColor: palette.dividerColor,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 9,
+                                ),
+                                imageOpacity: isNight ? 0.48 : 0.38,
+                                onTap: () => _showGoalEffectsSheet(palette),
+                                child: Row(
+                                  children: [
+                                    Icon(currentEffect.icon, color: accentColor, size: 20),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "🎆 تأثيرات الهدف (20)",
+                                            style: TextStyle(
+                                              color: palette.textPrimary,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 12,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          Text(
+                                            _autoCycleEffects
+                                                ? "🔄 تلقائي: #${currentEffect.number} + 200 عبارة 3D"
+                                                : "#${currentEffect.number}: ${currentEffect.name}",
+                                            style: TextStyle(
+                                              color: accentColor,
+                                              fontSize: 10.5,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.chevron_left_rounded,
+                                      color: palette.textMuted,
+                                      size: 18,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        // شريط الـ 30 صورة إسلامية للسبحة (يتبدل كل 100 تسبيحة) + سكنات المسبحة (500 سكن)
+                        Firdaws4KCardShell(
+                          backdrop: activeTasbihBackdrop,
+                          isDark: isNight,
+                          borderRadius: 16,
+                          borderColor: orbAccent.withOpacity(0.55),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                          imageOpacity: isNight ? 0.56 : 0.44,
+                          onTap: () => _showTasbih30BackdropsSheet(palette, settings),
+                          child: Row(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: SizedBox(
+                                  width: 34,
+                                  height: 34,
+                                  child: FirdawsResilientImage.entry(activeTasbihBackdrop),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '🕌 خلفية السبحة (${settings.selectedTasbihBackdropIndex + 1}/٣٠) • ${activeTasbihBackdrop.title}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: palette.textPrimary,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                    Text(
+                                      'تتبدل كل ١٠٠ تسبيحة • متبقي $remainingForBackdrop للتبديل التلقائي',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: orbAccent,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ],
                                 ),
-                              );
-                            },
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          // 3. نص الذكر الحالي
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            child: AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 250),
-                              child: Text(
-                                activeDhikrText,
-                                key: ValueKey<String>(activeDhikrText),
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 21,
-                                  fontWeight: FontWeight.bold,
-                                  color: accentColor,
-                                  height: 1.4,
+                              ),
+                              IconButton(
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                                tooltip: 'الخلفية السابقة',
+                                onPressed: settings.previousTasbihBackdrop,
+                                icon: Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: palette.textPrimary,
+                                  size: 19,
                                 ),
                               ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 10),
-
-                          // 4. حاوية ثابتة الأبعاد لقرص المسبحة مع حلقة التقدم الدائرية
-                          SizedBox(
-                            width: 280,
-                            height: 280,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              clipBehavior: Clip.none,
-                              children: [
-                                AnimatedBuilder(
-                                  animation: _waterRippleAnimation,
-                                  builder: (context, _) {
-                                    final double size = 230 + _waterRippleAnimation.value * 58;
-                                    final double opacity =
-                                        (1.0 - _waterRippleAnimation.value) * 0.45;
-                                    return Container(
-                                      width: size,
-                                      height: size,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: accentColor.withOpacity(opacity),
-                                          width: 2.5,
-                                        ),
-                                      ),
-                                    );
-                                  },
+                              IconButton(
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                                tooltip: 'الخلفية التالية',
+                                onPressed: settings.nextTasbihBackdrop,
+                                icon: Icon(
+                                  Icons.chevron_left_rounded,
+                                  color: palette.textPrimary,
+                                  size: 19,
                                 ),
-
-                                if (effectiveTarget > 0)
-                                  SizedBox(
-                                    width: 250,
-                                    height: 250,
-                                    child: CircularProgressIndicator(
-                                      value: progressRatio,
-                                      strokeWidth: 7,
-                                      backgroundColor: palette.dividerColor.withOpacity(0.5),
-                                      valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                              ),
+                              IconButton(
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                                tooltip: '٥٠٠ سكن للمسبحة ✨',
+                                onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const HasanatStoreScreen(
+                                      initialCategory: StoreItemCategory.tasbihSkin,
                                     ),
                                   ),
+                                ),
+                                icon: Icon(Icons.palette_rounded, color: orbAccent, size: 17),
+                              ),
+                            ],
+                          ),
+                        ),
 
-                                GestureDetector(
-                                  onTap: _onBeadPressed,
-                                  behavior: HitTestBehavior.opaque,
-                                  child: ScaleTransition(
-                                    scale: _scaleAnimation,
-                                    child: Container(
-                                      width: 224,
-                                      height: 224,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        gradient: RadialGradient(
-                                          center: const Alignment(-0.25, -0.30),
-                                          radius: 0.95,
-                                          colors: isNight
-                                              ? [
-                                                  palette.primaryColor,
-                                                  palette.cardColor,
-                                                  Colors.black,
-                                                ]
-                                              : [
-                                                  palette.cardColor,
-                                                  palette.elevatedCardColor,
-                                                  palette.primaryColor.withOpacity(0.18),
-                                                ],
-                                        ),
-                                        border: Border.all(color: accentColor, width: 3.2),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: accentColor.withOpacity(isNight ? 0.35 : 0.22),
-                                            blurRadius: 28,
-                                            spreadRadius: 3,
-                                          ),
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(isNight ? 0.7 : 0.16),
-                                            blurRadius: 16,
-                                            offset: const Offset(0, 8),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Center(
-                                        child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Text(
-                                              "$_counter",
-                                              style: TextStyle(
-                                                fontSize: 68,
-                                                fontWeight: FontWeight.w900,
-                                                color: palette.textPrimary,
-                                                letterSpacing: 1.5,
-                                              ),
-                                            ),
-                                            if (effectiveTarget > 0)
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(
-                                                  horizontal: 14,
-                                                  vertical: 3,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: accentColor.withOpacity(0.18),
-                                                  borderRadius: BorderRadius.circular(12),
-                                                  border: Border.all(
-                                                    color: accentColor.withOpacity(0.45),
-                                                  ),
-                                                ),
-                                                child: Text(
-                                                  "الهدف: $effectiveTarget",
-                                                  style: TextStyle(
-                                                    color: accentColor,
-                                                    fontSize: 12.5,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                          ],
+                        const SizedBox(height: 8),
+
+                        // 2. قائمة اختيار الذكر الحر أو شريط تقدم التحدي
+                        if (activeChallenge == null)
+                          Firdaws4KCardShell(
+                            backdrop: Background500Catalog.forExtraSection(13),
+                            isDark: isNight,
+                            borderRadius: 18,
+                            borderColor: accentColor.withOpacity(0.45),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                            imageOpacity: isNight ? 0.44 : 0.34,
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<int>(
+                                value: _selectedDhikrIndex,
+                                isExpanded: true,
+                                dropdownColor: palette.cardColor,
+                                icon: Icon(Icons.keyboard_arrow_down_rounded, color: accentColor),
+                                items: List.generate(_dhikrList.length, (index) {
+                                  return DropdownMenuItem<int>(
+                                    value: index,
+                                    child: Text(
+                                      _dhikrList[index],
+                                      style: TextStyle(fontSize: 14, color: palette.textPrimary),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  );
+                                }),
+                                onChanged: (val) {
+                                  if (val != null) {
+                                    setState(() {
+                                      _selectedDhikrIndex = val;
+                                      _counter = 0;
+                                    });
+                                    _saveTasbihState();
+                                  }
+                                },
+                              ),
+                            ),
+                          )
+                        else
+                          Firdaws4KCardShell(
+                            backdrop: Background500Catalog.forExtraSection(14),
+                            isDark: isNight,
+                            borderRadius: 16,
+                            borderColor: accentColor.withOpacity(0.55),
+                            padding: const EdgeInsets.all(10),
+                            imageOpacity: isNight ? 0.44 : 0.34,
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        activeChallenge.badge,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: accentColor,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
                                         ),
                                       ),
                                     ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      "المتبقي: ${(activeChallenge.targetCount - _counter).clamp(0, activeChallenge.targetCount)}",
+                                      style: TextStyle(
+                                        color: palette.textSecondary,
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: LinearProgressIndicator(
+                                    value: (_counter / activeChallenge.targetCount).clamp(0.0, 1.0),
+                                    minHeight: 6,
+                                    backgroundColor: palette.dividerColor,
+                                    color: accentColor,
                                   ),
                                 ),
                               ],
                             ),
                           ),
 
-                          const SizedBox(height: 8),
+                        const SizedBox(height: 8),
 
-                          // 5. شرائح الهدف (عند عدم وجود تحدٍ نشط)
-                          if (activeChallenge == null)
-                            Wrap(
-                              spacing: 6,
-                              alignment: WrapAlignment.center,
-                              children: [33, 99, 100, 1000, 0].map((t) {
-                                final isSelected = _target == t;
-                                return ChoiceChip(
-                                  label: Text(t == 0 ? "مفتوح" : "$t"),
-                                  selected: isSelected,
-                                  selectedColor: accentColor.withOpacity(0.24),
-                                  backgroundColor: palette.cardColor,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                    side: BorderSide(
-                                      color: isSelected ? accentColor : palette.dividerColor,
-                                      width: 1.4,
+                        // شارة النمو الفوري لبستان جنتي 3D مع كل تسبيحة
+                        Builder(
+                          builder: (ctx) {
+                            int trees = 0;
+                            String treeName = 'نخلة التوحيد الذهبية';
+                            try {
+                              final jp = Provider.of<JannatiProvider>(ctx);
+                              trees = jp.totalGardenTrees;
+                              treeName = jp.lastTasbihTreeName;
+                            } catch (_) {}
+                            return Firdaws3DCard(
+                              palette: palette,
+                              glowColor: const Color(0xFF10B981),
+                              backdropSlot: 405,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              borderRadius: 16,
+                              depth: 3.5,
+                              onTap: () => FirdawsNavBridge.jumpTo(5, jannatiTab: 0),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF10B981).withOpacity(0.20),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: const Color(0xFF34D399),
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.forest_rounded,
+                                      color: Color(0xFF34D399),
+                                      size: 17,
                                     ),
                                   ),
-                                  labelStyle: TextStyle(
-                                    color: isSelected ? accentColor : palette.textSecondary,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                    fontSize: 13,
+                                  const SizedBox(width: 9),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'بستان جنتي 3D يزدان بكل تسبيحة: $trees شجرة 🌳',
+                                          style: TextStyle(
+                                            color: palette.textPrimary,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 11.5,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Text(
+                                          treeName,
+                                          style: const TextStyle(
+                                            color: Color(0xFF34D399),
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  onSelected: (_) {
-                                    setState(() => _target = t);
-                                    _saveTasbihState();
-                                  },
-                                );
-                              }).toList(),
+                                  const Flexible(
+                                    fit: FlexFit.loose,
+                                    child: Text(
+                                      'شاهد البستان ⬅️',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: Color(0xFF38BDF8),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 10.5,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        // 3. نص الذكر الحالي داخل قالب إسلامي 4K أنيق
+                        Firdaws4KCardShell(
+                          backdrop: Background500Catalog.forExtraSection(17),
+                          isDark: isNight,
+                          borderRadius: 18,
+                          borderColor: orbAccent.withOpacity(0.40),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          imageOpacity: isNight ? 0.36 : 0.28,
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 250),
+                            child: Text(
+                              activeDhikrText,
+                              key: ValueKey<String>(activeDhikrText),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: orbAccent,
+                                height: 1.35,
+                              ),
                             ),
+                          ),
+                        ),
 
-                          const SizedBox(height: 8),
+                        const SizedBox(height: 10),
 
-                          // 6. شريط الإجماليات وزر إعادة التعيين
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        // 4. حاوية ثابتة الأبعاد لقرص المسبحة مع السكن المختار وحلقة التقدم
+                        SizedBox(
+                          width: 280,
+                          height: 280,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            clipBehavior: Clip.none,
                             children: [
-                              IconButton(
-                                icon: Icon(
-                                  Icons.refresh_rounded,
-                                  color: palette.textSecondary,
-                                  size: 28,
-                                ),
-                                tooltip: "إعادة تعيين العداد",
-                                onPressed: _reset,
-                              ),
-                              Flexible(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                                  decoration: BoxDecoration(
-                                    color: palette.cardColor,
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(color: accentColor.withOpacity(0.4)),
-                                  ),
-                                  child: Text(
-                                    effectiveTarget > 0
-                                        ? "🌟 الدورة: ${_counter ~/ effectiveTarget} • 📿 الإجمالي: $_totalLifetimeTasbih ${themeOption.primaryEmoji}"
-                                        : "📿 الإجمالي التراكمي: $_totalLifetimeTasbih ${themeOption.primaryEmoji}",
-                                    style: TextStyle(
-                                      color: accentColor,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
+                              AnimatedBuilder(
+                                animation: _waterRippleAnimation,
+                                builder: (context, _) {
+                                  final double size = 230 + _waterRippleAnimation.value * 58;
+                                  final double opacity =
+                                      (1.0 - _waterRippleAnimation.value) * 0.45;
+                                  return Container(
+                                    width: size,
+                                    height: size,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: orbAccent.withOpacity(opacity),
+                                        width: 2.5,
+                                      ),
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                  );
+                                },
+                              ),
+
+                              if (effectiveTarget > 0)
+                                SizedBox(
+                                  width: 250,
+                                  height: 250,
+                                  child: CircularProgressIndicator(
+                                    value: progressRatio,
+                                    strokeWidth: 7,
+                                    backgroundColor: palette.dividerColor.withOpacity(0.5),
+                                    valueColor: AlwaysStoppedAnimation<Color>(orbAccent),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 6),
-                              InkWell(
-                                onTap: _open3dPhrasesCatalog,
-                                borderRadius: BorderRadius.circular(14),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                                  decoration: BoxDecoration(
-                                    color: accentColor.withOpacity(0.18),
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(color: accentColor.withOpacity(0.55)),
-                                  ),
-                                  child: Text(
-                                    "✨ #$_phraseNumber3d/200",
-                                    style: TextStyle(
-                                      color: accentColor,
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.bold,
+
+                              GestureDetector(
+                                onTap: _onBeadPressed,
+                                behavior: HitTestBehavior.opaque,
+                                child: ScaleTransition(
+                                  scale: _scaleAnimation,
+                                  child: Container(
+                                    width: 224,
+                                    height: 224,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: RadialGradient(
+                                        center: const Alignment(-0.25, -0.30),
+                                        radius: 0.95,
+                                        colors: isNight
+                                            ? [
+                                                hasCustomTasbihSkin
+                                                    ? Color.lerp(orbSecondary, palette.cardColor, 0.45)!
+                                                    : palette.primaryColor,
+                                                palette.cardColor,
+                                                Colors.black,
+                                              ]
+                                            : [
+                                                palette.cardColor,
+                                                palette.elevatedCardColor,
+                                                orbSecondary.withOpacity(0.24),
+                                              ],
+                                      ),
+                                      border: Border.all(color: orbAccent, width: 3.2),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: orbAccent.withOpacity(isNight ? 0.42 : 0.26),
+                                          blurRadius: 28,
+                                          spreadRadius: 3,
+                                        ),
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(isNight ? 0.7 : 0.16),
+                                          blurRadius: 16,
+                                          offset: const Offset(0, 8),
+                                        ),
+                                      ],
+                                    ),
+                                    child: ClipOval(
+                                      child: Stack(
+                                        fit: StackFit.expand,
+                                        children: [
+                                          Opacity(
+                                            opacity: isNight ? 0.22 : 0.16,
+                                            child: FirdawsResilientImage.entry(
+                                              activeTasbihBackdrop,
+                                            ),
+                                          ),
+                                          Center(
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  "$_counter",
+                                                  style: TextStyle(
+                                                    fontSize: 68,
+                                                    fontWeight: FontWeight.w900,
+                                                    color: palette.textPrimary,
+                                                    letterSpacing: 1.5,
+                                                  ),
+                                                ),
+                                                if (effectiveTarget > 0)
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(
+                                                      horizontal: 14,
+                                                      vertical: 3,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: orbAccent.withOpacity(0.22),
+                                                      borderRadius: BorderRadius.circular(12),
+                                                      border: Border.all(
+                                                        color: orbAccent.withOpacity(0.55),
+                                                      ),
+                                                    ),
+                                                    child: Text(
+                                                      "الهدف: $effectiveTarget",
+                                                      style: TextStyle(
+                                                        color: orbAccent,
+                                                        fontSize: 12.5,
+                                                        fontWeight: FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                        ],
-                      ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        // 5. شرائح الهدف (عند عدم وجود تحدٍ نشط)
+                        if (activeChallenge == null)
+                          Wrap(
+                            spacing: 6,
+                            alignment: WrapAlignment.center,
+                            children: [33, 99, 100, 1000, 0].map((t) {
+                              final isSelected = _target == t;
+                              return ChoiceChip(
+                                label: Text(t == 0 ? "مفتوح" : "$t"),
+                                selected: isSelected,
+                                selectedColor: accentColor.withOpacity(0.24),
+                                backgroundColor: palette.cardColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  side: BorderSide(
+                                    color: isSelected ? accentColor : palette.dividerColor,
+                                    width: 1.4,
+                                  ),
+                                ),
+                                labelStyle: TextStyle(
+                                  color: isSelected ? accentColor : palette.textSecondary,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  fontSize: 13,
+                                ),
+                                onSelected: (_) {
+                                  setState(() => _target = t);
+                                  _saveTasbihState();
+                                },
+                              );
+                            }).toList(),
+                          ),
+
+                        const SizedBox(height: 8),
+
+                        // 6. شريط الإجماليات وزر إعادة التعيين داخل قوالب 4K
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                Icons.refresh_rounded,
+                                color: palette.textSecondary,
+                                size: 28,
+                              ),
+                              tooltip: "إعادة تعيين العداد",
+                              onPressed: _reset,
+                            ),
+                            Flexible(
+                              child: Firdaws4KCardShell(
+                                backdrop: Background500Catalog.forExtraSection(15),
+                                isDark: isNight,
+                                borderRadius: 14,
+                                borderColor: accentColor.withOpacity(0.45),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 7,
+                                ),
+                                imageOpacity: isNight ? 0.42 : 0.34,
+                                child: Text(
+                                  effectiveTarget > 0
+                                      ? "🌟 الدورة: ${_counter ~/ effectiveTarget} • 📿 الإجمالي: $_totalLifetimeTasbih ${themeOption.primaryEmoji}"
+                                      : "📿 الإجمالي التراكمي: $_totalLifetimeTasbih ${themeOption.primaryEmoji}",
+                                  style: TextStyle(
+                                    color: accentColor,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Firdaws4KCardShell(
+                              backdrop: Background500Catalog.forExtraSection(16),
+                              isDark: isNight,
+                              borderRadius: 14,
+                              borderColor: accentColor.withOpacity(0.55),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 7,
+                              ),
+                              imageOpacity: isNight ? 0.45 : 0.36,
+                              onTap: _open3dPhrasesCatalog,
+                              child: Text(
+                                "✨ #$_phraseNumber3d/200",
+                                style: TextStyle(
+                                  color: accentColor,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
+            ),
           ),
 
           // لافتة التحفيز الثلاثية الأبعاد 3D فوق المسبحة

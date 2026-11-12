@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:adhan/adhan.dart';
 import 'package:provider/provider.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../models/sahih_hadith_data.dart';
 import '../providers/jannati_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/firdaws_brand_logo.dart';
+import '../widgets/firdaws_resilient_image.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
 import '../widgets/real_mosque_background.dart';
 import 'quran_reader_screen.dart';
@@ -85,14 +87,14 @@ class _SahihHadithScreenState extends State<SahihHadithScreen> {
             child: Column(
               children: [
                 // الشريط العلوي
-                Container(
+                Firdaws4KCardShell(
+                  backdrop: Background500Catalog.forExtraSection(1),
+                  isDark: palette.isDark,
                   margin: const EdgeInsets.fromLTRB(12, 8, 12, 6),
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: palette.cardColor.withOpacity(0.92),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: accent.withOpacity(0.5)),
-                  ),
+                  borderRadius: 18,
+                  borderColor: accent.withOpacity(0.55),
+                  imageOpacity: 0.45,
                   child: Row(
                     children: [
                       IconButton(
@@ -128,15 +130,16 @@ class _SahihHadithScreenState extends State<SahihHadithScreen> {
                           ],
                         ),
                       ),
-                      Container(
+                      Firdaws4KCardShell(
+                        backdrop: Background500Catalog.forExtraSection(2),
+                        isDark: palette.isDark,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
                           vertical: 4,
                         ),
-                        decoration: BoxDecoration(
-                          color: accent.withOpacity(0.16),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                        borderRadius: 10,
+                        borderColor: accent.withOpacity(0.5),
+                        imageOpacity: 0.35,
                         child: Text(
                           '${themeOpt.primaryEmoji} ${list.length}',
                           style: TextStyle(
@@ -262,7 +265,17 @@ class _SahihHadithScreenState extends State<SahihHadithScreen> {
     required Color accent,
     required JannatiProvider jannati,
   }) {
-    return GestureDetector(
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.bySlot(400 + (h.id.hashCode.abs() % 95)),
+      isDark: palette.isDark,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      borderRadius: 18,
+      borderWidth: isExpanded ? 1.7 : 1.0,
+      borderColor: isExpanded
+          ? accent
+          : (isRead ? accent.withOpacity(0.55) : accent.withOpacity(0.28)),
+      imageOpacity: palette.isDark ? 0.34 : 0.28,
       onTap: () {
         setState(() => _expandedId = isExpanded ? null : h.id);
         jannati.markJannahHadithRead(
@@ -271,21 +284,7 @@ class _SahihHadithScreenState extends State<SahihHadithScreen> {
           sourceRef: h.sourceReference,
         );
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: palette.cardColor.withOpacity(palette.isDark ? 0.90 : 0.96),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: isExpanded
-                ? accent
-                : (isRead ? accent.withOpacity(0.5) : palette.dividerColor),
-            width: isExpanded ? 1.7 : 1.0,
-          ),
-        ),
-        child: Column(
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
@@ -329,13 +328,13 @@ class _SahihHadithScreenState extends State<SahihHadithScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            Container(
+            Firdaws4KCardShell(
+              backdrop: Background500Catalog.bySlot(410 + (h.id.hashCode.abs() % 80)),
+              isDark: palette.isDark,
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: accent.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: accent.withOpacity(0.25)),
-              ),
+              borderRadius: 12,
+              borderColor: accent.withOpacity(0.32),
+              imageOpacity: palette.isDark ? 0.26 : 0.22,
               child: Text(
                 h.arabicText,
                 style: TextStyle(
@@ -366,12 +365,13 @@ class _SahihHadithScreenState extends State<SahihHadithScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              Container(
+              Firdaws4KCardShell(
+                backdrop: Background500Catalog.forExtraSection(5),
+                isDark: palette.isDark,
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: palette.elevatedCardColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                borderRadius: 12,
+                borderColor: accent.withOpacity(0.3),
+                imageOpacity: palette.isDark ? 0.28 : 0.22,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -430,7 +430,6 @@ class _SahihHadithScreenState extends State<SahihHadithScreen> {
             ],
           ],
         ),
-      ),
     );
   }
 }

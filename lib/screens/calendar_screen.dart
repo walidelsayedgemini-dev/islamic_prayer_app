@@ -168,28 +168,22 @@ class _CalendarScreenState extends State<CalendarScreen>
                         itemBuilder: (_, idx) {
                           final mNum = idx + 1;
                           final isSel = tempMonth == mNum;
-                          return InkWell(
-                            borderRadius: BorderRadius.circular(12),
+                          return Firdaws4KCardShell(
+                            backdrop: Background500Catalog.forCalendarSection(5 + idx),
+                            isDark: palette.isDark || isSel,
+                            borderRadius: 12,
+                            borderWidth: isSel ? 1.8 : 1.0,
+                            borderColor: isSel ? accent : palette.dividerColor,
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            imageOpacity: isSel ? 0.56 : 0.34,
                             onTap: () => setDialogState(() => tempMonth = mNum),
-                            child: Container(
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: isSel
-                                    ? accent
-                                    : palette.elevatedCardColor,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isSel ? accent : palette.dividerColor,
-                                ),
-                              ),
+                            child: Center(
                               child: Text(
                                 HijriDate.monthNamesArabic[idx],
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  color: isSel
-                                      ? palette.onAccentColor
-                                      : palette.textPrimary,
+                                  color: isSel ? accent : palette.textPrimary,
                                   fontWeight: isSel
                                       ? FontWeight.w900
                                       : FontWeight.w600,
@@ -437,14 +431,14 @@ class _CalendarScreenState extends State<CalendarScreen>
               ),
               const SizedBox(height: 16),
               if (hijri.isWhiteDay)
-                Container(
+                Firdaws4KCardShell(
+                  backdrop: Background500Catalog.forCalendarSection(20),
+                  isDark: isNight,
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: goldBadgeColor.withOpacity(0.14),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: goldBadgeColor.withOpacity(0.45)),
-                  ),
+                  borderRadius: 14,
+                  borderColor: goldBadgeColor.withOpacity(0.55),
+                  imageOpacity: 0.44,
                   child: Row(
                     children: [
                       Icon(Icons.nightlight_round, color: goldBadgeColor, size: 20),
@@ -463,14 +457,14 @@ class _CalendarScreenState extends State<CalendarScreen>
                   ),
                 ),
               if (occasion.title.isNotEmpty)
-                Container(
+                Firdaws4KCardShell(
+                  backdrop: Background500Catalog.forCalendarSection(21),
+                  isDark: isNight,
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: accent.withOpacity(0.14),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: accent.withOpacity(0.45)),
-                  ),
+                  borderRadius: 14,
+                  borderColor: accent.withOpacity(0.55),
+                  imageOpacity: 0.44,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -523,13 +517,13 @@ class _CalendarScreenState extends State<CalendarScreen>
                     final userProv =
                         Provider.of<FirdawsUserProvider>(innerCtx, listen: false);
                     final dayRec = userProv.recordForDate(greg);
-                    return Container(
+                    return Firdaws4KCardShell(
+                      backdrop: Background500Catalog.forCalendarSection(22),
+                      isDark: isNight,
                       padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: palette.cardColor,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: accent.withOpacity(0.4)),
-                      ),
+                      borderRadius: 14,
+                      borderColor: accent.withOpacity(0.5),
+                      imageOpacity: 0.42,
                       child: Row(
                         children: [
                           Icon(Icons.fact_check_rounded, color: accent, size: 20),
@@ -853,26 +847,34 @@ class _CalendarScreenState extends State<CalendarScreen>
                     icon: Icon(Icons.arrow_back_ios_rounded, color: accentColor, size: 18),
                     tooltip: "الشهر السابق",
                   ),
-                  InkWell(
-                    onTap: () => _showHijriMonthYearPicker(palette),
-                    borderRadius: BorderRadius.circular(10),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      child: Column(
-                        children: [
-                          Text(
-                            "${HijriDate.monthNamesArabic[_displayMonth - 1]} $_displayYear هـ",
-                            style: TextStyle(
-                              color: accentColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => _showHijriMonthYearPicker(palette),
+                      borderRadius: BorderRadius.circular(10),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        child: Column(
+                          children: [
+                            Text(
+                              "${HijriDate.monthNamesArabic[_displayMonth - 1]} $_displayYear هـ",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: accentColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
-                          ),
-                          Text(
-                            gregorianSpan,
-                            style: TextStyle(color: palette.textMuted, fontSize: 11),
-                          ),
-                        ],
+                            Text(
+                              gregorianSpan,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: palette.textMuted, fontSize: 11),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -1217,11 +1219,15 @@ class _CalendarScreenState extends State<CalendarScreen>
                 ),
               ),
             ),
-            Text(
-              settings.cityName,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: palette.textMuted, fontSize: 10.5),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                settings.cityName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: TextStyle(color: palette.textMuted, fontSize: 10.5),
+              ),
             ),
           ],
         ),
@@ -1233,7 +1239,7 @@ class _CalendarScreenState extends State<CalendarScreen>
             crossAxisCount: 2,
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
-            childAspectRatio: 1.62,
+            mainAxisExtent: 118,
           ),
           itemCount: slots.length,
           itemBuilder: (_, idx) {
@@ -1384,14 +1390,13 @@ class _CalendarScreenState extends State<CalendarScreen>
             ],
           ),
           const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
+          Firdaws4KCardShell(
+            backdrop: Background500Catalog.forCalendarSection(24),
+            isDark: palette.isDark,
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: palette.elevatedCardColor,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: palette.dividerColor),
-            ),
+            borderRadius: 14,
+            borderColor: goldBadgeColor.withOpacity(0.45),
+            imageOpacity: 0.36,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1399,12 +1404,16 @@ class _CalendarScreenState extends State<CalendarScreen>
                   children: [
                     Icon(Icons.lightbulb_rounded, color: goldBadgeColor, size: 16),
                     const SizedBox(width: 6),
-                    Text(
-                      "فضل هذا اليوم المبارك وأسراره:",
-                      style: TextStyle(
-                        color: goldBadgeColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
+                    Flexible(
+                      child: Text(
+                        "فضل هذا اليوم المبارك وأسراره:",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: goldBadgeColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ],
@@ -1453,13 +1462,13 @@ class _CalendarScreenState extends State<CalendarScreen>
             ],
           ),
           const SizedBox(height: 10),
-          Container(
+          Firdaws4KCardShell(
+            backdrop: Background500Catalog.forCalendarSection(25),
+            isDark: palette.isDark,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: accentColor.withOpacity(0.35)),
-            ),
+            borderRadius: 12,
+            borderColor: accentColor.withOpacity(0.45),
+            imageOpacity: 0.40,
             child: Row(
               children: [
                 Icon(Icons.fingerprint_rounded, color: accentColor, size: 18),
@@ -1524,13 +1533,13 @@ class _CalendarScreenState extends State<CalendarScreen>
                 ],
               ),
               const SizedBox(height: 14),
-              Container(
+              Firdaws4KCardShell(
+                backdrop: Background500Catalog.forCalendarSection(45),
+                isDark: palette.isDark,
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: palette.elevatedCardColor.withOpacity(0.86),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: palette.dividerColor),
-                ),
+                borderRadius: 16,
+                borderColor: palette.dividerColor,
+                imageOpacity: 0.42,
                 child: Row(
                   children: [
                     Icon(Icons.calendar_month_rounded, color: palette.textSecondary, size: 20),
@@ -1652,34 +1661,29 @@ class _CalendarQuickPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: accent.withOpacity(0.18),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: accent.withOpacity(0.55)),
+    final slotSeed = label.codeUnits.fold<int>(26, (a, b) => a + b) % 48;
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forCalendarSection(slotSeed),
+      isDark: palette.isDark,
+      borderRadius: 12,
+      borderColor: accent.withOpacity(0.55),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      imageOpacity: 0.45,
+      onTap: onTap,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: accent, size: 14),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 11,
+            ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: accent, size: 14),
-              const SizedBox(width: 5),
-              Text(
-                label,
-                style: TextStyle(
-                  color: palette.textPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
-                ),
-              ),
-            ],
-          ),
-        ),
+        ],
       ),
     );
   }

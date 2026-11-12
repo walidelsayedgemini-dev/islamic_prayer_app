@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/backgrounds_500_catalog.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/audio_download_manager_sheet.dart';
+import '../widgets/firdaws_resilient_image.dart';
 import '../widgets/sacred_reference_widgets.dart';
 import 'quran_reader_screen.dart';
 
@@ -61,50 +63,58 @@ class QuranAzkarSheet {
                 ),
               ),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: accent.withOpacity(0.20),
-                      border: Border.all(color: accent, width: 1.2),
+              Firdaws4KCardShell(
+                backdrop: Background500Catalog.forExtraSection(64),
+                isDark: palette.isDark,
+                padding: const EdgeInsets.all(12),
+                borderRadius: 18,
+                borderColor: accent.withOpacity(0.45),
+                imageOpacity: 0.45,
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: accent.withOpacity(0.20),
+                        border: Border.all(color: accent, width: 1.2),
+                      ),
+                      child: Icon(Icons.volunteer_activism_rounded, color: accent, size: 22),
                     ),
-                    child: Icon(Icons.volunteer_activism_rounded, color: accent, size: 22),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "📿 أذكار الصباح والمساء وحصن المسلم",
-                          style: TextStyle(
-                            color: accent,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15.5,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "📿 أذكار الصباح والمساء وحصن المسلم",
+                            style: TextStyle(
+                              color: accent,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15.5,
+                            ),
                           ),
-                        ),
-                        Text(
-                          "«مثل الذي يذكر ربه والذي لا يذكر ربه مثل الحي والميت»",
-                          style: TextStyle(color: palette.textSecondary, fontSize: 11),
-                        ),
-                      ],
-                    ),
-                  ),
-                  TextButton.icon(
-                    onPressed: () => showAudioDownloadManagerSheet(context),
-                    icon: Icon(Icons.download_for_offline_rounded, color: accent, size: 17),
-                    label: Text(
-                      "تحميل ⬇️",
-                      style: TextStyle(
-                        color: accent,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
+                          Text(
+                            "«مثل الذي يذكر ربه والذي لا يذكر ربه مثل الحي والميت»",
+                            style: TextStyle(color: palette.textSecondary, fontSize: 11),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
+                    TextButton.icon(
+                      onPressed: () => showAudioDownloadManagerSheet(context),
+                      icon: Icon(Icons.download_for_offline_rounded, color: accent, size: 17),
+                      label: Text(
+                        "تحميل ⬇️",
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               Divider(color: palette.dividerColor, height: 24),
               Expanded(
@@ -155,13 +165,13 @@ class QuranAzkarSheet {
     ThemePalette palette,
   ) {
     final accentColor = palette.accentColor;
-    return Container(
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forExtraSection(65 + (title.hashCode.abs() % 20)),
+      isDark: palette.isDark,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: palette.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accentColor.withOpacity(0.3)),
-      ),
+      borderRadius: 16,
+      borderColor: accentColor.withOpacity(0.4),
+      imageOpacity: palette.isDark ? 0.36 : 0.30,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
