@@ -31,6 +31,7 @@ class HoorAppearanceConfig {
   final int handheldItem; // 0..4 (0=none, 1=lantern, 2=mushaf, 3=subha, 4=pearl)
   final int auraStyle; // 0..3
   final int basePose; // 0..3
+  final int animeStyleIndex; // 0..23
 
   const HoorAppearanceConfig({
     this.name = 'حُور',
@@ -47,6 +48,7 @@ class HoorAppearanceConfig {
     this.handheldItem = 1,
     this.auraStyle = 1,
     this.basePose = 0,
+    this.animeStyleIndex = 0,
   });
 
   HoorAppearanceConfig copyWith({
@@ -64,6 +66,7 @@ class HoorAppearanceConfig {
     int? handheldItem,
     int? auraStyle,
     int? basePose,
+    int? animeStyleIndex,
   }) {
     return HoorAppearanceConfig(
       name: name ?? this.name,
@@ -80,6 +83,7 @@ class HoorAppearanceConfig {
       handheldItem: handheldItem ?? this.handheldItem,
       auraStyle: auraStyle ?? this.auraStyle,
       basePose: basePose ?? this.basePose,
+      animeStyleIndex: animeStyleIndex ?? this.animeStyleIndex,
     );
   }
 
@@ -98,6 +102,7 @@ class HoorAppearanceConfig {
         'handheldItem': handheldItem,
         'auraStyle': auraStyle,
         'basePose': basePose,
+        'animeStyleIndex': animeStyleIndex,
       };
 
   factory HoorAppearanceConfig.fromJson(Map<String, dynamic> json) {
@@ -124,6 +129,7 @@ class HoorAppearanceConfig {
       handheldItem: ((json['handheldItem'] as num?)?.toInt() ?? 1).clamp(0, 4),
       auraStyle: ((json['auraStyle'] as num?)?.toInt() ?? 1).clamp(0, 3),
       basePose: ((json['basePose'] as num?)?.toInt() ?? 0).clamp(0, 3),
+      animeStyleIndex: ((json['animeStyleIndex'] as num?)?.toInt() ?? 0).clamp(0, 23),
     );
   }
 }
@@ -241,6 +247,33 @@ class HoorCatalog {
   static const int totalBackdrops = 1000;
   static const int totalMovements = 1000;
   static const int totalReplies = 1000;
+
+  static const List<String> animeStyleNames = [
+    'نجمة القمر الكيوت 🌸',
+    'فجر الفردوس المضيء ✨',
+    'ياسمينة السكينة 🌼',
+    'لؤلؤة الكوثر الصافية 💎',
+    'قمر الهدى الهادئ 🌙',
+    'فراشة الربيع الحالمة 🦋',
+    'ندى السحر الفضي 💧',
+    'سحابة المسك الدافئة ☁️',
+    'زهرة الرمان الوردي 🌺',
+    'أميرة النور الحالمة 👑',
+    'فانوس البشارة الذهبي 🏮',
+    'زمردة التسبيح الهادئة 🌿',
+    'شمس الضحى الباسمة ☀️',
+    'نور السندس الأخضر 💚',
+    'تاج اللؤلؤ الملكي ✨',
+    'نسمة الندى السماوي 🌊',
+    'كوكب الريان اللامع 🌠',
+    'روضة الأنس الجميلة 🌷',
+    'جوهرة الفلق الوردية 💖',
+    'سراج التهجد النوراني 🕯️',
+    'نسيم العبير الفائض 🍃',
+    'بدر الإيمان المشرق 🌟',
+    'أنس القلوب السعيد 🕊️',
+    'ريحانة الجنة اللطيفة 🌸',
+  ];
 
   static const List<Color> skinTones = [
     Color(0xFFFFE4CE), // أبيض لؤلؤي دافئ
@@ -796,7 +829,7 @@ class HoorCatalog {
       routeKey: 'tasbih',
       screenTitle: 'السبحة النورانية والتحديات',
       egyptianIntro:
-          'السبحة دي فيها أحلى 20 تأثير فوز 3D و30 خلفية إسلامية بتتغير كل 100 تسبيحة! وكل تسبيحة هنا بتسمّع معايا وتزود رصيدك في جنتي 📿',
+          'السبحة دي فيها أحلى 20 تأثير فوز مبهر و30 خلفية إسلامية بتتغير كل 100 تسبيحة! وكل تسبيحة هنا بتسمّع معايا وتزود رصيدك في جنتي 📿',
       practicalTip:
           'جرب تختار هدف تسبيح أو تتحدى أهلك في تحدي الذكر العائلي!',
       paradiseHadith:

@@ -157,7 +157,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                     child: Row(
                       children: [
                         _drawerShortcutChip(
-                          label: '🎨 الثيمات (${IslamicTheme.allThemes.length}) 3D',
+                          label: '🎨 الثيمات (${IslamicTheme.allThemes.length})',
                           icon: Icons.palette_rounded,
                           accent: accent,
                           palette: palette,
@@ -180,7 +180,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                           },
                         ),
                         _drawerShortcutChip(
-                          label: '🎮 ٣٠ لعبة 3D',
+                          label: '🎮 ٣٠ لعبة',
                           icon: Icons.sports_esports_rounded,
                           accent: const Color(0xFF8B5CF6),
                           palette: palette,
@@ -1170,7 +1170,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
       children: [
         _buildShortcutTile(
           icon: Icons.palette_rounded,
-          title: "🎨 بوابة الثيمات الموحدة 3D (٥٢ ثيماً + ٢٠ خطاً)",
+          title: "🎨 بوابة الثيمات الموحدة (٥٢ ثيماً + ٢٠ خطاً)",
           subtitle: "تحكم كامل في كل الألوان والوضع الليلي العصري والخطوط من مكان واحد",
           palette: palette,
           onTap: () {
@@ -1191,7 +1191,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
         ),
         _buildShortcutTile(
           icon: Icons.sports_esports_rounded,
-          title: "🎮 صالة الـ ٣٠ لعبة التنافسية 3D",
+          title: "🎮 صالة الـ ٣٠ لعبة التنافسية",
           subtitle: "٩٠ عالماً • ٩٠ بطلاً • ٣٠ زعيماً شريراً • ٤ مستويات صعوبة • مشاركة ٢ لاعبين",
           palette: palette,
           onTap: () {

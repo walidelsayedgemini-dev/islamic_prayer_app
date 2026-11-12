@@ -24,51 +24,60 @@ class HoorCharacterPainter extends CustomPainter {
     final cx = w * 0.5;
     final t = animationValue * 2 * math.pi;
 
+    final animeIdx = appearance.animeStyleIndex.clamp(0, 23);
+    final isChibiCompact = animeIdx % 3 == 2;
+
     final breath = math.sin(t * movement.breathSpeed) * movement.breathAmplitude;
     final headTilt =
-        math.sin(t * 0.5 * movement.breathSpeed) * movement.headTiltAngle;
+        math.sin(t * 0.5 * movement.breathSpeed) * (movement.headTiltAngle * 0.85);
     final handWave =
         math.sin(t * movement.handWaveSpeed + 0.6) * movement.handWaveAngle +
             (speakingIntensity * 0.14 * math.sin(t * 3.0));
     final cloakSway =
         math.sin(t * 0.75) * movement.cloakRippleAmplitude;
-    final haloPulse = 0.85 + 0.15 * math.sin(t * movement.haloPulseSpeed);
+    final haloPulse = 0.88 + 0.12 * math.sin(t * movement.haloPulseSpeed);
 
-    // طبيعة رمش العين الواقعية السلسة كل دورة
-    final blinkWave = math.pow((math.sin(t * 0.5)).abs(), 26).toDouble();
-    final eyeOpen = (1.0 - blinkWave * 0.92).clamp(0.08, 1.0);
+    // رمش أنمي لطيف ومشرق
+    final blinkWave = math.pow((math.sin(t * 0.5)).abs(), 28).toDouble();
+    final eyeOpen = (1.0 - blinkWave * 0.90).clamp(0.12, 1.0);
 
-    // الألوان المختارة (دمج لطيف بين تفاصيل المستخدم والسكن المختار)
     final skinBase = HoorCatalog.skinTones[appearance.skinToneIndex % 6];
-    final skinShadow = Color.lerp(skinBase, const Color(0xFF6D4C41), 0.18)!;
+    final skinShadow = Color.lerp(skinBase, const Color(0xFFE09F87), 0.22)!;
     final eyeColor = HoorCatalog.eyeColors[appearance.eyeColorIndex % 6];
 
     final robePrimary = Color.lerp(
       HoorCatalog.robePalette[appearance.robeColorIndex % 12],
       skin.primarySilk,
-      0.45,
+      0.42,
     )!;
-    final robeSecondary = Color.lerp(robePrimary, skin.secondarySilk, 0.5)!;
+    final robeSecondary = Color.lerp(robePrimary, skin.secondarySilk, 0.55)!;
     final trimColor = Color.lerp(
       HoorCatalog.trimPalette[appearance.trimColorIndex % 8],
       skin.trimGold,
-      0.5,
+      0.48,
     )!;
-    final headColor = Color.lerp(skin.hijabOrKufiColor, robePrimary, 0.35)!;
+    final headColor = Color.lerp(skin.hijabOrKufiColor, robePrimary, 0.36)!;
 
     final isMale = appearance.gender == HoorGender.male;
     final isPoseGreeting = appearance.basePose == 1;
     final isPoseDua = appearance.basePose == 2;
 
-    // 1. الهالة النورانية خلف الشخصية
-    _paintAura(canvas, cx, h * 0.44 + breath, math.min(w, h) * 0.42 * haloPulse,
-        skin.auraColor);
+    // 1. الهالة الحالمة + نجوم/بتلات متلألئة
+    _paintCuteAnimeAura(
+      canvas,
+      cx,
+      h * 0.44 + breath,
+      math.min(w, h) * 0.44 * haloPulse,
+      skin.auraColor,
+      trimColor,
+      animeIdx,
+    );
 
     canvas.save();
-    canvas.translate(0, breath * 0.75);
+    canvas.translate(0, breath * 0.7);
 
-    // 2. العباءة / الثوب والوشاح المتدفق بنعومة الحرير
-    _paintRobeAndShoulders(
+    // 2. الرداء الأنمي اللطيف بخطوط نظيفة ولمعان حريري
+    _paintAnimeRobe(
       canvas,
       w: w,
       h: h,
@@ -78,37 +87,39 @@ class HoorCharacterPainter extends CustomPainter {
       trimColor: trimColor,
       cloakSway: cloakSway,
       isMale: isMale,
+      animeIdx: animeIdx,
+      isChibiCompact: isChibiCompact,
     );
 
-    // 3. الرقبة والظل الدافئ أسفل الذقن
+    // 3. الرقبة الصغيرة الأنمي
     final neckRect = Rect.fromCenter(
-      center: Offset(cx, h * 0.415),
-      width: w * 0.125,
-      height: h * 0.11,
+      center: Offset(cx, h * 0.435),
+      width: w * 0.095,
+      height: h * 0.085,
     );
-    final neckPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [skinShadow, skinBase],
-      ).createShader(neckRect);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(neckRect, Radius.circular(w * 0.05)),
-      neckPaint,
+      RRect.fromRectAndRadius(neckRect, Radius.circular(w * 0.04)),
+      Paint()..color = skinShadow,
     );
 
-    // 4. الرأس + الملامح الدقيقة + الحجاب أو الكوفية/العمامة
+    // 4. الرأس الأنمي اللطيف (نسبة تشيبي جذابة بعيون واسعة وملامح بريئة جميلة)
     canvas.save();
-    canvas.translate(cx, h * 0.31);
+    canvas.translate(cx, h * (isChibiCompact ? 0.325 : 0.315));
     canvas.rotate(headTilt);
 
     if (!isMale) {
-      // طرحة خلفية منسدلة للمؤنث (حور)
-      _paintHijabDrapeBack(canvas, w, h, headColor, trimColor, cloakSway);
+      _paintAnimeHijabDrapeBack(
+        canvas,
+        w,
+        h,
+        headColor,
+        trimColor,
+        cloakSway,
+        animeIdx,
+      );
     }
 
-    // الوجه المتناسب طبيعياً
-    _paintFace(
+    _paintAnimeFace(
       canvas,
       w: w,
       h: h,
@@ -119,23 +130,39 @@ class HoorCharacterPainter extends CustomPainter {
       isMale: isMale,
       speakingIntensity: speakingIntensity,
       t: t,
+      animeIdx: animeIdx,
     );
 
     if (isMale) {
-      _paintMaleHeadwear(canvas, w, h, headColor, trimColor);
+      _paintAnimeMaleHeadwear(
+        canvas,
+        w,
+        h,
+        headColor,
+        trimColor,
+        animeIdx,
+      );
     } else {
-      _paintFemaleHijabFront(canvas, w, h, headColor, trimColor);
+      _paintAnimeFemaleHijabFront(
+        canvas,
+        w,
+        h,
+        headColor,
+        trimColor,
+        animeIdx,
+      );
     }
 
     canvas.restore();
 
-    // 5. الذراعان واليدان مع الحركة الانسيابية والأداة المحمولة (فانوس/مصحف/سبحة/لؤلؤة)
-    _paintArmsAndHandheld(
+    // 5. الذراعان واليدان + العنصر النوراني
+    _paintAnimeArmsAndHandheld(
       canvas,
       w: w,
       h: h,
       cx: cx,
       robePrimary: robePrimary,
+      robeSecondary: robeSecondary,
       trimColor: trimColor,
       skinBase: skinBase,
       handWave: handWave,
@@ -147,44 +174,75 @@ class HoorCharacterPainter extends CustomPainter {
     canvas.restore();
   }
 
-  void _paintAura(
-      Canvas canvas, double cx, double cy, double radius, Color auraColor) {
-    final style = appearance.auraStyle;
+  void _paintCuteAnimeAura(
+    Canvas canvas,
+    double cx,
+    double cy,
+    double radius,
+    Color auraColor,
+    Color trimColor,
+    int animeIdx,
+  ) {
     final grad = RadialGradient(
       colors: [
-        auraColor.withOpacity(0.42),
-        auraColor.withOpacity(0.14),
+        auraColor.withOpacity(0.36),
+        trimColor.withOpacity(0.14),
         auraColor.withOpacity(0.0),
       ],
     );
     canvas.drawCircle(
       Offset(cx, cy),
-      radius * 1.15,
+      radius * 1.16,
       Paint()
         ..shader = grad.createShader(
-            Rect.fromCircle(center: Offset(cx, cy), radius: radius * 1.15)),
+          Rect.fromCircle(center: Offset(cx, cy), radius: radius * 1.16),
+        ),
     );
 
-    if (style >= 1) {
+    if (appearance.auraStyle >= 1) {
       final ringPaint = Paint()
-        ..color = auraColor.withOpacity(0.28)
+        ..color = trimColor.withOpacity(0.32)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.6;
-      canvas.drawCircle(Offset(cx, cy), radius * 0.86, ringPaint);
+      canvas.drawCircle(Offset(cx, cy), radius * 0.88, ringPaint);
     }
-    if (style >= 2) {
-      // هلال ونجمة هندسية مضيئة حول الهالة
-      final starPaint = Paint()..color = Colors.white.withOpacity(0.65);
-      for (int k = 0; k < 6; k++) {
-        final ang = (k * math.pi / 3) + animationValue * math.pi * 0.5;
-        final sx = cx + math.cos(ang) * radius * 0.92;
-        final sy = cy + math.sin(ang) * radius * 0.92;
-        canvas.drawCircle(Offset(sx, sy), k.isEven ? 2.4 : 1.5, starPaint);
-      }
+
+    // نجوم ولمعات أنمي متلألئة around character
+    final sparkleCount = appearance.auraStyle >= 2 ? 7 : 4;
+    for (int k = 0; k < sparkleCount; k++) {
+      final ang = (k * (math.pi * 2 / sparkleCount)) +
+          animationValue * math.pi * 0.65 +
+          (animeIdx * 0.25);
+      final r = radius * (k.isEven ? 0.94 : 0.78);
+      final sx = cx + math.cos(ang) * r;
+      final sy = cy + math.sin(ang) * r;
+      final sSize = k.isEven ? 4.2 : 3.0;
+      _drawFourPointStar(
+        canvas,
+        Offset(sx, sy),
+        sSize,
+        k % 3 == 0 ? trimColor : Colors.white.withOpacity(0.92),
+      );
     }
   }
 
-  void _paintRobeAndShoulders(
+  void _drawFourPointStar(
+      Canvas canvas, Offset center, double r, Color color) {
+    final p = Path()
+      ..moveTo(center.dx, center.dy - r)
+      ..quadraticBezierTo(center.dx + r * 0.2, center.dy - r * 0.2,
+          center.dx + r, center.dy)
+      ..quadraticBezierTo(center.dx + r * 0.2, center.dy + r * 0.2, center.dx,
+          center.dy + r)
+      ..quadraticBezierTo(center.dx - r * 0.2, center.dy + r * 0.2,
+          center.dx - r, center.dy)
+      ..quadraticBezierTo(center.dx - r * 0.2, center.dy - r * 0.2, center.dx,
+          center.dy - r)
+      ..close();
+    canvas.drawPath(p, Paint()..color = color);
+  }
+
+  void _paintAnimeRobe(
     Canvas canvas, {
     required double w,
     required double h,
@@ -194,86 +252,114 @@ class HoorCharacterPainter extends CustomPainter {
     required Color trimColor,
     required double cloakSway,
     required bool isMale,
+    required int animeIdx,
+    required bool isChibiCompact,
   }) {
-    final bodyTop = h * 0.44;
-    final shoulderHalf = w * (isMale ? 0.275 : 0.245);
-    final hemHalf = w * (isMale ? 0.34 : 0.38);
+    final bodyTop = h * 0.455;
+    final shoulderHalf = w * (isMale ? 0.235 : 0.215);
+    final hemHalf = w * (isChibiCompact ? 0.36 : 0.33);
 
     final robePath = Path()
-      ..moveTo(cx - shoulderHalf * 0.45, bodyTop)
-      ..quadraticBezierTo(
-          cx - shoulderHalf, bodyTop + h * 0.04, cx - shoulderHalf * 1.05, bodyTop + h * 0.14)
-      ..quadraticBezierTo(
-          cx - hemHalf + cloakSway * 0.4, h * 0.78, cx - hemHalf + cloakSway, h * 0.97)
-      ..lineTo(cx + hemHalf + cloakSway * 0.6, h * 0.97)
-      ..quadraticBezierTo(
-          cx + hemHalf + cloakSway * 0.3, h * 0.78, cx + shoulderHalf * 1.05, bodyTop + h * 0.14)
-      ..quadraticBezierTo(
-          cx + shoulderHalf, bodyTop + h * 0.04, cx + shoulderHalf * 0.45, bodyTop)
+      ..moveTo(cx - shoulderHalf * 0.48, bodyTop)
+      ..quadraticBezierTo(cx - shoulderHalf, bodyTop + h * 0.04,
+          cx - shoulderHalf * 1.02, bodyTop + h * 0.14)
+      ..quadraticBezierTo(cx - hemHalf + cloakSway * 0.35, h * 0.78,
+          cx - hemHalf + cloakSway, h * 0.96)
+      ..quadraticBezierTo(cx + cloakSway * 0.5, h * 0.99,
+          cx + hemHalf + cloakSway * 0.55, h * 0.96)
+      ..quadraticBezierTo(cx + hemHalf + cloakSway * 0.25, h * 0.78,
+          cx + shoulderHalf * 1.02, bodyTop + h * 0.14)
+      ..quadraticBezierTo(cx + shoulderHalf, bodyTop + h * 0.04,
+          cx + shoulderHalf * 0.48, bodyTop)
       ..close();
 
-    final bodyRect = Rect.fromLTRB(cx - hemHalf, bodyTop, cx + hemHalf, h * 0.98);
+    final bodyRect =
+        Rect.fromLTRB(cx - hemHalf, bodyTop, cx + hemHalf, h * 0.98);
     canvas.drawPath(
       robePath,
       Paint()
         ..shader = LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [robeSecondary, robePrimary, Color.lerp(robePrimary, Colors.black, 0.28)!],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color.lerp(robeSecondary, Colors.white, 0.15)!,
+            robePrimary,
+            Color.lerp(robePrimary, Colors.black, 0.18)!,
+          ],
         ).createShader(bodyRect),
     );
 
-    // حزام أو تطريز عمودي وسط الثوب
-    final centerPanel = Path()
-      ..moveTo(cx - w * 0.032, bodyTop + h * 0.03)
-      ..lineTo(cx + w * 0.032, bodyTop + h * 0.03)
-      ..lineTo(cx + w * 0.065 + cloakSway * 0.4, h * 0.96)
-      ..lineTo(cx - w * 0.065 + cloakSway * 0.4, h * 0.96)
-      ..close();
-    canvas.drawPath(
-      centerPanel,
-      Paint()
-        ..color = trimColor.withOpacity(0.24)
-        ..style = PaintingStyle.fill,
-    );
+    // كاب كتف أنمي ناعم (capelet / ribbon sash) يختلف حسب animeIdx
+    if (animeIdx % 4 != 3) {
+      final capPath = Path()
+        ..moveTo(cx - shoulderHalf * 0.55, bodyTop)
+        ..quadraticBezierTo(cx - shoulderHalf * 1.12, bodyTop + h * 0.08,
+            cx - shoulderHalf * 0.92, bodyTop + h * 0.17)
+        ..quadraticBezierTo(cx, bodyTop + h * 0.22, cx + shoulderHalf * 0.92,
+            bodyTop + h * 0.17)
+        ..quadraticBezierTo(cx + shoulderHalf * 1.12, bodyTop + h * 0.08,
+            cx + shoulderHalf * 0.55, bodyTop)
+        ..close();
+      canvas.drawPath(
+        capPath,
+        Paint()..color = robeSecondary.withOpacity(0.85),
+      );
+      canvas.drawPath(
+        capPath,
+        Paint()
+          ..color = trimColor.withOpacity(0.75)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.6,
+      );
+    }
 
-    // خطوط التطريز الذهبي/الفضي الحريري
-    final trimPaint = Paint()
-      ..color = trimColor.withOpacity(0.88)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
-    canvas.drawLine(
-      Offset(cx - w * 0.032, bodyTop + h * 0.03),
-      Offset(cx - w * 0.065 + cloakSway * 0.4, h * 0.95),
-      trimPaint,
-    );
-    canvas.drawLine(
-      Offset(cx + w * 0.032, bodyTop + h * 0.03),
-      Offset(cx + w * 0.065 + cloakSway * 0.4, h * 0.95),
-      trimPaint,
-    );
+    // فيونكة / وسام نجمي أنمي لطيف على الصدر
+    final bowY = bodyTop + h * 0.085;
+    final ribbonPaint = Paint()..color = trimColor;
+    canvas.drawCircle(Offset(cx, bowY), w * 0.022, ribbonPaint);
+    if (!isMale) {
+      final leftBow = Path()
+        ..moveTo(cx, bowY)
+        ..lineTo(cx - w * 0.055, bowY - h * 0.022)
+        ..lineTo(cx - w * 0.048, bowY + h * 0.022)
+        ..close();
+      final rightBow = Path()
+        ..moveTo(cx, bowY)
+        ..lineTo(cx + w * 0.055, bowY - h * 0.022)
+        ..lineTo(cx + w * 0.048, bowY + h * 0.022)
+        ..close();
+      canvas.drawPath(leftBow, ribbonPaint);
+      canvas.drawPath(rightBow, ribbonPaint);
+    }
 
-    // حاشية الياقة المزخرفة
-    final collarPath = Path()
-      ..moveTo(cx - w * 0.09, bodyTop + h * 0.01)
-      ..quadraticBezierTo(cx, bodyTop + h * 0.075, cx + w * 0.09, bodyTop + h * 0.01);
-    canvas.drawPath(
-      collarPath,
+    // حاشية ناعمة أسفل الثوب
+    canvas.drawLine(
+      Offset(cx - hemHalf * 0.85 + cloakSway * 0.8, h * 0.92),
+      Offset(cx + hemHalf * 0.85 + cloakSway * 0.5, h * 0.92),
       Paint()
-        ..color = trimColor
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3.2
+        ..color = trimColor.withOpacity(0.55)
+        ..strokeWidth = 2.0
         ..strokeCap = StrokeCap.round,
     );
   }
 
-  void _paintHijabDrapeBack(Canvas canvas, double w, double h, Color headColor,
-      Color trimColor, double cloakSway) {
+  void _paintAnimeHijabDrapeBack(
+    Canvas canvas,
+    double w,
+    double h,
+    Color headColor,
+    Color trimColor,
+    double cloakSway,
+    int animeIdx,
+  ) {
+    final spread = animeIdx.isEven ? 0.25 : 0.22;
     final drape = Path()
-      ..moveTo(-w * 0.16, -h * 0.06)
-      ..quadraticBezierTo(-w * 0.25, h * 0.08, -w * 0.23 + cloakSway * 0.5, h * 0.30)
-      ..quadraticBezierTo(0, h * 0.36, w * 0.23 + cloakSway * 0.5, h * 0.30)
-      ..quadraticBezierTo(w * 0.25, h * 0.08, w * 0.16, -h * 0.06)
+      ..moveTo(-w * 0.17, -h * 0.07)
+      ..quadraticBezierTo(-w * (spread + 0.04), h * 0.08,
+          -w * spread + cloakSway * 0.55, h * 0.29)
+      ..quadraticBezierTo(0, h * 0.35, w * spread + cloakSway * 0.55, h * 0.29)
+      ..quadraticBezierTo(
+          w * (spread + 0.04), h * 0.08, w * 0.17, -h * 0.07)
       ..close();
 
     canvas.drawPath(
@@ -282,12 +368,16 @@ class HoorCharacterPainter extends CustomPainter {
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [headColor, Color.lerp(headColor, Colors.black, 0.25)!],
-        ).createShader(Rect.fromCircle(center: Offset.zero, radius: w * 0.28)),
+          colors: [
+            Color.lerp(headColor, Colors.white, 0.12)!,
+            headColor,
+            Color.lerp(headColor, Colors.black, 0.16)!,
+          ],
+        ).createShader(Rect.fromCircle(center: Offset.zero, radius: w * 0.29)),
     );
   }
 
-  void _paintFace(
+  void _paintAnimeFace(
     Canvas canvas, {
     required double w,
     required double h,
@@ -298,53 +388,82 @@ class HoorCharacterPainter extends CustomPainter {
     required bool isMale,
     required double speakingIntensity,
     required double t,
+    required int animeIdx,
   }) {
-    final faceWidth = w * (isMale ? 0.24 : 0.22);
-    final faceHeight = h * 0.205;
-    final faceRect = Rect.fromCenter(
-      center: Offset.zero,
-      width: faceWidth,
-      height: faceHeight,
-    );
+    final faceWidth = w * 0.265;
+    final faceHeight = h * 0.225;
 
-    // تدرج الوجه المتناظر بنعومة
+    // شكل رأس أنمي تشيبي لطيف بخدين مستديرين وذقن رقيق ناعم
+    final hw = faceWidth * 0.5;
+    final hh = faceHeight * 0.5;
     final facePath = Path()
-      ..addRRect(RRect.fromRectAndRadius(faceRect, Radius.circular(faceWidth * 0.48)));
+      ..moveTo(0, -hh)
+      ..cubicTo(hw * 0.92, -hh, hw * 1.05, -hh * 0.15, hw * 0.96, hh * 0.35)
+      ..quadraticBezierTo(hw * 0.72, hh * 0.94, 0, hh * 1.02)
+      ..quadraticBezierTo(-hw * 0.72, hh * 0.94, -hw * 0.96, hh * 0.35)
+      ..cubicTo(-hw * 1.05, -hh * 0.15, -hw * 0.92, -hh, 0, -hh)
+      ..close();
 
+    final faceRect =
+        Rect.fromCenter(center: Offset.zero, width: faceWidth, height: faceHeight);
     canvas.drawPath(
       facePath,
       Paint()
         ..shader = RadialGradient(
-          center: const Alignment(-0.2, -0.25),
-          radius: 0.9,
-          colors: [skinBase, skinBase, skinShadow],
+          center: const Alignment(-0.15, -0.25),
+          radius: 0.95,
+          colors: [
+            Color.lerp(skinBase, Colors.white, 0.16)!,
+            skinBase,
+            skinShadow,
+          ],
           stops: const [0.0, 0.65, 1.0],
         ).createShader(faceRect),
     );
-
-    // حمرة خفيفة دافئة للخدود
-    final blushColor = const Color(0xFFE57373).withOpacity(isMale ? 0.12 : 0.22);
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(-faceWidth * 0.27, faceHeight * 0.14),
-        width: faceWidth * 0.20,
-        height: faceHeight * 0.10,
-      ),
-      Paint()..color = blushColor,
-    );
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(faceWidth * 0.27, faceHeight * 0.14),
-        width: faceWidth * 0.20,
-        height: faceHeight * 0.10,
-      ),
-      Paint()..color = blushColor,
+    // تحديد أنمي ناعم دافئ حول الوجه
+    canvas.drawPath(
+      facePath,
+      Paint()
+        ..color = skinShadow.withOpacity(0.55)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2,
     );
 
-    // العيون الدقيقة التعبيرية
-    final eyeY = -faceHeight * 0.04;
-    final eyeOffsetX = faceWidth * 0.21;
-    final eyeR = faceWidth * (appearance.eyeStyle == 1 ? 0.088 : 0.078);
+    // حمرة خدود أنمي لطيفة جداً (وردية خفيفة + خطوط أنمي كيوت)
+    final blushColor =
+        const Color(0xFFFF8A9E).withOpacity(isMale ? 0.24 : 0.38);
+    for (final side in [-1.0, 1.0]) {
+      final bx = side * faceWidth * 0.29;
+      final by = faceHeight * 0.18;
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(bx, by),
+          width: faceWidth * 0.19,
+          height: faceHeight * 0.105,
+        ),
+        Paint()..color = blushColor,
+      );
+      if (!isMale) {
+        final stripeP = Paint()
+          ..color = const Color(0xFFF06292).withOpacity(0.45)
+          ..strokeWidth = 1.2
+          ..strokeCap = StrokeCap.round;
+        canvas.drawLine(
+            Offset(bx - 3, by + 1), Offset(bx - 1, by - 2), stripeP);
+        canvas.drawLine(
+            Offset(bx + 1, by + 1), Offset(bx + 3, by - 2), stripeP);
+      }
+    }
+
+    // العيون الأنمي الكبيرة اللامعة البرّاقة ✨
+    final eyeY = faceHeight * 0.01;
+    final eyeOffsetX = faceWidth * 0.22;
+    final eyeScaleMod = (animeIdx % 3 == 0) ? 1.12 : 1.02;
+    final eyeW = faceWidth * (isMale ? 0.19 : 0.215) * eyeScaleMod;
+    final eyeH = eyeW * (isMale ? 1.05 : 1.18);
+
+    final irisTop = Color.lerp(eyeColor, Colors.black, 0.35)!;
+    final irisBottom = Color.lerp(eyeColor, Colors.white, 0.35)!;
 
     for (final side in [-1.0, 1.0]) {
       final ex = side * eyeOffsetX;
@@ -352,199 +471,312 @@ class HoorCharacterPainter extends CustomPainter {
       canvas.translate(ex, eyeY);
       canvas.scale(1.0, eyeOpen);
 
-      // بياض العين الناصع
-      canvas.drawOval(
-        Rect.fromCenter(center: Offset.zero, width: eyeR * 2.1, height: eyeR * 1.6),
+      // بياض العين الناعم
+      final eyeOuterRect =
+          Rect.fromCenter(center: Offset.zero, width: eyeW, height: eyeH);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(eyeOuterRect, Radius.circular(eyeW * 0.45)),
         Paint()..color = Colors.white,
       );
-      // القزحية الملونة
-      canvas.drawCircle(Offset.zero, eyeR * 0.78, Paint()..color = eyeColor);
-      // البؤبؤ + لمعة نورانية
-      canvas.drawCircle(
-          Offset.zero, eyeR * 0.38, Paint()..color = const Color(0xFF111111));
-      canvas.drawCircle(
-        Offset(-eyeR * 0.25, -eyeR * 0.25),
-        eyeR * 0.24,
-        Paint()..color = Colors.white.withOpacity(0.9),
+
+      // القزحية الأنمي الكبيرة المتدرجة
+      final irisRect = Rect.fromCenter(
+        center: Offset(0, eyeH * 0.03),
+        width: eyeW * 0.80,
+        height: eyeH * 0.86,
       );
+      canvas.drawOval(
+        irisRect,
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [irisTop, eyeColor, irisBottom],
+          ).createShader(irisRect),
+      );
+
+      // البؤبؤ الأنيق في المركز
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(0, eyeH * 0.02),
+          width: eyeW * 0.36,
+          height: eyeH * 0.40,
+        ),
+        Paint()..color = const Color(0xFF14111A),
+      );
+
+      // هلال مضيء أسفل القزحية (بريق أنمي دافئ)
+      canvas.drawArc(
+        Rect.fromCenter(
+          center: Offset(0, eyeH * 0.16),
+          width: eyeW * 0.56,
+          height: eyeH * 0.36,
+        ),
+        0.15,
+        math.pi - 0.3,
+        false,
+        Paint()
+          ..color = Colors.white.withOpacity(0.62)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.6
+          ..strokeCap = StrokeCap.round,
+      );
+
+      // لمعتان أنمي ساطعتان (Sparkle Catchlights!)
+      canvas.drawCircle(
+        Offset(-eyeW * 0.19, -eyeH * 0.18),
+        eyeW * 0.16,
+        Paint()..color = Colors.white,
+      );
+      canvas.drawCircle(
+        Offset(eyeW * 0.16, eyeH * 0.16),
+        eyeW * 0.085,
+        Paint()..color = Colors.white.withOpacity(0.92),
+      );
+
       canvas.restore();
 
-      // الجفن والرموش العليا
+      // خط الرمش الأنمي العلوي المقوّس + رموش طرفية لطيفة
       final lashPaint = Paint()
-        ..color = const Color(0xFF2C1E16)
+        ..color = const Color(0xFF231829)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = isMale ? 1.8 : 2.3
+        ..strokeWidth = isMale ? 2.1 : 2.6
         ..strokeCap = StrokeCap.round;
-      final lashArc = Path()
-        ..moveTo(ex - eyeR * 1.15, eyeY + 1)
-        ..quadraticBezierTo(ex, eyeY - eyeR * 1.15 * eyeOpen, ex + eyeR * 1.15, eyeY + 1);
-      canvas.drawPath(lashArc, lashPaint);
+      final lashY = eyeY - (eyeH * 0.44 * eyeOpen);
+      final lashPath = Path()
+        ..moveTo(ex - eyeW * 0.54, lashY + eyeH * 0.18)
+        ..quadraticBezierTo(ex, lashY - eyeH * 0.12, ex + eyeW * 0.54,
+            lashY + eyeH * 0.18);
+      canvas.drawPath(lashPath, lashPaint);
 
-      // الحاجب (3 أنماط)
-      final browY = eyeY - eyeR * (appearance.browStyle == 1 ? 1.85 : 1.55);
-      final browArch = appearance.browStyle == 2 ? eyeR * 0.65 : eyeR * 0.45;
+      if (!isMale) {
+        final wingX = ex + side * eyeW * 0.52;
+        final wingY = lashY + eyeH * 0.12;
+        canvas.drawLine(
+          Offset(wingX, wingY),
+          Offset(wingX + side * eyeW * 0.15, wingY - eyeH * 0.12),
+          Paint()
+            ..color = const Color(0xFF231829)
+            ..strokeWidth = 1.8
+            ..strokeCap = StrokeCap.round,
+        );
+      }
+
+      // الحاجب الهادئ المقوس above eye
+      final browY = eyeY - eyeH * 0.68;
       final browPath = Path()
-        ..moveTo(ex - eyeR * 1.1, browY)
-        ..quadraticBezierTo(ex, browY - browArch, ex + eyeR * 1.1, browY + 0.8);
+        ..moveTo(ex - eyeW * 0.38, browY + 1)
+        ..quadraticBezierTo(ex, browY - 3.2, ex + eyeW * 0.38, browY + 1);
       canvas.drawPath(
         browPath,
         Paint()
-          ..color = const Color(0xFF3E2723)
+          ..color = const Color(0xFF3E2723).withOpacity(0.85)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = isMale ? 2.5 : 1.9
+          ..strokeWidth = 1.6
           ..strokeCap = StrokeCap.round,
       );
     }
 
-    // الأنف الناعم المتناسب
-    final nosePath = Path()
-      ..moveTo(0, faceHeight * 0.02)
-      ..quadraticBezierTo(faceWidth * 0.03, faceHeight * 0.14, -faceWidth * 0.015, faceHeight * 0.17);
-    canvas.drawPath(
-      nosePath,
-      Paint()
-        ..color = skinShadow.withOpacity(0.55)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.6
-        ..strokeCap = StrokeCap.round,
+    // أنف أنمي صغير لطيف جداً (نقطة ظل صغيرة ناعمة)
+    canvas.drawCircle(
+      Offset(0, faceHeight * 0.16),
+      1.1,
+      Paint()..color = skinShadow.withOpacity(0.75),
     );
 
-    // الفم والابتسامة الدافئة (مع حركة كلام لطيفة عند التفاعل)
+    // فم أنمي مبتسم لطيف (بدون أي تفاصيل مخيفة)
     final mouthY = faceHeight * 0.285;
-    final mouthW = faceWidth * (appearance.mouthStyle == 1 ? 0.22 : 0.18);
-    final speakOpen = speakingIntensity > 0.05
-        ? (0.3 + 0.7 * (math.sin(t * 6.0).abs())) * speakingIntensity * 4.5
+    final mouthW = faceWidth * 0.135;
+    final speakWave = speakingIntensity > 0.05
+        ? (0.3 + 0.7 * math.sin(t * 6.0).abs()) * speakingIntensity
         : 0.0;
 
-    final smilePath = Path()
-      ..moveTo(-mouthW, mouthY)
-      ..quadraticBezierTo(0, mouthY + 6.0 + speakOpen, mouthW, mouthY);
-    canvas.drawPath(
-      smilePath,
-      Paint()
-        ..color = isMale ? const Color(0xFF8D4E4E) : const Color(0xFFC25B6B)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.4
-        ..strokeCap = StrokeCap.round,
-    );
-
-    if (speakOpen > 1.2) {
-      canvas.drawOval(
-        Rect.fromCenter(
-          center: Offset(0, mouthY + 2.5),
-          width: mouthW * 1.1,
-          height: speakOpen + 1.5,
-        ),
-        Paint()..color = const Color(0xFF880E4F).withOpacity(0.65),
+    if (speakWave > 0.18) {
+      // فم مفتوح سعيد كيوت أثناء الحديث
+      final openRect = Rect.fromCenter(
+        center: Offset(0, mouthY + 2.5),
+        width: mouthW * 1.45,
+        height: 4.5 + speakWave * 5.0,
       );
-    }
-
-    // لحية خفيفة أنيقة اختيارية للذكر عند تفضيل النمط الوقور
-    if (isMale && appearance.headwearStyle >= 2) {
-      final beardPath = Path()
-        ..moveTo(-faceWidth * 0.38, faceHeight * 0.20)
-        ..quadraticBezierTo(0, faceHeight * 0.62, faceWidth * 0.38, faceHeight * 0.20)
-        ..quadraticBezierTo(0, faceHeight * 0.44, -faceWidth * 0.38, faceHeight * 0.20);
+      canvas.drawOval(openRect, Paint()..color = const Color(0xFFD84B6E));
+      canvas.drawArc(
+        Rect.fromCenter(
+          center: Offset(0, mouthY + 4.5),
+          width: mouthW * 0.9,
+          height: 3.5,
+        ),
+        0,
+        math.pi,
+        true,
+        Paint()..color = const Color(0xFFFF9DB0),
+      );
+    } else if (appearance.mouthStyle == 2) {
+      // ابتسامة ":3" الأنمي الظريفة
+      final catSmile = Path()
+        ..moveTo(-mouthW, mouthY)
+        ..quadraticBezierTo(-mouthW * 0.5, mouthY + 4.5, 0, mouthY)
+        ..quadraticBezierTo(mouthW * 0.5, mouthY + 4.5, mouthW, mouthY);
       canvas.drawPath(
-        beardPath,
-        Paint()..color = const Color(0xFF2D1E16).withOpacity(0.75),
+        catSmile,
+        Paint()
+          ..color = const Color(0xFFB84C65)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.0
+          ..strokeCap = StrokeCap.round,
+      );
+    } else {
+      final smilePath = Path()
+        ..moveTo(-mouthW, mouthY)
+        ..quadraticBezierTo(0, mouthY + 5.5, mouthW, mouthY);
+      canvas.drawPath(
+        smilePath,
+        Paint()
+          ..color = isMale ? const Color(0xFF9E5252) : const Color(0xFFC7526C)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.1
+          ..strokeCap = StrokeCap.round,
       );
     }
   }
 
-  void _paintFemaleHijabFront(
-      Canvas canvas, double w, double h, Color headColor, Color trimColor) {
-    final hw = w * 0.135;
-    final hh = h * 0.125;
+  void _paintAnimeFemaleHijabFront(
+    Canvas canvas,
+    double w,
+    double h,
+    Color headColor,
+    Color trimColor,
+    int animeIdx,
+  ) {
+    final hw = w * 0.148;
+    final hh = h * 0.132;
 
+    // غطاء أنمي حريري ناعم يحيط بالجبهة والجانبين بخصلات ناعمة
     final topCap = Path()
-      ..moveTo(-hw * 1.05, 0)
-      ..quadraticBezierTo(-hw * 1.1, -hh * 1.15, 0, -hh * 1.12)
-      ..quadraticBezierTo(hw * 1.1, -hh * 1.15, hw * 1.05, 0)
-      ..quadraticBezierTo(hw * 0.55, -hh * 0.85, 0, -hh * 0.72)
-      ..quadraticBezierTo(-hw * 0.55, -hh * 0.85, -hw * 1.05, 0)
+      ..moveTo(-hw * 1.06, hh * 0.08)
+      ..quadraticBezierTo(-hw * 1.12, -hh * 1.16, 0, -hh * 1.14)
+      ..quadraticBezierTo(hw * 1.12, -hh * 1.16, hw * 1.06, hh * 0.08)
+      ..quadraticBezierTo(hw * 0.58, -hh * 0.80, 0, -hh * 0.64)
+      ..quadraticBezierTo(-hw * 0.58, -hh * 0.80, -hw * 1.06, hh * 0.08)
       ..close();
 
     canvas.drawPath(
       topCap,
       Paint()
         ..shader = LinearGradient(
-          colors: [Color.lerp(headColor, Colors.white, 0.18)!, headColor],
-        ).createShader(Rect.fromCircle(center: Offset.zero, radius: hw * 1.2)),
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color.lerp(headColor, Colors.white, 0.24)!, headColor],
+        ).createShader(Rect.fromCircle(center: Offset.zero, radius: hw * 1.25)),
     );
 
-    // تاج أو شريط ذهبي خفيف في أعلى الحجاب (حسب headwearStyle)
-    if (appearance.headwearStyle >= 1) {
+    // زينة أنمي مختلفة باختلاف الـ 24 شكلاً (فيونكة، هلال، زهرة، تاج نجمي)
+    final ornamentKind = (animeIdx + appearance.headwearStyle) % 4;
+    if (ornamentKind == 0) {
+      // فيونكة أنمي على الجانب
+      final bx = hw * 0.72;
+      final by = -hh * 0.52;
+      final bowP = Paint()..color = trimColor;
+      canvas.drawCircle(Offset(bx, by), 3.4, bowP);
+      canvas.drawCircle(Offset(bx - 5, by - 2), 4.0, bowP);
+      canvas.drawCircle(Offset(bx + 5, by + 2), 4.0, bowP);
+    } else if (ornamentKind == 1) {
+      // شريط + جوهرة هلال لطيفة
       final band = Path()
-        ..moveTo(-hw * 0.85, -hh * 0.45)
-        ..quadraticBezierTo(0, -hh * 0.92, hw * 0.85, -hh * 0.45);
+        ..moveTo(-hw * 0.88, -hh * 0.46)
+        ..quadraticBezierTo(0, -hh * 0.94, hw * 0.88, -hh * 0.46);
       canvas.drawPath(
         band,
         Paint()
           ..color = trimColor
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.6,
+          ..strokeWidth = 2.4,
       );
-    }
-    if (appearance.headwearStyle >= 3) {
-      // جوهرة/لؤلؤة الجبين الملكية
+      canvas.drawCircle(Offset(0, -hh * 0.72), 4.2, Paint()..color = trimColor);
       canvas.drawCircle(
-        Offset(0, -hh * 0.72),
-        4.2,
-        Paint()..color = trimColor,
-      );
+          Offset(0, -hh * 0.72), 2.0, Paint()..color = Colors.white);
+    } else if (ornamentKind == 2) {
+      // زهرة أنمي 5 بتلات على طرف الحجاب
+      final fx = -hw * 0.72;
+      final fy = -hh * 0.45;
+      for (int p = 0; p < 5; p++) {
+        final ang = p * (math.pi * 2 / 5);
+        canvas.drawCircle(
+          Offset(fx + math.cos(ang) * 4.5, fy + math.sin(ang) * 4.5),
+          2.6,
+          Paint()..color = trimColor.withOpacity(0.92),
+        );
+      }
+      canvas.drawCircle(Offset(fx, fy), 2.3, Paint()..color = Colors.white);
+    } else {
+      // نجمة بريق فوق الجبين
+      _drawFourPointStar(canvas, Offset(0, -hh * 0.78), 5.6, trimColor);
     }
   }
 
-  void _paintMaleHeadwear(
-      Canvas canvas, double w, double h, Color headColor, Color trimColor) {
-    final hw = w * 0.135;
-    final hh = h * 0.12;
+  void _paintAnimeMaleHeadwear(
+    Canvas canvas,
+    double w,
+    double h,
+    Color headColor,
+    Color trimColor,
+    int animeIdx,
+  ) {
+    final hw = w * 0.145;
+    final hh = h * 0.125;
+
+    // خصلات شعر أنمي خفيفة للأولاد
+    final hairColor = animeIdx % 4 == 2
+        ? const Color(0xFF3E2723)
+        : const Color(0xFF1F1824);
 
     if (appearance.headwearStyle == 0) {
-      // شعر مهذب أنيق
       final hair = Path()
-        ..moveTo(-hw * 0.95, -hh * 0.2)
-        ..quadraticBezierTo(-hw * 0.9, -hh * 1.05, 0, -hh * 1.0)
-        ..quadraticBezierTo(hw * 0.9, -hh * 1.05, hw * 0.95, -hh * 0.2)
-        ..quadraticBezierTo(0, -hh * 0.72, -hw * 0.95, -hh * 0.2);
-      canvas.drawPath(hair, Paint()..color = const Color(0xFF251A14));
+        ..moveTo(-hw * 1.02, -hh * 0.12)
+        ..quadraticBezierTo(-hw * 1.0, -hh * 1.15, 0, -hh * 1.12)
+        ..quadraticBezierTo(hw * 1.0, -hh * 1.15, hw * 1.02, -hh * 0.12)
+        ..lineTo(hw * 0.7, -hh * 0.56)
+        ..lineTo(hw * 0.35, -hh * 0.36)
+        ..lineTo(0, -hh * 0.64)
+        ..lineTo(-hw * 0.38, -hh * 0.36)
+        ..lineTo(-hw * 0.72, -hh * 0.56)
+        ..close();
+      canvas.drawPath(hair, Paint()..color = hairColor);
     } else if (appearance.headwearStyle == 1) {
-      // طاقية / كوفية مطرزة بالذهب
       final kufiRect = RRect.fromLTRBAndCorners(
-        -hw * 0.94,
-        -hh * 1.05,
-        hw * 0.94,
-        -hh * 0.46,
-        topLeft: Radius.circular(hw * 0.6),
-        topRight: Radius.circular(hw * 0.6),
-        bottomLeft: const Radius.circular(4),
-        bottomRight: const Radius.circular(4),
+        -hw * 0.96,
+        -hh * 1.08,
+        hw * 0.96,
+        -hh * 0.45,
+        topLeft: Radius.circular(hw * 0.65),
+        topRight: Radius.circular(hw * 0.65),
+        bottomLeft: const Radius.circular(6),
+        bottomRight: const Radius.circular(6),
       );
       canvas.drawRRect(kufiRect, Paint()..color = headColor);
       canvas.drawLine(
-        Offset(-hw * 0.88, -hh * 0.56),
-        Offset(hw * 0.88, -hh * 0.56),
+        Offset(-hw * 0.88, -hh * 0.54),
+        Offset(hw * 0.88, -hh * 0.54),
         Paint()
           ..color = trimColor
-          ..strokeWidth = 2.5,
+          ..strokeWidth = 2.6,
       );
+      _drawFourPointStar(canvas, Offset(0, -hh * 0.76), 4.0, trimColor);
     } else {
-      // عمامة أو غترة وقورة
       final turban = RRect.fromRectAndRadius(
         Rect.fromCenter(
-          center: Offset(0, -hh * 0.82),
-          width: hw * 2.2,
-          height: hh * 0.72,
+          center: Offset(0, -hh * 0.84),
+          width: hw * 2.15,
+          height: hh * 0.74,
         ),
-        Radius.circular(hh * 0.36),
+        Radius.circular(hh * 0.38),
       );
-      canvas.drawRRect(turban, Paint()..color = Colors.white.withOpacity(0.95));
+      canvas.drawRRect(
+          turban, Paint()..color = Colors.white.withOpacity(0.96));
       canvas.drawRRect(
         RRect.fromRectAndRadius(
           Rect.fromCenter(
-            center: Offset(0, -hh * 0.82),
-            width: hw * 1.85,
+            center: Offset(0, -hh * 0.84),
+            width: hw * 1.82,
             height: hh * 0.22,
           ),
           const Radius.circular(6),
@@ -554,12 +786,13 @@ class HoorCharacterPainter extends CustomPainter {
     }
   }
 
-  void _paintArmsAndHandheld(
+  void _paintAnimeArmsAndHandheld(
     Canvas canvas, {
     required double w,
     required double h,
     required double cx,
     required Color robePrimary,
+    required Color robeSecondary,
     required Color trimColor,
     required Color skinBase,
     required double handWave,
@@ -567,43 +800,42 @@ class HoorCharacterPainter extends CustomPainter {
     required bool isPoseDua,
     required double t,
   }) {
-    final shoulderY = h * 0.49;
+    final shoulderY = h * 0.495;
 
-    // الذراع اليمنى (تتحرك بمرونة وترحيب)
+    // الذراع اليمنى الكيوت
     canvas.save();
-    canvas.translate(cx + w * 0.21, shoulderY);
+    canvas.translate(cx + w * 0.195, shoulderY);
     final rightAngle = isPoseDua
-        ? -0.45 + handWave
-        : (isPoseGreeting ? -0.35 + handWave * 1.5 : -0.15 + handWave);
+        ? -0.42 + handWave
+        : (isPoseGreeting ? -0.36 + handWave * 1.45 : -0.16 + handWave);
     canvas.rotate(rightAngle);
 
     final sleeveRight = RRect.fromRectAndRadius(
-      Rect.fromLTWH(-w * 0.04, 0, w * 0.09, h * 0.20),
-      Radius.circular(w * 0.04),
+      Rect.fromLTWH(-w * 0.04, 0, w * 0.088, h * 0.185),
+      Radius.circular(w * 0.044),
     );
     canvas.drawRRect(sleeveRight, Paint()..color = robePrimary);
     canvas.drawCircle(
-      Offset(w * 0.005, h * 0.21),
-      w * 0.038,
+      Offset(w * 0.004, h * 0.195),
+      w * 0.036,
       Paint()..color = skinBase,
     );
     canvas.restore();
 
-    // الذراع اليسرى (تحمل العنصر النوراني المختار)
+    // الذراع اليسرى
     canvas.save();
-    canvas.translate(cx - w * 0.21, shoulderY);
-    final leftAngle = isPoseDua ? 0.45 - handWave : 0.16 - handWave * 0.7;
+    canvas.translate(cx - w * 0.195, shoulderY);
+    final leftAngle = isPoseDua ? 0.42 - handWave : 0.15 - handWave * 0.7;
     canvas.rotate(leftAngle);
 
     final sleeveLeft = RRect.fromRectAndRadius(
-      Rect.fromLTWH(-w * 0.05, 0, w * 0.09, h * 0.20),
-      Radius.circular(w * 0.04),
+      Rect.fromLTWH(-w * 0.048, 0, w * 0.088, h * 0.185),
+      Radius.circular(w * 0.044),
     );
     canvas.drawRRect(sleeveLeft, Paint()..color = robePrimary);
-    final handCenter = Offset(-w * 0.005, h * 0.21);
-    canvas.drawCircle(handCenter, w * 0.038, Paint()..color = skinBase);
+    final handCenter = Offset(-w * 0.004, h * 0.195);
+    canvas.drawCircle(handCenter, w * 0.036, Paint()..color = skinBase);
 
-    // رسم الأداة اليدوية النورانية
     _paintHandheld(canvas, handCenter, w, trimColor, t);
     canvas.restore();
   }
@@ -619,42 +851,41 @@ class HoorCharacterPainter extends CustomPainter {
     canvas.rotate(sway);
 
     if (item == 1) {
-      // فانوس نوراني رقيق
       canvas.drawLine(
         Offset.zero,
-        Offset(0, w * 0.06),
+        Offset(0, w * 0.055),
         Paint()
           ..color = trimColor
           ..strokeWidth = 1.6,
       );
-      final glowRect = Offset(0, w * 0.115);
+      final glowRect = Offset(0, w * 0.11);
       canvas.drawCircle(
         glowRect,
-        w * 0.08,
+        w * 0.075,
         Paint()
           ..shader = RadialGradient(
             colors: [
-              const Color(0xFFFFF59D).withOpacity(0.75),
+              const Color(0xFFFFF59D).withOpacity(0.78),
               trimColor.withOpacity(0.0),
             ],
-          ).createShader(Rect.fromCircle(center: glowRect, radius: w * 0.08)),
+          ).createShader(Rect.fromCircle(center: glowRect, radius: w * 0.075)),
       );
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromCenter(center: glowRect, width: w * 0.055, height: w * 0.075),
+          Rect.fromCenter(
+              center: glowRect, width: w * 0.052, height: w * 0.072),
           const Radius.circular(6),
         ),
         Paint()..color = trimColor,
       );
       canvas.drawCircle(
         glowRect,
-        w * 0.018,
+        w * 0.017,
         Paint()..color = const Color(0xFFFFFDE7),
       );
     } else if (item == 2) {
-      // مصحف كريم مفتوح
       final bookRect = Rect.fromCenter(
-          center: Offset(0, -w * 0.02), width: w * 0.10, height: w * 0.07);
+          center: Offset(0, -w * 0.02), width: w * 0.095, height: w * 0.065);
       canvas.drawRRect(
         RRect.fromRectAndRadius(bookRect, const Radius.circular(4)),
         Paint()..color = const Color(0xFF0B5345),
@@ -668,30 +899,28 @@ class HoorCharacterPainter extends CustomPainter {
         Offset(0, bookRect.bottom - 3),
         Paint()
           ..color = trimColor
-          ..strokeWidth = 1.6,
+          ..strokeWidth = 1.5,
       );
     } else if (item == 3) {
-      // سبحة من لآلئ النور
       for (int k = 0; k < 9; k++) {
         final ang = (k / 9) * math.pi * 2;
-        final bx = math.cos(ang) * w * 0.036;
-        final by = w * 0.05 + math.sin(ang) * w * 0.042;
+        final bx = math.cos(ang) * w * 0.034;
+        final by = w * 0.048 + math.sin(ang) * w * 0.04;
         canvas.drawCircle(
           Offset(bx, by),
-          3.2,
+          3.0,
           Paint()..color = k.isEven ? trimColor : Colors.white,
         );
       }
     } else {
-      // لؤلؤة فردوسية مضيئة
       canvas.drawCircle(
-        Offset(0, -w * 0.03),
-        w * 0.035,
+        Offset(0, -w * 0.028),
+        w * 0.034,
         Paint()
           ..shader = const RadialGradient(
             colors: [Colors.white, Color(0xFFE0F7FA), Color(0xFF80DEEA)],
           ).createShader(Rect.fromCircle(
-              center: Offset(0, -w * 0.03), radius: w * 0.035)),
+              center: Offset(0, -w * 0.028), radius: w * 0.034)),
       );
     }
 

@@ -138,7 +138,7 @@ class _ArenaGamePlayScreenState extends State<ArenaGamePlayScreen> {
           reason: won
               ? 'فوز في ${widget.game.title} (${_selectedWorld.name})'
               : 'مشاركة مشرفة في ${widget.game.title}',
-          sourceTag: 'سباقات 3D',
+          sourceTag: 'سباقات الميدان',
         );
         await hasanat.recordMetric(EventMissionMetric.arenaMatchesPlayed);
         if (won) {
@@ -374,8 +374,8 @@ class _ArenaGamePlayScreenState extends State<ArenaGamePlayScreen> {
                             Flexible(
                               child: Text(
                                 _playMode == ArenaPlayMode.dualPlayerLocal
-                                    ? 'انطلاق مباراة ٢ لاعبين في ${_selectedWorld.name} 3D!'
-                                    : 'انطلق إلى ${_selectedWorld.name} 3D!',
+                                    ? 'انطلاق مباراة ٢ لاعبين في ${_selectedWorld.name}!'
+                                    : 'انطلق إلى ${_selectedWorld.name}!',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -507,7 +507,7 @@ class _ArenaGamePlayScreenState extends State<ArenaGamePlayScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'قصة الملحمة • عرض 4K 3D',
+                            'قصة الملحمة • عرض 4K',
                             style: TextStyle(
                               color: Colors.white70,
                               fontSize: 11,
@@ -691,7 +691,7 @@ class _ArenaGamePlayScreenState extends State<ArenaGamePlayScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '🌍 اختر العالم 4K ثلاثي الأبعاد (${widget.game.worlds.length} عوالم مختلفة):',
+            '🌍 اختر العالم الساحر 4K (${widget.game.worlds.length} عوالم مختلفة):',
             style: TextStyle(
               color: palette.textPrimary,
               fontWeight: FontWeight.w900,

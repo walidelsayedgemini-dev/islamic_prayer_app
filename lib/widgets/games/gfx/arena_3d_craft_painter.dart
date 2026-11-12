@@ -545,20 +545,149 @@ class _SkinPreviewPainter extends CustomPainter {
         rimColor: primaryColor,
       );
     } else {
-      // heroSkin preview
-      Arena3DCraftPainterUtils.paintPlayerCraft3D(
+      // heroSkin preview: أزياء الأبطال الفروسية (درع + عباءة + تاج + ترس) تختلف تماماً عن المركبات
+      _paintHeroOutfitPreview(
         canvas: canvas,
         center: c,
-        radius: math.min(size.width, size.height) * 0.25,
-        phase: 0.35,
-        craftKey: 'emerald_wings',
-        heroKey: styleKey,
-        vfxKey: 'vfx_sparks',
-        fallbackPrimary: primaryColor,
-        fallbackSecondary: secondaryColor,
-        hasShield: true,
+        size: size,
+        styleKey: styleKey,
+        primaryColor: primaryColor,
+        secondaryColor: secondaryColor,
       );
     }
+  }
+
+  void _paintHeroOutfitPreview({
+    required Canvas canvas,
+    required Offset center,
+    required Size size,
+    required String styleKey,
+    required Color primaryColor,
+    required Color secondaryColor,
+  }) {
+    final s = math.min(size.width, size.height);
+    final variant = styleKey.codeUnits.fold<int>(0, (a, b) => a + b) % 3;
+
+    // هالة البطل الخلفية
+    canvas.drawCircle(
+      center,
+      s * 0.40,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            primaryColor.withOpacity(0.32),
+            secondaryColor.withOpacity(0.10),
+            Colors.transparent,
+          ],
+        ).createShader(Rect.fromCircle(center: center, radius: s * 0.40)),
+    );
+
+    // 1. عباءة / وشاح الفارس الملكي المنسدل
+    final cloakPath = Path()
+      ..moveTo(center.dx - s * 0.16, center.dy - s * 0.12)
+      ..quadraticBezierTo(center.dx - s * 0.34, center.dy + s * 0.08,
+          center.dx - s * 0.28, center.dy + s * 0.32)
+      ..lineTo(center.dx + s * 0.28, center.dy + s * 0.32)
+      ..quadraticBezierTo(center.dx + s * 0.34, center.dy + s * 0.08,
+          center.dx + s * 0.16, center.dy - s * 0.12)
+      ..close();
+    canvas.drawPath(
+      cloakPath,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            secondaryColor,
+            Color.lerp(secondaryColor, Colors.black, 0.42)!,
+          ],
+        ).createShader(Rect.fromCircle(center: center, radius: s * 0.36)),
+    );
+
+    // 2. درع الصدر والكتفين المزخرف
+    final armorPath = Path()
+      ..moveTo(center.dx - s * 0.22, center.dy - s * 0.11)
+      ..lineTo(center.dx + s * 0.22, center.dy - s * 0.11)
+      ..lineTo(center.dx + s * 0.16, center.dy + s * 0.18)
+      ..quadraticBezierTo(center.dx, center.dy + s * 0.28,
+          center.dx - s * 0.16, center.dy + s * 0.18)
+      ..close();
+    canvas.drawPath(
+      armorPath,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.lerp(primaryColor, Colors.white, 0.25)!,
+            primaryColor,
+            Color.lerp(primaryColor, Colors.black, 0.35)!,
+          ],
+        ).createShader(Rect.fromCircle(center: center, radius: s * 0.26)),
+    );
+    canvas.drawPath(
+      armorPath,
+      Paint()
+        ..color = secondaryColor.withOpacity(0.9)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0,
+    );
+
+    // 3. الخوذة / التاج الملكي أو العمامة المذهبة للبطل أعلى الدرع
+    final helmCenter = Offset(center.dx, center.dy - s * 0.21);
+    canvas.drawCircle(
+      helmCenter,
+      s * 0.115,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            Color.lerp(primaryColor, Colors.white, 0.35)!,
+            primaryColor,
+          ],
+        ).createShader(Rect.fromCircle(center: helmCenter, radius: s * 0.12)),
+    );
+    if (variant == 0) {
+      // تاج ثلاثي القمم
+      final crown = Path()
+        ..moveTo(helmCenter.dx - s * 0.10, helmCenter.dy - s * 0.04)
+        ..lineTo(helmCenter.dx - s * 0.08, helmCenter.dy - s * 0.15)
+        ..lineTo(helmCenter.dx - s * 0.03, helmCenter.dy - s * 0.08)
+        ..lineTo(helmCenter.dx, helmCenter.dy - s * 0.18)
+        ..lineTo(helmCenter.dx + s * 0.03, helmCenter.dy - s * 0.08)
+        ..lineTo(helmCenter.dx + s * 0.08, helmCenter.dy - s * 0.15)
+        ..lineTo(helmCenter.dx + s * 0.10, helmCenter.dy - s * 0.04)
+        ..close();
+      canvas.drawPath(crown, Paint()..color = secondaryColor);
+    } else if (variant == 1) {
+      // هلال نصر مضيء أعلى الخوذة
+      canvas.drawCircle(
+        Offset(helmCenter.dx, helmCenter.dy - s * 0.13),
+        s * 0.055,
+        Paint()..color = secondaryColor,
+      );
+      canvas.drawCircle(
+        Offset(helmCenter.dx + s * 0.018, helmCenter.dy - s * 0.138),
+        s * 0.042,
+        Paint()..color = primaryColor,
+      );
+    } else {
+      // عصابة / تطريز ملكي مزدوج
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(
+              center: Offset(helmCenter.dx, helmCenter.dy - s * 0.05),
+              width: s * 0.24,
+              height: s * 0.055),
+          const Radius.circular(4),
+        ),
+        Paint()..color = secondaryColor,
+      );
+    }
+
+    // 4. وسام / جوهرة القلب في منتصف درع البطل
+    final emblemCenter = Offset(center.dx, center.dy + s * 0.03);
+    canvas.drawCircle(emblemCenter, s * 0.075, Paint()..color = secondaryColor);
+    canvas.drawCircle(emblemCenter, s * 0.042, Paint()..color = Colors.white);
   }
 
   @override

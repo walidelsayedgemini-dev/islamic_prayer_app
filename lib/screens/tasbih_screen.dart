@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/backgrounds_500_catalog.dart';
 import '../models/events_missions_catalog.dart';
 import '../models/hasanat_store_catalog.dart';
+import '../models/tasbih_1000_catalog.dart';
 import '../models/tasbih_3d_phrases_200.dart';
 import '../models/tasbih_challenge.dart';
 import '../providers/firdaws_user_provider.dart';
@@ -43,7 +44,7 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
   TasbihChallenge? _customChallenge;
   final Map<String, int> _challengeProgress = {};
 
-  // تأثيرات الوصول للهدف الـ 20 + اللافتة التحفيزية الثلاثية الأبعاد (200 عبارة 3D)
+  // تأثيرات الوصول للهدف الـ 20 + اللافتة التحفيزية (200 عبارة تحفيزية)
   int _selectedEffectIndex = 0; // 0..19
   int _activePlayingEffectIndex = 0;
   bool _autoCycleEffects = true;
@@ -58,16 +59,9 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
 
   late AnimationController _goalEffectController;
 
-  final List<String> _dhikrList = [
-    "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ",
-    "سُبْحَانَ اللَّهِ الْعَظِيمِ",
-    "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
-    "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ",
-    "اللَّهُ أَكْبَرُ كَبِيرًا",
-    "أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ",
-    "اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ",
-    "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ الْعَلِيِّ الْعَظِيمِ",
-  ];
+  List<TasbihDuaEntry> get _dhikrCatalog => Tasbih1000Catalog.all1000;
+  TasbihDuaEntry get _currentDhikrEntry =>
+      _dhikrCatalog[_selectedDhikrIndex.clamp(0, _dhikrCatalog.length - 1)];
 
   @override
   void initState() {
@@ -129,7 +123,7 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
         _counter = prefs.getInt('tasbih_counter') ?? 0;
         _target = prefs.getInt('tasbih_target') ?? 33;
         _selectedDhikrIndex =
-            (prefs.getInt('tasbih_dhikr_idx') ?? 0).clamp(0, _dhikrList.length - 1);
+            (prefs.getInt('tasbih_dhikr_idx') ?? 0).clamp(0, _dhikrCatalog.length - 1);
         _totalLifetimeTasbih = prefs.getInt('tasbih_lifetime') ?? 0;
         _completedChallengesCount = prefs.getInt('tasbih_completed_count') ?? 0;
         _activeChallengeId = prefs.getString('tasbih_active_challenge');
@@ -234,7 +228,7 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
     HapticFeedback.lightImpact();
 
     final activeChallenge = _activeChallenge;
-    final activeDhikrText = activeChallenge?.dhikr ?? _dhikrList[_selectedDhikrIndex];
+    final activeDhikrText = activeChallenge?.dhikr ?? _currentDhikrEntry.text;
     String? pendingEffectMessage;
     bool shouldTriggerEffect = false;
 
@@ -1096,6 +1090,211 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
     );
   }
 
+  void _show1000DhikrSheet(ThemePalette palette) {
+    final accent = palette.accentColor;
+    String selectedCat = 'الكل';
+    String searchQuery = '';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final filtered = Tasbih1000Catalog.search(
+              query: searchQuery,
+              category: selectedCat,
+            );
+            return Container(
+              height: MediaQuery.of(ctx).size.height * 0.86,
+              decoration: BoxDecoration(
+                color: palette.scaffoldColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                border: Border.all(color: accent.withOpacity(0.5), width: 1.4),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 10),
+                  Container(
+                    width: 44,
+                    height: 4.5,
+                    decoration: BoxDecoration(
+                      color: palette.dividerColor,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'موسوعة ١٠٠٠ دعاء وتسبيح 📿✨',
+                                style: TextStyle(
+                                  color: palette.textPrimary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Text(
+                                'اختر أي دعاء أو ذكر للتسبيح به (${filtered.length} من ١٠٠٠)',
+                                style: TextStyle(
+                                  color: accent,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.close_rounded, color: palette.textMuted),
+                          onPressed: () => Navigator.of(ctx).pop(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: TextField(
+                      onChanged: (v) => setSheetState(() => searchQuery = v),
+                      style: TextStyle(color: palette.textPrimary, fontSize: 13),
+                      decoration: InputDecoration(
+                        hintText: 'ابحث في ١٠٠٠ دعاء وتسبيح (رزق، استغفار، شفاء، جنة...)',
+                        hintStyle: TextStyle(color: palette.textMuted, fontSize: 12),
+                        prefixIcon: Icon(Icons.search_rounded, color: accent),
+                        isDense: true,
+                        filled: true,
+                        fillColor: palette.cardColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: palette.dividerColor),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 38,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      children: [
+                        for (final cat in ['الكل', ...Tasbih1000Catalog.categories])
+                          Padding(
+                            padding: const EdgeInsets.only(left: 6),
+                            child: ChoiceChip(
+                              label: Text(
+                                cat,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: selectedCat == cat
+                                      ? palette.onAccentColor
+                                      : palette.textPrimary,
+                                  fontWeight: selectedCat == cat
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                              selected: selectedCat == cat,
+                              selectedColor: accent,
+                              backgroundColor: palette.cardColor,
+                              onSelected: (_) => setSheetState(() => selectedCat = cat),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                      itemCount: filtered.length,
+                      itemBuilder: (_, idx) {
+                        final entry = filtered[idx];
+                        final isSelected = (entry.number - 1) == _selectedDhikrIndex;
+                        return Card(
+                          color: isSelected
+                              ? accent.withOpacity(0.16)
+                              : palette.cardColor.withOpacity(0.92),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(
+                              color: isSelected ? accent : palette.dividerColor,
+                              width: isSelected ? 1.5 : 1,
+                            ),
+                          ),
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: ListTile(
+                            onTap: () {
+                              setState(() {
+                                _selectedDhikrIndex = entry.number - 1;
+                                _counter = 0;
+                                if (entry.recommendedCount > 0) {
+                                  _target = entry.recommendedCount;
+                                }
+                              });
+                              _saveTasbihState();
+                              Navigator.of(ctx).pop();
+                            },
+                            leading: CircleAvatar(
+                              radius: 17,
+                              backgroundColor: accent.withOpacity(0.2),
+                              child: Text(
+                                '${entry.number}',
+                                style: TextStyle(
+                                  color: accent,
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            title: Text(
+                              entry.text,
+                              style: TextStyle(
+                                color: palette.textPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.5,
+                                height: 1.5,
+                              ),
+                            ),
+                            subtitle: Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                '${entry.category} • الهدف المقترح: ${entry.recommendedCount}\n${entry.virtue}',
+                                style: TextStyle(
+                                  color: palette.textSecondary,
+                                  fontSize: 11,
+                                  height: 1.35,
+                                ),
+                              ),
+                            ),
+                            trailing: Icon(
+                              isSelected
+                                  ? Icons.check_circle_rounded
+                                  : Icons.touch_app_rounded,
+                              color: accent,
+                              size: 20,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
@@ -1105,7 +1304,7 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
     final accentColor = palette.accentColor;
 
     final activeChallenge = _activeChallenge;
-    final activeDhikrText = activeChallenge?.dhikr ?? _dhikrList[_selectedDhikrIndex];
+    final activeDhikrText = activeChallenge?.dhikr ?? _currentDhikrEntry.text;
     final effectiveTarget = activeChallenge?.targetCount ?? _target;
     final double progressRatio = effectiveTarget > 0
         ? ((_counter % effectiveTarget == 0 && _counter > 0)
@@ -1176,7 +1375,7 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
             },
           ),
           IconButton(
-            tooltip: '200 عبارة 3D ✨',
+            tooltip: '200 عبارة تحفيزية ✨',
             onPressed: _open3dPhrasesCatalog,
             icon: Icon(Icons.auto_stories_rounded, color: accentColor, size: 20),
           ),
@@ -1343,7 +1542,7 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
                                           ),
                                           Text(
                                             _autoCycleEffects
-                                                ? "🔄 تلقائي: #${currentEffect.number} + 200 عبارة 3D"
+                                                ? "🔄 تلقائي: #${currentEffect.number} + 200 عبارة تحفيزية"
                                                 : "#${currentEffect.number}: ${currentEffect.name}",
                                             style: TextStyle(
                                               color: accentColor,
@@ -1458,42 +1657,115 @@ class _TasbihScreenState extends State<TasbihScreen> with TickerProviderStateMix
 
                         const SizedBox(height: 8),
 
-                        // 2. قائمة اختيار الذكر الحر أو شريط تقدم التحدي
+                        // 2. موسوعة ١٠٠٠ دعاء وتسبيح أو شريط تقدم التحدي
                         if (activeChallenge == null)
                           Firdaws4KCardShell(
                             backdrop: Background500Catalog.forExtraSection(13),
                             isDark: isNight,
                             borderRadius: 18,
                             borderColor: accentColor.withOpacity(0.45),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 8,
+                            ),
                             imageOpacity: isNight ? 0.44 : 0.34,
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<int>(
-                                value: _selectedDhikrIndex,
-                                isExpanded: true,
-                                dropdownColor: palette.cardColor,
-                                icon: Icon(Icons.keyboard_arrow_down_rounded, color: accentColor),
-                                items: List.generate(_dhikrList.length, (index) {
-                                  return DropdownMenuItem<int>(
-                                    value: index,
-                                    child: Text(
-                                      _dhikrList[index],
-                                      style: TextStyle(fontSize: 14, color: palette.textPrimary),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  );
-                                }),
-                                onChanged: (val) {
-                                  if (val != null) {
+                            onTap: () => _show1000DhikrSheet(palette),
+                            child: Row(
+                              children: [
+                                IconButton(
+                                  constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                                  padding: EdgeInsets.zero,
+                                  tooltip: 'الذكر السابق',
+                                  onPressed: () {
                                     setState(() {
-                                      _selectedDhikrIndex = val;
+                                      _selectedDhikrIndex =
+                                          (_selectedDhikrIndex - 1 + _dhikrCatalog.length) %
+                                              _dhikrCatalog.length;
                                       _counter = 0;
                                     });
                                     _saveTasbihState();
-                                  }
-                                },
-                              ),
+                                  },
+                                  icon: Icon(
+                                    Icons.chevron_right_rounded,
+                                    color: accentColor,
+                                    size: 22,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Flexible(
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 7,
+                                                vertical: 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: accentColor.withOpacity(0.18),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                '#${_currentDhikrEntry.number}/١٠٠٠ • ${_currentDhikrEntry.category}',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  color: accentColor,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            '١٠٠٠ دعاء 📖',
+                                            maxLines: 1,
+                                            style: TextStyle(
+                                              color: palette.textSecondary,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        _currentDhikrEntry.text,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.bold,
+                                          color: palette.textPrimary,
+                                          height: 1.35,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                                  padding: EdgeInsets.zero,
+                                  tooltip: 'الذكر التالي',
+                                  onPressed: () {
+                                    setState(() {
+                                      _selectedDhikrIndex =
+                                          (_selectedDhikrIndex + 1) % _dhikrCatalog.length;
+                                      _counter = 0;
+                                    });
+                                    _saveTasbihState();
+                                  },
+                                  icon: Icon(
+                                    Icons.chevron_left_rounded,
+                                    color: accentColor,
+                                    size: 22,
+                                  ),
+                                ),
+                              ],
                             ),
                           )
                         else

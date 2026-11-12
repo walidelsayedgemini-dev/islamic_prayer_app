@@ -278,18 +278,22 @@ class NotificationService {
     try {
       await flutterLocalNotificationsPlugin.zonedSchedule(
         id,
-        '⏰ اقترب موعد $prayerName',
-        'بقي 15 دقيقة على الأذان، استعد للوضوء والصلاة 🌿',
+        '⏰ اقتربت $prayerName — استعد الآن',
+        'اقتربت الصلاة! بقي ١٥ دقيقة على الأذان، حيّ على الوضوء والاستعداد 🌿',
         tz.TZDateTime.from(scheduledTime, tz.local),
         const NotificationDetails(
           android: AndroidNotificationDetails(
-            'pre_adhan_channel',
-            'تذكير ما قبل الصلاة',
-            channelDescription: 'تذكير قبل الأذان بـ 15 دقيقة للاستعداد',
-            importance: Importance.high,
+            'pre_adhan_voice_v2',
+            'تنبيه صوتي قبل الصلاة (اقتربت الصلاة)',
+            channelDescription: 'تنبيه صوتي مسموع قبل الأذان بـ ١٥ دقيقة للاستعداد للصلاة',
+            importance: Importance.max,
             priority: Priority.high,
+            sound: RawResourceAndroidNotificationSound('pre_adhan_alert'),
+            playSound: true,
+            enableVibration: true,
           ),
           iOS: DarwinNotificationDetails(
+            sound: 'pre_adhan_alert.wav',
             presentSound: true,
           ),
         ),

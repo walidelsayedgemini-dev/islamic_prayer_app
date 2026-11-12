@@ -187,7 +187,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
                                   SizedBox(width: 5),
                                   Flexible(
                                     child: Text(
-                                      'اختيار عشوائي 3D',
+                                      'اختيار عشوائي',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
@@ -271,7 +271,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'ميدان الـ ٣٠ لعبة 4K 3D 🎮',
+                  'ميدان الـ ٣٠ لعبة 4K 🎮',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -354,7 +354,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'صالة التحدي والسباقات الحديثة 4K 3D',
+                      'صالة التحدي والسباقات الحديثة 4K',
                       style: TextStyle(
                         color: palette.textPrimary,
                         fontWeight: FontWeight.w900,
@@ -790,7 +790,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
             children: [
               Firdaws3DPill(
                 icon: Icons.apps_rounded,
-                label: 'كل المحركات 3D',
+                label: 'كل المحركات',
                 accentColor:
                     _selectedEngine == null ? const Color(0xFF38BDF8) : accent,
                 palette: palette,
@@ -1051,7 +1051,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
                             SizedBox(width: 4),
                             Flexible(
                               child: Text(
-                                'ادخل العالم 3D',
+                                'ادخل الميدان التفاعلي',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(

@@ -3,8 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/backgrounds_500_catalog.dart';
 import '../models/challenge_phrases_800.dart';
+import '../services/bluetooth_challenge_service.dart';
 
-enum ChallengerGroup { family, friend }
+enum ChallengerGroup { family, friend, customGroup }
 
 class ChallengerMember {
   final String id;
@@ -103,7 +104,9 @@ class ChallengerMember {
         name: (j['name'] ?? 'منافس').toString(),
         group: (j['group'] == 'family')
             ? ChallengerGroup.family
-            : ChallengerGroup.friend,
+            : (j['group'] == 'customGroup'
+                ? ChallengerGroup.customGroup
+                : ChallengerGroup.friend),
         relationLabel: (j['relationLabel'] ?? 'صديق').toString(),
         avatarEmoji: (j['avatarEmoji'] ?? '🌟').toString(),
         tasbihCount: (j['tasbihCount'] as num?)?.toInt() ?? 0,
@@ -199,6 +202,7 @@ class FamilyChallengeProvider with ChangeNotifier {
   int _userLosses = 0;
   int _phraseCounter = 0;
   String _selectedRivalId = 'fam_brother';
+  String _customGroupName = 'خير الأصدقاء والعائلة';
 
   String? _lastMatchPhrase;
   bool? _lastMatchWon;
@@ -214,6 +218,7 @@ class FamilyChallengeProvider with ChangeNotifier {
   int get userWins => _userWins;
   int get userLosses => _userLosses;
   String get selectedRivalId => _selectedRivalId;
+  String get customGroupName => _customGroupName;
   List<ChallengerMember> get members => List.unmodifiable(_members);
   List<ChallengeMatchRecord> get history => List.unmodifiable(_history);
 
@@ -955,6 +960,10 @@ class FamilyChallengeProvider with ChangeNotifier {
         _phraseCounter = (j['phraseCounter'] as num?)?.toInt() ?? 0;
         _selectedRivalId =
             (j['selectedRivalId'] ?? 'fam_brother').toString();
+        final savedGrp = (j['customGroupName'] ?? '').toString().trim();
+        if (savedGrp.isNotEmpty) {
+          _customGroupName = savedGrp;
+        }
         _lastMatchPhrase = j['lastMatchPhrase']?.toString();
         _lastMatchWon = j['lastMatchWon'] as bool?;
         _lastRivalName = j['lastRivalName']?.toString();
@@ -973,9 +982,10 @@ class FamilyChallengeProvider with ChangeNotifier {
           for (final m in loaded) {
             existingIds.add(m.id);
             final st = starterById[m.id];
+            // استعادة الصور الحقيقية الـ 50 للأسرة والأصدقاء بدلاً من روابط المباني القديمة
             final hasStalePortrait = m.networkPhotoUrl == null ||
                 m.networkPhotoUrl!.isEmpty ||
-                m.networkPhotoUrl!.contains('randomuser');
+                !m.networkPhotoUrl!.contains('randomuser.me');
             final cleanRel = m.relationLabel.replaceAll('خادم الخير', 'ساعي الخير');
             final sanitizedEmoji = const {'🧔🏻', '🧕🏻', '🧑🏻', '👩🏻‍🦱', '🦁', '🦅', '🕊️', '🐎'}
                     .contains(m.avatarEmoji)
@@ -987,7 +997,9 @@ class FamilyChallengeProvider with ChangeNotifier {
                 avatarEmoji: sanitizedEmoji,
                 networkPhotoUrl: hasStalePortrait
                     ? (st?.networkPhotoUrl ??
-                        Background500Catalog.personaPortraits50.first)
+                        Background500Catalog.personaPortraits50[
+                            merged.length %
+                                Background500Catalog.personaPortraits50.length])
                     : m.networkPhotoUrl,
                 age: (st != null && m.age == 25) ? st.age : m.age,
                 traits: (st != null &&
@@ -1035,6 +1047,7 @@ class FamilyChallengeProvider with ChangeNotifier {
         'userLosses': _userLosses,
         'phraseCounter': _phraseCounter,
         'selectedRivalId': _selectedRivalId,
+        'customGroupName': _customGroupName,
         'lastMatchPhrase': _lastMatchPhrase,
         'lastMatchWon': _lastMatchWon,
         'lastRivalName': _lastRivalName,
@@ -1055,6 +1068,58 @@ class FamilyChallengeProvider with ChangeNotifier {
       notifyListeners();
       _save();
     }
+  }
+
+  Future<void> renameCustomGroup(String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return;
+    _customGroupName = trimmed;
+    notifyListeners();
+    await _save();
+  }
+
+  Future<ChallengerMember> upsertBluetoothPeerProfile(
+    BluetoothSyncedProfile peer, {
+    ChallengerGroup targetGroup = ChallengerGroup.customGroup,
+    bool selectAsRival = true,
+  }) async {
+    final peerId = peer.id.startsWith('bt_') ? peer.id : 'bt_${peer.id}';
+    const pList = Background500Catalog.personaPortraits50;
+    final photoUrl = pList[peer.avatarIndex % pList.length];
+    final existingIdx = _members.indexWhere(
+      (m) => m.id == peerId || m.name.trim() == peer.name.trim(),
+    );
+    final member = ChallengerMember(
+      id: existingIdx >= 0 ? _members[existingIdx].id : peerId,
+      name: peer.name,
+      group: targetGroup,
+      relationLabel: peer.groupLabel.trim().isEmpty
+          ? '$_customGroupName • بلوتوث قريب 📡'
+          : '${peer.groupLabel} • بلوتوث قريب 📡',
+      avatarEmoji: '📡',
+      tasbihCount: peer.tasbihCount,
+      championScore: peer.championScore,
+      winsCount: peer.winsCount,
+      age: peer.age,
+      traits: peer.traits,
+      customPhotoBase64: peer.customPhotoBase64,
+      networkPhotoUrl: photoUrl,
+      dailyTasbihGoal: 150,
+      bioNote: 'منافس قريب عبر البلوتوث 📡',
+    );
+    if (existingIdx >= 0) {
+      final copy = List<ChallengerMember>.from(_members);
+      copy[existingIdx] = member;
+      _members = copy;
+    } else {
+      _members = [member, ..._members];
+    }
+    if (selectAsRival) {
+      _selectedRivalId = member.id;
+    }
+    notifyListeners();
+    await _save();
+    return member;
   }
 
   Future<void> recordUserTasbih(int count) async {
@@ -1104,7 +1169,11 @@ class FamilyChallengeProvider with ChangeNotifier {
       name: cleanName,
       group: group,
       relationLabel: relationLabel.trim().isEmpty
-          ? (group == ChallengerGroup.family ? 'العائلة' : 'الأصدقاء')
+          ? (group == ChallengerGroup.family
+              ? 'العائلة'
+              : (group == ChallengerGroup.customGroup
+                  ? _customGroupName
+                  : 'الأصدقاء'))
           : relationLabel.trim(),
       avatarEmoji: avatarEmoji,
       tasbihCount: initialTasbih,

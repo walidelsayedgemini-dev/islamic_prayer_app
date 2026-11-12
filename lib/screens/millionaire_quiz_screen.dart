@@ -639,7 +639,7 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
             side: const BorderSide(color: Color(0xFF8B5CF6), width: 1.5),
           ),
           title: const Text(
-            '📊 تصويت الجمهور المباشر 3D',
+            '📊 تصويت الجمهور المباشر',
             style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
           ),
           content: Column(
@@ -976,7 +976,7 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
                     const Text('💎', style: TextStyle(fontSize: 44)),
                     const SizedBox(height: 6),
                     Text(
-                      'من سيربح المليون — الاستوديو 3D',
+                      'من سيربح المليون — الاستوديو',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 21,
@@ -1012,7 +1012,7 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
               _buildModeSelectorCard(
                 palette: palette,
                 mode: MillionairePlayMode.vsAiRivals,
-                title: 'منافسة المتسابقين الافتراضيين 3D',
+                title: 'منافسة المتسابقين الافتراضيين',
                 subtitle: 'سابق متنافسين افتراضيين على سلم المليون لحظة بلحظة',
                 icon: '🤖',
                 color: const Color(0xFF38BDF8),
@@ -1295,7 +1295,7 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
                     SizedBox(width: 8),
                     Flexible(
                       child: Text(
-                        'دخول كرسي الاستوديو 3D وبدء المليون',
+                        'دخول كرسي الاستوديو وبدء المليون',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(

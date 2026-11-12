@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:adhan/adhan.dart';
 import 'package:provider/provider.dart';
 import '../models/backgrounds_500_catalog.dart';
+import '../models/help_me_1000_catalog.dart';
 import '../models/help_me_model.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
@@ -26,7 +27,9 @@ class HelpMeScreen extends StatefulWidget {
 class _HelpMeScreenState extends State<HelpMeScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _breathingController;
-  int _modeIndex = 0; // 0: صيدلية الروح، 1: اسألني (500 سؤال وجواب)
+  int _modeIndex = 0; // 0: صيدلية الروح (١٠٠٠ موضوع)، 1: اسألني (٥٠٠ سؤال وجواب)
+  String _selectedDomainId = 'all';
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -75,6 +78,274 @@ class _HelpMeScreenState extends State<HelpMeScreen>
     return isDark
         ? category.accentColor
         : Color.lerp(category.primaryColor, Colors.black, 0.20)!;
+  }
+
+  Color _resolveAccentColor(Color primary, Color accent, bool isDark) {
+    return isDark ? accent : Color.lerp(primary, Colors.black, 0.22)!;
+  }
+
+  void _showCaseDetails(
+    BuildContext context,
+    HelpMeCaseEntry entry,
+    ThemePalette palette,
+  ) {
+    final catAccent =
+        _resolveAccentColor(entry.primaryColor, entry.accentColor, palette.isDark);
+    final btnForeground =
+        ThemeData.estimateBrightnessForColor(catAccent) == Brightness.dark
+            ? Colors.white
+            : Colors.black;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.86,
+          minChildSize: 0.50,
+          maxChildSize: 0.96,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: palette.scaffoldColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                border: Border.all(color: catAccent.withOpacity(0.45), width: 1.5),
+              ),
+              child: ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.all(20),
+                children: [
+                  Center(
+                    child: Container(
+                      width: 45,
+                      height: 4.5,
+                      decoration: BoxDecoration(
+                        color: palette.dividerColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: entry.primaryColor.withOpacity(0.18),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: catAccent, width: 1.4),
+                        ),
+                        child: Text(entry.emoji, style: const TextStyle(fontSize: 22)),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '#${entry.number}/١٠٠٠ • ${entry.domainLabel}',
+                              style: TextStyle(
+                                color: catAccent,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              entry.title,
+                              style: TextStyle(
+                                fontSize: 16.5,
+                                fontWeight: FontWeight.bold,
+                                color: palette.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    entry.summary,
+                    style: TextStyle(
+                      color: palette.textSecondary,
+                      fontSize: 12.5,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Firdaws4KCardShell(
+                    backdrop: Background500Catalog.forHelpMeBanner(1),
+                    isDark: palette.isDark,
+                    borderColor: catAccent.withOpacity(0.5),
+                    borderRadius: 16,
+                    padding: const EdgeInsets.all(14),
+                    imageOpacity: 0.50,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          '📖 ${entry.quranAyah}',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: palette.textPrimary,
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.bold,
+                            height: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SacredEvidenceFooter(
+                          evidenceText: entry.quranAyah,
+                          titleForHadith: entry.title,
+                          trackInJannati: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Firdaws4KCardShell(
+                    backdrop: Background500Catalog.forHelpMeBanner(2),
+                    isDark: palette.isDark,
+                    borderColor: catAccent.withOpacity(0.45),
+                    borderRadius: 16,
+                    padding: const EdgeInsets.all(14),
+                    imageOpacity: 0.45,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '📜 الدليل النبوي الصحيح:',
+                          style: TextStyle(
+                            color: catAccent,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          entry.hadithReference,
+                          style: TextStyle(
+                            color: palette.textPrimary,
+                            fontSize: 13.5,
+                            height: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SacredEvidenceFooter(
+                          evidenceText: entry.hadithReference,
+                          titleForHadith: entry.title,
+                          hadithVerbatim: entry.dua,
+                          trackInJannati: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // إيه أه / إيه لأ
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withOpacity(0.14),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: const Color(0xFF10B981).withOpacity(0.45),
+                      ),
+                    ),
+                    child: Text(
+                      '✅ إيه أه (افعل): ${entry.doAction}',
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        height: 1.45,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444).withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: const Color(0xFFEF4444).withOpacity(0.42),
+                      ),
+                    ),
+                    child: Text(
+                      '🚫 إيه لأ (اجتنب): ${entry.dontAction}',
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        height: 1.45,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Firdaws4KCardShell(
+                    backdrop: Background500Catalog.forHelpMeCategory(15),
+                    isDark: palette.isDark,
+                    borderColor: catAccent.withOpacity(0.42),
+                    borderRadius: 14,
+                    padding: const EdgeInsets.all(12),
+                    imageOpacity: 0.42,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '🤲 الدعاء الجامع المأثور:',
+                          style: TextStyle(
+                            color: catAccent,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          entry.dua,
+                          style: TextStyle(
+                            color: palette.textPrimary,
+                            fontSize: 14,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (entry.hasBreathingGuide) ...[
+                    const SizedBox(height: 14),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _openBreathingExercise(
+                          context,
+                          HelpMeCategory.categories.first,
+                          palette,
+                        );
+                      },
+                      icon: const Icon(Icons.air_rounded, size: 20),
+                      label: const Text(
+                        "ابدأ تمرين التنفس والسكينة الإسلامي 🌬️",
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: catAccent,
+                        foregroundColor: btnForeground,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   void _showCategoryDetails(
@@ -517,7 +788,7 @@ class _HelpMeScreenState extends State<HelpMeScreen>
                                 children: [
                                   Text(
                                     _modeIndex == 0
-                                        ? "سَاعِدْنِي • صيدلية الروح والسكينة"
+                                        ? "سَاعِدْنِي • ١٠٠٠ موضوع وحل عملي"
                                         : "اسْأَلْنِي • موسوعة ٥٠٠ سؤال وجواب",
                                     style: TextStyle(
                                       color: accentColor,
@@ -527,7 +798,7 @@ class _HelpMeScreenState extends State<HelpMeScreen>
                                   ),
                                   Text(
                                     _modeIndex == 0
-                                        ? "علاج القلوب بالهدي النبوي والقرآن الكريم لكل أحوال الإنسان"
+                                        ? "التنمر، الفتن، الملهيات، الصحبة، المال الحلال، وإيه أه وإيه لأ"
                                         : "ابحث بالعربية الفصحى أو العامية في العقيدة والفقه والجَنَّة والحياة",
                                     style: TextStyle(color: palette.textSecondary, fontSize: 11),
                                     maxLines: 1,
@@ -660,64 +931,213 @@ class _HelpMeScreenState extends State<HelpMeScreen>
                                 'اكتب أي سؤال بالعامية أو الفصحى لتصلك الإجابة الشرعية والدليل فوراً',
                           ),
                         )
-                      : GridView.builder(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 95),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 0.88,
-                          ),
-                          itemCount: HelpMeCategory.categories.length,
-                          itemBuilder: (context, index) {
-                            final cat = HelpMeCategory.categories[index];
-                            final catAccent = _resolveCatAccent(cat, palette.isDark);
-                            return Firdaws4KCardShell(
-                              backdrop: Background500Catalog.forHelpMeCategory(index),
-                              isDark: isNight,
-                              borderColor: catAccent.withOpacity(0.60),
-                              borderRadius: 20,
-                              padding: const EdgeInsets.all(14),
-                              imageOpacity: 0.66,
-                              onTap: () => _showCategoryDetails(context, cat, palette),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: cat.primaryColor.withOpacity(0.24),
-                                      shape: BoxShape.circle,
-                                      border: Border.all(color: catAccent.withOpacity(0.8)),
-                                    ),
-                                    child: Icon(cat.icon, color: catAccent, size: 28),
+                      : Builder(
+                          builder: (context) {
+                            final filteredCases = HelpMe1000Catalog.filter(
+                              domainId: _selectedDomainId,
+                              query: _searchQuery,
+                            );
+                            return Column(
+                              children: [
+                                // شريط الحالات القلبية السريعة
+                                SizedBox(
+                                  height: 40,
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    physics: const BouncingScrollPhysics(),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    itemCount: HelpMeCategory.categories.length,
+                                    itemBuilder: (_, idx) {
+                                      final cat = HelpMeCategory.categories[idx];
+                                      final cAcc = _resolveCatAccent(cat, palette.isDark);
+                                      return Padding(
+                                        padding: const EdgeInsets.only(left: 6),
+                                        child: ActionChip(
+                                          avatar: Icon(cat.icon, size: 15, color: cAcc),
+                                          label: Text(
+                                            cat.title,
+                                            style: TextStyle(
+                                              color: palette.textPrimary,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          backgroundColor: palette.cardColor.withOpacity(0.92),
+                                          side: BorderSide(color: cAcc.withOpacity(0.45)),
+                                          onPressed: () =>
+                                              _showCategoryDetails(context, cat, palette),
+                                        ),
+                                      );
+                                    },
                                   ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    cat.title,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: catAccent,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
+                                ),
+                                const SizedBox(height: 6),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  child: TextField(
+                                    style: TextStyle(color: palette.textPrimary, fontSize: 13),
+                                    onChanged: (v) => setState(() => _searchQuery = v),
+                                    decoration: InputDecoration(
+                                      hintText:
+                                          'ابحث في ١٠٠٠ موضوع: تنمر، فتن، صحبة، رزق حلال، قلق...',
+                                      hintStyle:
+                                          TextStyle(color: palette.textMuted, fontSize: 12),
+                                      prefixIcon: Icon(Icons.search_rounded, color: accentColor),
+                                      isDense: true,
+                                      filled: true,
+                                      fillColor: palette.cardColor.withOpacity(0.92),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                        borderSide: BorderSide(color: palette.dividerColor),
+                                      ),
                                     ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    cat.subtitle,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: palette.textSecondary,
-                                      fontSize: 10,
-                                      height: 1.3,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 6),
+                                SizedBox(
+                                  height: 38,
+                                  child: ListView(
+                                    scrollDirection: Axis.horizontal,
+                                    physics: const BouncingScrollPhysics(),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 6),
+                                        child: ChoiceChip(
+                                          label: Text(
+                                            'الكل (${filteredCases.length}) 🌟',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: _selectedDomainId == 'all'
+                                                  ? palette.onAccentColor
+                                                  : palette.textPrimary,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          selected: _selectedDomainId == 'all',
+                                          selectedColor: accentColor,
+                                          backgroundColor: palette.cardColor,
+                                          onSelected: (_) =>
+                                              setState(() => _selectedDomainId = 'all'),
+                                        ),
+                                      ),
+                                      for (final dom in HelpMe1000Catalog.domains)
+                                        Padding(
+                                          padding: const EdgeInsets.only(left: 6),
+                                          child: ChoiceChip(
+                                            label: Text(
+                                              '${dom.emoji} ${dom.label}',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: _selectedDomainId == dom.id
+                                                    ? palette.onAccentColor
+                                                    : palette.textPrimary,
+                                                fontWeight: _selectedDomainId == dom.id
+                                                    ? FontWeight.bold
+                                                    : FontWeight.normal,
+                                              ),
+                                            ),
+                                            selected: _selectedDomainId == dom.id,
+                                            selectedColor: accentColor,
+                                            backgroundColor: palette.cardColor,
+                                            onSelected: (_) =>
+                                                setState(() => _selectedDomainId = dom.id),
+                                          ),
+                                        ),
+                                    ],
                                   ),
-                                ],
-                              ),
+                                ),
+                                const SizedBox(height: 6),
+                                Expanded(
+                                  child: ListView.builder(
+                                    physics: const BouncingScrollPhysics(),
+                                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 98),
+                                    itemCount: filteredCases.length,
+                                    itemBuilder: (context, index) {
+                                      final entry = filteredCases[index];
+                                      final catAccent = _resolveAccentColor(
+                                        entry.primaryColor,
+                                        entry.accentColor,
+                                        palette.isDark,
+                                      );
+                                      return Firdaws4KCardShell(
+                                        backdrop: Background500Catalog.forHelpMeCategory(
+                                          index % 30,
+                                        ),
+                                        isDark: isNight,
+                                        margin: const EdgeInsets.only(bottom: 10),
+                                        padding: const EdgeInsets.all(13),
+                                        borderColor: catAccent.withOpacity(0.50),
+                                        borderRadius: 18,
+                                        imageOpacity: isNight ? 0.42 : 0.34,
+                                        onTap: () =>
+                                            _showCaseDetails(context, entry, palette),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  entry.emoji,
+                                                  style: const TextStyle(fontSize: 19),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    '#${entry.number} • ${entry.domainLabel}',
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: TextStyle(
+                                                      color: catAccent,
+                                                      fontSize: 11,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Icon(
+                                                  Icons.chevron_left_rounded,
+                                                  color: catAccent,
+                                                  size: 20,
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 5),
+                                            Text(
+                                              entry.title,
+                                              style: TextStyle(
+                                                color: palette.textPrimary,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 5),
+                                            Text(
+                                              '✅ ${entry.doAction}',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                color: palette.textSecondary,
+                                                fontSize: 11.5,
+                                              ),
+                                            ),
+                                            Text(
+                                              '🚫 ${entry.dontAction}',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                color: palette.textMuted,
+                                                fontSize: 11,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
                             );
                           },
                         ),

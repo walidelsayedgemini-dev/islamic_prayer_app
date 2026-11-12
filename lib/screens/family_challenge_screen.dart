@@ -14,6 +14,7 @@ import '../providers/hasanat_provider.dart';
 import '../providers/jannati_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
+import '../services/bluetooth_challenge_service.dart';
 import '../widgets/firdaws_3d_ui.dart';
 import '../widgets/firdaws_portrait_avatar.dart';
 import '../widgets/firdaws_resilient_image.dart';
@@ -161,10 +162,17 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
         backgroundColor: firdaws3DSurfaceColor(palette),
         elevation: 0,
         title: const Text(
-          'تحدي العائلة والصحبة 3D 🏆',
+          'تحدي العائلة والصحبة 🏆',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         actions: [
+          IconButton(
+            tooltip: 'تحدي البلوتوث القريب 📡',
+            icon: const Icon(Icons.bluetooth_searching_rounded,
+                color: Color(0xFF10B981)),
+            onPressed: () =>
+                _showBluetoothChallengeSheet(palette, accent, challenge, userProv),
+          ),
           Builder(
             builder: (ctx) {
               int bal = 0;
@@ -390,6 +398,11 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
           e.group != ChallengerGroup.friend) {
         return false;
       }
+      if (_memberGroupFilter == 'customGroup' &&
+          !e.isCurrentUser &&
+          e.group != ChallengerGroup.customGroup) {
+        return false;
+      }
       if (mq.isEmpty) return true;
       return e.name.contains(mq) ||
           e.relation.contains(mq) ||
@@ -606,6 +619,17 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
               _groupFilterChip('all', 'الكل (${entries.length})', palette, accent),
               _groupFilterChip('family', 'العائلة 👨‍👩‍👧‍👦', palette, accent),
               _groupFilterChip('friend', 'الأصدقاء 🤝', palette, accent),
+              _groupFilterChip(
+                'customGroup',
+                '${challenge.customGroupName} 🌟',
+                palette,
+                accent,
+              ),
+              IconButton(
+                tooltip: 'تغيير اسم مجموعة ${challenge.customGroupName}',
+                onPressed: () => _showRenameCustomGroupDialog(palette, challenge),
+                icon: Icon(Icons.edit_note_rounded, color: accent, size: 20),
+              ),
             ],
           ),
         ),
@@ -1270,7 +1294,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
               ),
               const SizedBox(height: 4),
               Text(
-                'تحدَّ صديقك أو أحد أفراد عائلتك الآن على نفس الجهاز في مسابقة المليون أو أي لعبة من الـ ٣٠ لعبة ثلاثية الأبعاد:',
+                'تحدَّ صديقك أو أحد أفراد عائلتك الآن على نفس الجهاز في مسابقة المليون أو أي لعبة من الـ ٣٠ لعبة تفاعلية:',
                 style: TextStyle(
                   color: firdawsCrispSecondaryText(palette),
                   fontSize: 11.2,
@@ -1330,7 +1354,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                     SizedBox(width: 6),
                     Flexible(
                       child: Text(
-                        'صالة الـ ٣٠ لعبة 3D — مشاركة ٢ لاعبين',
+                        'صالة الـ ٣٠ لعبة — مشاركة ٢ لاعبين',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -1763,7 +1787,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          'أو اختر من ٥٠ معلم وشعار إسلامي نقي 4K:',
+                          'أو اختر من ٥٠ صورة شخصية حقيقية 👥:',
                           style: TextStyle(
                             color: palette.textSecondary,
                             fontSize: 11.5,
@@ -1846,26 +1870,30 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                           ),
                         ),
                         const SizedBox(height: 10),
-                        Row(
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
                           children: [
-                            Expanded(
-                              child: ChoiceChip(
-                                label: const Center(child: Text('العائلة 👨‍👩‍👧‍👦')),
-                                selected: group == ChallengerGroup.family,
-                                onSelected: (_) => setModal(() {
-                                  group = ChallengerGroup.family;
-                                }),
-                              ),
+                            ChoiceChip(
+                              label: const Text('العائلة 👨‍👩‍👧‍👦'),
+                              selected: group == ChallengerGroup.family,
+                              onSelected: (_) => setModal(() {
+                                group = ChallengerGroup.family;
+                              }),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: ChoiceChip(
-                                label: const Center(child: Text('الأصدقاء 🤝')),
-                                selected: group == ChallengerGroup.friend,
-                                onSelected: (_) => setModal(() {
-                                  group = ChallengerGroup.friend;
-                                }),
-                              ),
+                            ChoiceChip(
+                              label: const Text('الأصدقاء 🤝'),
+                              selected: group == ChallengerGroup.friend,
+                              onSelected: (_) => setModal(() {
+                                group = ChallengerGroup.friend;
+                              }),
+                            ),
+                            ChoiceChip(
+                              label: Text('${challenge.customGroupName} 🌟'),
+                              selected: group == ChallengerGroup.customGroup,
+                              onSelected: (_) => setModal(() {
+                                group = ChallengerGroup.customGroup;
+                              }),
                             ),
                           ],
                         ),
@@ -2192,5 +2220,394 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _showRenameCustomGroupDialog(
+    ThemePalette palette,
+    FamilyChallengeProvider challenge,
+  ) async {
+    final ctrl = TextEditingController(text: challenge.customGroupName);
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: firdaws3DSurfaceColor(palette),
+        title: Text(
+          'تسمية المجموعة المخصّصة 🌟',
+          style: TextStyle(color: palette.textPrimary, fontSize: 16),
+        ),
+        content: TextField(
+          controller: ctrl,
+          style: TextStyle(color: palette.textPrimary),
+          decoration: const InputDecoration(
+            labelText: 'اسم المجموعة (مثلاً: خير الأصدقاء والعائلة)',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await challenge.renameCustomGroup(ctrl.text);
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('حفظ الاسم ✨'),
+          ),
+        ],
+      ),
+    );
+    ctrl.dispose();
+  }
+
+  Future<void> _showBluetoothChallengeSheet(
+    ThemePalette palette,
+    Color accent,
+    FamilyChallengeProvider challenge,
+    FirdawsUserProvider userProv,
+  ) async {
+    final bt = BluetoothChallengeService.instance;
+    final codeImportCtrl = TextEditingController();
+
+    final localProfile = BluetoothSyncedProfile(
+      id: 'usr_${userProv.displayName.hashCode.abs()}',
+      name: userProv.displayName,
+      age: userProv.profile.age,
+      traits: userProv.profile.preferences.take(4).toList(),
+      avatarIndex: userProv.displayName.hashCode.abs() % 50,
+      tasbihCount: challenge.userTasbihCount,
+      championScore: challenge.userChampionScore,
+      winsCount: challenge.userWins,
+      groupLabel: challenge.customGroupName,
+    );
+    final shareCode = localProfile.encodeShareCode();
+
+    bool scanning = false;
+    bool hosting = false;
+    String statusMsg = bt.isNativeAndroid
+        ? 'اضغط «البحث عن أجهزة قريبة» أو «استقبال تحدٍّ» لتبادل البيانات والصور عبر البلوتوث 📡'
+        : 'في المتصفح أو دون بلوتوث مدمج: انسخ كود ملفك أو الصق كود صديقك لإضافته فوراً ✨';
+    List<BluetoothPeerDevice> devices = [];
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (ctx, setModal) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              ),
+              child: DraggableScrollableSheet(
+                initialChildSize: 0.82,
+                minChildSize: 0.50,
+                maxChildSize: 0.95,
+                builder: (_, sc) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: firdaws3DSurfaceColor(palette),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(28),
+                      ),
+                      border: Border.all(
+                        color: const Color(0xFF10B981).withOpacity(0.55),
+                        width: 1.4,
+                      ),
+                    ),
+                    child: ListView(
+                      controller: sc,
+                      padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 46,
+                            height: 4.5,
+                            decoration: BoxDecoration(
+                              color: palette.dividerColor,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            const Icon(Icons.bluetooth_connected_rounded,
+                                color: Color(0xFF10B981), size: 26),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'تحدي البلوتوث القريب ومشاركة البيانات 📡',
+                                style: TextStyle(
+                                  color: palette.textPrimary,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'تبادل الاسم والعمر والصفات والصورة ورصيد التسبيح والانتصارات مع صديقك القريب وضمه مباشرة إلى «${challenge.customGroupName}».',
+                          style: TextStyle(
+                            color: palette.textSecondary,
+                            fontSize: 11.8,
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10B981).withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                                color: const Color(0xFF10B981).withOpacity(0.4)),
+                          ),
+                          child: Text(
+                            statusMsg,
+                            style: TextStyle(
+                              color: palette.textPrimary,
+                              fontSize: 11.8,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        if (bt.isNativeAndroid) ...[
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: scanning
+                                      ? null
+                                      : () async {
+                                          setModal(() {
+                                            scanning = true;
+                                            statusMsg =
+                                                'جاري فحص الأجهزة القريبة والمقترنة بالبلوتوث...';
+                                          });
+                                          try {
+                                            await bt.requestPermissions();
+                                            final list = await bt.scanDevices();
+                                            setModal(() {
+                                              devices = list;
+                                              scanning = false;
+                                              statusMsg = list.isEmpty
+                                                  ? 'لم يتم العثور على أجهزة بعد — تأكد من فتح البلوتوث والظهور على جهاز صديقك'
+                                                  : 'تم العثور على ${list.length} جهاز — اضغط على جهاز للاتصال والمنافسة';
+                                            });
+                                          } catch (e) {
+                                            setModal(() {
+                                              scanning = false;
+                                              statusMsg = 'تنبيه البلوتوث: $e';
+                                            });
+                                          }
+                                        },
+                                  icon: const Icon(Icons.radar_rounded, size: 18),
+                                  label: Text(
+                                      scanning ? 'جاري البحث...' : 'بحث أجهزة قريبة'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF10B981),
+                                    foregroundColor: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () async {
+                                    if (hosting) {
+                                      await bt.stopHostExchange();
+                                      setModal(() {
+                                        hosting = false;
+                                        statusMsg = 'تم إيقاف وضع الاستقبال.';
+                                      });
+                                      return;
+                                    }
+                                    setModal(() {
+                                      hosting = true;
+                                      statusMsg =
+                                          'جهازك مرئي الآن! اطلب من صديقك الضغط على اسم جهازك للاتصال...';
+                                    });
+                                    await bt.enableDiscoverable();
+                                    try {
+                                      final peer = await bt
+                                          .startHostExchange(localProfile);
+                                      if (peer != null) {
+                                        await challenge.upsertBluetoothPeerProfile(
+                                          peer,
+                                          targetGroup:
+                                              ChallengerGroup.customGroup,
+                                        );
+                                        setModal(() {
+                                          hosting = false;
+                                          statusMsg =
+                                              'تم استلام ملف «${peer.name}» وإضافته للتحدي! 🎉';
+                                        });
+                                      }
+                                    } catch (e) {
+                                      setModal(() {
+                                        hosting = false;
+                                        statusMsg = 'تعذر الاستقبال: $e';
+                                      });
+                                    }
+                                  },
+                                  icon: Icon(hosting
+                                      ? Icons.stop_circle_outlined
+                                      : Icons.wifi_tethering_rounded),
+                                  label: Text(
+                                      hosting ? 'إيقاف الاستقبال' : 'استقبال تحدٍّ 📡'),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (devices.isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            ...devices.map((dev) => Card(
+                                  color: firdaws3DElevatedSurfaceColor(palette),
+                                  margin: const EdgeInsets.only(bottom: 6),
+                                  child: ListTile(
+                                    leading: const Icon(
+                                      Icons.bluetooth_rounded,
+                                      color: Color(0xFF38BDF8),
+                                    ),
+                                    title: Text(
+                                      dev.name,
+                                      style: TextStyle(
+                                        color: palette.textPrimary,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      '${dev.address} • ${dev.isPaired ? "مقترن" : "جديد"}',
+                                      style: TextStyle(
+                                        color: palette.textSecondary,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                    trailing: ElevatedButton(
+                                      onPressed: () async {
+                                        setModal(() => statusMsg =
+                                            'جاري تبادل البيانات مع ${dev.name}...');
+                                        try {
+                                          final peer = await bt.connectAndExchange(
+                                            address: dev.address,
+                                            localProfile: localProfile,
+                                          );
+                                          if (peer != null) {
+                                            await challenge
+                                                .upsertBluetoothPeerProfile(
+                                              peer,
+                                              targetGroup:
+                                                  ChallengerGroup.customGroup,
+                                            );
+                                            setModal(() => statusMsg =
+                                                'تمت المزامنة مع «${peer.name}» (${peer.tasbihCount} تسبيحة) وإضافته للمنافسة! 🏆');
+                                          }
+                                        } catch (e) {
+                                          setModal(() => statusMsg =
+                                              'تأكد من تفعيل «استقبال تحدٍّ» عند ${dev.name}: $e');
+                                        }
+                                      },
+                                      child: const Text('تحدّي ⚔️'),
+                                    ),
+                                  ),
+                                )),
+                          ],
+                        ],
+                        const SizedBox(height: 14),
+                        Divider(color: palette.dividerColor),
+                        const SizedBox(height: 8),
+                        Text(
+                          'مشاركة سريعة بكود الفردوس (لأي جهاز):',
+                          style: TextStyle(
+                            color: accent,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12.5,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  Clipboard.setData(
+                                      ClipboardData(text: shareCode));
+                                  setModal(() => statusMsg =
+                                      'تم نسخ كود بطاقتك! أرسله لصديقك ليضيفك فوراً 📋');
+                                },
+                                icon: const Icon(Icons.copy_rounded, size: 16),
+                                label: const Text('نسخ كود بطاقتي'),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: codeImportCtrl,
+                                style: TextStyle(
+                                    color: palette.textPrimary, fontSize: 11.5),
+                                decoration: InputDecoration(
+                                  hintText: 'الصق كود صديقك (FIRDAWS:...) هنا',
+                                  hintStyle: TextStyle(
+                                      color: palette.textMuted, fontSize: 11),
+                                  isDense: true,
+                                  filled: true,
+                                  fillColor:
+                                      firdaws3DElevatedSurfaceColor(palette),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              onPressed: () async {
+                                final parsed = BluetoothSyncedProfile.tryDecode(
+                                    codeImportCtrl.text);
+                                if (parsed == null) {
+                                  setModal(() => statusMsg =
+                                      'الكود غير صالح — تأكد من نسخه كاملاً.');
+                                  return;
+                                }
+                                await challenge.upsertBluetoothPeerProfile(
+                                  parsed,
+                                  targetGroup: ChallengerGroup.customGroup,
+                                );
+                                codeImportCtrl.clear();
+                                setModal(() => statusMsg =
+                                    'تمت إضافة «${parsed.name}» بنجاح إلى «${challenge.customGroupName}»! 🎉');
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: accent,
+                                foregroundColor: palette.onAccentColor,
+                              ),
+                              child: const Text('إضافة'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        );
+      },
+    );
+    await bt.stopHostExchange();
+    codeImportCtrl.dispose();
   }
 }

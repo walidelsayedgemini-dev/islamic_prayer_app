@@ -396,7 +396,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
     expect(tester.takeException(), isNull);
 
-    final startBtn = find.text('دخول كرسي الاستوديو 3D وبدء المليون');
+    final startBtn = find.text('دخول كرسي الاستوديو وبدء المليون');
     await tester.scrollUntilVisible(
       startBtn,
       300,

@@ -12,7 +12,11 @@ class Firdaws4KCacheService {
 
   final Map<String, File> _resolvedFiles = {};
   final Map<String, Future<File?>> _inFlight = {};
+  final Map<String, DateTime> _failedCooldown = {};
+  final Set<String> _knownMissingUrls = {};
   Directory? _cacheDir;
+
+  static const Duration _retryCooldown = Duration(minutes: 5);
 
   Future<Directory?> _ensureDir() async {
     if (kIsWeb) return null;
@@ -38,6 +42,16 @@ class Firdaws4KCacheService {
 
   File? cachedFileSync(String url) => _resolvedFiles[url];
 
+  bool isInFailureCooldown(String url) {
+    final last = _failedCooldown[url];
+    if (last == null) return false;
+    if (DateTime.now().difference(last) < _retryCooldown) {
+      return true;
+    }
+    _failedCooldown.remove(url);
+    return false;
+  }
+
   Future<File?> getOrFetch(String url) {
     if (kIsWeb || url.trim().isEmpty) return Future.value(null);
     final mem = _resolvedFiles[url];
@@ -60,21 +74,38 @@ class Firdaws4KCacheService {
       final file = File('${dir.path}${Platform.pathSeparator}${_safeKey(url)}');
       if (await file.exists() && await file.length() > 1500) {
         _resolvedFiles[url] = file;
+        _failedCooldown.remove(url);
         return file;
+      }
+      if (isInFailureCooldown(url)) {
+        return null;
       }
       final resp = await http
           .get(
             Uri.parse(url),
             headers: const {'User-Agent': 'AlFirdawsApp/1.0 (https://github.com)'},
           )
-          .timeout(const Duration(seconds: 12));
+          .timeout(const Duration(seconds: 6));
       if (resp.statusCode == 200 && resp.bodyBytes.length > 1500) {
         await file.writeAsBytes(resp.bodyBytes, flush: true);
         _resolvedFiles[url] = file;
+        _failedCooldown.remove(url);
         return file;
       }
-    } catch (_) {}
+      _failedCooldown[url] = DateTime.now();
+    } catch (_) {
+      _failedCooldown[url] = DateTime.now();
+    }
     return null;
+  }
+
+  void markNetworkError(String url) {
+    _failedCooldown[url] = DateTime.now();
+    _knownMissingUrls.add(url);
+  }
+
+  bool shouldSkipNetworkFetch(String url) {
+    return isInFailureCooldown(url) && _knownMissingUrls.contains(url);
   }
 }
 
@@ -164,6 +195,7 @@ class _FirdawsResilientImageState extends State<FirdawsResilientImage> {
       alignment: widget.alignment,
       width: widget.width,
       height: widget.height,
+      gaplessPlayback: true,
       filterQuality: widget.filterQuality,
       errorBuilder: (_, __, ___) => const SizedBox.shrink(),
     );
@@ -172,6 +204,9 @@ class _FirdawsResilientImageState extends State<FirdawsResilientImage> {
   @override
   Widget build(BuildContext context) {
     final url = widget.networkUrl?.trim();
+    final skipNet = url != null &&
+        url.isNotEmpty &&
+        Firdaws4KCacheService.instance.shouldSkipNetworkFetch(url);
     Widget media;
 
     if (!kIsWeb && _diskFile != null) {
@@ -185,12 +220,13 @@ class _FirdawsResilientImageState extends State<FirdawsResilientImage> {
             alignment: widget.alignment,
             width: widget.width,
             height: widget.height,
+            gaplessPlayback: true,
             filterQuality: widget.filterQuality,
             errorBuilder: (_, __, ___) => _buildAssetFallback(),
           ),
         ],
       );
-    } else if (url != null && url.isNotEmpty) {
+    } else if (url != null && url.isNotEmpty && !skipNet) {
       media = Stack(
         fit: StackFit.expand,
         children: [
@@ -201,6 +237,7 @@ class _FirdawsResilientImageState extends State<FirdawsResilientImage> {
             alignment: widget.alignment,
             width: widget.width,
             height: widget.height,
+            gaplessPlayback: true,
             filterQuality: widget.filterQuality,
             headers: kIsWeb
                 ? null
@@ -213,11 +250,14 @@ class _FirdawsResilientImageState extends State<FirdawsResilientImage> {
               }
               return AnimatedOpacity(
                 opacity: (frame != null || wasSyncLoaded) ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 280),
+                duration: const Duration(milliseconds: 200),
                 child: child,
               );
             },
-            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            errorBuilder: (_, __, ___) {
+              Firdaws4KCacheService.instance.markNetworkError(url);
+              return const SizedBox.shrink();
+            },
           ),
         ],
       );

@@ -1077,7 +1077,7 @@ class _Tasbih3DMotivationBannerState extends State<Tasbih3DMotivationBanner>
                         ),
                       ),
                       child: Text(
-                        '${p.emoji} ${p.badgeTitle} • 3D',
+                        '${p.emoji} ${p.badgeTitle}',
                         style: const TextStyle(
                           color: Color(0xFFE2E8F0),
                           fontSize: 11,
@@ -1133,7 +1133,7 @@ class _Tasbih3DMotivationBannerState extends State<Tasbih3DMotivationBanner>
                       onPressed: widget.onNextPhrase,
                       icon: const Icon(Icons.auto_awesome_rounded, size: 15),
                       label: const Text(
-                        'تحفيز 3D تالٍ ✨',
+                        'تحفيز تالٍ ✨',
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.bold,
@@ -1240,7 +1240,7 @@ void showTasbih200PhrasesExplorerSheet(
                       const SizedBox(width: 8),
                       const Expanded(
                         child: Text(
-                          'موسوعة 200 جملة تحفيزية ثلاثية الأبعاد (3D)',
+                          'موسوعة 200 جملة تحفيزية مضيئة',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 15,

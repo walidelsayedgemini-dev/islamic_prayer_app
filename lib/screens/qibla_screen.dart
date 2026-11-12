@@ -22,6 +22,13 @@ enum CompassSkinStyle {
   windroseMariner, // البحري بالوردة النجمية
   vintageOttoman, // العثماني التراثي النحاسي
   darkMinimalKaaba, // الأسود والذهب الكعبة الملكي
+  pearlGoldFirdaws, // اللؤلؤي الذهبي الفردوسي
+  sapphireNight, // الياقوتي الليلي الأزرق
+  rubyDamascus, // العقيقي الدمشقي الفاخر
+  marbleAndalusian, // الرخامي الأندلسي الهادئ
+  turquoiseMedina, // الفيروزي المدني المنير
+  sunsetAmber, // الكهرماني الذهبي الدافئ
+  crystalSilver, // الفضي البلوري الصافي
 }
 
 class QiblaScreen extends StatefulWidget {
@@ -471,47 +478,120 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
 
           const SizedBox(height: 16),
 
-          // 5. شريط أشكال البوصلة الخمسة داخل قالب إسلامي 4K
+          // 5. شريط سكنات البوصلة الاثني عشر السريعة داخل قالب إسلامي 4K
           Firdaws4KCardShell(
             backdrop: Background500Catalog.forExtraSection(25),
             isDark: palette.isDark,
-            borderRadius: 28,
+            borderRadius: 24,
             borderColor: accentColor.withOpacity(0.45),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             imageOpacity: palette.isDark ? 0.50 : 0.36,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSkinIconPreview(
-                  CompassSkinStyle.emeraldClassic,
-                  const Color(0xFF047857),
-                  Icons.explore_rounded,
-                  palette,
+                Padding(
+                  padding: const EdgeInsets.only(right: 6, bottom: 8),
+                  child: Text(
+                    'سكنات البوصلة السريعة (١٢ تصميماً + ٥٠٠ بالمتجر) 🧭',
+                    style: TextStyle(
+                      color: palette.textPrimary,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-                _buildSkinIconPreview(
-                  CompassSkinStyle.windroseMariner,
-                  const Color(0xFFEF4444),
-                  Icons.navigation_rounded,
-                  palette,
-                ),
-                _buildSkinIconPreview(
-                  CompassSkinStyle.whiteSmartDial,
-                  Colors.white,
-                  Icons.radio_button_checked_rounded,
-                  palette,
-                  isCenterFeatured: true,
-                ),
-                _buildSkinIconPreview(
-                  CompassSkinStyle.vintageOttoman,
-                  const Color(0xFFB45309),
-                  Icons.grain_rounded,
-                  palette,
-                ),
-                _buildSkinIconPreview(
-                  CompassSkinStyle.darkMinimalKaaba,
-                  const Color(0xFF0F172A),
-                  Icons.brightness_1_rounded,
-                  palette,
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    children: [
+                      _buildSkinIconPreview(
+                        CompassSkinStyle.emeraldClassic,
+                        const Color(0xFF047857),
+                        Icons.explore_rounded,
+                        palette,
+                        label: 'نبوي',
+                      ),
+                      _buildSkinIconPreview(
+                        CompassSkinStyle.windroseMariner,
+                        const Color(0xFF0284C7),
+                        Icons.navigation_rounded,
+                        palette,
+                        label: 'بحري',
+                      ),
+                      _buildSkinIconPreview(
+                        CompassSkinStyle.whiteSmartDial,
+                        Colors.white,
+                        Icons.radio_button_checked_rounded,
+                        palette,
+                        isCenterFeatured: true,
+                        label: 'أبيض ذكي',
+                      ),
+                      _buildSkinIconPreview(
+                        CompassSkinStyle.vintageOttoman,
+                        const Color(0xFFB45309),
+                        Icons.grain_rounded,
+                        palette,
+                        label: 'عثماني',
+                      ),
+                      _buildSkinIconPreview(
+                        CompassSkinStyle.darkMinimalKaaba,
+                        const Color(0xFF0F172A),
+                        Icons.brightness_1_rounded,
+                        palette,
+                        label: 'كعبة ملكي',
+                      ),
+                      _buildSkinIconPreview(
+                        CompassSkinStyle.pearlGoldFirdaws,
+                        const Color(0xFFF59E0B),
+                        Icons.auto_awesome_rounded,
+                        palette,
+                        label: 'لؤلؤي',
+                      ),
+                      _buildSkinIconPreview(
+                        CompassSkinStyle.sapphireNight,
+                        const Color(0xFF1D4ED8),
+                        Icons.nights_stay_rounded,
+                        palette,
+                        label: 'ياقوتي',
+                      ),
+                      _buildSkinIconPreview(
+                        CompassSkinStyle.rubyDamascus,
+                        const Color(0xFF9F1239),
+                        Icons.diamond_rounded,
+                        palette,
+                        label: 'عقيقي',
+                      ),
+                      _buildSkinIconPreview(
+                        CompassSkinStyle.marbleAndalusian,
+                        const Color(0xFF065F46),
+                        Icons.architecture_rounded,
+                        palette,
+                        label: 'أندلسي',
+                      ),
+                      _buildSkinIconPreview(
+                        CompassSkinStyle.turquoiseMedina,
+                        const Color(0xFF0D9488),
+                        Icons.mosque_rounded,
+                        palette,
+                        label: 'مدني',
+                      ),
+                      _buildSkinIconPreview(
+                        CompassSkinStyle.sunsetAmber,
+                        const Color(0xFFD97706),
+                        Icons.wb_twilight_rounded,
+                        palette,
+                        label: 'كهرماني',
+                      ),
+                      _buildSkinIconPreview(
+                        CompassSkinStyle.crystalSilver,
+                        const Color(0xFF475569),
+                        Icons.star_outline_rounded,
+                        palette,
+                        label: 'فضي',
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -752,6 +832,7 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
     IconData icon,
     ThemePalette palette, {
     bool isCenterFeatured = false,
+    String? label,
   }) {
     final isSelected = _selectedSkin == style;
 
@@ -760,31 +841,54 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
         HapticFeedback.selectionClick();
         setState(() => _selectedSkin = style);
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: isCenterFeatured ? 48 : 42,
-        height: isCenterFeatured ? 48 : 42,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: color,
-          border: Border.all(
-            color: isSelected ? const Color(0xFF10B981) : palette.dividerColor,
-            width: isSelected ? 3.2 : 1.4,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isSelected
-                  ? const Color(0xFF10B981).withOpacity(0.55)
-                  : Colors.black.withOpacity(0.18),
-              blurRadius: isSelected ? 10 : 4,
-              offset: const Offset(0, 2),
-            )
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 5),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: isCenterFeatured ? 46 : 40,
+              height: isCenterFeatured ? 46 : 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color,
+                border: Border.all(
+                  color: isSelected
+                      ? const Color(0xFF10B981)
+                      : palette.dividerColor,
+                  width: isSelected ? 3.2 : 1.4,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: isSelected
+                        ? const Color(0xFF10B981).withOpacity(0.55)
+                        : Colors.black.withOpacity(0.18),
+                    blurRadius: isSelected ? 10 : 4,
+                    offset: const Offset(0, 2),
+                  )
+                ],
+              ),
+              child: Icon(
+                icon,
+                color: color == Colors.white
+                    ? const Color(0xFF047857)
+                    : Colors.white,
+                size: isCenterFeatured ? 23 : 19,
+              ),
+            ),
+            if (label != null) ...[
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? palette.accentColor : palette.textMuted,
+                  fontSize: 9,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                ),
+              ),
+            ],
           ],
-        ),
-        child: Icon(
-          icon,
-          color: color == Colors.white ? const Color(0xFF047857) : Colors.white,
-          size: isCenterFeatured ? 24 : 20,
         ),
       ),
     );
@@ -853,6 +957,55 @@ class _LargeDialPainter extends CustomPainter {
         tickColor = Colors.white70;
         cardinalColor = Colors.white;
         subtleRingColor = const Color(0xFF1E293B);
+        break;
+      case CompassSkinStyle.pearlGoldFirdaws:
+        dialBg = const Color(0xFFFFFBF0);
+        rimColor = const Color(0xFFD97706);
+        tickColor = const Color(0xFF78350F);
+        cardinalColor = const Color(0xFFB45309);
+        subtleRingColor = const Color(0xFFFDE68A);
+        break;
+      case CompassSkinStyle.sapphireNight:
+        dialBg = const Color(0xFF091538);
+        rimColor = const Color(0xFF38BDF8);
+        tickColor = const Color(0xFFBAE6FD);
+        cardinalColor = Colors.white;
+        subtleRingColor = const Color(0xFF1E3A8A);
+        break;
+      case CompassSkinStyle.rubyDamascus:
+        dialBg = const Color(0xFF2B0A16);
+        rimColor = const Color(0xFFF43F5E);
+        tickColor = const Color(0xFFFECDD3);
+        cardinalColor = const Color(0xFFFFE4E6);
+        subtleRingColor = const Color(0xFF881337);
+        break;
+      case CompassSkinStyle.marbleAndalusian:
+        dialBg = const Color(0xFFECFDF5);
+        rimColor = const Color(0xFF065F46);
+        tickColor = const Color(0xFF047857);
+        cardinalColor = const Color(0xFF064E3B);
+        subtleRingColor = const Color(0xFFA7F3D0);
+        break;
+      case CompassSkinStyle.turquoiseMedina:
+        dialBg = const Color(0xFF042F2E);
+        rimColor = const Color(0xFF2DD4BF);
+        tickColor = const Color(0xFF99F6E4);
+        cardinalColor = Colors.white;
+        subtleRingColor = const Color(0xFF115E59);
+        break;
+      case CompassSkinStyle.sunsetAmber:
+        dialBg = const Color(0xFF291407);
+        rimColor = const Color(0xFFF59E0B);
+        tickColor = const Color(0xFFFCD34D);
+        cardinalColor = const Color(0xFFFEF3C7);
+        subtleRingColor = const Color(0xFF92400E);
+        break;
+      case CompassSkinStyle.crystalSilver:
+        dialBg = const Color(0xFFF1F5F9);
+        rimColor = const Color(0xFF475569);
+        tickColor = const Color(0xFF334155);
+        cardinalColor = const Color(0xFF0F172A);
+        subtleRingColor = const Color(0xFFCBD5E1);
         break;
     }
 

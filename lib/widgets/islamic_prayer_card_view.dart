@@ -57,6 +57,7 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
   late PageController _prayerPageController;
   int _selectedPrayerIdx = 0;
   bool _userSwipedManually = false;
+  bool _isPointerDown = false;
 
   int _prayerIndex(Prayer p) {
     final i = _orderedPrayers.indexOf(p);
@@ -100,12 +101,20 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
     super.dispose();
   }
 
+  void _scheduleSnapBackOnRelease() {
+    _isPointerDown = false;
+    Future.delayed(const Duration(milliseconds: 220), () {
+      if (!mounted || _isPointerDown) return;
+      _jumpToNextPrayer();
+    });
+  }
+
   void _stepPrayerPage(int delta) {
     if (!_prayerPageController.hasClients) return;
     final curPage = (_prayerPageController.page ?? _baseOffset.toDouble()).round();
     _prayerPageController.animateToPage(
       curPage + delta,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 260),
       curve: Curves.easeOutCubic,
     );
   }
@@ -186,139 +195,168 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
 
         const SizedBox(height: 10),
 
-        // 2. بطاقة الصلاة المركزية التفاعلية (قابلة للسحب يميناً ويساراً للتبديل بين الصلوات)
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // الميدالية الجانبية اليمنى (اضغط للتبديل للسابقة)
-              Expanded(
-                flex: 3,
-                child: _buildSidePrayerMedallion(
-                  prayer: prevPrayer,
-                  time: prevTime,
-                  palette: palette,
-                  statusLabel: prevPrayer == widget.currentPrayer
-                      ? "حالية ◀"
-                      : "اسحب / اضغط ◀",
-                  onTapOverride: () {
-                    setState(() => _userSwipedManually = true);
-                    _stepPrayerPage(-1);
-                  },
-                ),
-              ),
-
-              const SizedBox(width: 8),
-
-              // البطاقة المركزية القابلة للسحب بين الـ 6 صلوات
-              Expanded(
-                flex: 5,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      height: 196,
-                      child: PageView.builder(
-                        controller: _prayerPageController,
-                        physics: const BouncingScrollPhysics(),
-                        onPageChanged: (page) {
-                          setState(() {
-                            _selectedPrayerIdx = ((page % 6) + 6) % 6;
-                            _userSwipedManually = _orderedPrayers[_selectedPrayerIdx] !=
-                                defaultTargetPrayer;
-                          });
-                        },
-                        itemBuilder: (_, page) {
-                          final idx = ((page % 6) + 6) % 6;
-                          final prayer = _orderedPrayers[idx];
-                          final pTime = widget.prayerTimes.timeForPrayer(prayer) ??
-                              DateTime.now();
-                          return _buildCenterCartouchePrayerCard(
-                            prayer: prayer,
-                            prayerSlideIdx: idx,
-                            defaultNextPrayer: defaultTargetPrayer,
-                            time: pTime,
-                            remaining: prayer == defaultTargetPrayer
-                                ? widget.remaining
-                                : pTime.difference(DateTime.now()),
-                            palette: palette,
-                          );
-                        },
-                      ),
+        // 2. بطاقة الصلاة المركزية التفاعلية (تبدّل الصلوات الثلاث أثناء السحب وتعود تلقائياً بمجرد ترك الإصبع)
+        Listener(
+          onPointerDown: (_) => _isPointerDown = true,
+          onPointerUp: (_) => _scheduleSnapBackOnRelease(),
+          onPointerCancel: (_) => _scheduleSnapBackOnRelease(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // الميدالية الجانبية اليمنى (اضغط أو اسحب للتبديل للسابقة)
+                Expanded(
+                  flex: 3,
+                  child: GestureDetector(
+                    onHorizontalDragEnd: (details) {
+                      final vx = details.primaryVelocity ?? 0;
+                      if (vx.abs() > 40) {
+                        setState(() => _userSwipedManually = true);
+                        _stepPrayerPage(vx > 0 ? 1 : -1);
+                      }
+                    },
+                    child: _buildSidePrayerMedallion(
+                      prayer: prevPrayer,
+                      time: prevTime,
+                      palette: palette,
+                      statusLabel: prevPrayer == widget.currentPrayer
+                          ? "حالية ◀"
+                          : "اسحب / اضغط ◀",
+                      onTapOverride: () {
+                        setState(() => _userSwipedManually = true);
+                        _stepPrayerPage(-1);
+                        Future.delayed(const Duration(milliseconds: 900), () {
+                          if (mounted && !_isPointerDown) _jumpToNextPrayer();
+                        });
+                      },
                     ),
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ...List.generate(6, (i) {
-                          final active = (_selectedPrayerIdx % 6) == i;
-                          final isNext = _orderedPrayers[i] == defaultTargetPrayer;
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 220),
-                            margin: const EdgeInsets.symmetric(horizontal: 2.5),
-                            width: active ? 16 : 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(4),
-                              color: active
-                                  ? accent
-                                  : (isNext
-                                      ? accent.withOpacity(0.45)
-                                      : palette.textMuted.withOpacity(0.35)),
-                            ),
-                          );
-                        }),
-                        if (!isShowingDefaultNext) ...[
-                          const SizedBox(width: 6),
-                          GestureDetector(
-                            onTap: _jumpToNextPrayer,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 7, vertical: 2),
+                  ),
+                ),
+
+                const SizedBox(width: 8),
+
+                // البطاقة المركزية القابلة للسحب بين الـ 6 صلوات
+                Expanded(
+                  flex: 5,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        height: 196,
+                        child: PageView.builder(
+                          controller: _prayerPageController,
+                          physics: const BouncingScrollPhysics(),
+                          onPageChanged: (page) {
+                            setState(() {
+                              _selectedPrayerIdx = ((page % 6) + 6) % 6;
+                              _userSwipedManually = _orderedPrayers[_selectedPrayerIdx] !=
+                                  defaultTargetPrayer;
+                            });
+                          },
+                          itemBuilder: (_, page) {
+                            final idx = ((page % 6) + 6) % 6;
+                            final prayer = _orderedPrayers[idx];
+                            final pTime = widget.prayerTimes.timeForPrayer(prayer) ??
+                                DateTime.now();
+                            return _buildCenterCartouchePrayerCard(
+                              prayer: prayer,
+                              prayerSlideIdx: idx,
+                              defaultNextPrayer: defaultTargetPrayer,
+                              time: pTime,
+                              remaining: prayer == defaultTargetPrayer
+                                  ? widget.remaining
+                                  : pTime.difference(DateTime.now()),
+                              palette: palette,
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ...List.generate(6, (i) {
+                            final active = (_selectedPrayerIdx % 6) == i;
+                            final isNext = _orderedPrayers[i] == defaultTargetPrayer;
+                            return AnimatedContainer(
+                              duration: const Duration(milliseconds: 220),
+                              margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                              width: active ? 16 : 6,
+                              height: 6,
                               decoration: BoxDecoration(
-                                color: accent.withOpacity(0.18),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                    color: accent.withOpacity(0.55)),
+                                borderRadius: BorderRadius.circular(4),
+                                color: active
+                                    ? accent
+                                    : (isNext
+                                        ? accent.withOpacity(0.45)
+                                        : palette.textMuted.withOpacity(0.35)),
                               ),
-                              child: Text(
-                                'القادمة ↩',
-                                style: TextStyle(
-                                  color: accent,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
+                            );
+                          }),
+                          if (!isShowingDefaultNext) ...[
+                            const SizedBox(width: 6),
+                            GestureDetector(
+                              onTap: _jumpToNextPrayer,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: accent.withOpacity(0.18),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                      color: accent.withOpacity(0.55)),
+                                ),
+                                child: Text(
+                                  'القادمة ↩',
+                                  style: TextStyle(
+                                    color: accent,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
+                          ],
                         ],
-                      ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 8),
+
+                // الميدالية الجانبية اليسرى (اضغط أو اسحب للتبديل للتالية)
+                Expanded(
+                  flex: 3,
+                  child: GestureDetector(
+                    onHorizontalDragEnd: (details) {
+                      final vx = details.primaryVelocity ?? 0;
+                      if (vx.abs() > 40) {
+                        setState(() => _userSwipedManually = true);
+                        _stepPrayerPage(vx > 0 ? 1 : -1);
+                      }
+                    },
+                    child: _buildSidePrayerMedallion(
+                      prayer: nextAfterDisplayed,
+                      time: nextAfterTime,
+                      palette: palette,
+                      statusLabel: nextAfterDisplayed == defaultTargetPrayer
+                          ? "القادمة ▶"
+                          : "اسحب / اضغط ▶",
+                      onTapOverride: () {
+                        setState(() => _userSwipedManually = true);
+                        _stepPrayerPage(1);
+                        Future.delayed(const Duration(milliseconds: 900), () {
+                          if (mounted && !_isPointerDown) _jumpToNextPrayer();
+                        });
+                      },
                     ),
-                  ],
+                  ),
                 ),
-              ),
-
-              const SizedBox(width: 8),
-
-              // الميدالية الجانبية اليسرى (اضغط للتبديل للتالية)
-              Expanded(
-                flex: 3,
-                child: _buildSidePrayerMedallion(
-                  prayer: nextAfterDisplayed,
-                  time: nextAfterTime,
-                  palette: palette,
-                  statusLabel: nextAfterDisplayed == defaultTargetPrayer
-                      ? "القادمة ▶"
-                      : "اسحب / اضغط ▶",
-                  onTapOverride: () {
-                    setState(() => _userSwipedManually = true);
-                    _stepPrayerPage(1);
-                  },
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
 

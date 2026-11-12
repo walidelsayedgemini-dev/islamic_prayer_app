@@ -55,6 +55,8 @@ class HoorCompanionProvider extends ChangeNotifier {
 
   bool _floatingGuideEnabled = true;
   bool _guidePopupOpen = false;
+  double _floatingGuideX = 0.04;
+  double _floatingGuideY = 0.76;
   String _activeScreenRoute = 'prayer_home';
 
   final List<HoorVentMessage> _ventingHistory = [];
@@ -81,6 +83,8 @@ class HoorCompanionProvider extends ChangeNotifier {
 
   bool get floatingGuideEnabled => _floatingGuideEnabled;
   bool get guidePopupOpen => _guidePopupOpen;
+  double get floatingGuideX => _floatingGuideX;
+  double get floatingGuideY => _floatingGuideY;
   String get activeScreenRoute => _activeScreenRoute;
   HoorScreenGuideEntry get currentScreenGuide =>
       HoorCatalog.guideForRoute(_activeScreenRoute);
@@ -132,6 +136,12 @@ class HoorCompanionProvider extends ChangeNotifier {
       _interactionCount =
           math.max(0, (decoded['interactionCount'] as num?)?.toInt() ?? 0);
       _floatingGuideEnabled = decoded['floatingGuideEnabled'] as bool? ?? true;
+      _floatingGuideX =
+          ((decoded['floatingGuideX'] as num?)?.toDouble() ?? 0.04)
+              .clamp(0.02, 0.88);
+      _floatingGuideY =
+          ((decoded['floatingGuideY'] as num?)?.toDouble() ?? 0.76)
+              .clamp(0.08, 0.86);
 
       final historyRaw = decoded['ventingHistory'];
       if (historyRaw is List) {
@@ -190,10 +200,42 @@ class HoorCompanionProvider extends ChangeNotifier {
       'movementIndex': _activeMovementIndex,
       'interactionCount': _interactionCount,
       'floatingGuideEnabled': _floatingGuideEnabled,
+      'floatingGuideX': _floatingGuideX,
+      'floatingGuideY': _floatingGuideY,
       'ventingHistory': _ventingHistory.take(80).map((m) => m.toJson()).toList(),
     });
     await prefs.setString(_kMainKey, payload);
     await prefs.setString(_kBackupKey, payload);
+  }
+
+  Future<void> setFloatingGuidePosition(
+    double normalizedX,
+    double normalizedY, {
+    bool persist = true,
+  }) async {
+    _floatingGuideX = normalizedX.clamp(0.02, 0.88);
+    _floatingGuideY = normalizedY.clamp(0.08, 0.86);
+    notifyListeners();
+    if (persist) {
+      await _persist();
+    }
+  }
+
+  Future<void> selectAnimeStylePreset(int presetIndex) async {
+    final safe = ((presetIndex % 24) + 24) % 24;
+    _appearance = _appearance.copyWith(
+      animeStyleIndex: safe,
+      robeColorIndex: safe % 12,
+      trimColorIndex: (safe * 3) % 8,
+      eyeStyle: safe % 4,
+      mouthStyle: safe % 4,
+      headwearStyle: safe % 5,
+      handheldItem: 1 + (safe % 4),
+      auraStyle: 1 + (safe % 3),
+    );
+    _kineticPulseTick++;
+    notifyListeners();
+    await _persist();
   }
 
   void setActiveScreenRoute(String routeKey) {

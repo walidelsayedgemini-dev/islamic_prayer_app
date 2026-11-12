@@ -137,7 +137,7 @@ class _ArenaLiveEventsOverlayState extends State<ArenaLiveEventsOverlay> {
     final phrases = [
       if (ev != null) '⚡ حدث «${ev.title}» يمطر الحسنات الآن!',
       '🎁 صندوق جائزة هبط في ساحة المنافسة — التقطه سريعاً!',
-      '🚀 موجة تسارع ثلاثية الأبعاد — واصل الصدارة!',
+      '🚀 موجة تسارع فائقة — واصل الصدارة!',
       '🌟 بريق الفوز يضاعف رصيدك عند خط النهاية!',
     ];
     _activeWaveBanner = phrases[_rng.nextInt(phrases.length)];

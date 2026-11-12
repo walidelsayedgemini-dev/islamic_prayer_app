@@ -1496,7 +1496,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 const SizedBox(width: 7),
                 Expanded(
                   child: Text(
-                    'ساحة المسابقات والألعاب ثلاثية الأبعاد 3D',
+                    'ساحة المسابقات والألعاب التفاعلية',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -1565,7 +1565,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                         Text('🕹️', style: TextStyle(fontSize: 19)),
                         SizedBox(height: 3),
                         Text(
-                          'صالة ٣٠ لعبة 3D',
+                          'صالة ٣٠ لعبة',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -1807,7 +1807,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
               _buildHubActionItem(
                 bgSlotIndex: 1,
                 icon: Icons.sports_esports_rounded,
-                label: "٣٠ لعبة 3D",
+                label: "٣٠ لعبة",
                 color: isDark ? const Color(0xFFA78BFA) : const Color(0xFF6D28D9),
                 palette: palette,
                 onTap: () => Navigator.of(context).push(

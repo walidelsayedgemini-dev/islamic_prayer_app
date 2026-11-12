@@ -474,7 +474,7 @@ class _Runner3DEngineWidgetState extends State<Runner3DEngineWidget>
                   SizedBox(width: 4),
                   Flexible(
                     child: Text(
-                      'قفز 3D',
+                      'قفز',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(

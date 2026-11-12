@@ -17,7 +17,7 @@ extension StoreItemCategoryExt on StoreItemCategory {
       case StoreItemCategory.gardenSkin:
         return 'بساتين الجنة';
       case StoreItemCategory.craftSkin:
-        return 'المركبات 3D';
+        return 'المركبات المضيئة';
       case StoreItemCategory.heroSkin:
         return 'أزياء الأبطال';
       case StoreItemCategory.frameSkin:
@@ -226,7 +226,7 @@ class HasanatStoreCatalog {
     HasanatSkinItem(
       id: 'craft_nebula_astrolabe',
       name: 'طراد الإسطرلاب المجري',
-      subtitle: 'حلقات فلكية دوارة تحيط بالمركبة أثناء السباق في الفضاء 3D',
+      subtitle: 'حلقات فلكية دوارة تحيط بالمركبة أثناء السباق في الفضاء الواسع',
       category: StoreItemCategory.craftSkin,
       rarity: SkinRarity.rare,
       price: 240,
@@ -259,7 +259,7 @@ class HasanatStoreCatalog {
     HasanatSkinItem(
       id: 'craft_firdaws_crown',
       name: 'مركب تاج الفردوس الأسطوري',
-      subtitle: 'قمة التصميم ثلاثي الأبعاد بزخارف ملكية وتوربينات ذهبية لا تُقهر',
+      subtitle: 'قمة التصميم الفاخر بزخارف ملكية وتوربينات ذهبية لا تُقهر',
       category: StoreItemCategory.craftSkin,
       rarity: SkinRarity.firdaws,
       price: 750,
@@ -353,7 +353,7 @@ class HasanatStoreCatalog {
     HasanatSkinItem(
       id: 'frame_noor_halo',
       name: 'هالة النور الفيروزية',
-      subtitle: 'حلقة نورانية مضيئة مزدوجة الطبقات بإشراقة سماوية 3D',
+      subtitle: 'حلقة نورانية مضيئة مزدوجة الطبقات بإشراقة سماوية بهية',
       category: StoreItemCategory.frameSkin,
       rarity: SkinRarity.rare,
       price: 210,
@@ -674,7 +674,7 @@ class HasanatStoreCatalog {
       case StoreItemCategory.gardenSkin:
         return 'مظهر جنة إسلامي بطابع $gem $adj • الإصدار #$num لقصور الفردوس والأنهار';
       case StoreItemCategory.craftSkin:
-        return 'هيكل ثلاثي الأبعاد مستوحى من تراث $gem $adj • الطراز #$num للسباقات';
+        return 'هيكل متطور مستوحى من تراث $gem $adj • الطراز #$num للسباقات';
       case StoreItemCategory.heroSkin:
         return 'طقم بطولي منقوش بألوان $gem $adj • الطراز #$num في تحديات الميادين';
       case StoreItemCategory.frameSkin:

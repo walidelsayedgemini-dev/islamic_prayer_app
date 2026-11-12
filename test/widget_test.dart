@@ -519,9 +519,9 @@ void main() {
     expect(prayers.tomorrowFajr.isAfter(prayers.prayerTimes.fajr), isTrue);
   });
 
-  test('Authentic Islamic Stories (52), Sahih Bukhari (120) & SacredReferenceParser work accurately',
+  test('Authentic Islamic Stories (61), Sahih Bukhari (120) & SacredReferenceParser work accurately',
       () async {
-    expect(IslamicStoriesCatalog.allStories.length, 52);
+    expect(IslamicStoriesCatalog.allStories.length, 61);
     for (final cat in StoryCategory.values) {
       expect(IslamicStoriesCatalog.byCategory(cat), isNotEmpty);
     }

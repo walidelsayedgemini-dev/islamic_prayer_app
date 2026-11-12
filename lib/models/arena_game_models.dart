@@ -15,21 +15,21 @@ extension ArenaEngineTypeExt on ArenaEngineType {
   String get arabicLabel {
     switch (this) {
       case ArenaEngineType.runner3D:
-        return 'سباق منظور 3D';
+        return 'سباق منظور';
       case ArenaEngineType.target3D:
-        return 'تصويب العمق 3D';
+        return 'تصويب العمق';
       case ArenaEngineType.memory3D:
-        return 'ذاكرة الألواح 3D';
+        return 'ذاكرة الألواح';
       case ArenaEngineType.path3D:
-        return 'متاهة المعراج 3D';
+        return 'متاهة المعراج';
       case ArenaEngineType.wordForge3D:
-        return 'صياغة الكلمات 3D';
+        return 'صياغة الكلمات';
       case ArenaEngineType.astrolabe3D:
-        return 'فلك الأسطرلاب 3D';
+        return 'فلك الأسطرلاب';
       case ArenaEngineType.strategyGrid3D:
-        return 'لوح الإستراتيجية 3D';
+        return 'لوح الإستراتيجية';
       case ArenaEngineType.rhythmPulse3D:
-        return 'إيقاع النور 3D';
+        return 'إيقاع النور';
     }
   }
 
@@ -291,7 +291,7 @@ class ArenaVirtualRival {
     ArenaVirtualRival(
       id: 'vr_tariq',
       name: 'طارق الأندلسي',
-      title: 'قائد الميادين 3D',
+      title: 'قائد الميادين',
       emoji: '🦅',
       baseSkill: 0.96,
       badgeColor: Color(0xFF8B5CF6),

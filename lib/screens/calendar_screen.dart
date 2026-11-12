@@ -1211,7 +1211,7 @@ class _CalendarScreenState extends State<CalendarScreen>
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'مواقيت صلوات اليوم المختار • خلفيات واقعية 4K',
+                'مواقيت صلوات اليوم المختار • صور إسلامية 4K',
                 style: TextStyle(
                   color: accent,
                   fontWeight: FontWeight.bold,

@@ -121,11 +121,12 @@ class _RealMosqueBackgroundState extends State<RealMosqueBackground>
               );
             },
             child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 700),
+              duration: const Duration(milliseconds: 500),
               child: Image.asset(
                 assetPath,
                 key: ValueKey<String>('${assetPath}_${widget.isNightMode}'),
                 fit: BoxFit.cover,
+                gaplessPlayback: true,
                 filterQuality: FilterQuality.medium,
                 width: double.infinity,
                 height: double.infinity,
@@ -137,11 +138,12 @@ class _RealMosqueBackgroundState extends State<RealMosqueBackground>
           )
         else
           AnimatedSwitcher(
-            duration: const Duration(milliseconds: 500),
+            duration: const Duration(milliseconds: 350),
             child: Image.asset(
               assetPath,
               key: ValueKey<String>('${assetPath}_${widget.isNightMode}_static'),
               fit: BoxFit.cover,
+              gaplessPlayback: true,
               filterQuality: FilterQuality.medium,
               width: double.infinity,
               height: double.infinity,

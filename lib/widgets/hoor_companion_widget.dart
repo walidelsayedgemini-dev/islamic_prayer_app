@@ -769,6 +769,81 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
                     ],
                   ),
                   const SizedBox(height: 14),
+                  const Text(
+                    'اختر شكل الأنمي الكيوت المفضّل (٢٤ شكلاً متجدداً 🌸):',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13.5,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 98,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: HoorCatalog.animeStyleNames.length,
+                      itemBuilder: (_, idx) {
+                        final isSel = app.animeStyleIndex == idx;
+                        final previewApp = app.copyWith(
+                          animeStyleIndex: idx,
+                          robeColorIndex: idx % 12,
+                          trimColorIndex: (idx * 3) % 8,
+                          headwearStyle: idx % 5,
+                          handheldItem: 1 + (idx % 4),
+                        );
+                        return GestureDetector(
+                          onTap: () => liveHoor.selectAnimeStylePreset(idx),
+                          child: Container(
+                            width: 82,
+                            margin: const EdgeInsets.only(left: 8),
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: isSel
+                                  ? palette.accentColor.withOpacity(0.20)
+                                  : palette.elevatedCardColor.withOpacity(0.65),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isSel
+                                    ? palette.accentColor
+                                    : palette.dividerColor,
+                                width: isSel ? 2.0 : 1.0,
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: CustomPaint(
+                                    size: const Size(48, 56),
+                                    painter: HoorCharacterPainter(
+                                      appearance: previewApp,
+                                      skin: HoorCatalog.skinByIndex(idx * 41),
+                                      movement: liveHoor.activeMovement,
+                                      animationValue: 0.2,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  HoorCatalog.animeStyleNames[idx],
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: isSel
+                                        ? palette.accentColor
+                                        : palette.textSecondary,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 14),
                   _detailColorSelector(
                     label: 'لون البشرة',
                     colors: HoorCatalog.skinTones,

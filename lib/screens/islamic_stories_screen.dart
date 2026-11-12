@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/backgrounds_500_catalog.dart';
 import '../models/islamic_stories_data.dart';
 import '../providers/settings_provider.dart';
+import '../services/offline_content_download_service.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/firdaws_resilient_image.dart';
 import '../widgets/islamic_theme_effects_canvas.dart';
@@ -27,26 +28,108 @@ class _IslamicStoriesScreenState extends State<IslamicStoriesScreen> {
   StoryCategory? _selectedCategory;
   String _searchQuery = '';
   IslamicStory? _activeStory;
+  bool _batchDownloading = false;
+  final _downloads = OfflineContentDownloadService.instance;
 
   @override
   void initState() {
     super.initState();
+    _downloads.init();
+    _downloads.addListener(_onDownloadChange);
     if (widget.initialStoryId != null) {
       _activeStory = IslamicStoriesCatalog.getById(widget.initialStoryId!);
     }
   }
 
+  @override
+  void dispose() {
+    _downloads.removeListener(_onDownloadChange);
+    super.dispose();
+  }
+
+  void _onDownloadChange() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _toggleStoryDownload(IslamicStory story) async {
+    if (_downloads.isDownloaded(story.id)) {
+      await _downloads.removeDownload(story.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('تم إزالة «${story.title}» من المحمّلات بدون نت'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } else {
+      final ok = await _downloads.downloadContent(
+        id: story.id,
+        offlineBundleJson: story.toOfflineJson(),
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ok
+                ? 'تم تحميل قصة «${story.title}» للقراءة بدون نت ✅📥'
+                : 'تعذر التحميل حالياً',
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  Future<void> _downloadAllStories() async {
+    if (_batchDownloading) return;
+    setState(() => _batchDownloading = true);
+    try {
+      for (final s in IslamicStoriesCatalog.allStories) {
+        if (!_downloads.isDownloaded(s.id)) {
+          await _downloads.downloadContent(
+            id: s.id,
+            offlineBundleJson: s.toOfflineJson(),
+          );
+        }
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('تم تحميل جميع القصص (٦١ قصة) للعمل بدون إنترنت 📖✅'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _batchDownloading = false);
+    }
+  }
+
+  static String _normalizeArabic(String input) {
+    return input
+        .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u0640]'), '')
+        .replaceAll('أ', 'ا')
+        .replaceAll('إ', 'ا')
+        .replaceAll('آ', 'ا')
+        .replaceAll('ى', 'ي')
+        .replaceAll('ة', 'ه')
+        .toLowerCase();
+  }
+
   List<IslamicStory> get _filteredStories {
     final base = IslamicStoriesCatalog.byCategory(_selectedCategory);
     if (_searchQuery.trim().isEmpty) return base;
-    final q = _searchQuery.trim();
+    final q = _normalizeArabic(_searchQuery.trim());
     return base
         .where(
           (s) =>
-              s.title.contains(q) ||
-              s.subtitle.contains(q) ||
-              s.primarySource.contains(q) ||
-              s.chapters.any((c) => c.heading.contains(q) || c.body.contains(q)),
+              _normalizeArabic(s.title).contains(q) ||
+              _normalizeArabic(s.subtitle).contains(q) ||
+              _normalizeArabic(s.primarySource).contains(q) ||
+              s.chapters.any(
+                (c) =>
+                    _normalizeArabic(c.heading).contains(q) ||
+                    _normalizeArabic(c.body).contains(q),
+              ),
         )
         .toList();
   }
@@ -129,7 +212,7 @@ class _IslamicStoriesScreenState extends State<IslamicStoriesScreen> {
                       ),
                     ),
                     Text(
-                      '٥٢ قصة صحيحة وموثقة بالقرآن وصحيح البخاري مع مشاهد حية تفاعلية ${themeOpt.primaryEmoji}',
+                      '${IslamicStoriesCatalog.allStories.length} قصة موثقة بالقرآن والبخاري (الأنبياء الـ٢٥ + الصحابة) ${themeOpt.primaryEmoji}',
                       style: TextStyle(
                         color: palette.textSecondary,
                         fontSize: 10.5,
@@ -139,6 +222,20 @@ class _IslamicStoriesScreenState extends State<IslamicStoriesScreen> {
                     ),
                   ],
                 ),
+              ),
+              IconButton(
+                tooltip: 'تحميل كل القصص بدون نت 📥',
+                onPressed: _batchDownloading ? null : _downloadAllStories,
+                icon: _batchDownloading
+                    ? SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: accent,
+                        ),
+                      )
+                    : Icon(Icons.download_for_offline_rounded, color: accent),
               ),
             ],
           ),
@@ -176,7 +273,7 @@ class _IslamicStoriesScreenState extends State<IslamicStoriesScreen> {
                 padding: const EdgeInsets.only(left: 6),
                 child: ChoiceChip(
                   label: Text(
-                    'الكل (٥٢) 🌟',
+                    'الكل (${IslamicStoriesCatalog.allStories.length}) 🌟',
                     style: TextStyle(
                       fontSize: 11.5,
                       color: _selectedCategory == null
@@ -335,6 +432,34 @@ class _IslamicStoriesScreenState extends State<IslamicStoriesScreen> {
                           ),
                         ),
                       ),
+                      IconButton(
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        tooltip: _downloads.isDownloaded(s.id)
+                            ? 'محمّلة بدون نت ✓'
+                            : 'تحميل القصة بدون نت 📥',
+                        onPressed: _downloads.isDownloading(s.id)
+                            ? null
+                            : () => _toggleStoryDownload(s),
+                        icon: _downloads.isDownloading(s.id)
+                            ? SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: s.accentColor,
+                                ),
+                              )
+                            : Icon(
+                                _downloads.isDownloaded(s.id)
+                                    ? Icons.offline_pin_rounded
+                                    : Icons.download_rounded,
+                                color: _downloads.isDownloaded(s.id)
+                                    ? const Color(0xFF10B981)
+                                    : accent,
+                                size: 20,
+                              ),
+                      ),
                       Icon(Icons.chevron_right_rounded, color: accent),
                       const SizedBox(width: 8),
                     ],
@@ -392,6 +517,23 @@ class _IslamicStoriesScreenState extends State<IslamicStoriesScreen> {
                   color: story.accentColor,
                   fontSize: 11.5,
                   fontWeight: FontWeight.bold,
+                ),
+              ),
+              IconButton(
+                tooltip: _downloads.isDownloaded(story.id)
+                    ? 'محمّلة بدون نت ✓ (حذف)'
+                    : 'تحميل للعمل بدون نت 📥',
+                onPressed: _downloads.isDownloading(story.id)
+                    ? null
+                    : () => _toggleStoryDownload(story),
+                icon: Icon(
+                  _downloads.isDownloaded(story.id)
+                      ? Icons.offline_pin_rounded
+                      : Icons.download_rounded,
+                  color: _downloads.isDownloaded(story.id)
+                      ? const Color(0xFF10B981)
+                      : accent,
+                  size: 20,
                 ),
               ),
             ],

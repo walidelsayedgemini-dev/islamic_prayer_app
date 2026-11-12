@@ -2,10 +2,8 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import '../models/backgrounds_500_catalog.dart';
 import '../models/islamic_audio_data.dart';
-import '../providers/settings_provider.dart';
 import '../services/firdaws_native_service.dart';
 import '../widgets/firdaws_resilient_image.dart';
 
@@ -134,23 +132,32 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen>
           body: Stack(
             fit: StackFit.expand,
             children: [
-              // خلفية الحرمين الدافئة (أو خلفية المستخدم المختارة 4K)
+              // خلفية تخيلية نقية للجنة تختلف باختلاف كل صلاة دون أي صور مساجد أو بشر
               Builder(
                 builder: (ctx) {
-                  String? userWp;
-                  try {
-                    userWp = ctx.watch<SettingsProvider>().selectedAppWallpaperAsset;
-                  } catch (_) {}
-                  final fallback = widget.voiceId == 'makkah'
-                      ? 'assets/images/themes/kaaba_black_gold.jpg'
-                      : (widget.voiceId == 'aqsa'
-                          ? 'assets/images/themes/dome_of_rock.jpg'
-                          : 'assets/images/nabawi_dome_minaret.jpg');
+                  final p = widget.prayerName;
+                  final String paradiseAsset;
+                  if (p.contains('الفجر') || p.toLowerCase().contains('fajr')) {
+                    paradiseAsset = 'assets/images/garden/garden_sidrat_sunbeams.jpg';
+                  } else if (p.contains('الشروق') || p.toLowerCase().contains('sunrise')) {
+                    paradiseAsset = 'assets/images/themes/celestial_rayyan.jpg';
+                  } else if (p.contains('الظهر') || p.toLowerCase().contains('dhuhr')) {
+                    paradiseAsset = 'assets/images/garden/garden_day_paradise.jpg';
+                  } else if (p.contains('العصر') || p.toLowerCase().contains('asr')) {
+                    paradiseAsset = 'assets/images/themes/paradise_glade_firdaws.jpg';
+                  } else if (p.contains('المغرب') || p.toLowerCase().contains('maghrib')) {
+                    paradiseAsset = 'assets/images/garden/garden_sunset_eden.jpg';
+                  } else if (p.contains('العشاء') || p.toLowerCase().contains('isha')) {
+                    paradiseAsset = 'assets/images/garden/garden_night_starlight.jpg';
+                  } else {
+                    paradiseAsset = 'assets/images/themes/kawthar_fountain_pure.jpg';
+                  }
                   return Image.asset(
-                    userWp ?? fallback,
+                    paradiseAsset,
                     fit: BoxFit.cover,
+                    gaplessPlayback: true,
                     filterQuality: FilterQuality.medium,
-                    color: Colors.black.withOpacity(0.32),
+                    color: Colors.black.withOpacity(0.28),
                     colorBlendMode: BlendMode.darken,
                   );
                 },
@@ -169,196 +176,216 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen>
                 ),
               ),
               SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 22,
-                    vertical: 18,
-                  ),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 10),
-                      Firdaws4KCardShell(
-                        backdrop: Background500Catalog.forExtraSection(35),
-                        isDark: true,
-                        borderRadius: 24,
-                        borderColor: const Color(0xFF38BDF8).withOpacity(0.55),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 7,
-                        ),
-                        imageOpacity: 0.45,
-                        child: const Text(
-                          '🕌 منبه الأذان المتواصل • حيّ على الفلاح',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Color(0xFFE0F2FE),
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 22,
+                        vertical: 14,
                       ),
-                      const Spacer(),
-                      AnimatedBuilder(
-                        animation: _pulseCtrl,
-                        builder: (context, _) {
-                          final scale = 0.94 + (_pulseCtrl.value * 0.10);
-                          return Transform.scale(
-                            scale: scale,
-                            child: Container(
-                              width: 148,
-                              height: 148,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFFD4AF37),
-                                    Color(0xFF059669),
-                                  ],
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFFD4AF37)
-                                        .withOpacity(0.45),
-                                    blurRadius: 36,
-                                    spreadRadius: 8,
-                                  ),
-                                ],
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: (constraints.maxHeight - 28).clamp(0, 4000),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const SizedBox(height: 6),
+                            Firdaws4KCardShell(
+                              backdrop: Background500Catalog.forExtraSection(35),
+                              isDark: true,
+                              borderRadius: 24,
+                              borderColor: const Color(0xFF38BDF8).withOpacity(0.55),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 7,
                               ),
-                              child: const Center(
-                                child: Text(
-                                  '🕌',
-                                  style: TextStyle(fontSize: 64),
+                              imageOpacity: 0.45,
+                              child: const Text(
+                                '🕌 منبه الأذان المتواصل • حيّ على الفلاح',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Color(0xFFE0F2FE),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 22),
-                      Text(
-                        widget.prayerName,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 34,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${_voice.title}\n(${_voice.muezzin})',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Color(0xFFA7F3D0),
-                          fontSize: 16,
-                          height: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Firdaws4KCardShell(
-                        backdrop: Background500Catalog.forExtraSection(36),
-                        isDark: true,
-                        borderRadius: 16,
-                        borderColor: Colors.white.withOpacity(0.28),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        imageOpacity: 0.42,
-                        child: Text(
-                          _statusBanner,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Color(0xFFE2E8F0),
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      // شريط السحب + تفعيل زر الإلغاء الإلزامي بخلفية 4K إسلامية
-                      if (!_swipedReady)
-                        Dismissible(
-                          key: const ValueKey('adhan_swipe_unlock'),
-                          direction: DismissDirection.horizontal,
-                          confirmDismiss: (_) async {
-                            setState(() {
-                              _swipedReady = true;
-                              _statusBanner =
-                                  'الآن اضغط على زر «إلغاء وإيقاف الأذان» بالأسفل';
-                            });
-                            return false;
-                          },
-                          background: _swipeBg(Alignment.centerLeft),
-                          secondaryBackground: _swipeBg(Alignment.centerRight),
-                          child: Firdaws4KCardShell(
-                            backdrop: Background500Catalog.forExtraSection(37),
-                            isDark: true,
-                            borderRadius: 22,
-                            borderWidth: 1.5,
-                            borderColor: const Color(0xFFD4AF37),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 18,
-                            ),
-                            imageOpacity: 0.55,
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                            const SizedBox(height: 16),
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.swipe_rounded,
-                                    color: Color(0xFF38BDF8)),
-                                SizedBox(width: 10),
-                                Flexible(
+                                AnimatedBuilder(
+                                  animation: _pulseCtrl,
+                                  builder: (context, _) {
+                                    final scale = 0.94 + (_pulseCtrl.value * 0.10);
+                                    return Transform.scale(
+                                      scale: scale,
+                                      child: Container(
+                                        width: 140,
+                                        height: 140,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          gradient: const LinearGradient(
+                                            colors: [
+                                              Color(0xFFD4AF37),
+                                              Color(0xFF059669),
+                                            ],
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: const Color(0xFFD4AF37)
+                                                  .withOpacity(0.45),
+                                              blurRadius: 36,
+                                              spreadRadius: 8,
+                                            ),
+                                          ],
+                                        ),
+                                        child: const Center(
+                                          child: Text(
+                                            '🕌',
+                                            style: TextStyle(fontSize: 60),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                const SizedBox(height: 18),
+                                Text(
+                                  widget.prayerName,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  '${_voice.title}\n(${_voice.muezzin})',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Color(0xFFA7F3D0),
+                                    fontSize: 15.5,
+                                    height: 1.45,
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                Firdaws4KCardShell(
+                                  backdrop: Background500Catalog.forExtraSection(36),
+                                  isDark: true,
+                                  borderRadius: 16,
+                                  borderColor: Colors.white.withOpacity(0.28),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 10,
+                                  ),
+                                  imageOpacity: 0.42,
                                   child: Text(
-                                    'اسحب هذا الشريط يميناً أو يساراً لإظهار زر الإلغاء ↔️',
+                                    _statusBanner,
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
+                                    style: const TextStyle(
+                                      color: Color(0xFFE2E8F0),
+                                      fontSize: 13,
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                        )
-                      else
-                        SizedBox(
-                          width: double.infinity,
-                          height: 58,
-                          child: ElevatedButton.icon(
-                            onPressed: () => _stopAndClose(
-                              reason: 'تم إيقاف الأذان بعد السحب والإلغاء ✅',
+                            const SizedBox(height: 16),
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // شريط السحب + تفعيل زر الإلغاء الإلزامي بخلفية 4K إسلامية
+                                if (!_swipedReady)
+                                  Dismissible(
+                                    key: const ValueKey('adhan_swipe_unlock'),
+                                    direction: DismissDirection.horizontal,
+                                    confirmDismiss: (_) async {
+                                      setState(() {
+                                        _swipedReady = true;
+                                        _statusBanner =
+                                            'الآن اضغط على زر «إلغاء وإيقاف الأذان» بالأسفل';
+                                      });
+                                      return false;
+                                    },
+                                    background: _swipeBg(Alignment.centerLeft),
+                                    secondaryBackground: _swipeBg(Alignment.centerRight),
+                                    child: Firdaws4KCardShell(
+                                      backdrop: Background500Catalog.forExtraSection(37),
+                                      isDark: true,
+                                      borderRadius: 22,
+                                      borderWidth: 1.5,
+                                      borderColor: const Color(0xFFD4AF37),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 18,
+                                        vertical: 16,
+                                      ),
+                                      imageOpacity: 0.55,
+                                      child: const Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.swipe_rounded,
+                                              color: Color(0xFF38BDF8)),
+                                          SizedBox(width: 10),
+                                          Flexible(
+                                            child: Text(
+                                              'اسحب هذا الشريط يميناً أو يساراً لإظهار زر الإلغاء ↔️',
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 56,
+                                    child: ElevatedButton.icon(
+                                      onPressed: () => _stopAndClose(
+                                        reason: 'تم إيقاف الأذان بعد السحب والإلغاء ✅',
+                                      ),
+                                      icon: const Icon(Icons.cancel_rounded, size: 26),
+                                      label: const Text(
+                                        '🛑 إلغاء وإيقاف الأذان الآن',
+                                        style: TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFFDC2626),
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(18),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  '🔊 تلميح سريع: الضغط على زر رفع الصوت من جانب الهاتف (+) يوقف الأذان فوراً حتى والشاشة مقفلة',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.72),
+                                    fontSize: 11.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                              ],
                             ),
-                            icon: const Icon(Icons.cancel_rounded, size: 26),
-                            label: const Text(
-                              '🛑 إلغاء وإيقاف الأذان الآن',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFDC2626),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                            ),
-                          ),
-                        ),
-                      const SizedBox(height: 12),
-                      Text(
-                        '🔊 تلميح سريع: الضغط على زر رفع الصوت من جانب الهاتف (+) يوقف الأذان فوراً حتى والشاشة مقفلة',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.72),
-                          fontSize: 11.5,
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
             ],

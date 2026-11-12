@@ -128,14 +128,6 @@ class FirdawsPortraitAvatar extends StatelessWidget {
   String? _sanitizeNetworkUrl(String? raw) {
     final u = raw?.trim();
     if (u == null || u.isEmpty) return null;
-    final lower = u.toLowerCase();
-    // حماية تلقائية من أي روابط بشرية محفوظة في إصدار أقدم
-    if (lower.contains('randomuser') ||
-        lower.contains('tourists') ||
-        lower.contains('muslim_women') ||
-        lower.contains('women_in_veils')) {
-      return null;
-    }
     return u;
   }
 
@@ -203,49 +195,51 @@ class FirdawsPortraitAvatar extends StatelessWidget {
                     ? Image.memory(
                         resolvedBytes,
                         fit: BoxFit.cover,
+                        gaplessPlayback: true,
                         width: size,
                         height: size,
                       )
-                    : Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          if (netUrl != null)
-                            FirdawsResilientImage(
-                              networkUrl: netUrl,
-                              fallbackAsset: assetPath,
-                              fit: BoxFit.cover,
-                              width: size,
-                              height: size,
-                            )
-                          else
-                            Image.asset(
-                              assetPath,
-                              fit: BoxFit.cover,
-                              width: size,
-                              height: size,
-                              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                            ),
-                          DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: RadialGradient(
-                                colors: [
-                                  Colors.black.withOpacity(0.18),
-                                  const Color(0xFF05131E).withOpacity(0.58),
-                                ],
+                    : (netUrl != null
+                        ? FirdawsResilientImage(
+                            networkUrl: netUrl,
+                            fallbackAsset: assetPath,
+                            fit: BoxFit.cover,
+                            width: size,
+                            height: size,
+                          )
+                        : Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.asset(
+                                assetPath,
+                                fit: BoxFit.cover,
+                                gaplessPlayback: true,
+                                width: size,
+                                height: size,
+                                errorBuilder: (_, __, ___) =>
+                                    const SizedBox.shrink(),
                               ),
-                            ),
-                          ),
-                          CustomPaint(
-                            painter: _IslamicCrestAvatarPainter(
-                              accent: colors.first,
-                              secondary: colors.length > 1
-                                  ? colors[1]
-                                  : const Color(0xFFFBBF24),
-                              seed: seedHash,
-                            ),
-                          ),
-                        ],
-                      ),
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: RadialGradient(
+                                    colors: [
+                                      Colors.black.withOpacity(0.18),
+                                      const Color(0xFF05131E).withOpacity(0.58),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              CustomPaint(
+                                painter: _IslamicCrestAvatarPainter(
+                                  accent: colors.first,
+                                  secondary: colors.length > 1
+                                      ? colors[1]
+                                      : const Color(0xFFFBBF24),
+                                  seed: seedHash,
+                                ),
+                              ),
+                            ],
+                          )),
               ),
             ),
           ),

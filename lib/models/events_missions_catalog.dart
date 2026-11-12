@@ -109,7 +109,7 @@ class EventsMissionsCatalog {
     UnlockableGameEvent(
       id: 'event_emerald_storm',
       title: 'عاصفة الحسنات الزمردية ×2',
-      subtitle: 'مضاعفة جميع الحسنات المكتسبة إلى الضعف مع مطر جواهر 3D',
+      subtitle: 'مضاعفة جميع الحسنات المكتسبة إلى الضعف مع مطر الجواهر المضيئة',
       ruleDescription: 'كل هدف تصيده يمنح ضعف النقاط والحسنات + موجة نيازك مضيئة',
       hasanatMultiplier: 2.0,
       jackpotBonus: 90,
@@ -221,7 +221,7 @@ class EventsMissionsCatalog {
     HasanatMissionSpec(
       id: 'hm_play_first_match',
       title: 'انطلاقة الميادين ٣D',
-      description: 'خُض مباراتين في ساحة الألعاب ثلاثية الأبعاد واجمع خبرة السباق',
+      description: 'خُض مباراتين في ساحة الألعاب التفاعلية واجمع خبرة السباق',
       metric: EventMissionMetric.arenaMatchesPlayed,
       targetValue: 2,
       hasanatReward: 100,

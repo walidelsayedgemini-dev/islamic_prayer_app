@@ -20,7 +20,9 @@ import java.util.Calendar
 
 class MainActivity : FlutterActivity() {
     private val channelName = "com.islamic.app/firdaws_native"
+    private val btChannelName = "com.islamic.app/firdaws_bluetooth"
     private var methodChannel: MethodChannel? = null
+    private var btBridge: FirdawsBluetoothBridge? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,6 +42,11 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
+
+        val btChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, btChannelName)
+        btBridge?.dispose()
+        btBridge = FirdawsBluetoothBridge(this, btChannel)
+        btChannel.setMethodCallHandler(btBridge)
 
         AdhanPlaybackService.onStateChangedListener = { isRinging, voiceId, prayerName ->
             runOnUiThread {
@@ -305,5 +312,11 @@ class MainActivity : FlutterActivity() {
                 )
             } catch (_: Exception) {}
         }
+    }
+
+    override fun onDestroy() {
+        btBridge?.dispose()
+        btBridge = null
+        super.onDestroy()
     }
 }

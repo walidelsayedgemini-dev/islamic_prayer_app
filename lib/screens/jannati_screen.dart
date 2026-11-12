@@ -686,7 +686,7 @@ class _JannatiScreenState extends State<JannatiScreen>
                       Text(
                         userProv.profile.hasCustomName
                             ? '${themeOption.primaryEmoji} جَنَّةُ ${userProv.displayName} • مَوْسُوعَةُ الفِرْدَوْس'
-                            : '${themeOption.primaryEmoji} جَنَّتِي • الْفِرْدَوْسُ الْأَعْلَى 3D',
+                            : '${themeOption.primaryEmoji} جَنَّتِي • الْفِرْدَوْسُ الْأَعْلَى',
                         style: TextStyle(
                           color: accent,
                           fontWeight: FontWeight.bold,

@@ -65,7 +65,7 @@ class UnifiedThemePillButton extends StatelessWidget {
             const SizedBox(width: 5),
             Flexible(
               child: Text(
-                'الثيمات (${IslamicTheme.allThemes.length}) 3D',
+                'الثيمات (${IslamicTheme.allThemes.length})',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -132,7 +132,7 @@ class UnifiedThemePillButton extends StatelessWidget {
                     const SizedBox(width: 5),
                     Expanded(
                       child: Text(
-                        'بوابة الثيمات الموحدة (${IslamicTheme.allThemes.length} ثيماً 3D)',
+                        'بوابة الثيمات الموحدة (${IslamicTheme.allThemes.length} ثيماً)',
                         style: TextStyle(
                           color: accent,
                           fontWeight: FontWeight.bold,
@@ -282,7 +282,7 @@ class _ThemeHubSheetState extends State<ThemeHubSheet> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'بوابة الثيمات الموحدة 3D (${IslamicTheme.allThemes.length} ثيماً)',
+                            'بوابة الثيمات الموحدة (${IslamicTheme.allThemes.length} ثيماً)',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -318,7 +318,7 @@ class _ThemeHubSheetState extends State<ThemeHubSheet> {
                 child: Row(
                   children: [
                     _brightnessBtn(
-                      label: 'ليلي 3D',
+                      label: 'ليلي',
                       icon: Icons.dark_mode_rounded,
                       selected: settings.brightnessMode == 'night',
                       palette: palette,

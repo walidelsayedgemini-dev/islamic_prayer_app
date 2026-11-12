@@ -1,23 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/backgrounds_500_catalog.dart';
+import '../models/islamic_books_catalog.dart';
+import '../services/offline_content_download_service.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/firdaws_resilient_image.dart';
-
-class IslamicBookChapter {
-  final int number;
-  final String title;
-  final String contentArabic;
-  final String explanation;
-  final String narrator;
-
-  const IslamicBookChapter({
-    required this.number,
-    required this.title,
-    required this.contentArabic,
-    required this.explanation,
-    required this.narrator,
-  });
-}
+import '../widgets/sacred_reference_widgets.dart';
 
 class IslamicBooksSheet extends StatefulWidget {
   final ThemeOption themeOption;
@@ -34,99 +21,103 @@ class IslamicBooksSheet extends StatefulWidget {
 }
 
 class _IslamicBooksSheetState extends State<IslamicBooksSheet> {
+  BookCategory _selectedCategory = BookCategory.all;
+  String _searchQuery = '';
   int _selectedBookIndex = 0;
-  final List<String> _bookTitles = [
-    "الأربعين النووية",
-    "رياض الصالحين",
-    "قصص الأنبياء",
-    "تفسير جزء عم",
-  ];
+  bool _batchDownloading = false;
 
-  static const List<IslamicBookChapter> nawawiChapters = [
-    IslamicBookChapter(
-      number: 1,
-      title: "الحديث الأول: إنما الأعمال بالنيات",
-      contentArabic:
-          "«إنما الأعمال بالنيات، وإنما لكل امرئ ما نوى، فمن كانت هجرته إلى الله ورسوله فهجرته إلى الله ورسوله، ومن كانت هجرته لدنيا يصيبها أو امرأة ينكحها فهجرته إلى ما هاجر إليه».",
-      explanation:
-          "هذا الحديث أصل عظيم من أصول الإسلام، وعليه مدار الدين؛ فالنية هي المعيار لصحة العمل وقبوله وتفاضل الأجور.",
-      narrator: "رواه البخاري ومسلم عن أمير المؤمنين عمر بن الخطاب رضي الله عنه.",
-    ),
-    IslamicBookChapter(
-      number: 2,
-      title: "الحديث الثاني: مراتب الدين (إسلام، إيمان، إحسان)",
-      contentArabic:
-          "«بينما نحن جلوس عند رسول الله ﷺ إذ طلع علينا رجل شديد بياض الثياب، شديد سواد الشعر، لا يُرى عليه أثر السفر، ولا يعرفه منا أحد... فقال: يا محمد أخبرني عن الإسلام... فأخبرني عن الإيمان... فأخبرني عن الإحسان: قال أن تعبد الله كأنك تراه فإن لم تكن تراه فإنه يراك».",
-      explanation:
-          "حديث جبريل عليه السلام الشهير؛ جامع لجميع وظائف العبادات الظاهرة والباطنة وحقيقة مراقبة الله تعالى.",
-      narrator: "رواه مسلم عن عمر بن الخطاب رضي الله عنه.",
-    ),
-    IslamicBookChapter(
-      number: 3,
-      title: "الحديث الثالث: بني الإسلام على خمس",
-      contentArabic:
-          "«بُني الإسلام على خمس: شهادة أن لا إله إلا الله وأن محمداً رسول الله، وإقام الصلاة، وإيتاء الزكاة، وحج البيت، وصوم رمضان».",
-      explanation:
-          "قواعد الإسلام وأركانه العظمى التي يقوم عليها بنيانه كالأعمدة المتماسكة.",
-      narrator: "رواه البخاري ومسلم عن عبد الله بن عمر رضي الله عنهما.",
-    ),
-    IslamicBookChapter(
-      number: 4,
-      title: "الحديث الخامس: النهي عن الابتداع",
-      contentArabic:
-          "«من أحدث في أمرنا هذا ما ليس منه فهو رد». وفي رواية لمسلم: «من عمل عملاً ليس عليه أمرنا فهو رد».",
-      explanation:
-          "ميزان الأعمال الظاهرة؛ فكما أن حديث النيات ميزان الباطن، فهذا الحديث ميزان مطابقة الشرع.",
-      narrator: "رواه البخاري ومسلم عن أم المؤمنين عائشة رضي الله عنها.",
-    ),
-    IslamicBookChapter(
-      number: 5,
-      title: "الحديث السابع: الدين النصيحة",
-      contentArabic:
-          "«الدين النصيحة. قلنا: لمن؟ قال: لله، ولكتابه، ولرسوله، ولأئمة المسلمين، وعامتهم».",
-      explanation:
-          "النصيحة هي إرادة الخير للمنصوح له؛ والنصيحة لله بالإيمان به وتوحيده، ولرسوله باتباع سنته.",
-      narrator: "رواه مسلم عن تميم الداري رضي الله عنه.",
-    ),
-  ];
+  final _downloads = OfflineContentDownloadService.instance;
 
-  static const List<IslamicBookChapter> riyadChapters = [
-    IslamicBookChapter(
-      number: 1,
-      title: "باب الصبر واحتساب الأجر",
-      contentArabic:
-          "«عجباً لأمر المؤمن إن أمره كله خير، وليس ذاك لأحد إلا للمؤمن: إن أصابته سراء شكر فكان خيراً له، وإن أصابته ضراء صبر فكان خيراً له».",
-      explanation:
-          "المؤمن يتقلب بين مقامي الشكر والصبر، وبذلك تفنى أحزانه ويعظم أجره عند ربه.",
-      narrator: "رواه مسلم عن صهيب بن سنان رضي الله عنه.",
-    ),
-    IslamicBookChapter(
-      number: 2,
-      title: "باب فضل الذكر ومجالس العلم",
-      contentArabic:
-          "«كلمتان خفيفتان على اللسان، ثقيلتان في الميزان، حبيبتان إلى الرحمن: سبحان الله وبحمده، سبحان الله العظيم».",
-      explanation: "فضل كلمات التسبيح والتحميد العظيمة في ميزان العبد يوم القيامة.",
-      narrator: "رواه البخاري ومسلم عن أبي هريرة رضي الله عنه.",
-    ),
-    IslamicBookChapter(
-      number: 3,
-      title: "باب التقوى والتوكل على الله",
-      contentArabic:
-          "«لو أنكم تتوكلون على الله حق توكله لرزقكم كما يرزق الطير، تغدو خماصاً وتروح بطاناً».",
-      explanation:
-          "حقيقة التوكل الجمع بين الاعتماد القلبي على الله تعالى وبذل الأسباب المشروعة في السعي.",
-      narrator: "رواه الترمذي وقال حديث حسن صحيح عن عمر بن الخطاب رضي الله عنه.",
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _downloads.init();
+    _downloads.addListener(_onDownloadChange);
+  }
+
+  @override
+  void dispose() {
+    _downloads.removeListener(_onDownloadChange);
+    super.dispose();
+  }
+
+  void _onDownloadChange() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _toggleBookDownload(IslamicLibraryBook book) async {
+    if (_downloads.isDownloaded(book.id)) {
+      await _downloads.removeDownload(book.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('تم إزالة «${book.title}» من التخزين المحلي لتوفير المساحة'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } else {
+      final ok = await _downloads.downloadContent(
+        id: book.id,
+        offlineBundleJson: book.toOfflineJson(),
+        remoteVerificationUrl: book.sourceReferenceUrl,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ok
+                ? 'تم تحميل «${book.title}» للعمل بدون إنترنت بنجاح ✅📥'
+                : 'تعذر التحميل حالياً، يرجى المحاولة لاحقاً',
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  Future<void> _downloadAllBooks() async {
+    if (_batchDownloading) return;
+    setState(() => _batchDownloading = true);
+    try {
+      for (final book in IslamicBooksCatalog.allBooks) {
+        if (!_downloads.isDownloaded(book.id)) {
+          await _downloads.downloadContent(
+            id: book.id,
+            offlineBundleJson: book.toOfflineJson(),
+          );
+        }
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('تم تحميل جميع كتب المكتبة المعتمدة للقراءة بدون إنترنت 📚✅'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _batchDownloading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final palette = widget.themeOption.resolve(isNight: widget.isNightMode);
     final accent = palette.accentColor;
-    final chapters = _selectedBookIndex == 0 ? nawawiChapters : riyadChapters;
+
+    final filteredBooks = IslamicBooksCatalog.filter(
+      category: _selectedCategory,
+      query: _searchQuery,
+    );
+    final safeIdx = filteredBooks.isEmpty
+        ? 0
+        : _selectedBookIndex.clamp(0, filteredBooks.length - 1);
+    final activeBook = filteredBooks.isEmpty ? null : filteredBooks[safeIdx];
+    final int downloadedBooksCount = IslamicBooksCatalog.allBooks
+        .where((b) => _downloads.isDownloaded(b.id))
+        .length;
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.90,
+      height: MediaQuery.of(context).size.height * 0.92,
       decoration: BoxDecoration(
         color: palette.scaffoldColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -146,7 +137,7 @@ class _IslamicBooksSheetState extends State<IslamicBooksSheet> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
             child: Firdaws4KCardShell(
               backdrop: Background500Catalog.forExtraSection(38),
               isDark: palette.isDark,
@@ -167,13 +158,49 @@ class _IslamicBooksSheetState extends State<IslamicBooksSheet> {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(
-                      "المكتبة الإسلامية والتفاسير الشريفة",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "المكتبة الموثقة • الأزهر وكبار العلماء 🕌",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: palette.textPrimary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          "${IslamicBooksCatalog.allBooks.length} كتاباً معتمداً • محمّل بدون نت: $downloadedBooksCount 📥",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: accent,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: _batchDownloading ? null : _downloadAllBooks,
+                    icon: _batchDownloading
+                        ? SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: accent,
+                            ),
+                          )
+                        : Icon(Icons.download_for_offline_rounded, size: 17, color: accent),
+                    label: Text(
+                      'الكل',
                       style: TextStyle(
-                        color: palette.textPrimary,
-                        fontSize: 17,
+                        color: accent,
+                        fontSize: 11,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -186,131 +213,364 @@ class _IslamicBooksSheetState extends State<IslamicBooksSheet> {
               ),
             ),
           ),
+
+          // بحث في الكتب
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: TextField(
+              style: TextStyle(color: palette.textPrimary, fontSize: 13),
+              onChanged: (v) => setState(() {
+                _searchQuery = v;
+                _selectedBookIndex = 0;
+              }),
+              decoration: InputDecoration(
+                hintText: 'ابحث عن كتاب، تفسير، فقه، سيرة، أو مؤلف...',
+                hintStyle: TextStyle(color: palette.textMuted, fontSize: 12),
+                prefixIcon: Icon(Icons.search_rounded, color: accent),
+                isDense: true,
+                filled: true,
+                fillColor: palette.cardColor,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: palette.dividerColor),
+                ),
+              ),
+            ),
+          ),
+
+          // تصنيفات الكتب
           SizedBox(
-            height: 44,
-            child: ListView.builder(
+            height: 38,
+            child: ListView(
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 14),
-              itemCount: _bookTitles.length,
-              itemBuilder: (context, idx) {
-                final isSel = idx == _selectedBookIndex;
-                return Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: ChoiceChip(
-                    label: Text(
-                      _bookTitles[idx],
-                      style: TextStyle(
-                        color: isSel ? palette.onAccentColor : palette.textPrimary,
-                        fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-                        fontSize: 12.5,
+              children: [
+                for (final cat in BookCategory.values)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 6),
+                    child: ChoiceChip(
+                      label: Text(
+                        cat.label,
+                        style: TextStyle(
+                          color: _selectedCategory == cat
+                              ? palette.onAccentColor
+                              : palette.textPrimary,
+                          fontWeight: _selectedCategory == cat
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          fontSize: 11.5,
+                        ),
                       ),
+                      selected: _selectedCategory == cat,
+                      selectedColor: accent,
+                      backgroundColor: palette.cardColor,
+                      onSelected: (val) {
+                        if (val) {
+                          setState(() {
+                            _selectedCategory = cat;
+                            _selectedBookIndex = 0;
+                          });
+                        }
+                      },
                     ),
-                    selected: isSel,
-                    selectedColor: accent,
-                    backgroundColor: palette.cardColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      side: BorderSide(color: isSel ? accent : palette.dividerColor),
-                    ),
-                    onSelected: (val) {
-                      if (val) setState(() => _selectedBookIndex = idx);
-                    },
                   ),
-                );
-              },
+              ],
             ),
           ),
-          const SizedBox(height: 10),
+
+          const SizedBox(height: 6),
+
+          // شريط الكتب المفلترة
+          if (filteredBooks.isNotEmpty)
+            SizedBox(
+              height: 44,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                itemCount: filteredBooks.length,
+                itemBuilder: (context, idx) {
+                  final b = filteredBooks[idx];
+                  final isSel = idx == safeIdx;
+                  final isOff = _downloads.isDownloaded(b.id);
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: ChoiceChip(
+                      label: Text(
+                        '${b.emoji} ${b.title}${isOff ? " ✅" : ""}',
+                        style: TextStyle(
+                          color: isSel ? palette.onAccentColor : palette.textPrimary,
+                          fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 12,
+                        ),
+                      ),
+                      selected: isSel,
+                      selectedColor: accent,
+                      backgroundColor: palette.cardColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        side: BorderSide(color: isSel ? accent : palette.dividerColor),
+                      ),
+                      onSelected: (val) {
+                        if (val) setState(() => _selectedBookIndex = idx);
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+
+          const SizedBox(height: 8),
+
           Expanded(
-            child: ListView.builder(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-              itemCount: chapters.length,
-              itemBuilder: (context, idx) {
-                final ch = chapters[idx];
-                return Firdaws4KCardShell(
-                  backdrop: Background500Catalog.forExtraSection(39 + idx),
-                  isDark: palette.isDark,
-                  margin: const EdgeInsets.only(bottom: 14),
-                  padding: const EdgeInsets.all(16),
-                  borderRadius: 18,
-                  borderColor: accent.withOpacity(0.45),
-                  imageOpacity: palette.isDark ? 0.45 : 0.35,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            child: activeBook == null
+                ? Center(
+                    child: Text(
+                      'لا توجد نتائج مطابقة للبحث في المكتبة 📖',
+                      style: TextStyle(color: palette.textMuted, fontSize: 13),
+                    ),
+                  )
+                : ListView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: accent.withOpacity(0.2),
-                              border: Border.all(color: accent),
+                      // بطاقة تعريف الكتاب + زر التحميل للعمل بدون نت
+                      Firdaws4KCardShell(
+                        backdrop: Background500Catalog.forExtraSection(37),
+                        isDark: palette.isDark,
+                        margin: const EdgeInsets.only(bottom: 14),
+                        padding: const EdgeInsets.all(14),
+                        borderRadius: 18,
+                        borderColor: accent.withOpacity(0.55),
+                        imageOpacity: 0.42,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(activeBook.emoji, style: const TextStyle(fontSize: 26)),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        activeBook.title,
+                                        style: TextStyle(
+                                          color: palette.textPrimary,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                      Text(
+                                        activeBook.author,
+                                        style: TextStyle(
+                                          color: palette.textSecondary,
+                                          fontSize: 11.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                            child: Center(
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: accent.withOpacity(0.16),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: accent.withOpacity(0.45)),
+                              ),
                               child: Text(
-                                "${ch.number}",
+                                '🛡️ ${activeBook.accreditation}',
                                 style: TextStyle(
                                   color: accent,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 13,
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              ch.title,
+                            const SizedBox(height: 8),
+                            Text(
+                              activeBook.summary,
                               style: TextStyle(
-                                color: accent,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                                color: palette.textSecondary,
+                                fontSize: 12.5,
+                                height: 1.45,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Firdaws4KCardShell(
-                        backdrop: Background500Catalog.forExtraSection(50 + idx),
-                        isDark: palette.isDark,
-                        padding: const EdgeInsets.all(12),
-                        borderRadius: 12,
-                        borderColor: palette.dividerColor,
-                        imageOpacity: 0.30,
-                        child: Text(
-                          ch.contentArabic,
-                          style: TextStyle(
-                            color: palette.textPrimary,
-                            fontSize: 15,
-                            height: 1.6,
-                          ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: _downloads.isDownloading(activeBook.id)
+                                        ? null
+                                        : () => _toggleBookDownload(activeBook),
+                                    icon: _downloads.isDownloading(activeBook.id)
+                                        ? const SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : Icon(
+                                            _downloads.isDownloaded(activeBook.id)
+                                                ? Icons.offline_pin_rounded
+                                                : Icons.download_rounded,
+                                            size: 18,
+                                          ),
+                                    label: Text(
+                                      _downloads.isDownloaded(activeBook.id)
+                                          ? 'محمّل بدون نت ✓ (${OfflineContentDownloadService.formatBytes(_downloads.downloadedSizeBytes(activeBook.id))}) • حذف'
+                                          : 'تحميل للقراءة بدون نت 📥',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: _downloads.isDownloaded(activeBook.id)
+                                          ? const Color(0xFF059669)
+                                          : accent,
+                                      foregroundColor: _downloads.isDownloaded(activeBook.id)
+                                          ? Colors.white
+                                          : palette.onAccentColor,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      Text(
-                        "الشرح والفوائد: ${ch.explanation}",
-                        style: TextStyle(
-                          color: palette.isDark ? const Color(0xFFE2E8F0) : palette.primaryColor,
-                          fontSize: 12.5,
-                          height: 1.5,
-                          fontWeight: FontWeight.w500,
+
+                      // الفصول والنصوص الموثقة مع ربط المصحف وصحيح البخاري
+                      for (int idx = 0; idx < activeBook.chapters.length; idx++)
+                        _buildChapterCard(
+                          activeBook.chapters[idx],
+                          idx,
+                          palette,
+                          accent,
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        ch.narrator,
-                        style: TextStyle(color: palette.textMuted, fontSize: 11),
-                      ),
                     ],
                   ),
-                );
-              },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChapterCard(
+    IslamicBookChapter ch,
+    int idx,
+    ThemePalette palette,
+    Color accent,
+  ) {
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forExtraSection(39 + (idx % 20)),
+      isDark: palette.isDark,
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      borderRadius: 18,
+      borderColor: accent.withOpacity(0.45),
+      imageOpacity: palette.isDark ? 0.45 : 0.35,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: accent.withOpacity(0.2),
+                  border: Border.all(color: accent),
+                ),
+                child: Center(
+                  child: Text(
+                    "${ch.number}",
+                    style: TextStyle(
+                      color: accent,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  ch.title,
+                  style: TextStyle(
+                    color: accent,
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Firdaws4KCardShell(
+            backdrop: Background500Catalog.forExtraSection(50 + (idx % 20)),
+            isDark: palette.isDark,
+            padding: const EdgeInsets.all(12),
+            borderRadius: 12,
+            borderColor: palette.dividerColor,
+            imageOpacity: 0.30,
+            child: Text(
+              ch.contentArabic,
+              style: TextStyle(
+                color: palette.textPrimary,
+                fontSize: 15,
+                height: 1.65,
+              ),
             ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            "💡 الشرح والفوائد: ${ch.explanation}",
+            style: TextStyle(
+              color: palette.isDark ? const Color(0xFFE2E8F0) : palette.primaryColor,
+              fontSize: 12.5,
+              height: 1.5,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '📜 ${ch.narrator}',
+            style: TextStyle(color: palette.textMuted, fontSize: 11),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              if (ch.quranSurah != null)
+                QuranRefBadge(
+                  surahNumber: ch.quranSurah!,
+                  ayahNumber: ch.quranAyah ?? 1,
+                  accentColor: accent,
+                ),
+              if (ch.hadithId != null)
+                HadithRefBadge(
+                  referenceText: ch.hadithId!,
+                  accentColor: accent,
+                  trackInJannati: true,
+                ),
+            ],
           ),
         ],
       ),

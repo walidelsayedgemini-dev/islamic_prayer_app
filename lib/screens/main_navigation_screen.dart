@@ -58,14 +58,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final ValueNotifier<bool?> _helpQaRequest = ValueNotifier<bool?>(null);
 
   late final List<Widget> _screens = [
-    const PrayerHomeScreen(),
-    FirdawsJourneyScreen(requestNotifier: _journeyRequest),
-    const QiblaScreen(),
-    const CalendarScreen(),
-    const TasbihScreen(),
-    JannatiScreen(tabRequestNotifier: _jannatiTabRequest),
-    HelpMeScreen(openQaNotifier: _helpQaRequest),
-    const SettingsScreen(),
+    const _KeepAliveTabWrapper(child: PrayerHomeScreen()),
+    _KeepAliveTabWrapper(
+        child: FirdawsJourneyScreen(requestNotifier: _journeyRequest)),
+    const _KeepAliveTabWrapper(child: QiblaScreen()),
+    const _KeepAliveTabWrapper(child: CalendarScreen()),
+    const _KeepAliveTabWrapper(child: TasbihScreen()),
+    _KeepAliveTabWrapper(
+        child: JannatiScreen(tabRequestNotifier: _jannatiTabRequest)),
+    _KeepAliveTabWrapper(
+        child: HelpMeScreen(openQaNotifier: _helpQaRequest)),
+    const _KeepAliveTabWrapper(child: SettingsScreen()),
   ];
 
   @override
@@ -412,5 +415,26 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ),
       ),
     );
+  }
+}
+
+class _KeepAliveTabWrapper extends StatefulWidget {
+  final Widget child;
+
+  const _KeepAliveTabWrapper({required this.child});
+
+  @override
+  State<_KeepAliveTabWrapper> createState() => _KeepAliveTabWrapperState();
+}
+
+class _KeepAliveTabWrapperState extends State<_KeepAliveTabWrapper>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }
