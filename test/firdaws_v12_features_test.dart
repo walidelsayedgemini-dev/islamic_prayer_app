@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:adhan/adhan.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -31,6 +32,7 @@ import 'package:islamic_prayer_app/screens/tasbih_screen.dart';
 import 'package:islamic_prayer_app/services/bluetooth_challenge_service.dart';
 import 'package:islamic_prayer_app/services/offline_content_download_service.dart';
 import 'package:islamic_prayer_app/theme/islamic_theme.dart';
+import 'package:islamic_prayer_app/widgets/islamic_prayer_card_view.dart';
 
 Widget _wrapApp(Widget child) {
   return MultiProvider(
@@ -208,14 +210,87 @@ void main() {
     expect(dl.isDownloaded(book.id), isFalse);
   });
 
-  test('Pre-Adhan spoken audio asset pre_adhan_alert.wav exists in raw resources',
+  test('Spoken audio assets pre_adhan_alert.wav & salawat_nabi.wav exist and load',
       () async {
     final preAdhanWav = File('android/app/src/main/res/raw/pre_adhan_alert.wav');
     expect(preAdhanWav.existsSync(), isTrue);
     expect(preAdhanWav.lengthSync(), greaterThan(50000));
 
+    final salawatRawWav = File('android/app/src/main/res/raw/salawat_nabi.wav');
+    expect(salawatRawWav.existsSync(), isTrue);
+    expect(salawatRawWav.lengthSync(), greaterThan(50000));
+
+    final salawatAssetWav = await rootBundle.load('assets/audio/salawat_nabi.wav');
+    expect(salawatAssetWav.lengthInBytes, greaterThan(50000));
+
     final adhanMp3 = await rootBundle.load('assets/audio/adhan_makkah.mp3');
     expect(adhanMp3.lengthInBytes, greaterThan(1000));
+  });
+
+  test('HelpMe1000Catalog groups every domain cleanly into subCategories', () {
+    for (final d in HelpMe1000Catalog.domains) {
+      final subs = HelpMe1000Catalog.subCategoriesForDomain(d.id);
+      expect(subs.length, 15, reason: 'Domain ${d.id} expected 15 subCategories');
+      final grouped = HelpMe1000Catalog.groupBySubCategory(
+        HelpMe1000Catalog.filter(domainId: d.id),
+      );
+      expect(grouped.length, 15);
+    }
+  });
+
+  testWidgets(
+      'HelpMeScreen categorized view & 3-card full-prayer swipe carousel render cleanly at 360x740 RTL',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.binding.setSurfaceSize(const Size(360, 740));
+
+    // 1. HelpMeScreen opens cleanly to Category folders, and tapping a category enters sub-category folders
+    await tester.pumpWidget(_wrapApp(const HelpMeScreen()));
+    await tester.pump(const Duration(milliseconds: 220));
+    expect(find.textContaining('الكتجريهات الرئيسية'), findsOneWidget);
+    expect(find.text('التنمر والأذى النفسي'), findsOneWidget);
+
+    await tester.tap(find.text('التنمر والأذى النفسي').first);
+    await tester.pump(const Duration(milliseconds: 220));
+    expect(find.text('كل الأقسام'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    // 2. IslamicPrayerCardView unified 3-card carousel across all 6 prayers
+    final coords = Coordinates(30.0444, 31.2357);
+    final params = CalculationMethod.egyptian.getParameters();
+    final times = PrayerTimes.today(coords, params);
+
+    await tester.pumpWidget(
+      _wrapApp(
+        Scaffold(
+          body: SingleChildScrollView(
+            child: IslamicPrayerCardView(
+              prayerTimes: times,
+              themeOption: IslamicTheme.allThemes.first,
+              isNightMode: true,
+              remaining: const Duration(hours: 1, minutes: 20),
+              currentPrayer: Prayer.dhuhr,
+              nextPrayer: Prayer.asr,
+              onOpenAzkar: () {},
+              onOpenQibla: () {},
+              onOpenAudio: () {},
+              onOpenCards: () {},
+              onOpenBooks: () {},
+              onOpenHelpMe: () {},
+              onPrayerTap: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 220));
+    expect(find.byType(PageView), findsOneWidget);
+    await tester.drag(find.byType(PageView), const Offset(140, 0));
+    await tester.pump(const Duration(milliseconds: 120));
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 2));
   });
 
   testWidgets('New screens render cleanly without overflow at 360x740 RTL',

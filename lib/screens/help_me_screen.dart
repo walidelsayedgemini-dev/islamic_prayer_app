@@ -27,8 +27,10 @@ class HelpMeScreen extends StatefulWidget {
 class _HelpMeScreenState extends State<HelpMeScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _breathingController;
-  int _modeIndex = 0; // 0: صيدلية الروح (١٠٠٠ موضوع)، 1: اسألني (٥٠٠ سؤال وجواب)
+  int _modeIndex = 0; // 0: صيدلية الروح (٧ كتجريهات • ١٠٠٠ موضوع)، 1: اسألني (٥٠٠ سؤال وجواب)
   String _selectedDomainId = 'all';
+  final Set<String> _expandedSubCategories = <String>{};
+  final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
   @override
@@ -70,6 +72,7 @@ class _HelpMeScreenState extends State<HelpMeScreen>
   @override
   void dispose() {
     widget.openQaNotifier?.removeListener(_consumeOpenQaRequest);
+    _searchController.dispose();
     _breathingController.dispose();
     super.dispose();
   }
@@ -931,221 +934,673 @@ class _HelpMeScreenState extends State<HelpMeScreen>
                                 'اكتب أي سؤال بالعامية أو الفصحى لتصلك الإجابة الشرعية والدليل فوراً',
                           ),
                         )
-                      : Builder(
-                          builder: (context) {
-                            final filteredCases = HelpMe1000Catalog.filter(
-                              domainId: _selectedDomainId,
-                              query: _searchQuery,
-                            );
-                            return Column(
-                              children: [
-                                // شريط الحالات القلبية السريعة
-                                SizedBox(
-                                  height: 40,
-                                  child: ListView.builder(
-                                    scrollDirection: Axis.horizontal,
-                                    physics: const BouncingScrollPhysics(),
-                                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                                    itemCount: HelpMeCategory.categories.length,
-                                    itemBuilder: (_, idx) {
-                                      final cat = HelpMeCategory.categories[idx];
-                                      final cAcc = _resolveCatAccent(cat, palette.isDark);
-                                      return Padding(
-                                        padding: const EdgeInsets.only(left: 6),
-                                        child: ActionChip(
-                                          avatar: Icon(cat.icon, size: 15, color: cAcc),
-                                          label: Text(
-                                            cat.title,
-                                            style: TextStyle(
-                                              color: palette.textPrimary,
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                          backgroundColor: palette.cardColor.withOpacity(0.92),
-                                          side: BorderSide(color: cAcc.withOpacity(0.45)),
-                                          onPressed: () =>
-                                              _showCategoryDetails(context, cat, palette),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  child: TextField(
-                                    style: TextStyle(color: palette.textPrimary, fontSize: 13),
-                                    onChanged: (v) => setState(() => _searchQuery = v),
-                                    decoration: InputDecoration(
-                                      hintText:
-                                          'ابحث في ١٠٠٠ موضوع: تنمر، فتن، صحبة، رزق حلال، قلق...',
-                                      hintStyle:
-                                          TextStyle(color: palette.textMuted, fontSize: 12),
-                                      prefixIcon: Icon(Icons.search_rounded, color: accentColor),
-                                      isDense: true,
-                                      filled: true,
-                                      fillColor: palette.cardColor.withOpacity(0.92),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                        borderSide: BorderSide(color: palette.dividerColor),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                SizedBox(
-                                  height: 38,
-                                  child: ListView(
-                                    scrollDirection: Axis.horizontal,
-                                    physics: const BouncingScrollPhysics(),
-                                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.only(left: 6),
-                                        child: ChoiceChip(
-                                          label: Text(
-                                            'الكل (${filteredCases.length}) 🌟',
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              color: _selectedDomainId == 'all'
-                                                  ? palette.onAccentColor
-                                                  : palette.textPrimary,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          selected: _selectedDomainId == 'all',
-                                          selectedColor: accentColor,
-                                          backgroundColor: palette.cardColor,
-                                          onSelected: (_) =>
-                                              setState(() => _selectedDomainId = 'all'),
-                                        ),
-                                      ),
-                                      for (final dom in HelpMe1000Catalog.domains)
-                                        Padding(
-                                          padding: const EdgeInsets.only(left: 6),
-                                          child: ChoiceChip(
-                                            label: Text(
-                                              '${dom.emoji} ${dom.label}',
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                color: _selectedDomainId == dom.id
-                                                    ? palette.onAccentColor
-                                                    : palette.textPrimary,
-                                                fontWeight: _selectedDomainId == dom.id
-                                                    ? FontWeight.bold
-                                                    : FontWeight.normal,
-                                              ),
-                                            ),
-                                            selected: _selectedDomainId == dom.id,
-                                            selectedColor: accentColor,
-                                            backgroundColor: palette.cardColor,
-                                            onSelected: (_) =>
-                                                setState(() => _selectedDomainId = dom.id),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Expanded(
-                                  child: ListView.builder(
-                                    physics: const BouncingScrollPhysics(),
-                                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 98),
-                                    itemCount: filteredCases.length,
-                                    itemBuilder: (context, index) {
-                                      final entry = filteredCases[index];
-                                      final catAccent = _resolveAccentColor(
-                                        entry.primaryColor,
-                                        entry.accentColor,
-                                        palette.isDark,
-                                      );
-                                      return Firdaws4KCardShell(
-                                        backdrop: Background500Catalog.forHelpMeCategory(
-                                          index % 30,
-                                        ),
-                                        isDark: isNight,
-                                        margin: const EdgeInsets.only(bottom: 10),
-                                        padding: const EdgeInsets.all(13),
-                                        borderColor: catAccent.withOpacity(0.50),
-                                        borderRadius: 18,
-                                        imageOpacity: isNight ? 0.42 : 0.34,
-                                        onTap: () =>
-                                            _showCaseDetails(context, entry, palette),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  entry.emoji,
-                                                  style: const TextStyle(fontSize: 19),
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Expanded(
-                                                  child: Text(
-                                                    '#${entry.number} • ${entry.domainLabel}',
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
-                                                    style: TextStyle(
-                                                      color: catAccent,
-                                                      fontSize: 11,
-                                                      fontWeight: FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                ),
-                                                Icon(
-                                                  Icons.chevron_left_rounded,
-                                                  color: catAccent,
-                                                  size: 20,
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 5),
-                                            Text(
-                                              entry.title,
-                                              style: TextStyle(
-                                                color: palette.textPrimary,
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 5),
-                                            Text(
-                                              '✅ ${entry.doAction}',
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                color: palette.textSecondary,
-                                                fontSize: 11.5,
-                                              ),
-                                            ),
-                                            Text(
-                                              '🚫 ${entry.dontAction}',
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                color: palette.textMuted,
-                                                fontSize: 11,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
+                      : _buildStructuredHelpDirectory(palette, accentColor, isNight),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStructuredHelpDirectory(
+    ThemePalette palette,
+    Color accentColor,
+    bool isNight,
+  ) {
+    final trimmedQuery = _searchQuery.trim();
+    final isSearching = trimmedQuery.isNotEmpty;
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: TextField(
+            controller: _searchController,
+            style: TextStyle(color: palette.textPrimary, fontSize: 13),
+            onChanged: (v) => setState(() => _searchQuery = v),
+            decoration: InputDecoration(
+              hintText: 'ابحث في ١٠٠٠ موضوع وتصنيف: تنمر، فتن، صحبة، رزق حلال...',
+              hintStyle: TextStyle(color: palette.textMuted, fontSize: 12),
+              prefixIcon: Icon(Icons.search_rounded, color: accentColor),
+              suffixIcon: isSearching
+                  ? IconButton(
+                      tooltip: 'مسح البحث',
+                      icon: Icon(Icons.close_rounded, color: palette.textMuted, size: 19),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = '');
+                      },
+                    )
+                  : null,
+              isDense: true,
+              filled: true,
+              fillColor: palette.cardColor.withOpacity(0.92),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: palette.dividerColor),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: isSearching
+              ? _buildSearchGroupedResults(palette, accentColor, isNight)
+              : (_selectedDomainId == 'all'
+                  ? _buildCategoriesOverview(palette, accentColor, isNight)
+                  : _buildSelectedDomainSubFolders(palette, accentColor, isNight)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoriesOverview(
+    ThemePalette palette,
+    Color accentColor,
+    bool isNight,
+  ) {
+    const quickCategories = HelpMeCategory.categories;
+    return ListView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 2, 16, 98),
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            children: [
+              Icon(Icons.folder_special_rounded, color: accentColor, size: 18),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'الأقسام والكتجريهات الرئيسية (٧ كتجريهات • ١٠٥ تصنيفاً فرعياً)',
+                  style: TextStyle(
+                    color: accentColor,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        for (int i = 0; i < HelpMe1000Catalog.domains.length; i++) ...[
+          _buildMainDomainFolderCard(
+            HelpMe1000Catalog.domains[i],
+            i,
+            palette,
+            isNight,
+          ),
+        ],
+        const SizedBox(height: 6),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              Icon(Icons.healing_rounded, color: accentColor, size: 18),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'تصنيف إسعافات القلوب العاجلة (٦ حالات قلبية)',
+                  style: TextStyle(
+                    color: accentColor,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        for (int r = 0; r < quickCategories.length; r += 2) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildQuickEmergencyTile(
+                    quickCategories[r],
+                    palette,
+                    isNight,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: (r + 1 < quickCategories.length)
+                      ? _buildQuickEmergencyTile(
+                          quickCategories[r + 1],
+                          palette,
+                          isNight,
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildMainDomainFolderCard(
+    HelpMeDomain dom,
+    int index,
+    ThemePalette palette,
+    bool isNight,
+  ) {
+    final domAccent =
+        _resolveAccentColor(dom.primaryColor, dom.accentColor, palette.isDark);
+    final domCases = HelpMe1000Catalog.filter(domainId: dom.id);
+    final subNames = HelpMe1000Catalog.subCategoriesForDomain(dom.id);
+
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forHelpMeCategory((index * 4) % 30),
+      isDark: isNight,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      borderColor: domAccent.withOpacity(0.55),
+      borderRadius: 20,
+      imageOpacity: isNight ? 0.44 : 0.34,
+      onTap: () {
+        setState(() {
+          _selectedDomainId = dom.id;
+          _expandedSubCategories
+            ..clear()
+            ..add(subNames.first);
+        });
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: dom.primaryColor.withOpacity(0.20),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: domAccent.withOpacity(0.65)),
+                ),
+                child: Text(dom.emoji, style: const TextStyle(fontSize: 22)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      dom.label,
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        _buildCountBadge(
+                          '📂 ${subNames.length} تصنيفاً فرعياً',
+                          domAccent,
+                        ),
+                        _buildCountBadge(
+                          '📌 ${domCases.length} موقفاً وحلاً',
+                          domAccent,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: domAccent,
+                size: 16,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 6,
+            runSpacing: 5,
+            children: subNames.take(3).map((sub) {
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: palette.scaffoldColor.withOpacity(0.55),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: domAccent.withOpacity(0.32)),
+                ),
+                child: Text(
+                  sub,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: palette.textSecondary,
+                    fontSize: 10.5,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickEmergencyTile(
+    HelpMeCategory cat,
+    ThemePalette palette,
+    bool isNight,
+  ) {
+    final cAcc = _resolveCatAccent(cat, palette.isDark);
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forHelpMeCategory(cat.state.index * 5),
+      isDark: isNight,
+      borderColor: cAcc.withOpacity(0.52),
+      borderRadius: 16,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      imageOpacity: isNight ? 0.38 : 0.28,
+      onTap: () => _showCategoryDetails(context, cat, palette),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: cat.primaryColor.withOpacity(0.18),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(cat.icon, size: 17, color: cAcc),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              cat.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: palette.textPrimary,
+                fontSize: 11.5,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSelectedDomainSubFolders(
+    ThemePalette palette,
+    Color accentColor,
+    bool isNight,
+  ) {
+    final dom = HelpMe1000Catalog.domains.firstWhere(
+      (d) => d.id == _selectedDomainId,
+      orElse: () => HelpMe1000Catalog.domains.first,
+    );
+    final domAccent =
+        _resolveAccentColor(dom.primaryColor, dom.accentColor, palette.isDark);
+    final entries = HelpMe1000Catalog.filter(domainId: dom.id);
+    final grouped = HelpMe1000Catalog.groupBySubCategory(entries);
+    final subEntries = grouped.entries.toList();
+    final allExpanded = subEntries.isNotEmpty &&
+        subEntries.every((e) => _expandedSubCategories.contains(e.key));
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Firdaws4KCardShell(
+            backdrop: Background500Catalog.forHelpMeBanner(3),
+            isDark: isNight,
+            borderRadius: 16,
+            borderColor: domAccent.withOpacity(0.55),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            imageOpacity: isNight ? 0.42 : 0.30,
+            child: Row(
+              children: [
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _selectedDomainId = 'all';
+                      _expandedSubCategories.clear();
+                    });
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: domAccent,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  icon: const Icon(Icons.arrow_forward_rounded, size: 17),
+                  label: const Text(
+                    'كل الأقسام',
+                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${dom.emoji} ${dom.label}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: palette.textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '${subEntries.length} تصنيفاً فرعياً • ${entries.length} موضوعاً',
+                        style: TextStyle(color: palette.textSecondary, fontSize: 10.5),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      if (allExpanded) {
+                        _expandedSubCategories.clear();
+                      } else {
+                        _expandedSubCategories.addAll(subEntries.map((e) => e.key));
+                      }
+                    });
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: domAccent,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    allExpanded ? 'طي الكل' : 'فتح الكل',
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: ListView.builder(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 2, 16, 98),
+            itemCount: subEntries.length,
+            itemBuilder: (context, subIdx) {
+              final subGroup = subEntries[subIdx];
+              final isExpanded = _expandedSubCategories.contains(subGroup.key);
+              return _buildSubCategoryAccordionCard(
+                folderNumber: subIdx + 1,
+                subTitle: subGroup.key,
+                cases: subGroup.value,
+                catAccent: domAccent,
+                isExpanded: isExpanded,
+                palette: palette,
+                isNight: isNight,
+                onToggle: () {
+                  setState(() {
+                    if (isExpanded) {
+                      _expandedSubCategories.remove(subGroup.key);
+                    } else {
+                      _expandedSubCategories.add(subGroup.key);
+                    }
+                  });
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSearchGroupedResults(
+    ThemePalette palette,
+    Color accentColor,
+    bool isNight,
+  ) {
+    final results = HelpMe1000Catalog.filter(
+      domainId: _selectedDomainId,
+      query: _searchQuery,
+    );
+    final grouped = HelpMe1000Catalog.groupBySubCategory(results);
+    final groups = grouped.entries.toList();
+
+    if (results.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'لم يتم العثور على مواقف مطابقة لـ «$_searchQuery»\nجرّب كلمة أبسط مثل: تنمر، فتن، صحبة، رزق، قلق',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: palette.textSecondary, fontSize: 13.5),
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 2, 16, 98),
+      itemCount: groups.length + 1,
+      itemBuilder: (context, idx) {
+        if (idx == 0) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              '🔍 ${results.length} نتيجة موزعة داخل ${groups.length} تصنيفاً منظماً',
+              style: TextStyle(
+                color: accentColor,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          );
+        }
+        final grp = groups[idx - 1];
+        final first = grp.value.first;
+        final catAccent = _resolveAccentColor(
+          first.primaryColor,
+          first.accentColor,
+          palette.isDark,
+        );
+        return _buildSubCategoryAccordionCard(
+          folderNumber: idx,
+          subTitle: '${first.domainLabel} › ${grp.key}',
+          cases: grp.value,
+          catAccent: catAccent,
+          isExpanded: true,
+          palette: palette,
+          isNight: isNight,
+          onToggle: () {},
+        );
+      },
+    );
+  }
+
+  Widget _buildSubCategoryAccordionCard({
+    required int folderNumber,
+    required String subTitle,
+    required List<HelpMeCaseEntry> cases,
+    required Color catAccent,
+    required bool isExpanded,
+    required ThemePalette palette,
+    required bool isNight,
+    required VoidCallback onToggle,
+  }) {
+    return Firdaws4KCardShell(
+      backdrop: Background500Catalog.forHelpMeCategory(folderNumber % 30),
+      isDark: isNight,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      borderColor: catAccent.withOpacity(isExpanded ? 0.68 : 0.42),
+      borderRadius: 18,
+      imageOpacity: isNight ? 0.38 : 0.28,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: onToggle,
+            borderRadius: BorderRadius.circular(12),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: catAccent.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    cases.first.emoji,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '📂 $folderNumber. $subTitle',
+                        style: TextStyle(
+                          color: palette.textPrimary,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '${cases.length} حالة موثقة بالقرآن والسنة',
+                        style: TextStyle(
+                          color: catAccent,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  isExpanded
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  color: catAccent,
+                  size: 22,
+                ),
+              ],
+            ),
+          ),
+          if (isExpanded) ...[
+            const SizedBox(height: 8),
+            Divider(color: catAccent.withOpacity(0.25), height: 1),
+            const SizedBox(height: 8),
+            for (final entry in cases)
+              InkWell(
+                onTap: () => _showCaseDetails(context, entry, palette),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 7),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: palette.scaffoldColor.withOpacity(isNight ? 0.56 : 0.72),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: catAccent.withOpacity(0.28)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: catAccent.withOpacity(0.18),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '#${entry.number}',
+                              style: TextStyle(
+                                color: catAccent,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              entry.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: palette.textPrimary,
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_left_rounded,
+                            color: catAccent,
+                            size: 18,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '✅ إيه أه: ${entry.doAction}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: palette.textSecondary,
+                          fontSize: 11,
+                        ),
+                      ),
+                      Text(
+                        '🚫 إيه لأ: ${entry.dontAction}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: palette.textMuted,
+                          fontSize: 10.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCountBadge(String text, Color accent) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: accent.withOpacity(0.16),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: accent.withOpacity(0.35)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: accent,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

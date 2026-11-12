@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -86,6 +87,7 @@ class _IslamicPrayerAppState extends State<IslamicPrayerApp>
   Timer? _salawatTimer;
   Timer? _prayerWatcherTimer;
   Timer? _salawatAutoHideTimer;
+  final AudioPlayer _salawatAudioPlayer = AudioPlayer();
   DateTime _lastSalawatShownAt = DateTime.now();
   DateTime? _lastNotificationSyncAt;
   String? _lastCustomMinuteKey;
@@ -132,6 +134,7 @@ class _IslamicPrayerAppState extends State<IslamicPrayerApp>
     _salawatTimer?.cancel();
     _prayerWatcherTimer?.cancel();
     _salawatAutoHideTimer?.cancel();
+    _salawatAudioPlayer.dispose();
     final native = FirdawsNativeService();
     if (native.onOpenAdhanScreen == _openAdhanScreenIfNeeded) {
       native.onOpenAdhanScreen = null;
@@ -335,6 +338,14 @@ class _IslamicPrayerAppState extends State<IslamicPrayerApp>
     }
   }
 
+  Future<void> _playSalawatVoice() async {
+    try {
+      await _salawatAudioPlayer.stop();
+      await _salawatAudioPlayer.setVolume(1.0);
+      await _salawatAudioPlayer.play(AssetSource('audio/salawat_nabi.wav'));
+    } catch (_) {}
+  }
+
   void _showFloatingSalawatNow() {
     if (!mounted) return;
     _salawatAutoHideTimer?.cancel();
@@ -342,6 +353,7 @@ class _IslamicPrayerAppState extends State<IslamicPrayerApp>
       _salawatStyleSeed++;
       _showInAppSalawat = true;
     });
+    _playSalawatVoice();
     _salawatAutoHideTimer = Timer(const Duration(seconds: 12), () {
       if (mounted && _showInAppSalawat) {
         setState(() => _showInAppSalawat = false);
@@ -351,6 +363,9 @@ class _IslamicPrayerAppState extends State<IslamicPrayerApp>
 
   void _dismissFloatingSalawatOnTouch() {
     _salawatAutoHideTimer?.cancel();
+    try {
+      _salawatAudioPlayer.stop();
+    } catch (_) {}
     if (!mounted || !_showInAppSalawat) return;
     setState(() => _showInAppSalawat = false);
     try {

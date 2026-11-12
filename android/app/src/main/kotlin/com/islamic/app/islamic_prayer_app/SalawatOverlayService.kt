@@ -11,6 +11,9 @@ import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.media.AudioAttributes
+import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -140,6 +143,7 @@ class SalawatOverlayService : Service() {
 
     private var windowManager: WindowManager? = null
     private var overlayView: View? = null
+    private var salawatMediaPlayer: MediaPlayer? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private val autoHideRunnable = Runnable { removeOverlayAndStop() }
 
@@ -280,6 +284,7 @@ class SalawatOverlayService : Service() {
             container.scaleX = 0.88f
             container.scaleY = 0.88f
             wm.addView(container, params)
+            playSalawatAudio()
             container.animate()
                 .alpha(1f)
                 .scaleX(1f)
@@ -304,17 +309,74 @@ class SalawatOverlayService : Service() {
         } catch (_: Exception) {}
     }
 
+    private fun playSalawatAudio() {
+        stopSalawatAudio()
+        try {
+            val mp = MediaPlayer.create(this, R.raw.salawat_nabi)
+            if (mp != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    mp.setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION_EVENT)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                            .build()
+                    )
+                }
+                mp.setVolume(1.0f, 1.0f)
+                mp.setOnCompletionListener { player ->
+                    try {
+                        player.release()
+                    } catch (_: Exception) {}
+                    if (salawatMediaPlayer === player) {
+                        salawatMediaPlayer = null
+                    }
+                }
+                mp.setOnErrorListener { player, _, _ ->
+                    try {
+                        player.release()
+                    } catch (_: Exception) {}
+                    if (salawatMediaPlayer === player) {
+                        salawatMediaPlayer = null
+                    }
+                    true
+                }
+                salawatMediaPlayer = mp
+                mp.start()
+            }
+        } catch (_: Exception) {}
+    }
+
+    private fun stopSalawatAudio() {
+        try {
+            salawatMediaPlayer?.let { mp ->
+                if (mp.isPlaying) {
+                    mp.stop()
+                }
+                mp.release()
+            }
+        } catch (_: Exception) {}
+        salawatMediaPlayer = null
+    }
+
     private fun showFallbackSalawatNotification() {
         val style = nextTheme()
-        val chId = "firdaws_salawat_floating_ch"
+        val chId = "firdaws_salawat_floating_voice_v2"
+        val soundUri = Uri.parse("android.resource://$packageName/raw/salawat_nabi")
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if (nm.getNotificationChannel(chId) == null) {
                 val ch = NotificationChannel(
                     chId,
-                    "تذكير الصلاة على النبي ﷺ",
+                    "تذكير الصلاة على النبي ﷺ بالصوت",
                     NotificationManager.IMPORTANCE_HIGH
-                )
+                ).apply {
+                    val attrs = AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_NOTIFICATION_EVENT)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build()
+                    setSound(soundUri, attrs)
+                    enableVibration(true)
+                }
                 nm.createNotificationChannel(ch)
             }
         }
@@ -329,6 +391,7 @@ class SalawatOverlayService : Service() {
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(style.title)
             .setContentText(style.subtitle)
+            .setSound(soundUri)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(pending)
@@ -359,6 +422,7 @@ class SalawatOverlayService : Service() {
 
     private fun removeOverlayOnly() {
         mainHandler.removeCallbacks(autoHideRunnable)
+        stopSalawatAudio()
         overlayView?.let { view ->
             try {
                 windowManager?.removeViewImmediate(view)

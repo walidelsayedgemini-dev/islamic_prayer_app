@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:adhan/adhan.dart';
 import '../models/backgrounds_500_catalog.dart';
@@ -58,6 +59,7 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
   int _selectedPrayerIdx = 0;
   bool _userSwipedManually = false;
   bool _isPointerDown = false;
+  Timer? _snapBackTimer;
 
   int _prayerIndex(Prayer p) {
     final i = _orderedPrayers.indexOf(p);
@@ -74,8 +76,10 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
     final defPrayer =
         widget.nextPrayer == Prayer.none ? Prayer.fajr : widget.nextPrayer;
     _selectedPrayerIdx = _prayerIndex(defPrayer);
-    _prayerPageController =
-        PageController(initialPage: _baseOffset + _selectedPrayerIdx);
+    _prayerPageController = PageController(
+      initialPage: _baseOffset + _selectedPrayerIdx,
+      viewportFraction: 0.37,
+    );
   }
 
   @override
@@ -96,14 +100,20 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
 
   @override
   void dispose() {
+    _snapBackTimer?.cancel();
     _glowController.dispose();
     _prayerPageController.dispose();
     super.dispose();
   }
 
-  void _scheduleSnapBackOnRelease() {
-    _isPointerDown = false;
-    Future.delayed(const Duration(milliseconds: 220), () {
+  void _cancelSnapBack() {
+    _snapBackTimer?.cancel();
+    _snapBackTimer = null;
+  }
+
+  void _scheduleSnapBackOnRelease({int delayMs = 650}) {
+    _cancelSnapBack();
+    _snapBackTimer = Timer(Duration(milliseconds: delayMs), () {
       if (!mounted || _isPointerDown) return;
       _jumpToNextPrayer();
     });
@@ -111,6 +121,7 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
 
   void _stepPrayerPage(int delta) {
     if (!_prayerPageController.hasClients) return;
+    _cancelSnapBack();
     final curPage = (_prayerPageController.page ?? _baseOffset.toDouble()).round();
     _prayerPageController.animateToPage(
       curPage + delta,
@@ -178,13 +189,6 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
     final defaultTargetPrayer =
         widget.nextPrayer == Prayer.none ? Prayer.fajr : widget.nextPrayer;
     final displayedPrayer = _orderedPrayers[_selectedPrayerIdx % 6];
-    final prevPrayer = _orderedPrayers[(_selectedPrayerIdx - 1 + 6) % 6];
-    final nextAfterDisplayed = _orderedPrayers[(_selectedPrayerIdx + 1) % 6];
-
-    final prevTime =
-        widget.prayerTimes.timeForPrayer(prevPrayer) ?? DateTime.now();
-    final nextAfterTime =
-        widget.prayerTimes.timeForPrayer(nextAfterDisplayed) ?? DateTime.now();
     final isShowingDefaultNext = displayedPrayer == defaultTargetPrayer;
 
     return Column(
@@ -195,165 +199,174 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
 
         const SizedBox(height: 10),
 
-        // 2. بطاقة الصلاة المركزية التفاعلية (تبدّل الصلوات الثلاث أثناء السحب وتعود تلقائياً بمجرد ترك الإصبع)
+        // 2. شريط الـ 3 صلوات الكامل القابل للسحب الحر عبر جميع الصلوات (الفجر ← العشاء) والعودة للقادمة عند ترك الإصبع
         Listener(
-          onPointerDown: (_) => _isPointerDown = true,
-          onPointerUp: (_) => _scheduleSnapBackOnRelease(),
-          onPointerCancel: (_) => _scheduleSnapBackOnRelease(),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
+          onPointerDown: (_) {
+            _isPointerDown = true;
+            _cancelSnapBack();
+          },
+          onPointerUp: (_) {
+            _isPointerDown = false;
+            _scheduleSnapBackOnRelease(delayMs: 700);
+          },
+          onPointerCancel: (_) {
+            _isPointerDown = false;
+            _scheduleSnapBackOnRelease(delayMs: 700);
+          },
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (notification) {
+              if (notification is ScrollStartNotification) {
+                _cancelSnapBack();
+              } else if (notification is ScrollEndNotification && !_isPointerDown) {
+                _scheduleSnapBackOnRelease(delayMs: 550);
+              }
+              return false;
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // الميدالية الجانبية اليمنى (اضغط أو اسحب للتبديل للسابقة)
-                Expanded(
-                  flex: 3,
-                  child: GestureDetector(
-                    onHorizontalDragEnd: (details) {
-                      final vx = details.primaryVelocity ?? 0;
-                      if (vx.abs() > 40) {
-                        setState(() => _userSwipedManually = true);
-                        _stepPrayerPage(vx > 0 ? 1 : -1);
-                      }
+                SizedBox(
+                  height: 204,
+                  width: double.infinity,
+                  child: PageView.builder(
+                    controller: _prayerPageController,
+                    physics: const BouncingScrollPhysics(),
+                    clipBehavior: Clip.none,
+                    onPageChanged: (page) {
+                      setState(() {
+                        _selectedPrayerIdx = ((page % 6) + 6) % 6;
+                        _userSwipedManually =
+                            _orderedPrayers[_selectedPrayerIdx] !=
+                                defaultTargetPrayer;
+                      });
                     },
-                    child: _buildSidePrayerMedallion(
-                      prayer: prevPrayer,
-                      time: prevTime,
-                      palette: palette,
-                      statusLabel: prevPrayer == widget.currentPrayer
-                          ? "حالية ◀"
-                          : "اسحب / اضغط ◀",
-                      onTapOverride: () {
-                        setState(() => _userSwipedManually = true);
-                        _stepPrayerPage(-1);
-                        Future.delayed(const Duration(milliseconds: 900), () {
-                          if (mounted && !_isPointerDown) _jumpToNextPrayer();
-                        });
-                      },
-                    ),
-                  ),
-                ),
+                    itemBuilder: (_, page) {
+                      final idx = ((page % 6) + 6) % 6;
+                      final prayer = _orderedPrayers[idx];
+                      final pTime = widget.prayerTimes.timeForPrayer(prayer) ??
+                          DateTime.now();
 
-                const SizedBox(width: 8),
+                      return AnimatedBuilder(
+                        animation: _prayerPageController,
+                        builder: (context, _) {
+                          final double currentPage = _prayerPageController.hasClients &&
+                                  _prayerPageController.position.haveDimensions
+                              ? (_prayerPageController.page ??
+                                  (_baseOffset + _selectedPrayerIdx).toDouble())
+                              : (_baseOffset + _selectedPrayerIdx).toDouble();
+                          final double distance =
+                              (currentPage - page).abs().clamp(0.0, 2.0);
+                          final double scale =
+                              1.0 - (distance.clamp(0.0, 1.0) * 0.16);
+                          final double opacity =
+                              1.0 - (distance.clamp(0.0, 1.5) * 0.22);
+                          final bool isFocused = distance < 0.45;
 
-                // البطاقة المركزية القابلة للسحب بين الـ 6 صلوات
-                Expanded(
-                  flex: 5,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        height: 196,
-                        child: PageView.builder(
-                          controller: _prayerPageController,
-                          physics: const BouncingScrollPhysics(),
-                          onPageChanged: (page) {
-                            setState(() {
-                              _selectedPrayerIdx = ((page % 6) + 6) % 6;
-                              _userSwipedManually = _orderedPrayers[_selectedPrayerIdx] !=
-                                  defaultTargetPrayer;
-                            });
-                          },
-                          itemBuilder: (_, page) {
-                            final idx = ((page % 6) + 6) % 6;
-                            final prayer = _orderedPrayers[idx];
-                            final pTime = widget.prayerTimes.timeForPrayer(prayer) ??
-                                DateTime.now();
-                            return _buildCenterCartouchePrayerCard(
-                              prayer: prayer,
-                              prayerSlideIdx: idx,
-                              defaultNextPrayer: defaultTargetPrayer,
-                              time: pTime,
-                              remaining: prayer == defaultTargetPrayer
-                                  ? widget.remaining
-                                  : pTime.difference(DateTime.now()),
-                              palette: palette,
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ...List.generate(6, (i) {
-                            final active = (_selectedPrayerIdx % 6) == i;
-                            final isNext = _orderedPrayers[i] == defaultTargetPrayer;
-                            return AnimatedContainer(
-                              duration: const Duration(milliseconds: 220),
-                              margin: const EdgeInsets.symmetric(horizontal: 2.5),
-                              width: active ? 16 : 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(4),
-                                color: active
-                                    ? accent
-                                    : (isNext
-                                        ? accent.withOpacity(0.45)
-                                        : palette.textMuted.withOpacity(0.35)),
-                              ),
-                            );
-                          }),
-                          if (!isShowingDefaultNext) ...[
-                            const SizedBox(width: 6),
-                            GestureDetector(
-                              onTap: _jumpToNextPrayer,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 7, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: accent.withOpacity(0.18),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                      color: accent.withOpacity(0.55)),
-                                ),
-                                child: Text(
-                                  'القادمة ↩',
-                                  style: TextStyle(
-                                    color: accent,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
+                          return Center(
+                            child: Transform.scale(
+                              scale: scale,
+                              child: Opacity(
+                                opacity: opacity.clamp(0.62, 1.0),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 3,
+                                    vertical: 4,
+                                  ),
+                                  child: _buildUnifiedCarouselPrayerCard(
+                                    prayer: prayer,
+                                    prayerSlideIdx: idx,
+                                    defaultNextPrayer: defaultTargetPrayer,
+                                    time: pTime,
+                                    remaining: prayer == defaultTargetPrayer
+                                        ? widget.remaining
+                                        : pTime.difference(DateTime.now()),
+                                    palette: palette,
+                                    isFocused: isFocused,
+                                    onTap: () {
+                                      if (isFocused) {
+                                        widget.onPrayerTap(
+                                            prayer.name.toLowerCase());
+                                      } else {
+                                        _cancelSnapBack();
+                                        _prayerPageController
+                                            .animateToPage(
+                                              page,
+                                              duration: const Duration(
+                                                  milliseconds: 250),
+                                              curve: Curves.easeOutCubic,
+                                            )
+                                            .then((_) {
+                                          if (mounted && !_isPointerDown) {
+                                            _scheduleSnapBackOnRelease(
+                                                delayMs: 900);
+                                          }
+                                        });
+                                      }
+                                    },
                                   ),
                                 ),
                               ),
                             ),
-                          ],
-                        ],
-                      ),
-                    ],
+                          );
+                        },
+                      );
+                    },
                   ),
                 ),
-
-                const SizedBox(width: 8),
-
-                // الميدالية الجانبية اليسرى (اضغط أو اسحب للتبديل للتالية)
-                Expanded(
-                  flex: 3,
-                  child: GestureDetector(
-                    onHorizontalDragEnd: (details) {
-                      final vx = details.primaryVelocity ?? 0;
-                      if (vx.abs() > 40) {
-                        setState(() => _userSwipedManually = true);
-                        _stepPrayerPage(vx > 0 ? 1 : -1);
-                      }
-                    },
-                    child: _buildSidePrayerMedallion(
-                      prayer: nextAfterDisplayed,
-                      time: nextAfterTime,
-                      palette: palette,
-                      statusLabel: nextAfterDisplayed == defaultTargetPrayer
-                          ? "القادمة ▶"
-                          : "اسحب / اضغط ▶",
-                      onTapOverride: () {
-                        setState(() => _userSwipedManually = true);
-                        _stepPrayerPage(1);
-                        Future.delayed(const Duration(milliseconds: 900), () {
-                          if (mounted && !_isPointerDown) _jumpToNextPrayer();
-                        });
-                      },
-                    ),
-                  ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ...List.generate(6, (i) {
+                      final active = (_selectedPrayerIdx % 6) == i;
+                      final isNext =
+                          _orderedPrayers[i] == defaultTargetPrayer;
+                      return GestureDetector(
+                        onTap: () {
+                          final delta = i - (_selectedPrayerIdx % 6);
+                          _stepPrayerPage(delta);
+                          _scheduleSnapBackOnRelease(delayMs: 950);
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 220),
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          width: active ? 18 : 7,
+                          height: 6.5,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            color: active
+                                ? accent
+                                : (isNext
+                                    ? accent.withOpacity(0.45)
+                                    : palette.textMuted.withOpacity(0.35)),
+                          ),
+                        ),
+                      );
+                    }),
+                    if (!isShowingDefaultNext) ...[
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: _jumpToNextPrayer,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: accent.withOpacity(0.18),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: accent.withOpacity(0.55)),
+                          ),
+                          child: Text(
+                            'القادمة ↩',
+                            style: TextStyle(
+                              color: accent,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
@@ -506,13 +519,15 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
     );
   }
 
-  Widget _buildCenterCartouchePrayerCard({
+  Widget _buildUnifiedCarouselPrayerCard({
     required Prayer prayer,
     required int prayerSlideIdx,
     required Prayer defaultNextPrayer,
     required DateTime time,
     required Duration remaining,
     required ThemePalette palette,
+    required bool isFocused,
+    required VoidCallback onTap,
   }) {
     final accent = firdawsModernAccent(palette);
     final topSurface = firdaws3DElevatedSurfaceColor(palette, opacity: 0.90);
@@ -527,7 +542,7 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
         : (isCurrent
             ? "الوقت الحالي ✨"
             : (isPassed
-                ? "مضى منذ ${_formatDuration(remaining)}"
+                ? "مضى ${_formatDuration(remaining)}"
                 : "بعد ${_formatDuration(remaining)}"));
 
     return AnimatedBuilder(
@@ -535,41 +550,41 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
       builder: (context, _) {
         final glowVal = _glowController.value;
         return GestureDetector(
-          onTap: () => widget.onPrayerTap(prayer.name.toLowerCase()),
+          onTap: onTap,
           child: Container(
+            height: 186,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(22),
               border: Border.all(
-                color: accent.withOpacity(0.68 + 0.24 * glowVal),
-                width: 2.0,
+                color: isFocused
+                    ? accent.withOpacity(0.75 + 0.22 * glowVal)
+                    : accent.withOpacity(0.42),
+                width: isFocused ? 2.1 : 1.4,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.white.withOpacity(palette.isDark ? 0.10 : 0.8),
-                  blurRadius: 0,
-                  offset: const Offset(0, -1.2),
-                ),
-                BoxShadow(
                   color: Color.lerp(Colors.black, accent, 0.22)!
-                      .withOpacity(palette.isDark ? 0.85 : 0.25),
+                      .withOpacity(palette.isDark ? 0.85 : 0.22),
                   blurRadius: 0,
-                  offset: const Offset(0, 6),
+                  offset: Offset(0, isFocused ? 5 : 3),
                 ),
                 BoxShadow(
                   color: accent.withOpacity(
-                      (palette.isDark ? 0.22 : 0.14) + 0.10 * glowVal),
-                  blurRadius: 20,
-                  spreadRadius: 1,
+                      (isFocused ? 0.24 : 0.10) + 0.08 * glowVal),
+                  blurRadius: isFocused ? 18 : 8,
+                  spreadRadius: isFocused ? 1 : 0,
                 ),
               ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(20),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
                   Opacity(
-                    opacity: palette.isDark ? 0.42 : 0.26,
+                    opacity: palette.isDark
+                        ? (isFocused ? 0.44 : 0.30)
+                        : (isFocused ? 0.28 : 0.18),
                     child: FirdawsResilientImage.entry(backdrop),
                   ),
                   DecoratedBox(
@@ -578,71 +593,48 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          topSurface.withOpacity(palette.isDark ? 0.72 : 0.82),
-                          botSurface.withOpacity(palette.isDark ? 0.78 : 0.86),
+                          topSurface.withOpacity(palette.isDark ? 0.72 : 0.84),
+                          botSurface.withOpacity(palette.isDark ? 0.78 : 0.88),
                         ],
                       ),
                     ),
                   ),
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 10,
+                      horizontal: 8,
+                    ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            InkWell(
-                              onTap: () => _stepPrayerPage(-1),
-                              borderRadius: BorderRadius.circular(12),
-                              child: Padding(
-                                padding: const EdgeInsets.all(2),
-                                child: Icon(
-                                  Icons.chevron_right_rounded,
-                                  color: accent.withOpacity(0.85),
-                                  size: 20,
-                                ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: accent.withOpacity(
+                              palette.isDark ? 0.24 : 0.16,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: accent.withOpacity(0.65),
+                            ),
+                          ),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              _prayerNameArabic(prayer),
+                              maxLines: 1,
+                              style: TextStyle(
+                                color: palette.isDark
+                                    ? accent
+                                    : palette.primaryColor,
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            Flexible(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: accent.withOpacity(
-                                      palette.isDark ? 0.24 : 0.16),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                      color: accent.withOpacity(0.65)),
-                                ),
-                                child: Text(
-                                  _prayerNameArabic(prayer),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: palette.isDark
-                                        ? accent
-                                        : palette.primaryColor,
-                                    fontSize: 16.5,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            InkWell(
-                              onTap: () => _stepPrayerPage(1),
-                              borderRadius: BorderRadius.circular(12),
-                              child: Padding(
-                                padding: const EdgeInsets.all(2),
-                                child: Icon(
-                                  Icons.chevron_left_rounded,
-                                  color: accent.withOpacity(0.85),
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                         const SizedBox(height: 6),
                         FittedBox(
@@ -651,16 +643,18 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
                             _formatTime(time),
                             style: TextStyle(
                               color: palette.textPrimary,
-                              fontSize: 32,
+                              fontSize: 28,
                               fontWeight: FontWeight.bold,
-                              letterSpacing: 1.0,
+                              letterSpacing: 0.8,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 5),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
+                            horizontal: 7,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: palette.isDark
                                 ? accent.withOpacity(0.18)
@@ -677,21 +671,24 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
                                 color: palette.isDark
                                     ? const Color(0xFFE0F2FE)
                                     : palette.primaryColor,
-                                fontSize: 11.5,
+                                fontSize: 10.5,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
                         ),
                         const SizedBox(height: 5),
-                        Text(
-                          "اضغط لتفاصيلها وسننها",
-                          style: TextStyle(
-                            color: firdawsCrispSecondaryText(palette),
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w600,
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            isFocused ? "اضغط للتفاصيل وسننها" : "اسحب للتبديل ↔",
+                            maxLines: 1,
+                            style: TextStyle(
+                              color: firdawsCrispSecondaryText(palette),
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
@@ -702,78 +699,6 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
           ),
         );
       },
-    );
-  }
-
-  Widget _buildSidePrayerMedallion({
-    required Prayer prayer,
-    required DateTime time,
-    required ThemePalette palette,
-    required String statusLabel,
-    VoidCallback? onTapOverride,
-  }) {
-    final accent = firdawsModernAccent(palette);
-
-    return Firdaws3DCard(
-      palette: palette,
-      glowColor: accent,
-      borderRadius: 20,
-      depth: 5.0,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
-      onTap: onTapOverride ?? () => widget.onPrayerTap(prayer.name.toLowerCase()),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  accent.withOpacity(palette.isDark ? 0.35 : 0.22),
-                  accent.withOpacity(0.08),
-                ],
-              ),
-              border: Border.all(color: accent.withOpacity(0.8), width: 1.5),
-            ),
-            child: Center(
-              child: Text(
-                _prayerNameArabic(prayer),
-                style: TextStyle(
-                  color: palette.textPrimary,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            _formatTime(time),
-            style: TextStyle(
-              color: accent,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            statusLabel,
-            style: TextStyle(
-              color: firdawsCrispSecondaryText(palette),
-              fontSize: 8.8,
-              fontWeight: FontWeight.w600,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
     );
   }
 

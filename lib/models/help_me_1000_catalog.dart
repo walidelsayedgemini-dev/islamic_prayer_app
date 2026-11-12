@@ -22,6 +22,7 @@ class HelpMeCaseEntry {
   final int number; // 1..1000
   final String domainId;
   final String domainLabel;
+  final String subCategory;
   final String emoji;
   final String title;
   final String summary;
@@ -39,6 +40,7 @@ class HelpMeCaseEntry {
     required this.number,
     required this.domainId,
     required this.domainLabel,
+    required this.subCategory,
     required this.emoji,
     required this.title,
     required this.summary,
@@ -537,6 +539,7 @@ class HelpMe1000Catalog {
         'مداومة الذكر القليل المستمر دون انقطاع',
         'طلب السكينة والانشراح عند ضيق الرزق',
         'مواجهة الخوف من المجهول بالتفويض التام',
+        'سلامة الصدر وطهارة القلب من الغل والخصام',
       ],
       contexts: [
         'في لحظة انفعال شديد أو خلاف حاد',
@@ -615,6 +618,7 @@ class HelpMe1000Catalog {
             number: number++,
             domainId: bp.domain.id,
             domainLabel: bp.domain.label,
+            subCategory: sit,
             emoji: bp.domain.emoji,
             title: '$sit — $ctx',
             summary:
@@ -653,18 +657,44 @@ class HelpMe1000Catalog {
 
   static List<HelpMeCaseEntry> filter({
     String domainId = 'all',
+    String subCategory = 'all',
     String query = '',
   }) {
     final q = _normalizeArabic(query.trim());
     return all1000.where((e) {
       if (domainId != 'all' && e.domainId != domainId) return false;
+      if (subCategory != 'all' && e.subCategory != subCategory) return false;
       if (q.isEmpty) return true;
       return _normalizeArabic(e.title).contains(q) ||
           _normalizeArabic(e.domainLabel).contains(q) ||
+          _normalizeArabic(e.subCategory).contains(q) ||
           _normalizeArabic(e.summary).contains(q) ||
           _normalizeArabic(e.doAction).contains(q) ||
           _normalizeArabic(e.dontAction).contains(q) ||
           _normalizeArabic(e.quranAyah).contains(q);
     }).toList();
+  }
+
+  /// تجميع أي قائمة حالات حسب التصنيف الفرعي المرتب داخل الكتجري
+  static Map<String, List<HelpMeCaseEntry>> groupBySubCategory(
+    List<HelpMeCaseEntry> entries,
+  ) {
+    final map = <String, List<HelpMeCaseEntry>>{};
+    for (final entry in entries) {
+      (map[entry.subCategory] ??= <HelpMeCaseEntry>[]).add(entry);
+    }
+    return map;
+  }
+
+  /// التصنيفات الفرعية الفريدة التابعة لكتجري محدد
+  static List<String> subCategoriesForDomain(String domainId) {
+    final seen = <String>{};
+    final out = <String>[];
+    for (final entry in all1000) {
+      if (entry.domainId == domainId && seen.add(entry.subCategory)) {
+        out.add(entry.subCategory);
+      }
+    }
+    return out;
   }
 }
