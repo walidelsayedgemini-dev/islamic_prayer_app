@@ -66,7 +66,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
       ),
       child: Column(
         children: [
-          const SizedBox(height: 10),
+          const SizedBox(height: FirdawsSpace.md),
           Container(
             width: 44,
             height: 4,
@@ -76,10 +76,10 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const EdgeInsets.fromLTRB(FirdawsSpace.pageGutter, 12, FirdawsSpace.pageGutter, 8),
             child: Row(
               children: [
-                Text(themeOpt.primaryEmoji, style: const TextStyle(fontSize: 22)),
+                Text(themeOpt.primaryEmoji, style: const TextStyle(fontSize: FirdawsType.headline)),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(
@@ -89,7 +89,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
                         'مركز التحميل بدون إنترنت ⬇️',
                         style: TextStyle(
                           color: palette.textPrimary,
-                          fontSize: 16,
+                          fontSize: FirdawsType.body,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -97,7 +97,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
                         'حمّل فقط السور والمقاطع التي تريدها لحفظ مساحة جهازك (${_formatMb(_cacheBytes)}) ✨',
                         style: TextStyle(
                           color: palette.textSecondary,
-                          fontSize: 11,
+                          fontSize: FirdawsType.caption,
                         ),
                       ),
                     ],
@@ -113,20 +113,20 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
 
           if (!player.supportsOfflineDownload)
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(FirdawsSpace.lg),
               child: Firdaws4KCardShell(
                 backdrop: Background500Catalog.forExtraSection(3),
                 isDark: palette.isDark,
                 borderColor: accent.withOpacity(0.45),
-                borderRadius: 16,
+                borderRadius: FirdawsRadius.control,
                 borderWidth: 1.0,
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(FirdawsSpace.lg),
                 imageOpacity: 0.36,
                 child: SizedBox(
                   width: double.infinity,
                   child: Text(
                     'ميزة تنزيل السور على الهاتف متاحة داخل تطبيق الأندرويد؛ وعلى الويب يتم البث المباشر الفوري.',
-                    style: TextStyle(color: palette.textPrimary, fontSize: 12.5),
+                    style: TextStyle(color: palette.textPrimary, fontSize: FirdawsType.label),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -139,7 +139,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
                 backdrop: Background500Catalog.forExtraSection(4),
                 isDark: palette.isDark,
                 borderColor: accent,
-                borderRadius: 16,
+                borderRadius: FirdawsRadius.control,
                 borderWidth: 1.2,
                 margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                 padding: const EdgeInsets.all(12),
@@ -162,7 +162,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
                             'جاري تنزيل سورة #${player.batchCurrentSurah ?? ""} (${player.batchCompleted}/${player.batchTotal})...',
                             style: TextStyle(
                               color: palette.textPrimary,
-                              fontSize: 12,
+                              fontSize: FirdawsType.caption,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -205,7 +205,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
                       icon: const Icon(Icons.download_for_offline_rounded, size: 17),
                       label: const Text(
                         'تحميل جزء عم (٣٧ سورة) ⬇️',
-                        style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: FirdawsType.caption, fontWeight: FontWeight.bold),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: accent,
@@ -229,7 +229,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
                       'مسح الكل',
                       style: TextStyle(
                         color: palette.textSecondary,
-                        fontSize: 11.5,
+                        fontSize: FirdawsType.caption,
                       ),
                     ),
                     style: OutlinedButton.styleFrom(
@@ -263,7 +263,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
                 height: 36,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: FirdawsSpace.pageGutter),
                   itemCount: IslamicAudioLibrary.reciters.length,
                   separatorBuilder: (_, __) => const SizedBox(width: 6),
                   itemBuilder: (_, idx) {
@@ -273,7 +273,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
                       label: Text(
                         rec.name,
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: FirdawsType.caption,
                           color: sel ? palette.onAccentColor : palette.textPrimary,
                           fontWeight: sel ? FontWeight.bold : FontWeight.normal,
                         ),
@@ -288,13 +288,13 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
               ),
               const SizedBox(height: 6),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
+                padding: const EdgeInsets.symmetric(horizontal: FirdawsSpace.pageGutter),
                 child: TextField(
-                  style: TextStyle(color: palette.textPrimary, fontSize: 13),
+                  style: TextStyle(color: palette.textPrimary, fontSize: FirdawsType.label),
                   onChanged: (v) => setState(() => _search = v.trim()),
                   decoration: InputDecoration(
                     hintText: 'ابحث باسم السورة للتحميل السريع...',
-                    hintStyle: TextStyle(color: palette.textMuted, fontSize: 12),
+                    hintStyle: TextStyle(color: palette.textMuted, fontSize: FirdawsType.caption),
                     prefixIcon: Icon(Icons.search_rounded, color: accent),
                     isDense: true,
                     filled: true,
@@ -341,7 +341,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
             textAlign: TextAlign.center,
             style: TextStyle(
               color: sel ? palette.onAccentColor : palette.textPrimary,
-              fontSize: 11.5,
+              fontSize: FirdawsType.caption,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -360,7 +360,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
           .where((s) => _search.isEmpty || s.nameArabic.contains(_search))
           .toList();
       return ListView.builder(
-        padding: const EdgeInsets.fromLTRB(14, 2, 14, 24),
+        padding: const EdgeInsets.fromLTRB(FirdawsSpace.pageGutter, 2, FirdawsSpace.pageGutter, 24),
         itemCount: surahs.length,
         itemBuilder: (_, idx) {
           final s = surahs[idx];
@@ -376,7 +376,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
             borderColor: (isBundled || isDownloaded)
                 ? accent.withOpacity(0.55)
                 : palette.dividerColor,
-            borderRadius: 14,
+            borderRadius: FirdawsRadius.control,
             borderWidth: 1.0,
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -390,7 +390,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
                     '${s.number}',
                     style: TextStyle(
                       color: accent,
-                      fontSize: 11,
+                      fontSize: FirdawsType.caption,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -404,7 +404,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
                         'سورة ${s.nameArabic}',
                         style: TextStyle(
                           color: palette.textPrimary,
-                          fontSize: 13.5,
+                          fontSize: FirdawsType.label,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -418,7 +418,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
                           color: (isBundled || isDownloaded)
                               ? accent
                               : palette.textSecondary,
-                          fontSize: 10.5,
+                          fontSize: FirdawsType.caption,
                         ),
                       ),
                     ],
@@ -478,7 +478,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
                       ),
                       child: const Text(
                         'تحميل ⬇️',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: FirdawsType.caption, fontWeight: FontWeight.bold),
                       ),
                     ),
               ],
@@ -490,7 +490,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
 
     if (_tab == 'ruqyah') {
       return ListView.builder(
-        padding: const EdgeInsets.fromLTRB(14, 2, 14, 24),
+        padding: const EdgeInsets.fromLTRB(FirdawsSpace.pageGutter, 2, FirdawsSpace.pageGutter, 24),
         itemCount: IslamicAudioLibrary.allRuqyah.length,
         itemBuilder: (_, idx) {
           final r = IslamicAudioLibrary.allRuqyah[idx];
@@ -509,7 +509,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(14, 2, 14, 24),
+      padding: const EdgeInsets.fromLTRB(FirdawsSpace.pageGutter, 2, FirdawsSpace.pageGutter, 24),
       itemCount: IslamicAudioLibrary.allIbtihalat.length,
       itemBuilder: (_, idx) {
         final ib = IslamicAudioLibrary.allIbtihalat[idx];
@@ -546,7 +546,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
       ),
       isDark: palette.isDark,
       borderColor: downloaded ? accent.withOpacity(0.55) : palette.dividerColor,
-      borderRadius: 16,
+      borderRadius: FirdawsRadius.control,
       borderWidth: 1.0,
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
@@ -566,7 +566,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
                   title,
                   style: TextStyle(
                     color: palette.textPrimary,
-                    fontSize: 13.5,
+                    fontSize: FirdawsType.label,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -575,7 +575,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
                   downloaded ? 'محمّلة بدون إنترنت ✅ • $subtitle' : subtitle,
                   style: TextStyle(
                     color: downloaded ? accent : palette.textSecondary,
-                    fontSize: 11,
+                    fontSize: FirdawsType.caption,
                   ),
                 ),
               ],
@@ -616,7 +616,7 @@ class _AudioDownloadManagerSheetState extends State<_AudioDownloadManagerSheet> 
               ),
               child: const Text(
                 'تحميل ⬇️',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: FirdawsType.caption, fontWeight: FontWeight.bold),
               ),
             ),
         ],

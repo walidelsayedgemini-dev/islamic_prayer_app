@@ -16,6 +16,7 @@ import 'package:islamic_prayer_app/models/millionaire/millionaire_models.dart';
 import 'package:islamic_prayer_app/models/millionaire/millionaire_question_bank.dart';
 import 'package:islamic_prayer_app/models/wallpaper_70_catalog.dart';
 import 'package:islamic_prayer_app/providers/audio_player_provider.dart';
+import 'package:islamic_prayer_app/providers/comfort_provider.dart';
 import 'package:islamic_prayer_app/providers/family_challenge_provider.dart';
 import 'package:islamic_prayer_app/providers/firdaws_user_provider.dart';
 import 'package:islamic_prayer_app/providers/hasanat_provider.dart';
@@ -51,6 +52,7 @@ import 'package:islamic_prayer_app/widgets/games/gfx/arena_4k_stage_compositor.d
 import 'package:islamic_prayer_app/widgets/games/gfx/arena_live_events_controller.dart';
 import 'package:islamic_prayer_app/widgets/games/gfx/arena_stage_fx.dart';
 import 'package:islamic_prayer_app/widgets/hoor_companion_widget.dart';
+import 'package:islamic_prayer_app/widgets/paradise_ui.dart';
 import 'package:islamic_prayer_app/widgets/unified_theme_hub.dart';
 import 'package:islamic_prayer_app/widgets/wallpaper_70_picker_sheet.dart';
 
@@ -61,7 +63,11 @@ Widget _wrapWithProviders(
 }) {
   return MultiProvider(
     providers: [
-      ChangeNotifierProvider<SettingsProvider>(create: (_) => SettingsProvider()),
+      ChangeNotifierProvider<ComfortProvider>(
+        create: (_) => ComfortProvider(systemReduceMotion: false),
+      ),
+      ChangeNotifierProvider<SettingsProvider>(
+          create: (_) => SettingsProvider()),
       ChangeNotifierProvider<AudioPlayerProvider>(
         create: (_) => AudioPlayerProvider(),
       ),
@@ -76,7 +82,8 @@ Widget _wrapWithProviders(
         create: (_) => FamilyChallengeProvider(),
       ),
       hasanatProvider != null
-          ? ChangeNotifierProvider<HasanatProvider>.value(value: hasanatProvider)
+          ? ChangeNotifierProvider<HasanatProvider>.value(
+              value: hasanatProvider)
           : ChangeNotifierProvider<HasanatProvider>(
               create: (_) => HasanatProvider(),
             ),
@@ -85,11 +92,8 @@ Widget _wrapWithProviders(
       locale: const Locale('ar'),
       supportedLocales: const [Locale('ar'), Locale('en')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        fontFamily: fontFamily,
-        useMaterial3: true,
-      ),
+      theme: IslamicTheme.getTheme('emerald_gold',
+          isNight: false, fontFamily: fontFamily),
       home: child,
     ),
   );
@@ -100,9 +104,18 @@ void main() {
 
   setUpAll(() async {
     await initializeDateFormatting('ar');
+    for (final spec in [
+      ('Cairo', 'Cairo-Regular.ttf'),
+      ('Aref Ruqaa', 'ArefRuqaa-Regular.ttf')
+    ]) {
+      final loader = FontLoader(spec.$1)
+        ..addFont(rootBundle.load('assets/fonts/${spec.$2}'));
+      await loader.load();
+    }
   });
 
-  test('Millionaire bank has 1000 unique questions across difficulties and generates valid 15-step ladder',
+  test(
+      'Millionaire bank has 1000 unique questions across difficulties and generates valid 15-step ladder',
       () {
     final questions = MillionaireQuestionBank.allQuestions;
     expect(questions.length, 1000);
@@ -116,7 +129,8 @@ void main() {
 
     for (final q in questions) {
       expect(q.options.length, 4, reason: 'Invalid options count for ${q.id}');
-      expect(q.correctIndex, inInclusiveRange(0, 3), reason: 'Invalid correctIndex for ${q.id}');
+      expect(q.correctIndex, inInclusiveRange(0, 3),
+          reason: 'Invalid correctIndex for ${q.id}');
       expect(q.question.trim(), isNotEmpty);
       expect(q.category.trim(), isNotEmpty);
       expect(q.explanation.trim(), isNotEmpty);
@@ -125,20 +139,24 @@ void main() {
     expect(MillionaireLadderConfig.rungs.length, 15);
     expect(MillionaireLadderConfig.rungs.first.amount, 100);
     expect(MillionaireLadderConfig.rungs.last.amount, 1000000);
-    expect(MillionaireLadderConfig.virtualRivals.length, greaterThanOrEqualTo(4));
+    expect(
+        MillionaireLadderConfig.virtualRivals.length, greaterThanOrEqualTo(4));
 
     final bundle = MillionaireQuestionBank.generateSessionLadder(seed: 42);
     expect(bundle.ladderQuestions.length, 15);
     expect(bundle.spareQuestions.length, 6);
   });
 
-  test('ChallengePhrasesCatalog has 400 unique win and 400 unique lose phrases with clean placeholders',
+  test(
+      'ChallengePhrasesCatalog has 400 unique win and 400 unique lose phrases with clean placeholders',
       () {
     expect(ChallengePhrasesCatalog.winPhrases.length, 400);
     expect(ChallengePhrasesCatalog.losePhrases.length, 400);
 
-    final winSet = ChallengePhrasesCatalog.winPhrases.map((p) => p.trim()).toSet();
-    final loseSet = ChallengePhrasesCatalog.losePhrases.map((p) => p.trim()).toSet();
+    final winSet =
+        ChallengePhrasesCatalog.winPhrases.map((p) => p.trim()).toSet();
+    final loseSet =
+        ChallengePhrasesCatalog.losePhrases.map((p) => p.trim()).toSet();
     expect(winSet.length, 400);
     expect(loseSet.length, 400);
     expect(winSet.intersection(loseSet).length, 0);
@@ -159,7 +177,8 @@ void main() {
     expect(sampleLose.contains('{rival}'), isFalse);
   });
 
-  test('ArenaGamesCatalog provides 30 unique 3D games each with >=3 worlds, >=3 heroes, villain & 8 engines covered',
+  test(
+      'ArenaGamesCatalog provides 30 unique 3D games each with >=3 worlds, >=3 heroes, villain & 8 engines covered',
       () {
     const games = ArenaGamesCatalog.allGames;
     expect(games.length, 30);
@@ -174,8 +193,10 @@ void main() {
       final g = games[i];
       expect(g.number, i + 1);
       enginesCovered.add(g.engineType);
-      expect(g.worlds.length, greaterThanOrEqualTo(3), reason: '${g.id} worlds');
-      expect(g.heroes.length, greaterThanOrEqualTo(3), reason: '${g.id} heroes');
+      expect(g.worlds.length, greaterThanOrEqualTo(3),
+          reason: '${g.id} worlds');
+      expect(g.heroes.length, greaterThanOrEqualTo(3),
+          reason: '${g.id} heroes');
       expect(g.themeGradient.length, greaterThanOrEqualTo(2));
       expect(g.story.trim(), isNotEmpty);
       expect(g.howToPlay.trim(), isNotEmpty);
@@ -187,7 +208,9 @@ void main() {
     expect(enginesCovered.length, ArenaEngineType.values.length);
   });
 
-  test('Arabic grammar labeler and 3D dark-mode color converter work accurately', () {
+  test(
+      'Arabic grammar labeler and 3D dark-mode color converter work accurately',
+      () {
     expect(
       firdawsCountLabel(
         0,
@@ -229,12 +252,14 @@ void main() {
       '15 شجرة',
     );
 
-    final nightPalette = IslamicTheme.resolvePalette('kaaba_black_gold', isNight: true);
+    final nightPalette =
+        IslamicTheme.resolvePalette('kaaba_black_gold', isNight: true);
     final surface = firdaws3DSurfaceColor(nightPalette);
     expect(surface.blue, greaterThanOrEqualTo(surface.red));
   });
 
-  test('Jannati tasbih orchard growth & FamilyChallengeProvider leaderboards work together',
+  test(
+      'Jannati tasbih orchard growth & FamilyChallengeProvider leaderboards work together',
       () async {
     SharedPreferences.setMockInitialValues({});
     final jp = JannatiProvider();
@@ -281,7 +306,8 @@ void main() {
     expect(champBoard.any((e) => e.isCurrentUser && e.value >= 120), isTrue);
   });
 
-  testWidgets('UnifiedThemePillButton opens ThemeHubSheet and HoorCompanionWidget renders cleanly',
+  testWidgets(
+      'UnifiedThemePillButton opens ThemeHubSheet and HoorCompanionWidget renders cleanly',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     await tester.binding.setSurfaceSize(const Size(430, 880));
@@ -314,7 +340,8 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('MillionaireQuizScreen, ArenaHubScreen, ArenaGamePlayScreen & FamilyChallengeScreen render cleanly',
+  testWidgets(
+      'MillionaireQuizScreen, ArenaHubScreen, ArenaGamePlayScreen & FamilyChallengeScreen render cleanly',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     await tester.binding.setSurfaceSize(const Size(430, 880));
@@ -326,14 +353,17 @@ void main() {
 
     await tester.pumpWidget(_wrapWithProviders(const ArenaHubScreen()));
     await tester.pump(const Duration(milliseconds: 250));
-    expect(find.textContaining('٣٠ لعبة'), findsWidgets);
+    expect(find.text('${ArenaGamesCatalog.totalCount}'), findsWidgets);
+    expect(find.text('لعبة في الصالة'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(
-      _wrapWithProviders(ArenaGamePlayScreen(game: ArenaGamesCatalog.allGames.first)),
+      _wrapWithProviders(
+          ArenaGamePlayScreen(game: ArenaGamesCatalog.allGames.first)),
     );
     await tester.pump(const Duration(milliseconds: 250));
-    expect(find.textContaining(ArenaGamesCatalog.allGames.first.title), findsWidgets);
+    expect(find.textContaining(ArenaGamesCatalog.allGames.first.title),
+        findsWidgets);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(_wrapWithProviders(const FamilyChallengeScreen()));
@@ -342,7 +372,8 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('All 8 Arena3DGameStage engines and 2-player mode render without overflow at 390x844',
+  testWidgets(
+      'All 8 Arena3DGameStage engines and 2-player mode render without overflow at 390x844',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     await tester.binding.setSurfaceSize(const Size(390, 844));
@@ -387,7 +418,8 @@ void main() {
     }
   });
 
-  testWidgets('MillionaireQuizScreen starts active stage and FamilyChallengeScreen switches all tabs cleanly at 390x844',
+  testWidgets(
+      'MillionaireQuizScreen starts active stage and FamilyChallengeScreen switches all tabs cleanly at 390x844',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     await tester.binding.setSurfaceSize(const Size(390, 844));
@@ -396,7 +428,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
     expect(tester.takeException(), isNull);
 
-    final startBtn = find.text('دخول كرسي الاستوديو وبدء المليون');
+    final startBtn = find.text('ابدأ جولة المليون');
     await tester.scrollUntilVisible(
       startBtn,
       300,
@@ -407,7 +439,10 @@ void main() {
     expect(lobbyErr, isNull, reason: 'Lobby scroll error: $lobbyErr');
     await tester.tap(startBtn);
     await tester.pump(const Duration(milliseconds: 250));
-    expect(find.textContaining('/١٥'), findsWidgets);
+    expect(find.text('المحطة 1 من ١٥'), findsOneWidget);
+    expect(tester.widget<LinearProgressIndicator>(
+      find.byType(LinearProgressIndicator).first,
+    ).value, closeTo(1 / 15, 0.001));
     final stageErr = tester.takeException();
     expect(stageErr, isNull, reason: 'Stage error: $stageErr');
 
@@ -417,11 +452,16 @@ void main() {
     expect(tester.takeException(), isNull);
 
     for (final tabText in [
-      '👑 مين بطل أكتر؟',
-      '⚔️ مبارزة ثنائية ٢ ضد ٢',
-      '📜 الـ 800 عبارة تحفيزية',
+      'التسبيح',
+      'الأبطال',
+      'مبارزة ثنائية',
+      'العبارات',
     ]) {
-      final tabFinder = find.text(tabText);
+      final tabFinder = find.descendant(
+        of: find.byType(TabBar),
+        matching: find.text(tabText),
+      );
+      expect(tabFinder, findsOneWidget, reason: 'Missing family tab $tabText');
       await tester.ensureVisible(tabFinder);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
@@ -431,39 +471,45 @@ void main() {
       final tabErr = tester.takeException();
       expect(tabErr, isNull, reason: 'Tab failed ($tabText): $tabErr');
     }
-    expect(find.textContaining('400 عبارة فوز'), findsOneWidget);
+    expect(find.text('عبارات الفوز · ٤٠٠'), findsOneWidget);
   });
 
-  testWidgets('JannatiScreen HoorCompanionWidget & treasury render cleanly at 390x844',
+  testWidgets(
+      'JannatiScreen calm daily checklist renders and toggles at 390x844',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     await tester.binding.setSurfaceSize(const Size(390, 844));
 
     await tester.pumpWidget(_wrapWithProviders(const JannatiScreen()));
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.byType(HoorCompanionWidget), findsOneWidget);
+    expect(find.text('يومك، خطوةً خطوة'), findsOneWidget);
+    expect(find.byType(HoorCompanionWidget), findsNothing);
     expect(tester.takeException(), isNull);
 
-    final tasbihBtn = find.textContaining('سبّح').first;
-    await tester.ensureVisible(tasbihBtn);
+    final action = find.byType(Checkbox).first;
+    await tester.ensureVisible(action);
     await tester.pump(const Duration(milliseconds: 100));
-    await tester.tap(tasbihBtn);
+    await tester.tap(action);
     await tester.pump(const Duration(milliseconds: 250));
     expect(tester.takeException(), isNull);
   });
 
-  test('Hasanat currency, 4000-skin Store catalog (500 per category), 16 Missions & 8 unlockable Events work end-to-end',
+  test(
+      'Hasanat currency, 4000-skin Store catalog (500 per category), 16 Missions & 8 unlockable Events work end-to-end',
       () async {
     SharedPreferences.setMockInitialValues({});
     expect(HasanatStoreCatalog.skinsPerCategory, 500);
     expect(StoreItemCategory.values.length, 8);
     expect(HasanatStoreCatalog.allSkins.length, 4000);
     expect(HasanatStoreCatalog.allSkins.map((s) => s.id).toSet().length, 4000);
-    expect(HasanatStoreCatalog.allSkins.map((s) => s.styleKey).toSet().length, 4000);
+    expect(HasanatStoreCatalog.allSkins.map((s) => s.styleKey).toSet().length,
+        4000);
     for (final cat in StoreItemCategory.values) {
       final byCat = HasanatStoreCatalog.byCategory(cat);
-      expect(byCat.length, 500, reason: 'Category ${cat.name} must have 500 skins');
-      expect(HasanatStoreCatalog.defaultForCategory(cat).isDefaultUnlocked, isTrue);
+      expect(byCat.length, 500,
+          reason: 'Category ${cat.name} must have 500 skins');
+      expect(HasanatStoreCatalog.defaultForCategory(cat).isDefaultUnlocked,
+          isTrue);
     }
     expect(EventsMissionsCatalog.missions.length, 16);
     expect(EventsMissionsCatalog.events.length, 8);
@@ -481,7 +527,8 @@ void main() {
     expect(hp.hasanatBalance, 220);
 
     // إنجاز أول مهمة (10 تسبيحات) واستلامها وفتح حدث ×1.5
-    final firstMission = EventsMissionsCatalog.missionById('hm_starter_tasbih')!;
+    final firstMission =
+        EventsMissionsCatalog.missionById('hm_starter_tasbih')!;
     await hp.recordMetric(EventMissionMetric.tasbihCount, delta: 10);
     expect(hp.isMissionReadyToClaim(firstMission), isTrue);
 
@@ -528,22 +575,29 @@ void main() {
     expect(reloaded.ownsSkin(goldCraft.id), isTrue);
     expect(reloaded.ownsSkin(sapphireTasbih.id), isTrue);
     expect(reloaded.equippedSkin(StoreItemCategory.craftSkin).id, goldCraft.id);
-    expect(reloaded.equippedSkin(StoreItemCategory.tasbihSkin).id, sapphireTasbih.id);
+    expect(reloaded.equippedSkin(StoreItemCategory.tasbihSkin).id,
+        sapphireTasbih.id);
     expect(reloaded.isEventUnlocked('event_dawn_racers'), isTrue);
   });
 
-  testWidgets('HasanatStoreScreen & EventsMissionsScreen render cleanly with all categories at 360x740 (Aref Ruqaa)',
+  testWidgets(
+      'HasanatStoreScreen & EventsMissionsScreen render cleanly with all categories at 360x740 (Aref Ruqaa)',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     await tester.binding.setSurfaceSize(const Size(360, 740));
 
     await tester.pumpWidget(_wrapWithProviders(const HasanatStoreScreen()));
     await tester.pump(const Duration(milliseconds: 250));
-    expect(find.textContaining('متجر السكنات'), findsWidgets);
+    expect(find.text('سوق المقتنيات'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     for (final cat in StoreItemCategory.values) {
-      final chip = find.text(cat.arabicLabel);
+      final chip = find.descendant(
+        of: find.byType(ParadiseChip),
+        matching: find.text(cat.arabicLabel),
+      );
+      expect(chip, findsOneWidget,
+          reason: 'Store category chip ${cat.name} was not found');
       await tester.ensureVisible(chip);
       await tester.pump(const Duration(milliseconds: 100));
       await tester.tap(chip);
@@ -554,21 +608,21 @@ void main() {
 
     await tester.pumpWidget(_wrapWithProviders(const EventsMissionsScreen()));
     await tester.pump(const Duration(milliseconds: 250));
-    expect(find.textContaining('المهام والأحداث'), findsWidgets);
+    expect(find.text('المهمات والأحداث'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
-    final eventsToggle = find.textContaining('الأحداث (');
-    if (eventsToggle.evaluate().isNotEmpty) {
-      await tester.tap(eventsToggle.first);
-      await tester.pump(const Duration(milliseconds: 200));
-      expect(tester.takeException(), isNull);
-    }
+    final eventsToggle = find.text('الأحداث');
+    expect(eventsToggle, findsOneWidget);
+    await tester.tap(eventsToggle);
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });
 
-  testWidgets('FirdawsBrandLogo, FirdawsPortraitAvatar & ArenaLiveEventsOverlay render accurately without emoji fallbacks',
+  testWidgets(
+      'FirdawsBrandLogo, FirdawsPortraitAvatar & ArenaLiveEventsOverlay render accurately without emoji fallbacks',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     await tester.binding.setSurfaceSize(const Size(390, 844));
@@ -647,7 +701,8 @@ void main() {
     await tester.pump();
   });
 
-  testWidgets('Zero RenderFlex overflow across core & upgraded screens at narrow 360x740 with Aref Ruqaa font',
+  testWidgets(
+      'Zero RenderFlex overflow across core & upgraded screens at narrow 360x740 with Aref Ruqaa font',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     await tester.binding.setSurfaceSize(const Size(360, 740));
@@ -684,7 +739,8 @@ void main() {
       expect(
         err,
         isNull,
-        reason: '${entry.key} threw exception/overflow at 360x740 (Aref Ruqaa): $err',
+        reason:
+            '${entry.key} threw exception/overflow at 360x740 (Aref Ruqaa): $err',
       );
     }
 
@@ -692,7 +748,8 @@ void main() {
     await tester.pump();
   });
 
-  test('Wallpaper70Catalog has 70 verified image assets, 7 WAV SFX exist, and FontCatalog has 20 selectable Cairo-first fonts',
+  test(
+      'Wallpaper70Catalog has 70 verified image assets, 7 WAV SFX exist, and FontCatalog has 20 selectable Cairo-first fonts',
       () async {
     TestWidgetsFlutterBinding.ensureInitialized();
     SharedPreferences.setMockInitialValues({});
@@ -728,12 +785,17 @@ void main() {
     expect(FontCatalog.allFonts.first.family, 'Cairo');
     expect(SettingsProvider().selectedFont, 'Cairo');
 
-    // Arena 4K backdrops include Islamic mosque & heritage landmarks and map all 30 games
+    // The 56-entry backdrop registry intentionally mixes local and managed-storage assets.
+    final backdrops = Arena4KStageAssets.allBackdrops;
+    expect(backdrops.length, 56);
+    expect(backdrops.toSet().length, 56);
     expect(
-      Arena4KStageAssets.allBackdrops
-          .any((p) => p.startsWith('assets/images/themes/')),
+      backdrops.every((path) =>
+          path.startsWith('assets/') || path.startsWith('/manus-storage/')),
       isTrue,
     );
+    expect(backdrops.any((path) => path.startsWith('assets/')), isTrue);
+    expect(backdrops.any((path) => path.startsWith('/manus-storage/')), isTrue);
     for (final g in ArenaGamesCatalog.allGames) {
       final resolved = Arena4KStageAssets.backdropForGame(g, worldIndex: 0);
       expect(resolved, isNotEmpty);
@@ -741,29 +803,16 @@ void main() {
     }
   });
 
-  testWidgets('JannatiScreen Rivers modal renders wide horizontal river titles (no 1-char vertical wrap), stats bar stays unshaken, and Wallpaper70PickerSheet works cleanly',
+  testWidgets(
+      'JannatiScreen Rivers modal renders wide horizontal river titles (no 1-char vertical wrap), stats bar stays unshaken, and Wallpaper70PickerSheet works cleanly',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     await tester.binding.setSurfaceSize(const Size(360, 740));
 
-    await tester.pumpWidget(_wrapWithProviders(const JannatiScreen(), fontFamily: 'Cairo'));
+    final tabRequest = ValueNotifier<int?>(2);
+    await tester.pumpWidget(_wrapWithProviders(JannatiScreen(tabRequestNotifier: tabRequest), fontFamily: 'Cairo'));
     await tester.pump(const Duration(milliseconds: 300));
     expect(tester.takeException(), isNull);
-
-    // Switch to 'أطلس الجنة' tab, then select 'الأنهار والعيون'
-    final atlasTab = find.text('أطلس الجنة');
-    if (atlasTab.evaluate().isEmpty) {
-      await tester.scrollUntilVisible(
-        atlasTab,
-        120,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.pump(const Duration(milliseconds: 200));
-    }
-    expect(atlasTab, findsWidgets);
-    await tester.ensureVisible(atlasTab.first);
-    await tester.tap(atlasTab.first);
-    await tester.pump(const Duration(milliseconds: 350));
 
     final riversChip = find.textContaining('الأنهار');
     if (riversChip.evaluate().isEmpty) {
@@ -792,7 +841,8 @@ void main() {
     // Open Wallpaper70PickerSheet and verify it renders cleanly at 360x740
     await tester.pumpWidget(
       _wrapWithProviders(
-        const Scaffold(body: Wallpaper70PickerSheet(initialTarget: WallpaperTarget.both)),
+        const Scaffold(
+            body: Wallpaper70PickerSheet(initialTarget: WallpaperTarget.both)),
         fontFamily: 'Cairo',
       ),
     );
@@ -804,7 +854,8 @@ void main() {
     await tester.pump();
   });
 
-  testWidgets('All 8 Arena3DGameStage engine archetypes render cleanly with ArenaStageFxScope & Islamic 4K backdrops at 360x740',
+  testWidgets(
+      'All 8 Arena3DGameStage engine archetypes render cleanly with ArenaStageFxScope & Islamic 4K backdrops at 360x740',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     await tester.binding.setSurfaceSize(const Size(360, 740));

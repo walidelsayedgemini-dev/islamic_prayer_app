@@ -1,11 +1,9 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'package:adhan/adhan.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../models/backgrounds_500_catalog.dart';
 import '../models/events_missions_catalog.dart';
 import '../models/millionaire/millionaire_models.dart';
 import '../models/millionaire/millionaire_question_bank.dart';
@@ -18,8 +16,7 @@ import '../services/arena_sfx_service.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/firdaws_3d_ui.dart';
 import '../widgets/firdaws_portrait_avatar.dart';
-import '../widgets/firdaws_resilient_image.dart';
-import '../widgets/real_mosque_background.dart';
+import '../widgets/paradise_ui.dart';
 import 'hasanat_store_screen.dart';
 
 enum MillionairePlayMode { vsAiRivals, dualPlayerLocal, familyChallenge }
@@ -38,10 +35,7 @@ class MillionaireQuizScreen extends StatefulWidget {
   State<MillionaireQuizScreen> createState() => _MillionaireQuizScreenState();
 }
 
-class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _stageAnim;
-
+class _MillionaireQuizScreenState extends State<MillionaireQuizScreen> {
   // إعدادات المسابقة
   bool _inLobby = true;
   MillionairePlayMode _playMode = MillionairePlayMode.vsAiRivals;
@@ -108,10 +102,6 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
     super.initState();
     _playMode = widget.initialMode;
     _selectedFamilyRivalId = widget.initialRivalId;
-    _stageAnim = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 12),
-    )..repeat();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -135,7 +125,6 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
       t.cancel();
     }
     _pendingTimers.clear();
-    _stageAnim.dispose();
     _p1NameCtrl.dispose();
     _p2NameCtrl.dispose();
     super.dispose();
@@ -217,9 +206,7 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
   }
 
   void _onSelectOption(int idx) {
-    if (_answerRevealed ||
-        _matchFinished ||
-        _eliminatedOptions.contains(idx)) {
+    if (_answerRevealed || _matchFinished || _eliminatedOptions.contains(idx)) {
       return;
     }
     _countdownTimer?.cancel();
@@ -319,7 +306,8 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
     if (_playMode == MillionairePlayMode.dualPlayerLocal) return;
     final rng = math.Random(rungIndex * 97 + DateTime.now().millisecond);
     final penalty = rungIndex * 0.022;
-    final hitChance = (_selectedAiRival.accuracyRate - penalty).clamp(0.35, 0.94);
+    final hitChance =
+        (_selectedAiRival.accuracyRate - penalty).clamp(0.35, 0.94);
     if (rng.nextDouble() <= hitChance && _aiRivalStep == rungIndex) {
       _aiRivalStep++;
       _aiRivalScore = MillionaireLadderConfig.rungs[rungIndex].amount;
@@ -327,6 +315,11 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
   }
 
   void _advanceNextRung({required bool wasCorrect}) {
+    if (!mounted || _matchFinished) return;
+    if (_currentRungIndex >= _questions.length - 1) {
+      _finalizeMatch();
+      return;
+    }
     setState(() {
       _currentRungIndex++;
       _lockedOptionIndex = null;
@@ -367,8 +360,9 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
         : _p1NameCtrl.text.trim();
 
     if (_playMode == MillionairePlayMode.dualPlayerLocal) {
-      final p2Name =
-          _p2NameCtrl.text.trim().isEmpty ? 'اللاعب ٢' : _p2NameCtrl.text.trim();
+      final p2Name = _p2NameCtrl.text.trim().isEmpty
+          ? 'اللاعب ٢'
+          : _p2NameCtrl.text.trim();
       final outcome = famProv.recordDualPlayerMatch(
         player1Name: userName,
         player1Score: _p1Score,
@@ -438,12 +432,12 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
           ? 'تحدي من سيربح المليون'
           : 'استوديو المليون (${_selectedAiRival.name})',
       userScore: (userStepScore ~/ 100) + (_currentRungIndex * 10),
-      rivalScore: won ? (rivalCompareScore ~/ 200) : (rivalCompareScore ~/ 100) + 150,
+      rivalScore:
+          won ? (rivalCompareScore ~/ 200) : (rivalCompareScore ~/ 100) + 150,
       forceWonIfTie: won,
     );
 
-    final rewardPts =
-        25 + (_currentRungIndex * 12) + (won ? 80 : 10);
+    final rewardPts = 25 + (_currentRungIndex * 12) + (won ? 80 : 10);
     await jannatiProv.recordArenaKnowledgeReward(
       'مسابقة من سيربح المليون (المرحلة ${_currentRungIndex + 1})',
       rewardPts,
@@ -482,9 +476,7 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
     HapticFeedback.selectionClick();
     ArenaSfxService.instance.playTap();
     final q = _questions[_currentRungIndex];
-    final wrongIndices = [0, 1, 2, 3]
-        .where((i) => i != q.correctIndex)
-        .toList()
+    final wrongIndices = [0, 1, 2, 3].where((i) => i != q.correctIndex).toList()
       ..shuffle();
     setState(() {
       _used5050 = true;
@@ -536,13 +528,15 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
           ),
           title: const Row(
             children: [
-              Text('📞 ', style: TextStyle(fontSize: 22)),
+              Text('📞 ', style: TextStyle(fontSize: FirdawsType.headline)),
               Flexible(
                 child: Text(
                   'اتصال بالشيخ الحكيم',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
+                  style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: FirdawsType.section),
                 ),
               ),
             ],
@@ -553,7 +547,7 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
             children: [
               const Text(
                 '«السلام عليكم ورحمة الله! بعد تدقيق السؤال أرى بإذن الله أن الإجابة الأرجح هي:»',
-                style: TextStyle(fontSize: 13.5, height: 1.5),
+                style: TextStyle(fontSize: FirdawsType.label, height: 1.5),
               ),
               const SizedBox(height: 12),
               Firdaws3DCard(
@@ -567,7 +561,7 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
                       'الخيار (${letters[suggestedIndex]}): ${q.options[suggestedIndex]}',
                       style: const TextStyle(
                         fontWeight: FontWeight.w900,
-                        fontSize: 14,
+                        fontSize: FirdawsType.label,
                         color: Color(0xFF10B981),
                       ),
                     ),
@@ -575,7 +569,7 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
                     Text(
                       'نسبة الثقة العلمية: $confidence٪',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: FirdawsType.caption,
                         color: firdawsCrispSecondaryText(palette),
                       ),
                     ),
@@ -640,7 +634,8 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
           ),
           title: const Text(
             '📊 تصويت الجمهور المباشر',
-            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
+            style: TextStyle(
+                fontWeight: FontWeight.w900, fontSize: FirdawsType.section),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -662,7 +657,7 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
                         Text(
                           '$pct٪',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: FirdawsType.caption,
                             fontWeight: FontWeight.w900,
                             color: col,
                           ),
@@ -692,7 +687,7 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
                           letters[i],
                           style: const TextStyle(
                             fontWeight: FontWeight.w900,
-                            fontSize: 14,
+                            fontSize: FirdawsType.label,
                           ),
                         ),
                       ],
@@ -721,133 +716,129 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
       builder: (_) => Directionality(
         textDirection: TextDirection.rtl,
         child: Container(
-          height: MediaQuery.of(context).size.height * 0.78,
+          height: MediaQuery.sizeOf(context).height * .86,
           decoration: BoxDecoration(
-            color: firdaws3DSurfaceColor(palette),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border.all(
-              color: const Color(0xFF38BDF8).withOpacity(0.4),
-            ),
+            color: palette.scaffoldColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+            border: Border.all(color: palette.dividerColor),
           ),
-          child: Column(
-            children: [
-              const SizedBox(height: 12),
-              Container(
-                width: 44,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: palette.dividerColor,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                '🪜 سُلّم المليون (١٥ محطة ذهبية)',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 10),
-              Expanded(
-                child: ListView.builder(
+          clipBehavior: Clip.antiAlias,
+          child: SafeArea(
+              top: false,
+              child: Column(children: [
+                Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+                    child: Container(
+                        width: 42,
+                        height: 4,
+                        decoration: BoxDecoration(
+                            color: palette.dividerColor,
+                            borderRadius: BorderRadius.circular(6)))),
+                Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: ParadiseHero(
+                      title: 'سُلّم الجوائز',
+                      subtitle:
+                          '١٥ محطة للتقدّم، مع محطات أمان تحفظ ما وصلت إليه.',
+                      imageAsset: Theme.of(context)
+                          .extension<FirdawsNatureLook>()
+                          ?.sceneryAsset,
+                      minHeight: 142,
+                    )),
+                const SizedBox(height: 10),
+                Expanded(
+                    child: ListView.builder(
                   reverse: true,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
                   itemCount: MillionaireLadderConfig.rungs.length,
-                  itemBuilder: (_, idx) {
-                    final rung = MillionaireLadderConfig.rungs[idx];
-                    final isCurrent = idx == _currentRungIndex;
-                    final passed = idx < _currentRungIndex;
-                    final rivalHere = _playMode == MillionairePlayMode.vsAiRivals &&
-                        _aiRivalStep == idx + 1;
+                  itemBuilder: (_, index) {
+                    final rung = MillionaireLadderConfig.rungs[index];
+                    final current = index == _currentRungIndex;
+                    final passed = index < _currentRungIndex;
+                    final rivalHere =
+                        _playMode == MillionairePlayMode.vsAiRivals &&
+                            _aiRivalStep == index + 1;
+                    final tone = current
+                        ? palette.accentColor
+                        : (passed
+                            ? const Color(0xFF16835D)
+                            : palette.dividerColor);
                     return Container(
-                      margin: const EdgeInsets.only(bottom: 6),
+                      margin: const EdgeInsets.only(bottom: 9),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
+                          horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        gradient: isCurrent
-                            ? const LinearGradient(
-                                colors: [Color(0xFF0EA5E9), Color(0xFF6366F1)],
-                              )
-                            : null,
-                        color: isCurrent
-                            ? null
-                            : passed
-                                ? const Color(0xFF10B981).withOpacity(0.14)
-                                : (rung.isSafeHaven
-                                    ? const Color(0xFF38BDF8).withOpacity(0.10)
-                                    : palette.textPrimary.withOpacity(0.04)),
+                        color: current
+                            ? palette.elevatedCardColor
+                            : palette.cardColor,
+                        borderRadius: BorderRadius.circular(17),
                         border: Border.all(
-                          color: isCurrent
-                              ? Colors.white.withOpacity(0.8)
-                              : (rung.isSafeHaven
-                                  ? const Color(0xFF38BDF8).withOpacity(0.45)
-                                  : palette.dividerColor.withOpacity(0.2)),
+                            color: current
+                                ? palette.accentColor
+                                : palette.dividerColor,
+                            width: current ? 1.6 : 1),
+                      ),
+                      child: Row(children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: tone.withOpacity(.12),
+                              border: Border.all(color: tone.withOpacity(.55))),
+                          child: Center(
+                              child: Text('${rung.step}',
+                                  style: TextStyle(
+                                      color: tone,
+                                      fontWeight: FontWeight.w900))),
                         ),
-                      ),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 13,
-                            backgroundColor: isCurrent
-                                ? Colors.white.withOpacity(0.25)
-                                : palette.textPrimary.withOpacity(0.08),
-                            child: Text(
-                              '${rung.step}',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w900,
-                                color: isCurrent
-                                    ? Colors.white
-                                    : palette.textPrimary,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              rung.formattedAmount,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w900,
-                                fontSize: 14,
-                                color: isCurrent
-                                    ? Colors.white
-                                    : (passed
-                                        ? const Color(0xFF10B981)
-                                        : palette.textPrimary),
-                              ),
-                            ),
-                          ),
-                          if (rung.isSafeHaven)
-                            const Text(
-                              'محطة أمان',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF38BDF8),
-                              ),
-                            ),
-                          if (rivalHere) ...[
-                            const SizedBox(width: 8),
-                            FirdawsPortraitAvatar(
-                              entityId: _selectedAiRival.id,
-                              displayName: _selectedAiRival.name,
-                              size: 22,
-                            ),
-                            const SizedBox(width: 4),
-                            const Text(
-                              'المنافس',
-                              style: TextStyle(fontSize: 11),
-                            ),
-                          ],
-                        ],
-                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                              Text(rung.formattedAmount,
+                                  softWrap: true,
+                                  style: TextStyle(
+                                      color: palette.textPrimary,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: FirdawsType.body)),
+                              if (rung.isSafeHaven || rivalHere) ...[
+                                const SizedBox(height: 5),
+                                Wrap(spacing: 8, runSpacing: 4, children: [
+                                  if (rung.isSafeHaven)
+                                    _stageTag(
+                                        'محطة أمان', const Color(0xFF16835D)),
+                                  if (rivalHere)
+                                    Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          FirdawsPortraitAvatar(
+                                              entityId: _selectedAiRival.id,
+                                              displayName:
+                                                  _selectedAiRival.name,
+                                              size: 22),
+                                          const SizedBox(width: 5),
+                                          Text('المنافس',
+                                              style: TextStyle(
+                                                  color: palette.textSecondary,
+                                                  fontSize:
+                                                      FirdawsType.caption)),
+                                        ]),
+                                ]),
+                              ],
+                            ])),
+                        if (current)
+                          Icon(Icons.my_location_rounded,
+                              color: palette.accentColor, size: 20)
+                        else if (passed)
+                          const Icon(Icons.check_circle_outline_rounded,
+                              color: Color(0xFF16835D), size: 20),
+                      ]),
                     );
                   },
-                ),
-              ),
-            ],
-          ),
+                )),
+              ])),
         ),
       ),
     );
@@ -857,50 +848,16 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsProvider>();
     final palette = settings.currentPalette;
-    final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
-    final isNight = settings.isNightEffective;
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: palette.scaffoldColor,
-        body: Stack(
-          children: [
-            Positioned.fill(
-              child: settings.selectedAppWallpaperAsset != null
-                  ? RealMosqueBackground(
-                      currentPrayer: isNight ? Prayer.isha : Prayer.dhuhr,
-                      themeOption: themeOption,
-                      isNightMode: isNight,
-                      customAssetOverride: settings.selectedAppWallpaperAsset,
-                      dimFactor: 0.90,
-                    )
-                  : FirdawsResilientImage.entry(
-                      Background500Catalog.forMillionaireSection(0),
-                    ),
-            ),
-            // خلفية استوديو 3D تفاعلية متحركة بأضواء المسرح فوق صورة 4K
-            Positioned.fill(
-              child: AnimatedBuilder(
-                animation: _stageAnim,
-                builder: (_, __) => CustomPaint(
-                  painter: _Millionaire3DStudioPainter(
-                    phase: _stageAnim.value,
-                    isDark: palette.isDark,
-                    accent: firdawsModernAccent(palette),
-                    tension:
-                        _inLobby ? 0.2 : (1.0 - _secondsLeft / _maxSecondsPerQuestion),
-                  ),
-                ),
-              ),
-            ),
-            SafeArea(
-              child: _inLobby
-                  ? _buildLobbyView(palette)
-                  : (_matchFinished
-                      ? _buildPostMatchView(palette)
-                      : _buildStageQuizView(palette)),
-            ),
-          ],
+        body: SafeArea(
+          child: _inLobby
+              ? _buildLobbyView(palette)
+              : (_matchFinished
+                  ? _buildPostMatchView(palette)
+                  : _buildStageQuizView(palette)),
         ),
       ),
     );
@@ -910,408 +867,341 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
     final fam = context.watch<FamilyChallengeProvider>();
     final categories = MillionaireQuestionBank.categories;
     final secondary = firdawsCrispSecondaryText(palette);
-    final accent = firdawsModernAccent(palette);
+    final scenery =
+        Theme.of(context).extension<FirdawsNatureLook>()?.sceneryAsset;
+    final ctaTextColor =
+        ThemeData.estimateBrightnessForColor(palette.primaryColor) ==
+                Brightness.dark
+            ? Colors.white
+            : const Color(0xFF102019);
 
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-          child: Row(
-            children: [
-              Firdaws3DPill(
-                label: 'رجوع',
-                icon: Icons.arrow_back_ios_new_rounded,
-                accentColor: const Color(0xFF38BDF8),
+          padding: const EdgeInsetsDirectional.fromSTEB(8, 4, 12, 4),
+          child: Row(children: [
+            IconButton(
+              tooltip: 'العودة',
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.arrow_back_rounded),
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+                child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('مسابقة المليون',
+                    style: TextStyle(
+                        color: palette.textPrimary,
+                        fontSize: FirdawsType.title,
+                        fontWeight: FontWeight.w900)),
+                Text('اختر منافستك ثم ابدأ الجولة',
+                    style: TextStyle(
+                        color: secondary, fontSize: FirdawsType.caption)),
+              ],
+            )),
+            Builder(builder: (ctx) {
+              int balance = 0;
+              try {
+                balance = ctx.watch<HasanatProvider>().hasanatBalance;
+              } catch (_) {}
+              return Firdaws3DPill(
+                label: '$balance حسنة',
+                icon: Icons.toll_rounded,
+                accentColor: const Color(0xFFD0A94A),
                 palette: palette,
-                onTap: () => Navigator.pop(context),
-              ),
-              const SizedBox(width: 8),
-              Builder(
-                builder: (ctx) {
-                  int bal = 0;
-                  try {
-                    bal = ctx.watch<HasanatProvider>().hasanatBalance;
-                  } catch (_) {}
-                  return Firdaws3DPill(
-                    label: '$bal 🪙',
-                    accentColor: const Color(0xFFF59E0B),
-                    palette: palette,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const HasanatStoreScreen(),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Align(
-                  alignment: AlignmentDirectional.centerEnd,
-                  child: Firdaws3DPill(
-                    label: '${MillionaireQuestionBank.totalCount} سؤال حقيقي',
-                    icon: Icons.auto_awesome_rounded,
-                    palette: palette,
-                    accentColor: const Color(0xFF10B981),
-                  ),
-                ),
-              ),
-            ],
-          ),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const HasanatStoreScreen())),
+              );
+            }),
+          ]),
         ),
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              // بطاقة العنوان 4K
-              Firdaws4KCardShell(
-                backdrop: Background500Catalog.forMillionaireSection(1),
-                isDark: palette.isDark,
-                borderColor: const Color(0xFF38BDF8).withOpacity(0.58),
-                padding: const EdgeInsets.all(18),
-                borderRadius: 22,
-                imageOpacity: 0.52,
-                child: Column(
+            child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+          children: [
+            Center(
+                child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 980),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text('💎', style: TextStyle(fontSize: 44)),
-                    const SizedBox(height: 6),
-                    Text(
-                      'من سيربح المليون — الاستوديو',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.w900,
-                        color: palette.textPrimary,
-                      ),
+                    ParadiseHero(
+                      title: 'من سيربح المليون؟',
+                      subtitle:
+                          'رحلة أسئلة من ١٥ محطة؛ تقدّم بثبات واختر الإجابة التي تثق بها.',
+                      imageAsset: scenery,
+                      minHeight: 244,
+                      footer: const Wrap(spacing: 8, runSpacing: 8, children: [
+                        ParadiseChip(
+                            label: '١٥ محطة', icon: Icons.stairs_rounded),
+                        ParadiseChip(
+                            label: '٤ وسائل مساعدة',
+                            icon: Icons.lightbulb_outline_rounded),
+                        ParadiseChip(
+                            label: 'ثلاثة أنماط', icon: Icons.groups_rounded),
+                      ]),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'بنك عملاق من ١,٠٠٠ سؤال إسلامي وثقافي فريد بدون تكرار، عبر ١٥ محطة حتى المليون مع ٤ وسائل مساعدة، ومنافسين افتراضيين، ومشاركة ٢ لاعبين!',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        height: 1.5,
-                        color: secondary,
-                      ),
+                    const SizedBox(height: 28),
+                    ParadiseSection(
+                      title: 'اختر طريقة المنافسة',
+                      child: Column(children: [
+                        _buildModeSelectorCard(
+                            palette: palette,
+                            mode: MillionairePlayMode.vsAiRivals,
+                            title: 'منافس افتراضي',
+                            subtitle: 'اختر متسابقًا وتابع تقدمه مع محطاتك.',
+                            icon: '🤖',
+                            color: const Color(0xFF4B8E7B)),
+                        const SizedBox(height: 10),
+                        _buildModeSelectorCard(
+                            palette: palette,
+                            mode: MillionairePlayMode.dualPlayerLocal,
+                            title: 'لاعبان على جهاز واحد',
+                            subtitle:
+                                'تناوبا على الإجابة، واجمعا النقاط خلال الجولة.',
+                            icon: '🤝',
+                            color: const Color(0xFF4B8E7B)),
+                        const SizedBox(height: 10),
+                        _buildModeSelectorCard(
+                            palette: palette,
+                            mode: MillionairePlayMode.familyChallenge,
+                            title: 'تحدي العائلة والصحبة',
+                            subtitle:
+                                'اختر منافسًا من قائمتك وسجّل نتيجة التحدي.',
+                            icon: '🏆',
+                            color: const Color(0xFF8A6A9D)),
+                      ]),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              // اختيار نمط اللعب
-              Text(
-                '١) اختر نظام المنافسة',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  color: palette.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              _buildModeSelectorCard(
-                palette: palette,
-                mode: MillionairePlayMode.vsAiRivals,
-                title: 'منافسة المتسابقين الافتراضيين',
-                subtitle: 'سابق متنافسين افتراضيين على سلم المليون لحظة بلحظة',
-                icon: '🤖',
-                color: const Color(0xFF38BDF8),
-              ),
-              const SizedBox(height: 8),
-              _buildModeSelectorCard(
-                palette: palette,
-                mode: MillionairePlayMode.dualPlayerLocal,
-                title: 'مشاركة ٢ لاعبين في نفس اللعبة (٢ ضد ٢)',
-                subtitle: 'تحدٍّ ثنائي متناوب على نفس الشاشة مع حصد النقاط وعبارات الفوز/الخسارة',
-                icon: '🤝',
-                color: const Color(0xFF10B981),
-              ),
-              const SizedBox(height: 8),
-              _buildModeSelectorCard(
-                palette: palette,
-                mode: MillionairePlayMode.familyChallenge,
-                title: 'تحدي العائلة والصحبة المباشر',
-                subtitle: 'نتيجتك تُسجّل في سباق «مين بطل أكتر؟» وتفتح عبارة من الـ ٨٠٠ عبارة!',
-                icon: '🏆',
-                color: const Color(0xFFA855F7),
-              ),
-              const SizedBox(height: 14),
-
-              // إعدادات خاصة بالنمط المختار
-              if (_playMode == MillionairePlayMode.vsAiRivals) ...[
-                Text(
-                  '٢) اختر منافسك الافتراضي في الاستوديو',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    color: palette.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: MillionaireLadderConfig.virtualRivals
-                      .asMap()
-                      .entries
-                      .map((entry) {
-                    final rIdx = entry.key;
-                    final rival = entry.value;
-                    final sel = rival.id == _selectedAiRival.id;
-                    return Firdaws4KCardShell(
-                      backdrop: Background500Catalog.forMillionaireSection(
-                          6 + (rIdx % 5)),
-                      isDark: palette.isDark,
-                      borderColor: sel
-                          ? const Color(0xFF38BDF8).withOpacity(0.85)
-                          : palette.dividerColor.withOpacity(0.45),
-                      borderRadius: 16,
-                      imageOpacity: sel ? 0.52 : 0.36,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
-                      onTap: () => setState(() => _selectedAiRival = rival),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          FirdawsPortraitAvatar(
-                            entityId: rival.id,
-                            displayName: rival.name,
-                            size: 38,
-                            ringColor: sel ? const Color(0xFF38BDF8) : null,
-                            isHighlighted: sel,
-                          ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  rival.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 12.5,
-                                    color: sel
-                                        ? const Color(0xFF38BDF8)
-                                        : palette.textPrimary,
-                                  ),
-                                ),
-                                Text(
-                                  'دقة ${(rival.accuracyRate * 100).round()}٪',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                      fontSize: 10.5, color: secondary),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                    const SizedBox(height: 26),
+                    if (_playMode == MillionairePlayMode.vsAiRivals)
+                      ParadiseSection(
+                        title: 'اختر منافسك',
+                        child: LayoutBuilder(builder: (context, constraints) {
+                          final width = constraints.maxWidth < 560
+                              ? constraints.maxWidth
+                              : (constraints.maxWidth - 16) / 2;
+                          return Wrap(
+                            spacing: 16,
+                            runSpacing: 12,
+                            children: MillionaireLadderConfig.virtualRivals
+                                .map((rival) {
+                              final selected = rival.id == _selectedAiRival.id;
+                              return SizedBox(
+                                  width: width,
+                                  child: Material(
+                                    color: selected
+                                        ? palette.elevatedCardColor
+                                        : palette.cardColor,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                      side: BorderSide(
+                                          color: selected
+                                              ? palette.accentColor
+                                              : palette.dividerColor),
+                                    ),
+                                    clipBehavior: Clip.antiAlias,
+                                    child: InkWell(
+                                      onTap: () => setState(
+                                          () => _selectedAiRival = rival),
+                                      child: Padding(
+                                          padding: const EdgeInsets.all(14),
+                                          child: Row(children: [
+                                            FirdawsPortraitAvatar(
+                                                entityId: rival.id,
+                                                displayName: rival.name,
+                                                size: 44,
+                                                ringColor: selected
+                                                    ? palette.accentColor
+                                                    : null,
+                                                isHighlighted: selected),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                                child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                  Text(rival.name,
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: TextStyle(
+                                                          color: palette
+                                                              .textPrimary,
+                                                          fontWeight:
+                                                              FontWeight.w800,
+                                                          fontSize: FirdawsType
+                                                              .body)),
+                                                  const SizedBox(height: 3),
+                                                  Text(
+                                                      'دقة ${(rival.accuracyRate * 100).round()}٪',
+                                                      style: TextStyle(
+                                                          color: secondary,
+                                                          fontSize: FirdawsType
+                                                              .caption)),
+                                                ])),
+                                            Icon(
+                                                selected
+                                                    ? Icons.check_circle_rounded
+                                                    : Icons.circle_outlined,
+                                                color: selected
+                                                    ? palette.accentColor
+                                                    : palette.textMuted),
+                                          ])),
+                                    ),
+                                  ));
+                            }).toList(),
+                          );
+                        }),
+                      )
+                    else if (_playMode == MillionairePlayMode.dualPlayerLocal)
+                      ParadiseSection(
+                          title: 'أسماء اللاعبين',
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final fields = [
+                                TextField(
+                                    controller: _p1NameCtrl,
+                                    style:
+                                        TextStyle(color: palette.textPrimary),
+                                    decoration: InputDecoration(
+                                        labelText: 'اللاعب الأول',
+                                        filled: true,
+                                        fillColor: palette.cardColor,
+                                        border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(14)))),
+                                TextField(
+                                    controller: _p2NameCtrl,
+                                    style:
+                                        TextStyle(color: palette.textPrimary),
+                                    decoration: InputDecoration(
+                                        labelText: 'اللاعب الثاني',
+                                        filled: true,
+                                        fillColor: palette.cardColor,
+                                        border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(14)))),
+                              ];
+                              if (constraints.maxWidth < 460) {
+                                return Column(children: [
+                                  fields[0],
+                                  const SizedBox(height: 12),
+                                  fields[1]
+                                ]);
+                              }
+                              return Row(children: [
+                                Expanded(child: fields[0]),
+                                const SizedBox(width: 12),
+                                Expanded(child: fields[1])
+                              ]);
+                            },
+                          ))
+                    else
+                      ParadiseSection(
+                        title: 'اختر منافسًا من العائلة أو الصحبة',
+                        child: fam.members.isEmpty
+                            ? Container(
+                                padding: const EdgeInsets.all(18),
+                                decoration: BoxDecoration(
+                                    color: palette.cardColor,
+                                    borderRadius: BorderRadius.circular(18),
+                                    border: Border.all(
+                                        color: palette.dividerColor)),
+                                child: Row(children: [
+                                  Icon(Icons.people_outline_rounded,
+                                      color: palette.accentColor),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                      child: Text(
+                                          'لا توجد أسماء متاحة في القائمة بعد. يمكنك بدء الجولة، وسيُستخدم المنافس المحدد في إعدادات العائلة.',
+                                          style: TextStyle(
+                                              color: palette.textPrimary,
+                                              height: 1.45))),
+                                ]))
+                            : Wrap(
+                                spacing: 10,
+                                runSpacing: 10,
+                                children: fam.members.map((member) {
+                                  final selected = member.id ==
+                                      (_selectedFamilyRivalId ??
+                                          fam.selectedRivalId);
+                                  return ParadiseChip(
+                                    label: member.name,
+                                    icon: selected
+                                        ? Icons.check_circle_rounded
+                                        : Icons.person_outline_rounded,
+                                    selected: selected,
+                                    onTap: () {
+                                      setState(() =>
+                                          _selectedFamilyRivalId = member.id);
+                                      fam.selectRival(member.id);
+                                    },
+                                  );
+                                }).toList()),
                       ),
-                    );
-                  }).toList(),
-                ),
-              ] else if (_playMode == MillionairePlayMode.dualPlayerLocal) ...[
-                Firdaws4KCardShell(
-                  backdrop: Background500Catalog.forMillionaireSection(5),
-                  isDark: palette.isDark,
-                  borderColor: const Color(0xFF10B981).withOpacity(0.58),
-                  borderRadius: 18,
-                  imageOpacity: 0.46,
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'أسماء المتنافسَين (مشاركة ٢ في نفس اللعبة)',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 13.5,
-                          color: palette.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _p1NameCtrl,
-                              style: TextStyle(
-                                color: palette.textPrimary,
-                                fontSize: 13,
-                              ),
-                              decoration: InputDecoration(
-                                labelText: 'اللاعب الأول',
-                                labelStyle: TextStyle(color: secondary),
-                                filled: true,
-                                fillColor:
-                                    palette.textPrimary.withOpacity(0.05),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: TextField(
-                              controller: _p2NameCtrl,
-                              style: TextStyle(
-                                color: palette.textPrimary,
-                                fontSize: 13,
-                              ),
-                              decoration: InputDecoration(
-                                labelText: 'اللاعب الثاني',
-                                labelStyle: TextStyle(color: secondary),
-                                filled: true,
-                                fillColor:
-                                    palette.textPrimary.withOpacity(0.05),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ] else ...[
-                Text(
-                  '٢) اختر المنافس من العائلة والصحبة',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    color: palette.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: fam.members.map((m) {
-                    final sel = m.id == (_selectedFamilyRivalId ?? fam.selectedRivalId);
-                    return ChoiceChip(
-                      label: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: math.max(
-                              120.0, MediaQuery.of(context).size.width - 72.0),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                    const SizedBox(height: 26),
+                    ParadiseSection(
+                        title: 'حدّد مجال الأسئلة',
+                        child: Wrap(
+                          spacing: 9,
+                          runSpacing: 9,
                           children: [
-                            FirdawsPortraitAvatar(
-                              entityId: m.id,
-                              displayName: m.name,
-                              customPhotoBase64: m.customPhotoBase64,
-                              networkPhotoUrl: m.networkPhotoUrl,
-                              size: 22,
-                            ),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                m.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
+                            ParadiseChip(
+                                label:
+                                    'شامل · ${MillionaireQuestionBank.totalCount} سؤال',
+                                icon: Icons.auto_awesome_rounded,
+                                selected: _selectedCategory == null,
+                                onTap: () =>
+                                    setState(() => _selectedCategory = null)),
+                            ...categories.map((category) => ParadiseChip(
+                                label: category,
+                                selected: _selectedCategory == category,
+                                onTap: () => setState(
+                                    () => _selectedCategory = category))),
                           ],
-                        ),
-                      ),
-                      selected: sel,
-                      selectedColor: const Color(0xFFA855F7).withOpacity(0.28),
-                      onSelected: (_) {
-                        setState(() => _selectedFamilyRivalId = m.id);
-                        fam.selectRival(m.id);
-                      },
-                    );
-                  }).toList(),
-                ),
-              ],
-
-              const SizedBox(height: 14),
-              Text(
-                '٣) اختر مجال الأسئلة (١,٠٠٠ سؤال فريد)',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                  color: palette.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  ChoiceChip(
-                    label: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: math.max(
-                            120.0, MediaQuery.of(context).size.width - 72.0),
-                      ),
-                      child: const Text(
-                        '🌟 شامل (١,٠٠٠ سؤال)',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    selected: _selectedCategory == null,
-                    selectedColor: accent.withOpacity(0.28),
-                    onSelected: (_) => setState(() => _selectedCategory = null),
-                  ),
-                  ...categories.map(
-                    (cat) => ChoiceChip(
-                      label: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: math.max(
-                              120.0, MediaQuery.of(context).size.width - 72.0),
-                        ),
-                        child: Text(
-                          cat,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      selected: _selectedCategory == cat,
-                      selectedColor: accent.withOpacity(0.28),
-                      onSelected: (_) => setState(() => _selectedCategory = cat),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 22),
-
-              Firdaws3DButton(
-                baseColor: const Color(0xFF0EA5E9),
-                onPressed: _startMatch,
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.play_arrow_rounded,
-                        color: Colors.white, size: 26),
-                    SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        'دخول كرسي الاستوديو وبدء المليون',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 15.5,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
+                        )),
+                    const SizedBox(height: 18),
+                  ]),
+            )),
+          ],
+        )),
+        SafeArea(
+            top: false,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+              decoration: BoxDecoration(
+                  color: palette.cardColor,
+                  border: Border(top: BorderSide(color: palette.dividerColor))),
+              child: Center(
+                  child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 980),
+                child: SizedBox(
+                    width: double.infinity,
+                    child: Firdaws3DButton(
+                      baseColor: palette.primaryColor,
+                      onPressed: _startMatch,
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 16, horizontal: 14),
+                      child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.play_arrow_rounded,
+                                color: ctaTextColor, size: 25),
+                            const SizedBox(width: 8),
+                            Flexible(
+                                child: Text('ابدأ جولة المليون',
+                                    textAlign: TextAlign.center,
+                                    softWrap: true,
+                                    style: TextStyle(
+                                        color: ctaTextColor,
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: FirdawsType.body))),
+                          ]),
+                    )),
+              )),
+            )),
       ],
     );
   }
@@ -1325,48 +1215,59 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
     required Color color,
   }) {
     final selected = _playMode == mode;
-    return Firdaws4KCardShell(
-      backdrop: Background500Catalog.forMillionaireSection(2 + mode.index),
-      isDark: palette.isDark,
-      borderColor: selected
-          ? color.withOpacity(0.85)
-          : palette.dividerColor.withOpacity(0.42),
-      borderRadius: 18,
-      imageOpacity: selected ? 0.54 : 0.38,
-      onTap: () => setState(() => _playMode = mode),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Row(
-        children: [
-          Text(icon, style: const TextStyle(fontSize: 28)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 13.5,
-                    color: selected ? color : palette.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    color: firdawsCrispSecondaryText(palette),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Icon(
-            selected ? Icons.check_circle_rounded : Icons.circle_outlined,
-            color: selected ? color : palette.dividerColor,
-          ),
-        ],
+    final glyph = icon == '🤖'
+        ? Icons.psychology_alt_rounded
+        : (icon == '🤝' ? Icons.people_alt_rounded : Icons.diversity_3_rounded);
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: Material(
+        color: selected ? palette.elevatedCardColor : palette.cardColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+              color: selected ? color : palette.dividerColor,
+              width: selected ? 1.6 : 1),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => setState(() => _playMode = mode),
+          child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(children: [
+                Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                        color: color.withOpacity(.12), shape: BoxShape.circle),
+                    child: Icon(glyph, color: color, size: 24)),
+                const SizedBox(width: 14),
+                Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      Text(title,
+                          softWrap: true,
+                          style: TextStyle(
+                              color: selected ? color : palette.textPrimary,
+                              fontWeight: FontWeight.w900,
+                              fontSize: FirdawsType.body)),
+                      const SizedBox(height: 4),
+                      Text(subtitle,
+                          softWrap: true,
+                          style: TextStyle(
+                              color: palette.textSecondary,
+                              fontSize: FirdawsType.caption,
+                              height: 1.4)),
+                    ])),
+                const SizedBox(width: 8),
+                Icon(
+                    selected
+                        ? Icons.check_circle_rounded
+                        : Icons.circle_outlined,
+                    color: selected ? color : palette.textMuted),
+              ])),
+        ),
       ),
     );
   }
@@ -1376,532 +1277,623 @@ class _MillionaireQuizScreenState extends State<MillionaireQuizScreen>
     final rung = MillionaireLadderConfig.rungs[_currentRungIndex];
     final secondary = firdawsCrispSecondaryText(palette);
     final isUrgent = _secondsLeft <= 8;
+    final scenery =
+        Theme.of(context).extension<FirdawsNatureLook>()?.sceneryAsset;
     const letters = ['أ', 'ب', 'ج', 'د'];
 
-    return Column(
-      children: [
-        // الشريط العلوي
-        Padding(
-          padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
-          child: Row(
-            children: [
-              Firdaws3DPill(
-                label: 'انسحاب',
-                icon: Icons.exit_to_app_rounded,
-                palette: palette,
-                accentColor: const Color(0xFF10B981),
-                onTap: _walkAwayNow,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Center(
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(18),
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF0EA5E9), Color(0xFF6366F1)],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF38BDF8).withOpacity(0.35),
-                          blurRadius: 12,
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      'السؤال ${rung.step}/١٥ • ${rung.formattedAmount}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Firdaws3DPill(
-                label: 'السلم',
-                icon: Icons.stairs_rounded,
-                palette: palette,
-                accentColor: const Color(0xFF38BDF8),
-                onTap: () => _openLadderSheet(palette),
-              ),
-            ],
-          ),
-        ),
-
-        // لوحة المتنافسين الحية (الافتراضي أو لاعبين) + عداد الوقت
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Row(
-            children: [
-              if (_playMode == MillionairePlayMode.dualPlayerLocal) ...[
-                Expanded(
-                  child: _DualScoreChip(
-                    name: _p1NameCtrl.text.isEmpty ? 'اللاعب ١' : _p1NameCtrl.text,
-                    score: _p1Score,
-                    active: _activePlayerTurn == 1,
-                    color: const Color(0xFF38BDF8),
-                    palette: palette,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _DualScoreChip(
-                    name: _p2NameCtrl.text.isEmpty ? 'اللاعب ٢' : _p2NameCtrl.text,
-                    score: _p2Score,
-                    active: _activePlayerTurn == 2,
-                    color: const Color(0xFF10B981),
-                    palette: palette,
-                  ),
-                ),
-              ] else ...[
-                Expanded(
-                  child: Row(
-                    children: [
-                      FirdawsPortraitAvatar(
-                        entityId: _selectedAiRival.id,
-                        displayName: _selectedAiRival.name,
-                        size: 28,
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          '${_selectedAiRival.name} في محطة $_aiRivalStep',
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 11.5, color: secondary),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-              const SizedBox(width: 10),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  color: (isUrgent
-                          ? const Color(0xFFEF4444)
-                          : const Color(0xFF38BDF8))
-                      .withOpacity(0.18),
-                  border: Border.all(
-                    color: isUrgent
-                        ? const Color(0xFFEF4444)
-                        : const Color(0xFF38BDF8),
-                  ),
-                ),
-                child: Text(
-                  '⏱ $_secondsLeft ث',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 12.5,
-                    color: isUrgent
-                        ? const Color(0xFFEF4444)
-                        : const Color(0xFF38BDF8),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // أشرطة وسائل المساعدة الـ 4
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          child: Row(
-            children: [
-              Expanded(
-                child: _Lifeline3DChip(
-                  icon: '✂️',
-                  label: '٥٠:٥٠',
-                  used: _used5050,
-                  color: const Color(0xFF38BDF8),
-                  palette: palette,
-                  onTap: _use5050,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: _Lifeline3DChip(
-                  icon: '📞',
-                  label: 'اتصال',
-                  used: _usedCallFriend,
-                  color: const Color(0xFF10B981),
-                  palette: palette,
-                  onTap: () => _useCallScholar(palette),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: _Lifeline3DChip(
-                  icon: '📊',
-                  label: 'الجمهور',
-                  used: _usedAudiencePoll,
-                  color: const Color(0xFF8B5CF6),
-                  palette: palette,
-                  onTap: () => _useAudiencePoll(palette),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: _Lifeline3DChip(
-                  icon: '🔄',
-                  label: 'تبديل',
-                  used: _usedSwapQuestion,
-                  color: const Color(0xFFF43F5E),
-                  palette: palette,
-                  onTap: _useSwapQuestion,
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        Expanded(
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 4),
+        child: Row(children: [
+          Firdaws3DPill(
+              label: 'اترك الجولة',
+              icon: Icons.logout_rounded,
+              accentColor: palette.accentColor,
+              palette: palette,
+              onTap: _walkAwayNow),
+          const Spacer(),
+          Firdaws3DPill(
+              label: 'سُلّم الجوائز',
+              icon: Icons.stairs_rounded,
+              accentColor: palette.accentColor,
+              palette: palette,
+              onTap: () => _openLadderSheet(palette)),
+        ]),
+      ),
+      Expanded(child: LayoutBuilder(builder: (context, constraints) {
+        return Center(
+            child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1080),
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-            children: [
-              // بطاقة السؤال 4K
-              Firdaws4KCardShell(
-                backdrop: Background500Catalog.forMillionaireSection(
-                    13 + (_currentRungIndex % 4)),
-                isDark: palette.isDark,
-                borderColor: q.difficulty.color.withOpacity(0.70),
-                borderRadius: 22,
-                imageOpacity: 0.52,
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              children: [
+                ParadiseHero(
+                  title: 'المحطة ${rung.step} من ١٥',
+                  subtitle:
+                      '${rung.formattedAmount} • ${rung.isSafeHaven ? 'محطة أمان' : 'تابع تقدّمك نحو المحطة التالية'}',
+                  imageAsset: scenery,
+                  minHeight: 174,
+                  footer: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Flexible(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              color: q.difficulty.color.withOpacity(0.16),
-                            ),
-                            child: Text(
-                              '${q.category} • ${q.difficulty.arabicLabel}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                        Row(children: [
+                          Icon(Icons.hourglass_bottom_rounded,
+                              color: isUrgent
+                                  ? const Color(0xFFFFB8B8)
+                                  : const Color(0xFFE8D6A7),
+                              size: 19),
+                          const SizedBox(width: 7),
+                          Text('الوقت المتبقي للإجابة',
                               style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                color: q.difficulty.color,
-                              ),
-                            ),
-                          ),
-                        ),
-                        if (_guaranteedAmount > 0) ...[
-                          const SizedBox(width: 8),
-                          Text(
-                            'الأمان: $_guaranteedAmount',
-                            style: const TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF10B981),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      q.question,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 17.5,
-                        height: 1.55,
-                        fontWeight: FontWeight.w900,
-                        color: palette.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              // خيارات الأجوبة الـ 4 بستايل أزرار 3D مجسّمة
-              ...List.generate(4, (i) {
-                final eliminated = _eliminatedOptions.contains(i);
-                final isLocked = _lockedOptionIndex == i;
-                final isCorrect = i == q.correctIndex;
-
-                Color? cardGlow;
-                Color? letterColor;
-                if (_answerRevealed) {
-                  if (isCorrect) {
-                    cardGlow = const Color(0xFF10B981);
-                    letterColor = const Color(0xFF10B981);
-                  } else if (isLocked) {
-                    cardGlow = const Color(0xFFEF4444);
-                    letterColor = const Color(0xFFEF4444);
-                  }
-                } else if (isLocked) {
-                  cardGlow = const Color(0xFF6366F1);
-                  letterColor = const Color(0xFF6366F1);
-                }
-
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Opacity(
-                    opacity: eliminated ? 0.24 : 1.0,
-                    child: Firdaws4KCardShell(
-                      backdrop: Background500Catalog.forMillionaireSection(
-                          17 + (i % 2)),
-                      isDark: palette.isDark,
-                      borderColor: (cardGlow ?? palette.dividerColor)
-                          .withOpacity(cardGlow != null ? 0.85 : 0.45),
-                      borderRadius: 16,
-                      imageOpacity: cardGlow != null ? 0.52 : 0.34,
-                      onTap: eliminated ? null : () => _onSelectOption(i),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 14),
-                      child: Row(
-                        children: [
+                                  color: Colors.white.withOpacity(.94),
+                                  fontSize: FirdawsType.caption)),
+                          const Spacer(),
                           Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: (letterColor ?? const Color(0xFF38BDF8))
-                                  .withOpacity(0.18),
-                              border: Border.all(
-                                color: letterColor ?? const Color(0xFF38BDF8),
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                letters[i],
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  color: letterColor ?? const Color(0xFF38BDF8),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              q.options[i],
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: palette.textPrimary,
-                              ),
-                            ),
-                          ),
-                          if (_answerRevealed && isCorrect)
-                            const Icon(Icons.check_circle_rounded,
-                                color: Color(0xFF10B981))
-                          else if (_answerRevealed && isLocked && !isCorrect)
-                            const Icon(Icons.cancel_rounded,
-                                color: Color(0xFFEF4444)),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }),
-
-              // شرح تعليمي مختصر فور الكشف
-              if (_answerRevealed) ...[
-                const SizedBox(height: 6),
-                Firdaws4KCardShell(
-                  backdrop: Background500Catalog.forMillionaireSection(19),
-                  isDark: palette.isDark,
-                  borderColor: const Color(0xFF10B981).withOpacity(0.65),
-                  borderRadius: 16,
-                  imageOpacity: 0.46,
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    '💡 الفائدة: ${q.explanation}',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      height: 1.5,
-                      color: palette.textPrimary,
-                    ),
-                  ),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                  color: isUrgent
+                                      ? const Color(0xFFB42332)
+                                      : Colors.white.withOpacity(.16),
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(
+                                      color: isUrgent
+                                          ? const Color(0xFFFFC1C1)
+                                          : Colors.white.withOpacity(.35))),
+                              child: Text('$_secondsLeft ث',
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: FirdawsType.body))),
+                        ]),
+                        const SizedBox(height: 10),
+                        ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: LinearProgressIndicator(
+                                value: rung.step / 15,
+                                minHeight: 5,
+                                backgroundColor: Colors.white.withOpacity(.28),
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                    Color(0xFFD8C28C)))),
+                      ]),
                 ),
-              ],
-            ],
-          ),
-        ),
-      ],
-    );
+                const SizedBox(height: 20),
+                ParadiseSection(
+                    title: 'المنافسة الآن',
+                    child: Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: _playMode == MillionairePlayMode.dualPlayerLocal
+                          ? [
+                              _DualScoreChip(
+                                  name: _p1NameCtrl.text.isEmpty
+                                      ? 'اللاعب ١'
+                                      : _p1NameCtrl.text,
+                                  score: _p1Score,
+                                  active: _activePlayerTurn == 1,
+                                  color: const Color(0xFF327C68),
+                                  palette: palette),
+                              _DualScoreChip(
+                                  name: _p2NameCtrl.text.isEmpty
+                                      ? 'اللاعب ٢'
+                                      : _p2NameCtrl.text,
+                                  score: _p2Score,
+                                  active: _activePlayerTurn == 2,
+                                  color: const Color(0xFF507A9B),
+                                  palette: palette),
+                            ]
+                          : _buildCurrentRival(palette, secondary),
+                    )),
+                const SizedBox(height: 20),
+                ParadiseSection(
+                    title: 'وسائل المساعدة',
+                    child: LayoutBuilder(builder: (context, box) {
+                      final itemWidth = box.maxWidth < 540
+                          ? (box.maxWidth - 8) / 2
+                          : (box.maxWidth - 24) / 4;
+                      Widget item(IconData icon, String label, bool used,
+                              Color color, VoidCallback onTap) =>
+                          SizedBox(
+                              width: itemWidth,
+                              child: _Lifeline3DChip(
+                                  icon: icon,
+                                  label: label,
+                                  used: used,
+                                  disabled: _answerRevealed ||
+                                      _matchFinished ||
+                                      _lockedOptionIndex != null,
+                                  color: color,
+                                  palette: palette,
+                                  onTap: onTap));
+                      return Wrap(spacing: 8, runSpacing: 8, children: [
+                        item(Icons.content_cut_rounded, '٥٠:٥٠', _used5050,
+                            palette.accentColor, _use5050),
+                        item(
+                            Icons.call_rounded,
+                            'اتصال',
+                            _usedCallFriend,
+                            const Color(0xFF3E9273),
+                            () => _useCallScholar(palette)),
+                        item(
+                            Icons.bar_chart_rounded,
+                            'الجمهور',
+                            _usedAudiencePoll,
+                            const Color(0xFF796B9B),
+                            () => _useAudiencePoll(palette)),
+                        item(
+                            Icons.swap_horiz_rounded,
+                            'تبديل',
+                            _usedSwapQuestion,
+                            const Color(0xFF9B6D56),
+                            _useSwapQuestion),
+                      ]);
+                    })),
+                const SizedBox(height: 22),
+                ParadiseSection(
+                    title: 'نص السؤال',
+                    child: Material(
+                      color: palette.cardColor,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(22),
+                          side: BorderSide(color: palette.dividerColor)),
+                      child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  alignment: WrapAlignment.spaceBetween,
+                                  children: [
+                                    _stageTag(
+                                        '${q.category} · ${q.difficulty.arabicLabel}',
+                                        q.difficulty.color),
+                                    if (_guaranteedAmount > 0)
+                                      _stageTag(
+                                          'المضمون: $_guaranteedAmount نقطة',
+                                          const Color(0xFF16835D)),
+                                  ]),
+                              const SizedBox(height: 18),
+                              Text(q.question,
+                                  textAlign: TextAlign.center,
+                                  softWrap: true,
+                                  style: TextStyle(
+                                      color: palette.textPrimary,
+                                      fontSize: FirdawsType.section,
+                                      height: 1.6,
+                                      fontWeight: FontWeight.w900)),
+                            ],
+                          )),
+                    )),
+                const SizedBox(height: 20),
+                ParadiseSection(
+                    title: 'اختر الإجابة',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text('اختر أحد الخيارات الأربعة لتثبيت إجابتك.',
+                            style: TextStyle(
+                                color: secondary,
+                                fontSize: FirdawsType.caption,
+                                height: 1.4)),
+                        const SizedBox(height: 10),
+                        LayoutBuilder(builder: (context, box) {
+                          final answerWidth = box.maxWidth >= 650
+                              ? (box.maxWidth - 12) / 2
+                              : box.maxWidth;
+                          return Wrap(
+                              spacing: 12,
+                              runSpacing: 12,
+                              children: List.generate(4, (index) {
+                                final eliminated =
+                                    _eliminatedOptions.contains(index);
+                                final locked = _lockedOptionIndex == index;
+                                final correct = index == q.correctIndex;
+                                final disabled = eliminated ||
+                                    _answerRevealed ||
+                                    _matchFinished ||
+                                    _lockedOptionIndex != null;
+                                final border = _answerRevealed && correct
+                                    ? const Color(0xFF16835D)
+                                    : (_answerRevealed && locked
+                                        ? const Color(0xFFB42332)
+                                        : (locked
+                                            ? palette.accentColor
+                                            : palette.dividerColor));
+                                final feedback = _answerRevealed && correct
+                                    ? '، الإجابة الصحيحة'
+                                    : (_answerRevealed && locked
+                                        ? '، إجابة غير صحيحة'
+                                        : (eliminated ? '، مستبعد' : ''));
+                                return SizedBox(
+                                    width: answerWidth,
+                                    child: Semantics(
+                                      button: true,
+                                      enabled: !disabled,
+                                      selected: locked,
+                                      liveRegion: _answerRevealed &&
+                                          (correct || locked),
+                                      label:
+                                          'الخيار ${letters[index]}: ${q.options[index]}$feedback',
+                                      excludeSemantics: true,
+                                      child: Opacity(
+                                        opacity: eliminated ? .48 : 1,
+                                        child: Material(
+                                          color: palette.cardColor,
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(18),
+                                              side: BorderSide(
+                                                  color: border,
+                                                  width: locked ||
+                                                          (_answerRevealed &&
+                                                              correct)
+                                                      ? 1.8
+                                                      : 1)),
+                                          clipBehavior: Clip.antiAlias,
+                                          child: InkWell(
+                                            onTap: disabled
+                                                ? null
+                                                : () => _onSelectOption(index),
+                                            child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 14,
+                                                        vertical: 16),
+                                                child: Row(children: [
+                                                  Container(
+                                                    width: 36,
+                                                    height: 36,
+                                                    decoration: BoxDecoration(
+                                                        shape: BoxShape.circle,
+                                                        color: border
+                                                            .withOpacity(.1),
+                                                        border: Border.all(
+                                                            color: border)),
+                                                    child: Center(
+                                                        child: Text(
+                                                            letters[index],
+                                                            style: TextStyle(
+                                                                color: border,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w900))),
+                                                  ),
+                                                  const SizedBox(width: 12),
+                                                  Expanded(
+                                                      child: Text(
+                                                          q.options[index],
+                                                          softWrap: true,
+                                                          style: TextStyle(
+                                                              color: palette
+                                                                  .textPrimary,
+                                                              fontSize:
+                                                                  FirdawsType
+                                                                      .body,
+                                                              height: 1.45,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w700))),
+                                                  if (_answerRevealed &&
+                                                      correct)
+                                                    const Icon(
+                                                        Icons
+                                                            .check_circle_rounded,
+                                                        color:
+                                                            Color(0xFF16835D))
+                                                  else if (_answerRevealed &&
+                                                      locked)
+                                                    const Icon(
+                                                        Icons.cancel_rounded,
+                                                        color:
+                                                            Color(0xFFB42332)),
+                                                ])),
+                                          ),
+                                        ),
+                                      ),
+                                    ));
+                              }));
+                        }),
+                      ],
+                    )),
+                if (_answerRevealed) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                        color: palette.elevatedCardColor,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: palette.dividerColor)),
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('توضيح الإجابة',
+                              style: TextStyle(
+                                  color: palette.accentColor,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: FirdawsType.label)),
+                          const SizedBox(height: 7),
+                          Text(q.explanation,
+                              softWrap: true,
+                              style: TextStyle(
+                                  color: palette.textPrimary,
+                                  fontSize: FirdawsType.body,
+                                  height: 1.55)),
+                        ]),
+                  ),
+                ],
+              ]),
+        ));
+      })),
+    ]);
+  }
+
+  Widget _stageTag(String label, Color color) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+        decoration: BoxDecoration(
+            color: color.withOpacity(.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color.withOpacity(.45))),
+        child: Text(label,
+            softWrap: true,
+            style: TextStyle(
+                color: color,
+                fontSize: FirdawsType.caption,
+                fontWeight: FontWeight.w800)),
+      );
+
+  List<Widget> _buildCurrentRival(ThemePalette palette, Color secondary) {
+    if (_playMode == MillionairePlayMode.familyChallenge) {
+      final family = context.watch<FamilyChallengeProvider>();
+      final id = _selectedFamilyRivalId ?? family.selectedRivalId;
+      for (final member in family.members) {
+        if (member.id == id) {
+          return [
+            Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                    color: palette.cardColor,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: palette.dividerColor)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  FirdawsPortraitAvatar(
+                      entityId: member.id,
+                      displayName: member.name,
+                      customPhotoBase64: member.customPhotoBase64,
+                      networkPhotoUrl: member.networkPhotoUrl,
+                      size: 34),
+                  const SizedBox(width: 9),
+                  Flexible(
+                      child: Text('منافس العائلة: ${member.name}',
+                          softWrap: true,
+                          style: TextStyle(
+                              color: palette.textPrimary,
+                              fontWeight: FontWeight.w700))),
+                ]))
+          ];
+        }
+      }
+      return [
+        Text('تحدي العائلة · المنافس المحدد',
+            style: TextStyle(color: secondary))
+      ];
+    }
+    return [
+      Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+              color: palette.cardColor,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: palette.dividerColor)),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            FirdawsPortraitAvatar(
+                entityId: _selectedAiRival.id,
+                displayName: _selectedAiRival.name,
+                size: 34),
+            const SizedBox(width: 9),
+            Flexible(
+                child: Text('${_selectedAiRival.name} · المحطة $_aiRivalStep',
+                    softWrap: true,
+                    style: TextStyle(
+                        color: palette.textPrimary,
+                        fontWeight: FontWeight.w700))),
+          ]))
+    ];
   }
 
   Widget _buildPostMatchView(ThemePalette palette) {
     final secondary = firdawsCrispSecondaryText(palette);
-    final wonMillion = _currentRungIndex >= 14 && !_gameOverLost && !_walkedAway;
+    final ctaTextColor =
+        ThemeData.estimateBrightnessForColor(palette.primaryColor) ==
+                Brightness.dark
+            ? Colors.white
+            : const Color(0xFF102019);
+    final wonMillion =
+        _currentRungIndex >= 14 && !_gameOverLost && !_walkedAway;
     final dualMode = _playMode == MillionairePlayMode.dualPlayerLocal;
     final statusColor = _gameOverLost
         ? const Color(0xFFEF4444)
         : (wonMillion || !_walkedAway
             ? const Color(0xFF10B981)
             : const Color(0xFF38BDF8));
+    final headline = dualMode
+        ? 'نتيجة المواجهة الثنائية!'
+        : (wonMillion
+            ? 'مبروك! ربحت المليون في الاستوديو!'
+            : (_gameOverLost
+                ? 'انتهت الجولة — عوّضها في المحاولة القادمة!'
+                : (_walkedAway
+                    ? 'انسحاب حكيم برصيدك المحقق!'
+                    : 'جولة رائعة وتعلّم قيّم!')));
+    final metrics = dualMode
+        ? <ParadiseMetric>[
+            ParadiseMetric(
+                value: '$_p1Score',
+                label: '${_p1NameCtrl.text} · نقاط',
+                icon: Icons.person_outline_rounded),
+            ParadiseMetric(
+                value: '$_p1CorrectCount',
+                label: 'إجابات صحيحة',
+                icon: Icons.check_circle_outline_rounded),
+            ParadiseMetric(
+                value: '$_p2Score',
+                label: '${_p2NameCtrl.text} · نقاط',
+                icon: Icons.person_outline_rounded),
+            ParadiseMetric(
+                value: '$_p2CorrectCount',
+                label: 'إجابات صحيحة',
+                icon: Icons.check_circle_outline_rounded),
+          ]
+        : <ParadiseMetric>[
+            ParadiseMetric(
+                value: '${_currentRungIndex + 1} / ١٥',
+                label: 'محطات الجولة',
+                icon: Icons.stairs_rounded),
+            ParadiseMetric(
+                value: '$_currentEarnedAmount',
+                label: 'رصيد المسابقة',
+                icon: Icons.account_balance_wallet_outlined),
+            ParadiseMetric(
+                value: '$_guaranteedAmount',
+                label: 'الرصيد المضمون',
+                icon: Icons.shield_outlined),
+          ];
 
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
-        const SizedBox(height: 16),
-        Firdaws4KCardShell(
-          backdrop: Background500Catalog.forMillionaireSection(11),
-          isDark: palette.isDark,
-          borderColor: statusColor.withOpacity(0.75),
-          borderRadius: 22,
-          imageOpacity: 0.52,
-          padding: const EdgeInsets.all(22),
-          child: Column(
-            children: [
-              Text(
-                wonMillion
-                    ? '👑'
-                    : (dualMode
-                        ? '🤝'
-                        : (_gameOverLost ? '💔' : '🏆')),
-                style: const TextStyle(fontSize: 54),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                dualMode
-                    ? 'نتيجة المواجهة الثنائية!'
-                    : (wonMillion
-                        ? 'مبروك! ربحت المليون في الاستوديو!'
-                        : (_gameOverLost
-                            ? 'انتهت الجولة — عوّضها في المحاولة القادمة!'
-                            : (_walkedAway
-                                ? 'انسحاب حكيم برصيدك المحقق!'
-                                : 'جولة رائعة وتعلّم قيّم!'))),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                  color: _gameOverLost ? const Color(0xFFFCA5A5) : palette.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              if (dualMode) ...[
-                Text(
-                  '${_p1NameCtrl.text}: $_p1Score نقطة ($_p1CorrectCount إجابات صحيحة)\n'
-                  '${_p2NameCtrl.text}: $_p2Score نقطة ($_p2CorrectCount إجابات صحيحة)',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.7,
-                    fontWeight: FontWeight.w800,
-                    color: secondary,
-                  ),
-                ),
-              ] else ...[
-                Text(
-                  'وصلت إلى السؤال ${_currentRungIndex + 1} من ١٥ • الرصيد: $_currentEarnedAmount نقطة',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF10B981),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
-        if (_postMatchPhrase.isNotEmpty)
-          Firdaws4KCardShell(
-            backdrop: Background500Catalog.forMillionaireSection(12),
-            isDark: palette.isDark,
-            borderColor: const Color(0xFFA855F7).withOpacity(0.65),
-            borderRadius: 18,
-            imageOpacity: 0.48,
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '💬 عبارة التحدي التحفيزية (من الـ ٨٠٠ عبارة):',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFFA855F7),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _postMatchPhrase,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.55,
-                    fontWeight: FontWeight.w800,
-                    color: palette.textPrimary,
-                  ),
-                ),
-                if (_postMatchSecondPhrase.isNotEmpty) ...[
-                  const Divider(height: 18),
-                  Text(
-                    _postMatchSecondPhrase,
-                    style: TextStyle(
-                      fontSize: 13,
-                      height: 1.5,
-                      color: secondary,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        const SizedBox(height: 18),
-        Row(
-          children: [
-            Expanded(
-              child: Firdaws3DButton(
-                baseColor: const Color(0xFF0EA5E9),
-                onPressed: _startMatch,
-                child: const Text(
-                  'جولة جديدة بالاستوديو',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Firdaws3DButton(
-                baseColor: const Color(0xFF6366F1),
-                onPressed: () => setState(() => _inLobby = true),
-                child: const Text(
-                  'تغيير النمط والمجال',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
         Center(
-          child: TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('العودة إلى الرئيسية'),
-          ),
-        ),
+            child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 860),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            ParadiseHero(
+              title: headline,
+              subtitle: dualMode
+                  ? 'انتهت المواجهة؛ راجعوا النقاط وعدد الإجابات الصحيحة.'
+                  : 'وصلت إلى السؤال ${_currentRungIndex + 1} من ١٥ · رصيد الجولة: $_currentEarnedAmount نقطة داخل اللعبة',
+              imageAsset: Theme.of(context)
+                  .extension<FirdawsNatureLook>()
+                  ?.sceneryAsset,
+              minHeight: 230,
+              footer: Row(children: [
+                Icon(
+                    dualMode
+                        ? Icons.people_alt_rounded
+                        : Icons.emoji_events_rounded,
+                    color: statusColor,
+                    size: 22),
+                const SizedBox(width: 8),
+                Expanded(
+                    child: Text(dualMode ? 'ملخص المواجهة' : 'ملخص الجولة',
+                        style: const TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.w800))),
+                if (!dualMode && _walkedAway && !_gameOverLost)
+                  const Icon(Icons.logout_rounded,
+                      color: Colors.white70, size: 20),
+              ]),
+            ),
+            const SizedBox(height: 22),
+            LayoutBuilder(builder: (context, constraints) {
+              final tileWidth = constraints.maxWidth < 380
+                  ? constraints.maxWidth
+                  : (constraints.maxWidth < 520
+                      ? (constraints.maxWidth - 10) / 2
+                      : (constraints.maxWidth - (metrics.length - 1) * 12) /
+                          metrics.length);
+              return Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: metrics
+                      .map(
+                          (metric) => SizedBox(width: tileWidth, child: metric))
+                      .toList());
+            }),
+            if (_postMatchPhrase.isNotEmpty) ...[
+              const SizedBox(height: 22),
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                    color: palette.cardColor,
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(color: palette.dividerColor)),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('رسالة التحدي',
+                          style: TextStyle(
+                              color: palette.accentColor,
+                              fontSize: FirdawsType.label,
+                              fontWeight: FontWeight.w900)),
+                      const SizedBox(height: 10),
+                      Text(_postMatchPhrase,
+                          softWrap: true,
+                          style: TextStyle(
+                              color: palette.textPrimary,
+                              fontSize: FirdawsType.body,
+                              height: 1.6,
+                              fontWeight: FontWeight.w700)),
+                      if (_postMatchSecondPhrase.isNotEmpty) ...[
+                        Divider(height: 24, color: palette.dividerColor),
+                        Text(_postMatchSecondPhrase,
+                            softWrap: true,
+                            style: TextStyle(
+                                color: secondary,
+                                fontSize: FirdawsType.body,
+                                height: 1.55)),
+                      ],
+                    ]),
+              ),
+            ],
+            const SizedBox(height: 24),
+            LayoutBuilder(builder: (context, constraints) {
+              final startAgain = Firdaws3DButton(
+                baseColor: palette.primaryColor,
+                onPressed: _startMatch,
+                padding:
+                    const EdgeInsets.symmetric(vertical: 15, horizontal: 12),
+                child: Text('جولة جديدة بالإعدادات نفسها',
+                    textAlign: TextAlign.center,
+                    softWrap: true,
+                    style: TextStyle(
+                        color: ctaTextColor, fontWeight: FontWeight.w900)),
+              );
+              final changeSettings = Firdaws3DButton(
+                baseColor: palette.elevatedCardColor,
+                rimColor: palette.dividerColor,
+                onPressed: () => setState(() => _inLobby = true),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 15, horizontal: 12),
+                child: Text('تغيير النمط أو المجال',
+                    textAlign: TextAlign.center,
+                    softWrap: true,
+                    style: TextStyle(
+                        color: palette.textPrimary,
+                        fontWeight: FontWeight.w900)),
+              );
+              if (constraints.maxWidth < 520) {
+                return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      startAgain,
+                      const SizedBox(height: 10),
+                      changeSettings,
+                    ]);
+              }
+              return Row(children: [
+                Expanded(child: startAgain),
+                const SizedBox(width: 12),
+                Expanded(child: changeSettings)
+              ]);
+            }),
+            const SizedBox(height: 10),
+            TextButton.icon(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.arrow_back_rounded),
+                label: const Text('العودة إلى الصفحة السابقة')),
+          ]),
+        )),
       ],
     );
   }
@@ -1928,7 +1920,9 @@ class _DualScoreChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
-        color: active ? color.withOpacity(0.22) : palette.textPrimary.withOpacity(0.05),
+        color: active
+            ? color.withOpacity(0.22)
+            : palette.textPrimary.withOpacity(0.05),
         border: Border.all(
           color: active ? color : palette.dividerColor.withOpacity(0.2),
           width: active ? 1.6 : 1,
@@ -1942,7 +1936,7 @@ class _DualScoreChip extends StatelessWidget {
               active ? '▶ $name' : name,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11.5,
+                fontSize: FirdawsType.caption,
                 fontWeight: FontWeight.w800,
                 color: active ? color : palette.textPrimary,
               ),
@@ -1951,7 +1945,7 @@ class _DualScoreChip extends StatelessWidget {
           Text(
             '$score',
             style: TextStyle(
-              fontSize: 12.5,
+              fontSize: FirdawsType.label,
               fontWeight: FontWeight.w900,
               color: color,
             ),
@@ -1963,9 +1957,10 @@ class _DualScoreChip extends StatelessWidget {
 }
 
 class _Lifeline3DChip extends StatelessWidget {
-  final String icon;
+  final IconData icon;
   final String label;
   final bool used;
+  final bool disabled;
   final Color color;
   final ThemePalette palette;
   final VoidCallback onTap;
@@ -1974,6 +1969,7 @@ class _Lifeline3DChip extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.used,
+    this.disabled = false,
     required this.color,
     required this.palette,
     required this.onTap,
@@ -1981,118 +1977,45 @@ class _Lifeline3DChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Opacity(
-      opacity: used ? 0.32 : 1.0,
-      child: Firdaws3DCard(
-        palette: palette,
-        glowColor: used ? null : color,
-        onTap: used ? null : onTap,
-        depth: used ? 1 : 4,
-        borderRadius: 14,
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(icon, style: const TextStyle(fontSize: 14)),
-            const SizedBox(width: 4),
-            Flexible(
-              child: Text(
-                label,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  decoration: used ? TextDecoration.lineThrough : null,
-                  color: palette.textPrimary,
+    final unavailable = used || disabled;
+    return Semantics(
+      button: true,
+      enabled: !unavailable,
+      label: '$label${used ? '، استُخدمت' : ''}',
+      child: Opacity(
+        opacity: unavailable ? 0.45 : 1.0,
+        child: Firdaws3DCard(
+          palette: palette,
+          glowColor: unavailable ? null : color,
+          onTap: unavailable ? null : onTap,
+          depth: unavailable ? 1 : 4,
+          borderRadius: FirdawsRadius.control,
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 17,
+                color: unavailable ? palette.textSecondary : color,
+              ),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: FirdawsType.caption,
+                    fontWeight: FontWeight.w800,
+                    decoration: used ? TextDecoration.lineThrough : null,
+                    color: palette.textPrimary,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
-}
-
-/// رسّام خلفية الاستوديو 3D مع أضواء مسرحية وشبكة أرضية منظورية
-class _Millionaire3DStudioPainter extends CustomPainter {
-  final double phase;
-  final bool isDark;
-  final Color accent;
-  final double tension;
-
-  const _Millionaire3DStudioPainter({
-    required this.phase,
-    required this.isDark,
-    required this.accent,
-    required this.tension,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final bgTop = (isDark ? const Color(0xFF060B18) : const Color(0xFFEEF6FF))
-        .withOpacity(isDark ? 0.42 : 0.24);
-    final bgMid = (isDark ? const Color(0xFF0C1732) : const Color(0xFFDCEBFF))
-        .withOpacity(isDark ? 0.34 : 0.20);
-    final bgBot = (isDark ? const Color(0xFF04070F) : const Color(0xFFCDE2FA))
-        .withOpacity(isDark ? 0.58 : 0.36);
-
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [bgTop, bgMid, bgBot],
-        ).createShader(Offset.zero & size),
-    );
-
-    // حزم أضواء مسرحية 3D متحركة
-    for (int i = 0; i < 4; i++) {
-      final angle = math.sin(phase * math.pi * 2 + i * 1.4) * 0.32;
-      final sx = size.width * (0.15 + i * 0.24);
-      final beamPath = Path()
-        ..moveTo(sx, 0)
-        ..lineTo(sx + math.tan(angle - 0.14) * size.height, size.height)
-        ..lineTo(sx + math.tan(angle + 0.14) * size.height, size.height)
-        ..close();
-
-      final beamColor = (i.isEven
-              ? const Color(0xFF38BDF8)
-              : const Color(0xFF8B5CF6))
-          .withOpacity(isDark ? (0.07 + tension * 0.04) : 0.08);
-      canvas.drawPath(
-        beamPath,
-        Paint()..color = beamColor,
-      );
-    }
-
-    // أرضية استوديو منظورية 3D مع حلقات متحدة المركز
-    final horizonY = size.height * 0.56;
-    final vanish = Offset(size.width * 0.5, horizonY);
-    final gridPaint = Paint()
-      ..color = accent.withOpacity(isDark ? 0.15 : 0.12)
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke;
-
-    for (int k = 1; k <= 6; k++) {
-      final t = k / 6.0;
-      final rx = size.width * (0.16 + t * 0.55);
-      final ry = rx * 0.28;
-      canvas.drawOval(
-        Rect.fromCenter(
-          center: Offset(vanish.dx, horizonY + size.height * 0.16 * t),
-          width: rx * 2,
-          height: ry * 2,
-        ),
-        gridPaint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _Millionaire3DStudioPainter oldDelegate) =>
-      oldDelegate.phase != phase ||
-      oldDelegate.isDark != isDark ||
-      oldDelegate.tension != tension;
 }

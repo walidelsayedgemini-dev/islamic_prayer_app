@@ -1,52 +1,86 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <base href="$FLUTTER_BASE_HREF">
-
+  <base href="/">
   <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="تطبيق الفردوس الإسلامي الشامل: مواقيت الصلاة، بوصلة القبلة الذكية، المسبحة والتحديات، التقويم الهجري، والأذكار.">
-
-  <!-- iOS meta tags & icons -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="الفردوس: مواقيت الصلاة حسب موقعك، القبلة، السبحة، التقويم الهجري والأذكار، في تطبيق عربي تفاعلي مع إعدادات محفوظة على جهازك.">
+  <meta name="theme-color" content="#0F3E32">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="الفردوس">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="الفردوس">
+  <meta property="og:title" content="الفردوس — مواقيت الصلاة والقبلة والأذكار">
+  <meta property="og:description" content="تطبيق عربي تفاعلي لمواقيت الصلاة والقبلة والسبحة والتقويم الهجري والأذكار.">
+  <meta property="og:image" content="https://files.manuscdn.com/user_upload_by_module/session_file/310519664093255124/SCEHCaeVzKfKHVQw.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="الفردوس — مواقيت الصلاة والقبلة والأذكار">
+  <meta name="twitter:description" content="تطبيق عربي تفاعلي لمواقيت الصلاة والقبلة والسبحة والتقويم الهجري والأذكار.">
+  <meta name="twitter:image" content="https://files.manuscdn.com/user_upload_by_module/session_file/310519664093255124/SCEHCaeVzKfKHVQw.png">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
-
-  <title>الفردوس</title>
+  <link rel="icon" type="image/png" href="favicon.png">
   <link rel="manifest" href="manifest.json">
-
+  <title>الفردوس — مواقيت الصلاة والقبلة والأذكار</title>
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #030e0b;
-      overflow: hidden;
-      font-family: 'Aref Ruqaa', 'Cairo', 'Amiri', 'Tajawal', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
+    html, body { margin: 0; padding: 0; background: #030e0b; }
+    body { overflow: hidden; font-family: 'Cairo', 'Amiri', 'Tajawal', system-ui, sans-serif; }
+    #app-startup { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; overflow: auto; background: #030e0b; color: #eaf2ed; text-align: center; }
+    #app-startup .content { max-width: 460px; }
+    #app-startup img { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; }
+    #app-startup h1 { margin: 16px 0 8px; font-size: 28px; color: #e6c65c; }
+    #app-startup h2 { font-size: 17px; margin: 0 0 12px; font-weight: 500; }
+    #app-startup p { line-height: 1.75; color: #b9cec3; font-size: 14px; }
+    #startup-status { display: block; margin-top: 20px; font-size: 15px; }
+    #startup-retry { display: none; margin: 16px auto 0; padding: 12px 22px; border: 0; border-radius: 12px; background: #e6c65c; color: #142d22; font: inherit; cursor: pointer; }
+    #app-startup noscript { display: block; padding: 12px; color: #fff; }
   </style>
 </head>
 <body>
+  <main id="app-startup" aria-label="بدء تطبيق الفردوس">
+    <div class="content">
+      <img src="assets/assets/images/palace_jannah_logo.png" alt="شعار الفردوس">
+      <h1>الفردوس</h1>
+      <h2>مواقيت الصلاة والقبلة والأذكار</h2>
+      <p>مواقيت حسب موقعك، سبحة تفاعلية وتقويم هجري، مع خيارات المظهر وحساب الصلاة. تُحفظ تفضيلاتك محليًا في هذا المتصفح.</p>
+      <span id="startup-status" role="status" aria-live="polite">جارٍ تحميل التطبيق…</span>
+      <button id="startup-retry" type="button">إعادة المحاولة</button>
+      <noscript>يتطلب التطبيق تفعيل JavaScript. فعّله في متصفحك ثم أعد تحميل الصفحة.</noscript>
+    </div>
+  </main>
   <script>
-    // إزالة كاش المتصفح القديم وإلغاء تسجيل أي ServiceWorker سابق لمنع التعارض مع وضع التطوير
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for(let registration of registrations) {
-          registration.unregister();
-        }
-      });
-    }
-    if ('caches' in window) {
-      caches.keys().then(function(names) {
-        for (let name of names) {
-          caches.delete(name);
-        }
-      });
-    }
+    (() => {
+      const startup = document.getElementById('app-startup');
+      const status = document.getElementById('startup-status');
+      const retry = document.getElementById('startup-retry');
+      let ready = false;
+      let timer;
+      function showFailure(message) {
+        if (ready) return;
+        status.textContent = message;
+        retry.style.display = 'block';
+      }
+      retry.addEventListener('click', () => location.reload());
+      window.addEventListener('flutter-first-frame', () => {
+        ready = true;
+        clearTimeout(timer);
+        startup.remove();
+      }, { once: true });
+      const probe = document.createElement('canvas');
+      const gl = probe.getContext('webgl2') || probe.getContext('webgl');
+      if (!gl) {
+        showFailure('الرسم غير متاح في هذا المتصفح. افتح الموقع في Chrome أو Edge أو Safari حديث مع دعم WebGL.');
+        return;
+      }
+      timer = setTimeout(() => {
+        showFailure('التحميل يستغرق وقتًا أطول من المعتاد. تحقق من اتصالك، أو جرّب متصفحًا حديثًا يدعم WebGL.');
+      }, 45000);
+      const script = document.createElement('script');
+      script.src = 'flutter_bootstrap.js';
+      script.async = true;
+      script.onerror = () => showFailure('تعذّر تحميل التطبيق. تحقق من اتصال الإنترنت ثم أعد المحاولة.');
+      document.body.appendChild(script);
+    })();
   </script>
-  <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

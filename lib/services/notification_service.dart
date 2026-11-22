@@ -6,6 +6,38 @@ import '../models/islamic_audio_data.dart';
 import '../models/prayer_model.dart';
 import 'firdaws_native_service.dart';
 
+enum ReminderNotificationAvailability {
+  available,
+  permissionDenied,
+  unsupportedWeb,
+  unsupportedPlatform,
+  unknown,
+}
+
+enum ReminderNotificationScheduleStatus {
+  scheduled,
+  cancelled,
+  permissionDenied,
+  unsupportedWeb,
+  unsupportedPlatform,
+  notInitialized,
+  failed,
+}
+
+class ReminderNotificationScheduleResult {
+  const ReminderNotificationScheduleResult(
+    this.status, {
+    this.count = 0,
+    this.limited = false,
+  });
+
+  final ReminderNotificationScheduleStatus status;
+  final int count;
+
+  /// True when the request set or platform capacity limited the horizon.
+  final bool limited;
+}
+
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
@@ -16,6 +48,35 @@ class NotificationService {
 
   bool _isInitialized = false;
   bool _tzConfigured = false;
+  static const String salawatNotificationPayload = 'firdaws:salawat';
+  void Function(int pageIndex)? _navigationHandler;
+  int? _pendingNavigationPage;
+
+  void setNavigationHandler(void Function(int pageIndex)? handler) {
+    _navigationHandler = handler;
+    final pending = _pendingNavigationPage;
+    if (handler != null && pending != null) {
+      _pendingNavigationPage = null;
+      handler(pending);
+    }
+  }
+
+  void handleNotificationResponse(NotificationResponse response) {
+    if (response.payload != salawatNotificationPayload) return;
+    final handler = _navigationHandler;
+    if (handler == null) {
+      _pendingNavigationPage = 4;
+    } else {
+      handler(4);
+    }
+  }
+
+  /// Reserved only for the optional salawat reminder feature. Prayer alarms
+  /// continue to use IDs 1..10 and pre-adhan IDs 101..110.
+  static const int reminderNotificationIdBase = 3000;
+  static const int reminderNotificationIdCapacity = 400;
+  static const int iosPendingNotificationLimit = 64;
+  static const int iosSalawatNotificationLimit = 40;
 
   /// ضبط المنطقة الزمنية المحلية لحزمة timezone بدقة حتى لا تُجدول التنبيهات بتوقيت UTC الخاطئ
   void configureLocalTimezone({int? overrideOffsetMillis}) {
@@ -31,7 +92,13 @@ class NotificationService {
     // أولوية لبعض المناطق العربية والإسلامية الشهيرة حسب الإزاحة
     const preferredByHours = <int, List<String>>{
       2: ['Africa/Cairo', 'Asia/Jerusalem', 'Asia/Amman', 'Asia/Beirut'],
-      3: ['Asia/Riyadh', 'Asia/Kuwait', 'Asia/Qatar', 'Asia/Baghdad', 'Europe/Istanbul'],
+      3: [
+        'Asia/Riyadh',
+        'Asia/Kuwait',
+        'Asia/Qatar',
+        'Asia/Baghdad',
+        'Europe/Istanbul'
+      ],
       4: ['Asia/Dubai', 'Asia/Muscat'],
       1: ['Africa/Casablanca', 'Africa/Tunis', 'Africa/Algiers'],
       0: ['Europe/London', 'UTC'],
@@ -89,10 +156,21 @@ class NotificationService {
         iOS: initializationSettingsDarwin,
       );
 
-      await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+      await flutterLocalNotificationsPlugin.initialize(
+        initializationSettings,
+        onDidReceiveNotificationResponse: handleNotificationResponse,
+      );
 
-      final androidPlugin = flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<
+      final launchDetails = await flutterLocalNotificationsPlugin
+          .getNotificationAppLaunchDetails();
+      final launchResponse = launchDetails?.notificationResponse;
+      if ((launchDetails?.didNotificationLaunchApp ?? false) &&
+          launchResponse != null) {
+        handleNotificationResponse(launchResponse);
+      }
+
+      final androidPlugin =
+          flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>();
       if (androidPlugin != null) {
         await androidPlugin.requestNotificationsPermission();
@@ -120,15 +198,23 @@ class NotificationService {
       configureLocalTimezone();
       if (!kIsWeb) {
         try {
-          await flutterLocalNotificationsPlugin.cancelAll();
+          // Do not erase unrelated reminders (including this feature's IDs).
+          for (final id in <int>[
+            ...List<int>.generate(10, (i) => i + 1),
+            ...List<int>.generate(10, (i) => i + 101)
+          ]) {
+            await flutterLocalNotificationsPlugin.cancel(id);
+          }
         } catch (_) {}
       }
 
-      final resolvedVoice = IslamicAudioLibrary.getAdhanVoiceById(voiceResource);
+      final resolvedVoice =
+          IslamicAudioLibrary.getAdhanVoiceById(voiceResource);
       final now = DateTime.now();
       final nativeAlarms = <Map<String, dynamic>>[];
 
-      Future<void> addPrayerAlarm(int id, String prayerName, DateTime prayerTime) async {
+      Future<void> addPrayerAlarm(
+          int id, String prayerName, DateTime prayerTime) async {
         if (!prayerTime.isAfter(now)) return;
         nativeAlarms.add({
           'triggerAtMillis': prayerTime.millisecondsSinceEpoch,
@@ -144,8 +230,7 @@ class NotificationService {
         );
 
         if (preAdhanReminder) {
-          final reminderTime =
-              prayerTime.subtract(const Duration(minutes: 15));
+          final reminderTime = prayerTime.subtract(const Duration(minutes: 15));
           if (reminderTime.isAfter(now)) {
             await _schedulePreAdhanReminder(
               id: id + 100,
@@ -169,7 +254,10 @@ class NotificationService {
       }
 
       // جدولة صلوات الغد الخمس كاملة لضمان استمرار الأذان حتى لو لم يفتح المستخدم التطبيق غداً
-      if (latitude != null && longitude != null && method != null && madhab != null) {
+      if (latitude != null &&
+          longitude != null &&
+          method != null &&
+          madhab != null) {
         final tomorrowPrayers = AdvancedPrayerTimes.calculateForDate(
           date: now.add(const Duration(days: 1)),
           latitude: latitude,
@@ -217,7 +305,8 @@ class NotificationService {
           android: AndroidNotificationDetails(
             'firdaws_adhan_ch_$rawSoundName',
             'تنبيهات الأذان ($rawSoundName)',
-            channelDescription: 'بث الأذان بصوت المؤذن المختار في الوقت المحدد بدقة',
+            channelDescription:
+                'بث الأذان بصوت المؤذن المختار في الوقت المحدد بدقة',
             importance: Importance.max,
             priority: Priority.max,
             sound: RawResourceAndroidNotificationSound(rawSoundName),
@@ -247,7 +336,8 @@ class NotificationService {
             android: AndroidNotificationDetails(
               'firdaws_adhan_ch_$rawSoundName',
               'تنبيهات الأذان ($rawSoundName)',
-              channelDescription: 'بث الأذان بصوت المؤذن المختار في الوقت المحدد بدقة',
+              channelDescription:
+                  'بث الأذان بصوت المؤذن المختار في الوقت المحدد بدقة',
               importance: Importance.max,
               priority: Priority.max,
               sound: RawResourceAndroidNotificationSound(rawSoundName),
@@ -285,7 +375,8 @@ class NotificationService {
           android: AndroidNotificationDetails(
             'pre_adhan_voice_v2',
             'تنبيه صوتي قبل الصلاة (اقتربت الصلاة)',
-            channelDescription: 'تنبيه صوتي مسموع قبل الأذان بـ ١٥ دقيقة للاستعداد للصلاة',
+            channelDescription:
+                'تنبيه صوتي مسموع قبل الأذان بـ ١٥ دقيقة للاستعداد للصلاة',
             importance: Importance.max,
             priority: Priority.high,
             sound: RawResourceAndroidNotificationSound('pre_adhan_alert'),
@@ -303,6 +394,191 @@ class NotificationService {
       );
     } catch (e) {
       debugPrint('Pre-adhan schedule error: $e');
+    }
+  }
+
+  /// Checks device notification access without requesting or changing any
+  /// permission. Web is intentionally reported as foreground-only.
+  Future<ReminderNotificationAvailability>
+      checkReminderNotificationAvailability() async {
+    if (kIsWeb) return ReminderNotificationAvailability.unsupportedWeb;
+    try {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final android = flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>();
+        final enabled = await android?.areNotificationsEnabled();
+        if (enabled == true) return ReminderNotificationAvailability.available;
+        if (enabled == false) {
+          return ReminderNotificationAvailability.permissionDenied;
+        }
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final ios = flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<
+                IOSFlutterLocalNotificationsPlugin>();
+        final permissions = await ios?.checkPermissions();
+        if (permissions?.isEnabled == true) {
+          return ReminderNotificationAvailability.available;
+        }
+        if (permissions != null) {
+          return ReminderNotificationAvailability.permissionDenied;
+        }
+      } else {
+        return ReminderNotificationAvailability.unsupportedPlatform;
+      }
+    } catch (error) {
+      debugPrint('Reminder permission check failed: $error');
+    }
+    return ReminderNotificationAvailability.unknown;
+  }
+
+  /// Cancels only the salawat reminder namespace (3000..3399).
+  Future<ReminderNotificationScheduleResult>
+      cancelSalawatReminderNotifications() async {
+    if (kIsWeb) {
+      return const ReminderNotificationScheduleResult(
+        ReminderNotificationScheduleStatus.unsupportedWeb,
+      );
+    }
+    try {
+      final pending =
+          await flutterLocalNotificationsPlugin.pendingNotificationRequests();
+      for (final request in pending) {
+        final id = request.id;
+        if (id >= reminderNotificationIdBase &&
+            id < reminderNotificationIdBase + reminderNotificationIdCapacity) {
+          await flutterLocalNotificationsPlugin.cancel(id);
+        }
+      }
+      return const ReminderNotificationScheduleResult(
+        ReminderNotificationScheduleStatus.cancelled,
+      );
+    } catch (error) {
+      debugPrint('Reminder cancellation failed: $error');
+      return const ReminderNotificationScheduleResult(
+        ReminderNotificationScheduleStatus.failed,
+      );
+    }
+  }
+
+  /// Schedules a bounded set of local reminders using only IDs 3000..3399.
+  /// Does not request permissions and never claims success when scheduling
+  /// fails. Callers should refresh the schedule when the app next resumes.
+  Future<ReminderNotificationScheduleResult> scheduleSalawatReminders({
+    required List<DateTime> occurrences,
+  }) async {
+    if (kIsWeb) {
+      return const ReminderNotificationScheduleResult(
+        ReminderNotificationScheduleStatus.unsupportedWeb,
+      );
+    }
+    if (defaultTargetPlatform != TargetPlatform.android &&
+        defaultTargetPlatform != TargetPlatform.iOS) {
+      return const ReminderNotificationScheduleResult(
+        ReminderNotificationScheduleStatus.unsupportedPlatform,
+      );
+    }
+
+    final cancellation = await cancelSalawatReminderNotifications();
+    if (cancellation.status == ReminderNotificationScheduleStatus.failed) {
+      return cancellation;
+    }
+    if (occurrences.isEmpty) {
+      return const ReminderNotificationScheduleResult(
+        ReminderNotificationScheduleStatus.cancelled,
+      );
+    }
+    if (!_isInitialized) {
+      return const ReminderNotificationScheduleResult(
+        ReminderNotificationScheduleStatus.notInitialized,
+      );
+    }
+    final availability = await checkReminderNotificationAvailability();
+    if (availability == ReminderNotificationAvailability.permissionDenied) {
+      return const ReminderNotificationScheduleResult(
+        ReminderNotificationScheduleStatus.permissionDenied,
+      );
+    }
+    if (availability != ReminderNotificationAvailability.available) {
+      return const ReminderNotificationScheduleResult(
+        ReminderNotificationScheduleStatus.failed,
+      );
+    }
+
+    configureLocalTimezone();
+    final upcoming = occurrences
+        .where((time) => time.isAfter(DateTime.now()))
+        .toList(growable: false);
+    var platformCapacity = reminderNotificationIdCapacity;
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      try {
+        // Leave capacity for prayer alarms and other app notifications. The
+        // salawat feature itself never consumes more than 40 of iOS's 64 slots.
+        final pending =
+            await flutterLocalNotificationsPlugin.pendingNotificationRequests();
+        platformCapacity = (iosPendingNotificationLimit - pending.length)
+            .clamp(0, iosSalawatNotificationLimit);
+      } catch (error) {
+        debugPrint(
+            'Could not inspect iOS pending notification capacity: $error');
+        return const ReminderNotificationScheduleResult(
+          ReminderNotificationScheduleStatus.failed,
+        );
+      }
+    }
+    final bounded = upcoming.take(platformCapacity).toList(growable: false);
+    final limited = upcoming.length > bounded.length ||
+        occurrences.length >= reminderNotificationIdCapacity;
+    if (bounded.isEmpty) {
+      if (upcoming.isNotEmpty && limited) {
+        return const ReminderNotificationScheduleResult(
+          ReminderNotificationScheduleStatus.scheduled,
+          limited: true,
+        );
+      }
+      return const ReminderNotificationScheduleResult(
+        ReminderNotificationScheduleStatus.cancelled,
+      );
+    }
+    try {
+      for (var index = 0; index < bounded.length; index++) {
+        await flutterLocalNotificationsPlugin.zonedSchedule(
+          reminderNotificationIdBase + index,
+          'تذكير بالصلاة على النبي ﷺ',
+          'اللهم صلِّ وسلم على نبينا محمد',
+          tz.TZDateTime.from(bounded[index], tz.local),
+          const NotificationDetails(
+            android: AndroidNotificationDetails(
+              'firdaws_optional_salawat',
+              'تذكيرات اختيارية',
+              channelDescription: 'تذكير اختياري بالصلاة على النبي ﷺ',
+              importance: Importance.defaultImportance,
+              priority: Priority.defaultPriority,
+              playSound: false,
+            ),
+            iOS: DarwinNotificationDetails(
+              presentAlert: true,
+              presentBadge: false,
+              presentSound: false,
+            ),
+          ),
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+          payload: salawatNotificationPayload,
+        );
+      }
+      return ReminderNotificationScheduleResult(
+        ReminderNotificationScheduleStatus.scheduled,
+        count: bounded.length,
+        limited: limited,
+      );
+    } catch (error) {
+      debugPrint('Optional salawat scheduling failed: $error');
+      await cancelSalawatReminderNotifications();
+      return const ReminderNotificationScheduleResult(
+        ReminderNotificationScheduleStatus.failed,
+      );
     }
   }
 }

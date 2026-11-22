@@ -1,4 +1,3 @@
-import 'package:adhan/adhan.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -13,9 +12,10 @@ import '../widgets/firdaws_portrait_avatar.dart';
 import '../widgets/firdaws_resilient_image.dart';
 import '../widgets/games/gfx/arena_3d_craft_painter.dart';
 import '../widgets/games/gfx/arena_4k_stage_compositor.dart';
-import '../widgets/real_mosque_background.dart';
+import '../widgets/nature_ui.dart';
+import '../widgets/paradise_ui.dart';
 
-/// متجر الحسنات الرسمي: ٥٠٠ سكن لكل فئة (٨ فئات × ٥٠٠ = ٤٠٠٠ سكن إسلامي)
+/// متجر الحسنات: مساحة لاكتشاف المقتنيات وتجهيز ما يملكه المستخدم.
 class HasanatStoreScreen extends StatefulWidget {
   final StoreItemCategory? initialCategory;
 
@@ -63,7 +63,8 @@ class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
-            color: res.success ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+            color:
+                res.success ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
             width: 1.5,
           ),
         ),
@@ -72,7 +73,7 @@ class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
           style: TextStyle(
             color: palette.textPrimary,
             fontWeight: FontWeight.bold,
-            fontSize: 12.5,
+            fontSize: FirdawsType.label,
           ),
         ),
       ),
@@ -89,130 +90,207 @@ class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: Container(
-          height: MediaQuery.of(context).size.height * 0.68,
-          decoration: BoxDecoration(
-            color: firdaws3DSurfaceColor(palette),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border.all(color: accent.withOpacity(0.45), width: 1.4),
-          ),
-          child: Column(
-            children: [
-              const SizedBox(height: 12),
-              Container(
-                width: 44,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: palette.dividerColor,
-                  borderRadius: BorderRadius.circular(4),
-                ),
+      builder: (_) {
+        final sheetHeight = MediaQuery.sizeOf(context).height * 0.76;
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: SafeArea(
+            top: false,
+            child: Container(
+              height: sheetHeight,
+              decoration: BoxDecoration(
+                color: palette.cardColor,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(30)),
+                border: Border.all(color: accent.withOpacity(0.48), width: 1.3),
               ),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Icon(Icons.receipt_long_rounded, color: accent),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'سجل عملة «حسنات» (${hasanat.hasanatBalance} 🪙)',
-                        style: TextStyle(
-                          color: palette.textPrimary,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 15,
-                        ),
-                      ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: palette.dividerColor,
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: hasanat.ledger.isEmpty
-                    ? Center(
-                        child: Text(
-                          'ابدأ بالتسبيح واللعب والمهام لترتفع حركات حسناتك ✨',
-                          style: TextStyle(color: palette.textMuted, fontSize: 13),
+                  ),
+                  Padding(
+                    padding:
+                        const EdgeInsetsDirectional.fromSTEB(20, 18, 12, 14),
+                    child: Row(
+                      children: [
+                        _roundIcon(
+                          icon: Icons.receipt_long_rounded,
+                          color: accent,
+                          palette: palette,
+                          size: 46,
                         ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
-                        itemCount: hasanat.ledger.length,
-                        itemBuilder: (_, idx) {
-                          final e = hasanat.ledger[idx];
-                          final isGain = e.delta >= 0;
-                          final c = isGain
-                              ? const Color(0xFF10B981)
-                              : const Color(0xFFF59E0B);
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Firdaws3DCard(
-                              palette: palette,
-                              glowColor: c,
-                              backdropSlot: 380 + (idx % 40),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'حركة الرصيد',
+                                softWrap: true,
+                                style: TextStyle(
+                                  color: palette.textPrimary,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: FirdawsType.body,
+                                ),
                               ),
-                              borderRadius: 16,
-                              child: Row(
+                              Text(
+                                'الرصيد الحالي: ${hasanat.hasanatBalance} حسنة',
+                                softWrap: true,
+                                style: TextStyle(
+                                  color: palette.textSecondary,
+                                  fontSize: FirdawsType.caption,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'إغلاق السجل',
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: Icon(Icons.close_rounded,
+                              color: palette.textSecondary),
+                          constraints:
+                              const BoxConstraints(minWidth: 48, minHeight: 48),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Divider(height: 1, color: palette.dividerColor),
+                  Expanded(
+                    child: hasanat.ledger.isEmpty
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
-                                    isGain
-                                        ? Icons.trending_up_rounded
-                                        : Icons.shopping_bag_rounded,
-                                    color: c,
-                                    size: 20,
+                                  _roundIcon(
+                                    icon: Icons.receipt_long_outlined,
+                                    color: accent,
+                                    palette: palette,
+                                    size: 62,
                                   ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          e.title,
-                                          style: TextStyle(
-                                            color: palette.textPrimary,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12.5,
-                                          ),
-                                        ),
-                                        Text(
-                                          e.sourceTag,
-                                          style: TextStyle(
-                                            color: palette.textMuted,
-                                            fontSize: 10.5,
-                                          ),
-                                        ),
-                                      ],
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'لا توجد حركات في السجل بعد',
+                                    textAlign: TextAlign.center,
+                                    softWrap: true,
+                                    style: TextStyle(
+                                      color: palette.textPrimary,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: FirdawsType.body,
                                     ),
                                   ),
-                                  Flexible(
-                                    child: Text(
-                                      '${isGain ? '+' : ''}${e.delta} 🪙',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: c,
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 13.5,
-                                      ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'ستظهر هنا تفاصيل الرصيد والمقتنيات.',
+                                    textAlign: TextAlign.center,
+                                    softWrap: true,
+                                    style: TextStyle(
+                                      color: palette.textSecondary,
+                                      fontSize: FirdawsType.label,
+                                      height: 1.5,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                          );
-                        },
-                      ),
+                          )
+                        : ListView.separated(
+                            padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
+                            itemCount: hasanat.ledger.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 9),
+                            itemBuilder: (_, idx) {
+                              final entry = hasanat.ledger[idx];
+                              final isGain = entry.delta >= 0;
+                              final color = isGain
+                                  ? const Color(0xFF16845F)
+                                  : const Color(0xFFB66A16);
+                              return Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 13),
+                                decoration: BoxDecoration(
+                                  color: palette.elevatedCardColor,
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(
+                                      color: palette.dividerColor, width: 1),
+                                ),
+                                child: Row(
+                                  children: [
+                                    _roundIcon(
+                                      icon: isGain
+                                          ? Icons.trending_up_rounded
+                                          : Icons.shopping_bag_outlined,
+                                      color: color,
+                                      palette: palette,
+                                      size: 42,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            entry.title,
+                                            softWrap: true,
+                                            style: TextStyle(
+                                              color: palette.textPrimary,
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: FirdawsType.label,
+                                              height: 1.35,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 3),
+                                          Text(
+                                            entry.sourceTag,
+                                            softWrap: true,
+                                            style: TextStyle(
+                                              color: palette.textSecondary,
+                                              fontSize: FirdawsType.caption,
+                                              height: 1.35,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    ConstrainedBox(
+                                      constraints:
+                                          const BoxConstraints(maxWidth: 105),
+                                      child: Text(
+                                        '${isGain ? '+' : ''}${entry.delta} حسنة',
+                                        textAlign: TextAlign.end,
+                                        softWrap: true,
+                                        style: TextStyle(
+                                          color: color,
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: FirdawsType.label,
+                                          height: 1.3,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -222,128 +300,210 @@ class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
     final hasanat = context.watch<HasanatProvider>();
     final userProv = context.watch<FirdawsUserProvider>();
     final palette = settings.currentPalette;
-    final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
-    final isNight = settings.isNightEffective;
     final accent = firdawsModernAccent(palette);
 
     final allInCategory = HasanatStoreCatalog.byCategory(_selectedCategory);
     final ownedInCat =
-        allInCategory.where((s) => hasanat.ownsSkin(s.id)).length;
+        allInCategory.where((skin) => hasanat.ownsSkin(skin.id)).length;
 
     final queryTrim = _searchQuery.trim().toLowerCase();
-    final items = allInCategory.where((s) {
-      if (_selectedRarity != null && s.rarity != _selectedRarity) return false;
+    final items = allInCategory.where((skin) {
+      if (_selectedRarity != null && skin.rarity != _selectedRarity) {
+        return false;
+      }
       if (queryTrim.isNotEmpty) {
-        final matchName = s.name.toLowerCase().contains(queryTrim);
-        final matchSub = s.subtitle.toLowerCase().contains(queryTrim);
+        final matchName = skin.name.toLowerCase().contains(queryTrim);
+        final matchSub = skin.subtitle.toLowerCase().contains(queryTrim);
         if (!matchName && !matchSub) return false;
       }
       return true;
     }).toList(growable: false);
 
     final equippedId = hasanat.equippedSkin(_selectedCategory).id;
+    final themeImage = FirdawsParadiseRegistry.imageFor(settings.selectedTheme);
 
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: palette.scaffoldColor,
+        resizeToAvoidBottomInset: true,
         body: Stack(
           children: [
-            Positioned.fill(
-              child: RealMosqueBackground(
-                currentPrayer: isNight ? Prayer.isha : Prayer.dhuhr,
-                themeOption: themeOption,
-                isNightMode: isNight,
-                customAssetOverride: settings.selectedAppWallpaperAsset ??
-                    'assets/images/themes/alhambra_granada.jpg',
-                dimFactor: 0.90,
-              ),
+            const Positioned.fill(
+              child: IgnorePointer(child: BotanicalBackdrop()),
             ),
             SafeArea(
-              child: Column(
-                children: [
-                  _buildHeaderBar(context, palette, accent, hasanat),
-                  _buildWalletBanner(context, palette, accent, hasanat),
-                  const SizedBox(height: 8),
-                  _buildCategoryChips(palette, accent),
-                  const SizedBox(height: 8),
-                  _buildSearchAndRarityBar(
-                    palette,
-                    accent,
-                    items.length,
-                    allInCategory.length,
-                    ownedInCat,
-                  ),
-                  const SizedBox(height: 6),
-                  Expanded(
-                    child: items.isEmpty
-                        ? Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(24),
-                              child: Firdaws3DCard(
-                                palette: palette,
-                                glowColor: accent,
-                                child: Text(
-                                  'لا توجد سكنات مطابقة للبحث في قسم «${_selectedCategory.arabicLabel}» 🔍',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: palette.textPrimary,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13,
+              child: Align(
+                alignment: AlignmentDirectional.topCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1200),
+                  child: Column(
+                    children: [
+                      _buildHeaderBar(context, palette, accent, hasanat),
+                      Expanded(
+                        child: CustomScrollView(
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.onDrag,
+                          slivers: [
+                            SliverPadding(
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
+                              sliver: SliverToBoxAdapter(
+                                child: ParadiseHero(
+                                  title: 'سوق المقتنيات',
+                                  subtitle:
+                                      'اكتشف المظاهر المتاحة، وجهّز ما تملكه أو اختر إضافة جديدة برصيد الحسنات.',
+                                  imageAsset: themeImage,
+                                  minHeight: 248,
+                                  footer: Wrap(
+                                    spacing: 9,
+                                    runSpacing: 8,
+                                    children: [
+                                      _heroFact(
+                                        '${HasanatStoreCatalog.allSkins.length}',
+                                        'مقتنى في الكتالوج',
+                                      ),
+                                      _heroFact(
+                                        '${StoreItemCategory.values.length}',
+                                        'فئات للتصفّح',
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
                             ),
-                          )
-                        : LayoutBuilder(
-                            builder: (context, constraints) {
-                              final isWide = constraints.maxWidth >= 560;
-                              if (isWide) {
-                                return GridView.builder(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(14, 4, 14, 28),
-                                  physics: const BouncingScrollPhysics(),
-                                  gridDelegate:
-                                      const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    crossAxisSpacing: 12,
-                                    mainAxisSpacing: 12,
-                                    mainAxisExtent: 292,
-                                  ),
-                                  itemCount: items.length,
-                                  itemBuilder: (_, idx) => _buildSkinCard(
-                                    skin: items[idx],
-                                    cardIdx: idx,
-                                    owned: hasanat.ownsSkin(items[idx].id),
-                                    equipped: items[idx].id == equippedId,
-                                    hasanat: hasanat,
-                                    userProv: userProv,
-                                    palette: palette,
-                                  ),
-                                );
-                              }
-                              return ListView.builder(
-                                padding:
-                                    const EdgeInsets.fromLTRB(14, 4, 14, 28),
-                                physics: const BouncingScrollPhysics(),
-                                itemCount: items.length,
-                                itemBuilder: (_, idx) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: _buildSkinCard(
-                                    skin: items[idx],
-                                    cardIdx: idx,
-                                    owned: hasanat.ownsSkin(items[idx].id),
-                                    equipped: items[idx].id == equippedId,
-                                    hasanat: hasanat,
-                                    userProv: userProv,
-                                    palette: palette,
+                            SliverPadding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              sliver: SliverToBoxAdapter(
+                                child: _buildWalletBanner(
+                                  context,
+                                  palette,
+                                  accent,
+                                  hasanat,
+                                ),
+                              ),
+                            ),
+                            SliverPadding(
+                              padding: const EdgeInsets.fromLTRB(16, 26, 16, 0),
+                              sliver: SliverToBoxAdapter(
+                                child: ParadiseSection(
+                                  title: 'اختر وجهة التصفّح',
+                                  child: _buildCategoryChips(palette, accent),
+                                ),
+                              ),
+                            ),
+                            SliverPadding(
+                              padding: const EdgeInsets.fromLTRB(16, 26, 16, 0),
+                              sliver: SliverToBoxAdapter(
+                                child: ParadiseSection(
+                                  title: 'ابحث وحدّد الدرجة',
+                                  child: _buildSearchAndRarityBar(
+                                    palette,
+                                    accent,
+                                    items.length,
+                                    allInCategory.length,
+                                    ownedInCat,
                                   ),
                                 ),
-                              );
-                            },
-                          ),
+                              ),
+                            ),
+                            SliverPadding(
+                              padding:
+                                  const EdgeInsets.fromLTRB(16, 27, 16, 12),
+                              sliver: SliverToBoxAdapter(
+                                child: ParadiseSection(
+                                  title: _selectedCategory.arabicLabel,
+                                  action: _resultCount(
+                                    palette,
+                                    items.length,
+                                    allInCategory.length,
+                                  ),
+                                  child: _buildCollectionNote(
+                                    palette,
+                                    _selectedCategory,
+                                    ownedInCat,
+                                    allInCategory.length,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (items.isEmpty)
+                              SliverPadding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 0, 16, 30),
+                                sliver: SliverToBoxAdapter(
+                                  child: _buildEmptyResults(palette, accent),
+                                ),
+                              )
+                            else
+                              SliverPadding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 0, 16, 30),
+                                sliver: SliverLayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final extent = constraints.crossAxisExtent;
+                                    final columns = extent >= 990
+                                        ? 3
+                                        : extent >= 650
+                                            ? 2
+                                            : 1;
+                                    final rowCount =
+                                        (items.length + columns - 1) ~/ columns;
+                                    return SliverList(
+                                      delegate: SliverChildBuilderDelegate(
+                                        (context, rowIndex) {
+                                          final start = rowIndex * columns;
+                                          final end = (start + columns)
+                                              .clamp(0, items.length);
+                                          final rowItems =
+                                              items.sublist(start, end);
+                                          return Padding(
+                                            padding: EdgeInsets.only(
+                                              bottom: rowIndex == rowCount - 1
+                                                  ? 0
+                                                  : 14,
+                                            ),
+                                            child: Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                for (var column = 0;
+                                                    column < rowItems.length;
+                                                    column++) ...[
+                                                  Expanded(
+                                                    child: _buildSkinCard(
+                                                      skin: rowItems[column],
+                                                      cardIdx: start + column,
+                                                      owned: hasanat.ownsSkin(
+                                                          rowItems[column].id),
+                                                      equipped:
+                                                          rowItems[column].id ==
+                                                              equippedId,
+                                                      hasanat: hasanat,
+                                                      userProv: userProv,
+                                                      palette: palette,
+                                                    ),
+                                                  ),
+                                                  if (column <
+                                                      rowItems.length - 1)
+                                                    const SizedBox(width: 14),
+                                                ],
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                        childCount: rowCount,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ],
@@ -359,39 +519,63 @@ class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
     HasanatProvider hasanat,
   ) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
+      padding: const EdgeInsets.fromLTRB(16, 5, 16, 4),
       child: Row(
         children: [
-          Firdaws3DPill(
-            icon: Icons.arrow_back_ios_new_rounded,
+          _headerAction(
+            icon: Icons.arrow_forward_rounded,
             label: 'رجوع',
-            accentColor: accent,
             palette: palette,
+            accent: accent,
             onTap: () => Navigator.of(context).pop(),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'متجر السكنات 🛍️',
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              'سوق الحسنات',
+              softWrap: true,
               style: TextStyle(
                 color: palette.textPrimary,
                 fontWeight: FontWeight.w900,
-                fontSize: 16,
+                fontSize: FirdawsType.body,
+                height: 1.25,
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          Firdaws3DPill(
-            icon: Icons.history_rounded,
+          const SizedBox(width: 12),
+          _headerAction(
+            icon: Icons.receipt_long_rounded,
             label: 'السجل',
-            accentColor: const Color(0xFF38BDF8),
             palette: palette,
+            accent: const Color(0xFF287C83),
             onTap: () => _showLedgerSheet(context, hasanat, palette, accent),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _headerAction({
+    required IconData icon,
+    required String label,
+    required ThemePalette palette,
+    required Color accent,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: label,
+      child: Material(
+        color: palette.cardColor,
+        shape: CircleBorder(side: BorderSide(color: palette.dividerColor)),
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: Icon(icon, color: accent, size: 21),
+          ),
+        ),
       ),
     );
   }
@@ -403,138 +587,166 @@ class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
     HasanatProvider hasanat,
   ) {
     final activeEv = hasanat.activeEvent;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: Firdaws3DCard(
-        palette: palette,
-        glowColor: const Color(0xFFF59E0B),
-        backdrop: Background500Catalog.forExtraSection(5),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        borderRadius: 20,
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFBBF24), Color(0xFFD97706)],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFF59E0B).withOpacity(0.45),
-                    blurRadius: 12,
-                  ),
-                ],
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: palette.cardColor,
+        borderRadius: BorderRadius.circular(25),
+        border: Border.all(color: palette.dividerColor, width: 1.1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(palette.isDark ? 0.16 : 0.045),
+            blurRadius: 20,
+            offset: const Offset(0, 7),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _roundIcon(
+                icon: Icons.account_balance_wallet_outlined,
+                color: accent,
+                palette: palette,
+                size: 54,
               ),
-              child: const Center(
-                child: Text('🪙', style: TextStyle(fontSize: 22)),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'رصيدك: ${hasanat.hasanatBalance} حسنة',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: palette.textPrimary,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 15.5,
-                    ),
-                  ),
-                  Text(
-                    'المملوكة: ${hasanat.ownedSkinIds.length} / ${HasanatStoreCatalog.allSkins.length} • التراكمي: ${hasanat.lifetimeHasanat}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: firdawsCrispSecondaryText(palette),
-                      fontSize: 10.5,
-                    ),
-                  ),
-                  if (activeEv != null)
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      '⚡ الحدث النشط: ${activeEv.title}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      'رصيد الحسنات',
+                      softWrap: true,
                       style: TextStyle(
-                        color: activeEv.primaryColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 10.5,
+                        color: palette.textSecondary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: FirdawsType.label,
                       ),
                     ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '${hasanat.hasanatBalance} حسنة',
+                      softWrap: true,
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontWeight: FontWeight.w900,
+                        fontSize: FirdawsType.headline,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Divider(height: 1, color: palette.dividerColor),
+          ),
+          Wrap(
+            spacing: 28,
+            runSpacing: 14,
+            children: [
+              _walletMetric(
+                palette,
+                '${hasanat.ownedSkinIds.length} / ${HasanatStoreCatalog.allSkins.length}',
+                'مقتنى تملكه',
+              ),
+              _walletMetric(
+                palette,
+                '${hasanat.lifetimeHasanat}',
+                'إجمالي الحسنات المكتسبة',
+              ),
+            ],
+          ),
+          if (activeEv != null) ...[
+            const SizedBox(height: 15),
+            Container(
+              padding: const EdgeInsetsDirectional.fromSTEB(12, 11, 12, 11),
+              decoration: BoxDecoration(
+                color: palette.elevatedCardColor,
+                borderRadius: BorderRadius.circular(16),
+                border:
+                    Border.all(color: activeEv.primaryColor.withOpacity(.6)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.event_available_rounded,
+                      color: activeEv.primaryColor, size: 21),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      'حدث نشط: ${activeEv.title}',
+                      softWrap: true,
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: FirdawsType.caption,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
           ],
-        ),
+        ],
+      ),
+    );
+  }
+
+  Widget _walletMetric(ThemePalette palette, String value, String label) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 120, maxWidth: 230),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            softWrap: true,
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontWeight: FontWeight.w900,
+              fontSize: FirdawsType.label,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            label,
+            softWrap: true,
+            style: TextStyle(
+              color: palette.textSecondary,
+              fontSize: FirdawsType.caption,
+              height: 1.4,
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildCategoryChips(ThemePalette palette, Color accent) {
-    return SizedBox(
-      height: 42,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        child: Row(
-          children: StoreItemCategory.values.map((cat) {
-            final isSel = _selectedCategory == cat;
-            return Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: InkWell(
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  setState(() => _selectedCategory = cat);
-                },
-                borderRadius: BorderRadius.circular(18),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: isSel
-                        ? accent
-                        : firdaws3DSurfaceColor(palette, opacity: 0.9),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
-                      color: isSel ? accent : palette.dividerColor,
-                      width: isSel ? 1.5 : 1.0,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        cat.icon,
-                        size: 16,
-                        color: isSel ? palette.onAccentColor : accent,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        cat.arabicLabel,
-                        style: TextStyle(
-                          color: isSel
-                              ? palette.onAccentColor
-                              : palette.textPrimary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ),
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: StoreItemCategory.values.map((category) {
+        final isSelected = _selectedCategory == category;
+        return ParadiseChip(
+          label: category.arabicLabel,
+          icon: category.icon,
+          selected: isSelected,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            setState(() => _selectedCategory = category);
+          },
+        );
+      }).toList(growable: false),
     );
   }
 
@@ -545,97 +757,128 @@ class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
     int totalInCat,
     int ownedInCat,
   ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: palette.cardColor,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: palette.dividerColor),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Firdaws3DCard(
-            palette: palette,
-            glowColor: accent,
-            backdrop: Background500Catalog.forExtraSection(8),
-            borderRadius: 16,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-            depth: 2.5,
-            child: Row(
-              children: [
-                Icon(Icons.search_rounded, color: accent, size: 18),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: TextField(
-                    controller: _searchCtrl,
-                    style: TextStyle(color: palette.textPrimary, fontSize: 12.5),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      border: InputBorder.none,
-                      hintText:
-                          'ابحث في $totalInCat سكن (${_selectedCategory.arabicLabel})...',
-                      hintStyle:
-                          TextStyle(color: palette.textMuted, fontSize: 11.5),
+          TextField(
+            controller: _searchCtrl,
+            textInputAction: TextInputAction.search,
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontSize: FirdawsType.label,
+            ),
+            decoration: InputDecoration(
+              hintText: 'ابحث في $totalInCat مظهرًا',
+              hintStyle: TextStyle(
+                color: palette.textMuted,
+                fontSize: FirdawsType.caption,
+              ),
+              prefixIcon: Icon(Icons.search_rounded, color: accent),
+              suffixIcon: _searchQuery.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'مسح البحث',
+                      onPressed: () {
+                        _searchCtrl.clear();
+                        setState(() => _searchQuery = '');
+                      },
+                      icon: Icon(Icons.close_rounded,
+                          color: palette.textSecondary),
                     ),
-                    onChanged: (v) => setState(() => _searchQuery = v),
-                  ),
-                ),
-                if (_searchQuery.isNotEmpty)
-                  InkWell(
-                    onTap: () {
-                      _searchCtrl.clear();
-                      setState(() => _searchQuery = '');
-                    },
-                    child: Icon(Icons.close_rounded,
-                        color: palette.textMuted, size: 17),
-                  ),
-              ],
+              filled: true,
+              fillColor: palette.elevatedCardColor,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: palette.dividerColor),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: accent, width: 1.5),
+              ),
+            ),
+            onChanged: (value) => setState(() => _searchQuery = value),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'درجة الندرة',
+            softWrap: true,
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontWeight: FontWeight.w800,
+              fontSize: FirdawsType.label,
             ),
           ),
-          const SizedBox(height: 6),
-          Row(
+          const SizedBox(height: 9),
+          Wrap(
+            spacing: 7,
+            runSpacing: 7,
             children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  child: Row(
-                    children: [
-                      _rarityFilterChip(
-                        label: 'الكل ($totalInCat)',
-                        color: accent,
-                        selected: _selectedRarity == null,
-                        palette: palette,
-                        onTap: () => setState(() => _selectedRarity = null),
-                      ),
-                      ...SkinRarity.values.map(
-                        (r) => Padding(
-                          padding: const EdgeInsets.only(right: 6),
-                          child: _rarityFilterChip(
-                            label: r.arabicLabel,
-                            color: r.badgeColor,
-                            selected: _selectedRarity == r,
-                            palette: palette,
-                            onTap: () => setState(() {
-                              _selectedRarity =
-                                  _selectedRarity == r ? null : r;
-                            }),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              _rarityFilterChip(
+                label: 'كل الدرجات',
+                color: accent,
+                selected: _selectedRarity == null,
+                palette: palette,
+                onTap: () => setState(() => _selectedRarity = null),
               ),
-              const SizedBox(width: 6),
-              Text(
-                '$filteredCount/$totalInCat • مملوك $ownedInCat',
-                style: TextStyle(
-                  color: firdawsCrispSecondaryText(palette),
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.bold,
-                ),
+              ...SkinRarity.values.map((rarity) => _rarityFilterChip(
+                    label: rarity.arabicLabel,
+                    color: rarity.badgeColor,
+                    selected: _selectedRarity == rarity,
+                    palette: palette,
+                    onTap: () => setState(() {
+                      _selectedRarity =
+                          _selectedRarity == rarity ? null : rarity;
+                    }),
+                  )),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              _filterSummary(
+                palette,
+                Icons.filter_list_rounded,
+                '$filteredCount نتيجة من $totalInCat',
+              ),
+              _filterSummary(
+                palette,
+                Icons.inventory_2_outlined,
+                'تملك $ownedInCat',
               ),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _filterSummary(ThemePalette palette, IconData icon, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: palette.textSecondary),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          softWrap: true,
+          style: TextStyle(
+            color: palette.textSecondary,
+            fontSize: FirdawsType.caption,
+            height: 1.35,
+          ),
+        ),
+      ],
     );
   }
 
@@ -646,28 +889,167 @@ class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
     required ThemePalette palette,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-        decoration: BoxDecoration(
-          color: selected
-              ? color.withOpacity(0.24)
-              : firdaws3DSurfaceColor(palette, opacity: 0.75),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? color : palette.dividerColor,
-            width: selected ? 1.4 : 0.9,
+    return Material(
+      color: selected ? color.withOpacity(.13) : palette.elevatedCardColor,
+      shape: StadiumBorder(
+        side: BorderSide(
+          color: selected ? color : palette.dividerColor,
+          width: selected ? 1.4 : 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const StadiumBorder(),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (selected) ...[
+                  Icon(Icons.check_rounded, color: color, size: 16),
+                  const SizedBox(width: 5),
+                ],
+                Flexible(
+                  child: Text(
+                    label,
+                    softWrap: true,
+                    style: TextStyle(
+                      color: selected
+                          ? palette.textPrimary
+                          : palette.textSecondary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: FirdawsType.caption,
+                      height: 1.25,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: selected ? color : palette.textSecondary,
-            fontWeight: FontWeight.bold,
-            fontSize: 10.5,
-          ),
+      ),
+    );
+  }
+
+  Widget _resultCount(ThemePalette palette, int count, int total) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+      decoration: BoxDecoration(
+        color: palette.elevatedCardColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: palette.dividerColor),
+      ),
+      child: Text(
+        '$count / $total',
+        softWrap: true,
+        style: TextStyle(
+          color: palette.textPrimary,
+          fontWeight: FontWeight.w800,
+          fontSize: FirdawsType.caption,
         ),
+      ),
+    );
+  }
+
+  Widget _buildCollectionNote(
+    ThemePalette palette,
+    StoreItemCategory category,
+    int owned,
+    int total,
+  ) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: palette.cardColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: palette.dividerColor),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(category.icon, color: palette.accentColor, size: 21),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'في هذه الفئة $total مظهرًا؛ تملك منها $owned.',
+              softWrap: true,
+              style: TextStyle(
+                color: palette.textSecondary,
+                fontSize: FirdawsType.caption,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyResults(ThemePalette palette, Color accent) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 30),
+      decoration: BoxDecoration(
+        color: palette.cardColor,
+        borderRadius: BorderRadius.circular(25),
+        border: Border.all(color: palette.dividerColor),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _roundIcon(
+            icon: Icons.search_off_rounded,
+            color: accent,
+            palette: palette,
+            size: 64,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'لا توجد مقتنيات بهذه المواصفات',
+            textAlign: TextAlign.center,
+            softWrap: true,
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontWeight: FontWeight.w900,
+              fontSize: FirdawsType.body,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            'جرّب عبارة بحث أخرى أو اختر درجة مختلفة.',
+            textAlign: TextAlign.center,
+            softWrap: true,
+            style: TextStyle(
+              color: palette.textSecondary,
+              fontSize: FirdawsType.label,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 17),
+          OutlinedButton.icon(
+            onPressed: () {
+              _searchCtrl.clear();
+              setState(() {
+                _searchQuery = '';
+                _selectedRarity = null;
+              });
+            },
+            icon: const Icon(Icons.restart_alt_rounded),
+            label: const Text('إعادة ضبط عوامل التصفية', softWrap: true),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: palette.textPrimary,
+              side: BorderSide(color: accent.withOpacity(.7)),
+              minimumSize: const Size(44, 48),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15)),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -689,28 +1071,17 @@ class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
         skin.previewAsset != null) {
       previewWidget = Arena4KBackdropPreview(
         assetPath: skin.previewAsset!,
-        height: 112,
-        borderRadius: 14,
+        height: 154,
+        borderRadius: FirdawsRadius.control,
         accentColor: skin.primaryColor,
         overlayChild: Align(
           alignment: AlignmentDirectional.topStart,
           child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.66),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: rarityColor.withOpacity(0.75)),
-              ),
-              child: Text(
-                skin.rarity.arabicLabel,
-                style: TextStyle(
-                  color: rarityColor,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 10.5,
-                ),
-              ),
+            padding: const EdgeInsets.all(9),
+            child: _productBadge(
+              skin.rarity.arabicLabel,
+              rarityColor,
+              dark: true,
             ),
           ),
         ),
@@ -719,19 +1090,19 @@ class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
       previewWidget = Firdaws4KCardShell(
         backdrop: Background500Catalog.forExtraSection(cardIdx + 17),
         isDark: true,
-        borderRadius: 14,
-        borderColor: skin.primaryColor.withOpacity(0.55),
-        imageOpacity: 0.45,
-        padding: const EdgeInsets.all(6),
+        borderRadius: FirdawsRadius.control,
+        borderColor: skin.primaryColor.withOpacity(.65),
+        imageOpacity: .45,
+        padding: const EdgeInsets.all(7),
         child: SizedBox(
-          height: 92,
+          height: 138,
           child: Center(
             child: FirdawsPortraitAvatar(
               entityId: 'you',
               displayName: userProv.displayName,
               isFemale: userProv.isFemale,
               customBytes: userProv.avatarBytes,
-              size: 72,
+              size: 76,
               frameStyleKey: skin.styleKey,
               showCrown: skin.rarity == SkinRarity.firdaws,
               isHighlighted: true,
@@ -740,124 +1111,257 @@ class _HasanatStoreScreenState extends State<HasanatStoreScreen> {
         ),
       );
     } else {
-      previewWidget = Stack(
-        children: [
-          ArenaSkin3DPreviewWidget(
-            categoryName: skin.category.name,
-            styleKey: skin.styleKey,
-            primaryColor: skin.primaryColor,
-            secondaryColor: skin.secondaryColor,
-            height: 106,
-          ),
-          Positioned.fill(
-            child: IgnorePointer(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: Opacity(
-                  opacity: 0.16,
-                  child: FirdawsResilientImage.entry(
-                    Background500Catalog.forExtraSection(cardIdx + 53),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    final btnColor = equipped
-        ? const Color(0xFF10B981)
-        : (owned
-            ? const Color(0xFF38BDF8)
-            : (canAfford ? const Color(0xFFF59E0B) : Colors.grey.shade700));
-
-    final btnLabel = equipped
-        ? 'مُجهَّز حالياً ✓'
-        : (owned
-            ? 'تجهيز السكن ✨'
-            : 'شراء بـ ${skin.price} حسنة 🪙');
-
-    return Firdaws3DCard(
-      palette: palette,
-      glowColor: equipped ? const Color(0xFF10B981) : skin.primaryColor,
-      backdrop: Background500Catalog.bySlot((cardIdx + skin.category.index * 59) % 500),
-      padding: const EdgeInsets.all(12),
-      borderRadius: 20,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          previewWidget,
-          const SizedBox(height: 10),
-          Row(
+      previewWidget = SizedBox(
+        height: 154,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(FirdawsRadius.control),
+          child: Stack(
+            fit: StackFit.expand,
             children: [
-              Expanded(
-                child: Text(
-                  skin.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: palette.textPrimary,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 13.5,
+              ArenaSkin3DPreviewWidget(
+                categoryName: skin.category.name,
+                styleKey: skin.styleKey,
+                primaryColor: skin.primaryColor,
+                secondaryColor: skin.secondaryColor,
+                height: 154,
+              ),
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Opacity(
+                    opacity: .14,
+                    child: FirdawsResilientImage.entry(
+                      Background500Catalog.forExtraSection(cardIdx + 53),
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: rarityColor.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: rarityColor.withOpacity(0.6)),
-                ),
-                child: Text(
+              PositionedDirectional(
+                top: 9,
+                start: 9,
+                child: _productBadge(
                   skin.rarity.arabicLabel,
-                  style: TextStyle(
-                    color: rarityColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 10,
-                  ),
+                  rarityColor,
+                  dark: true,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            skin.subtitle,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: firdawsCrispSecondaryText(palette),
-              fontSize: 11,
-              height: 1.35,
-            ),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: Firdaws3DButton(
-              baseColor: btnColor,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-              elevationDepth: equipped ? 2 : 3.5,
-              onPressed: equipped
-                  ? null
-                  : () => _onBuyOrEquip(skin, hasanat, palette),
-              child: Text(
-                btnLabel,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12,
-                ),
-              ),
-            ),
+        ),
+      );
+    }
+
+    final buttonColor = equipped
+        ? const Color(0xFF16845F)
+        : (owned
+            ? const Color(0xFF287C83)
+            : (canAfford ? const Color(0xFF956B27) : const Color(0xFF626A65)));
+    final buttonLabel = equipped
+        ? 'مُجهَّز حالياً'
+        : (owned ? 'تجهيز هذا المظهر' : 'شراء بـ ${skin.price} حسنة');
+
+    return Container(
+      decoration: BoxDecoration(
+        color: palette.cardColor,
+        borderRadius: BorderRadius.circular(23),
+        border: Border.all(
+          color: equipped ? const Color(0xFF16845F) : palette.dividerColor,
+          width: equipped ? 1.6 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(palette.isDark ? .18 : .045),
+            blurRadius: 17,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(13),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(FirdawsRadius.control),
+              child: previewWidget,
+            ),
+            const SizedBox(height: 13),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                _productBadge(skin.rarity.arabicLabel, rarityColor),
+                if (equipped)
+                  _productBadge('مجهّز', const Color(0xFF16845F))
+                else if (owned)
+                  _productBadge('ضمن مقتنياتك', const Color(0xFF287C83)),
+              ],
+            ),
+            const SizedBox(height: 9),
+            Text(
+              skin.name,
+              softWrap: true,
+              style: TextStyle(
+                color: palette.textPrimary,
+                fontWeight: FontWeight.w900,
+                fontSize: FirdawsType.label,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              skin.subtitle,
+              softWrap: true,
+              style: TextStyle(
+                color: palette.textSecondary,
+                fontSize: FirdawsType.caption,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+              decoration: BoxDecoration(
+                color: palette.elevatedCardColor,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: palette.dividerColor),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    owned ? Icons.inventory_2_outlined : Icons.toll_outlined,
+                    size: 19,
+                    color: owned ? palette.textSecondary : buttonColor,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      owned ? 'متاح في مجموعتك' : 'السعر: ${skin.price} حسنة',
+                      softWrap: true,
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: FirdawsType.caption,
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 11),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: equipped
+                    ? null
+                    : () => _onBuyOrEquip(skin, hasanat, palette),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: buttonColor,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: buttonColor.withOpacity(.74),
+                  disabledForegroundColor: Colors.white,
+                  minimumSize: const Size(44, 50),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15)),
+                  elevation: 0,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      equipped
+                          ? Icons.check_circle_outline_rounded
+                          : (owned
+                              ? Icons.checkroom_rounded
+                              : Icons.shopping_bag_outlined),
+                      size: 19,
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        buttonLabel,
+                        textAlign: TextAlign.center,
+                        softWrap: true,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: FirdawsType.caption,
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
+
+  Widget _productBadge(String label, Color color, {bool dark = false}) {
+    final background = dark ? const Color(0xE817211D) : color.withOpacity(.12);
+    final foreground = dark ? Colors.white : color;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(dark ? .75 : .45)),
+      ),
+      child: Text(
+        label,
+        softWrap: true,
+        style: TextStyle(
+          color: foreground,
+          fontWeight: FontWeight.w800,
+          fontSize: FirdawsType.micro,
+          height: 1.25,
+        ),
+      ),
+    );
+  }
+}
+
+Widget _roundIcon({
+  required IconData icon,
+  required Color color,
+  required ThemePalette palette,
+  required double size,
+}) {
+  return Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      color: palette.elevatedCardColor,
+      borderRadius: BorderRadius.circular(size * .34),
+      border: Border.all(color: color.withOpacity(.35)),
+    ),
+    child: Icon(icon, color: color, size: size * .48),
+  );
+}
+
+Widget _heroFact(String value, String label) {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(.14),
+      borderRadius: BorderRadius.circular(17),
+      border: Border.all(color: Colors.white.withOpacity(.33)),
+    ),
+    child: Text(
+      '$value · $label',
+      softWrap: true,
+      style: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w700,
+        fontSize: 13,
+        height: 1.3,
+      ),
+    ),
+  );
 }

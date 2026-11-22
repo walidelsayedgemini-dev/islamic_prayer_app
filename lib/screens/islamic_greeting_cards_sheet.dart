@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../models/backgrounds_500_catalog.dart';
 import '../theme/islamic_theme.dart';
-import '../widgets/firdaws_resilient_image.dart';
+import '../widgets/paradise_ui.dart';
 
 class IslamicGreetingCard {
   final String id;
@@ -39,6 +38,8 @@ class IslamicGreetingCardsSheet extends StatefulWidget {
 
 class _IslamicGreetingCardsSheetState extends State<IslamicGreetingCardsSheet> {
   int _selectedCardIndex = 0;
+  String _query = '';
+  final TextEditingController _searchController = TextEditingController();
 
   static const List<IslamicGreetingCard> cards = [
     IslamicGreetingCard(
@@ -99,217 +100,619 @@ class _IslamicGreetingCardsSheetState extends State<IslamicGreetingCardsSheet> {
     ),
   ];
 
+  List<int> get _visibleCardIndices {
+    final query = _query.trim().toLowerCase();
+    if (query.isEmpty) return List<int>.generate(cards.length, (index) => index);
+    return List<int>.generate(cards.length, (index) => index).where((index) {
+      final card = cards[index];
+      return card.occasion.toLowerCase().contains(query) ||
+          card.title.toLowerCase().contains(query);
+    }).toList();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _selectCard(int index) {
+    setState(() => _selectedCardIndex = index);
+  }
+
+  void _copySelectedCard(ThemePalette palette) {
+    final selectedCard = cards[_selectedCardIndex];
+    final textToCopy =
+        '${selectedCard.title}\n\n${selectedCard.message}\n\n${selectedCard.hadithOrDua}';
+    Clipboard.setData(ClipboardData(text: textToCopy));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'تم نسخ كرت ${selectedCard.occasion} بنجاح!',
+          style: TextStyle(color: palette.textPrimary),
+        ),
+        backgroundColor: palette.cardColor,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = widget.themeOption.resolve(isNight: widget.isNightMode);
     final accent = palette.accentColor;
     final selectedCard = cards[_selectedCardIndex];
+    final media = MediaQuery.of(context);
+    final sheetHeight = (media.size.height - media.viewInsets.bottom) * .92;
+    final scene = FirdawsParadiseRegistry.imageFor(widget.themeOption.key);
 
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.88,
-      decoration: BoxDecoration(
-        color: palette.scaffoldColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border.all(color: accent.withOpacity(0.45), width: 1.5),
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 1120,
+          maxHeight: sheetHeight,
+        ),
+        child: SizedBox(
+          width: double.infinity,
+          height: sheetHeight,
+          child: Material(
+            color: palette.scaffoldColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            clipBehavior: Clip.antiAlias,
+            child: Directionality(
+              textDirection: TextDirection.rtl,
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 10, bottom: 4),
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: palette.dividerColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsetsDirectional.fromSTEB(18, 4, 12, 12),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: palette.elevatedCardColor,
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(
+                                color: accent.withOpacity(.34),
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.mark_email_read_rounded,
+                              color: accent,
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'بطاقات التهنئة',
+                                  softWrap: true,
+                                  style: TextStyle(
+                                    color: palette.textPrimary,
+                                    fontSize: 19,
+                                    fontWeight: FontWeight.w800,
+                                    height: 1.2,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  'اختر مناسبة، راجع النص، ثم انسخه للمشاركة.',
+                                  softWrap: true,
+                                  style: TextStyle(
+                                    color: palette.textSecondary,
+                                    fontSize: 13,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton.filledTonal(
+                            tooltip: 'إغلاق بطاقات التهنئة',
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: const Icon(Icons.close_rounded),
+                            style: IconButton.styleFrom(
+                              foregroundColor: palette.textPrimary,
+                              backgroundColor: palette.elevatedCardColor,
+                              minimumSize: const Size(44, 44),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 14),
+                      child: ParadiseHero(
+                        title: 'كلمة طيبة في وقتها',
+                        subtitle:
+                            'تصفّح الرسائل الجاهزة، واختر ما يناسب مناسبتك.',
+                        imageAsset: scene,
+                        minHeight: 184,
+                      ),
+                    ),
+                    Expanded(
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          if (constraints.maxWidth >= 720) {
+                            final selectorWidth =
+                                (constraints.maxWidth * .32).clamp(280.0, 340.0);
+                            return Padding(
+                              padding: const EdgeInsetsDirectional.fromSTEB(
+                                  20, 4, 20, 12),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  SizedBox(
+                                    width: selectorWidth,
+                                    child: _buildWideSelector(palette, accent),
+                                  ),
+                                  const SizedBox(width: 20),
+                                  Expanded(
+                                    child: _buildPreview(
+                                      selectedCard,
+                                      palette,
+                                      accent,
+                                      showSectionTitle: true,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                          return SingleChildScrollView(
+                            padding: const EdgeInsetsDirectional.fromSTEB(
+                                18, 4, 18, 18),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _buildCompactSelector(palette, accent),
+                                const SizedBox(height: 20),
+                                _buildPreview(
+                                  selectedCard,
+                                  palette,
+                                  accent,
+                                  showSectionTitle: true,
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsetsDirectional.fromSTEB(18, 10, 18, 14),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () => _copySelectedCard(palette),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: accent,
+                            foregroundColor: palette.onAccentColor,
+                            minimumSize: const Size.fromHeight(58),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 18, vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(19),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.copy_rounded, size: 20),
+                              SizedBox(width: 10),
+                              Flexible(
+                                child: Text(
+                                  'انسخ نص البطاقة للمشاركة',
+                                  softWrap: true,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    height: 1.25,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
-      child: Column(
-        children: [
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(top: 10),
-              width: 44,
-              height: 4.5,
-              decoration: BoxDecoration(
-                color: palette.dividerColor,
-                borderRadius: BorderRadius.circular(10),
+    );
+  }
+
+  Widget _buildSearchField(ThemePalette palette) {
+    return TextField(
+      controller: _searchController,
+      textDirection: TextDirection.rtl,
+      onChanged: (value) => setState(() => _query = value),
+      style: TextStyle(color: palette.textPrimary, height: 1.35),
+      decoration: InputDecoration(
+        hintText: 'ابحث عن مناسبة أو عنوان',
+        hintStyle: TextStyle(color: palette.textMuted),
+        prefixIcon: Icon(Icons.search_rounded, color: palette.textSecondary),
+        suffixIcon: _query.isEmpty
+            ? null
+            : IconButton(
+                tooltip: 'مسح البحث',
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() => _query = '');
+                },
+                icon: Icon(Icons.close_rounded, color: palette.textSecondary),
               ),
-            ),
+        filled: true,
+        fillColor: palette.cardColor,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: palette.dividerColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: palette.dividerColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: palette.accentColor, width: 1.5),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompactSelector(ThemePalette palette, Color accent) {
+    final visible = _visibleCardIndices;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ParadiseSection(
+          title: 'اختر المناسبة',
+          action: _countBadge(palette, visible.length),
+          child: _buildSearchField(palette),
+        ),
+        const SizedBox(height: 12),
+        if (visible.isEmpty)
+          _buildEmptySearch(palette)
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final index in visible)
+                ParadiseChip(
+                  label: cards[index].occasion,
+                  icon: cards[index].icon,
+                  selected: index == _selectedCardIndex,
+                  onTap: () => _selectCard(index),
+                ),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-            child: Firdaws4KCardShell(
-              backdrop: Background500Catalog.forExtraSection(70),
-              isDark: palette.isDark,
-              borderRadius: 18,
-              borderColor: accent.withOpacity(0.45),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              imageOpacity: 0.45,
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: accent.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: accent),
-                    ),
-                    child: Icon(Icons.mark_email_read_rounded, color: accent, size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      "كروت التهنئة والأدعية الإسلامية",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: palette.textPrimary,
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
+      ],
+    );
+  }
+
+  Widget _buildWideSelector(ThemePalette palette, Color accent) {
+    final visible = _visibleCardIndices;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ParadiseSection(
+          title: 'اختر المناسبة',
+          action: _countBadge(palette, visible.length),
+          child: _buildSearchField(palette),
+        ),
+        const SizedBox(height: 10),
+        if (visible.isEmpty)
+          Expanded(child: Center(child: _buildEmptySearch(palette)))
+        else
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsetsDirectional.only(bottom: 8),
+              itemCount: visible.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, position) {
+                final index = visible[position];
+                final card = cards[index];
+                final selected = index == _selectedCardIndex;
+                return Material(
+                  color: selected
+                      ? palette.elevatedCardColor
+                      : palette.cardColor,
+                  borderRadius: BorderRadius.circular(18),
+                  child: InkWell(
+                    onTap: () => _selectCard(index),
+                    borderRadius: BorderRadius.circular(18),
+                    child: Container(
+                      padding: const EdgeInsets.all(13),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: selected ? accent : palette.dividerColor,
+                          width: selected ? 1.6 : 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: selected
+                                  ? palette.cardColor
+                                  : palette.elevatedCardColor,
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Icon(card.icon, color: accent, size: 21),
+                          ),
+                          const SizedBox(width: 11),
+                          Expanded(
+                            child: Text(
+                              card.occasion,
+                              softWrap: true,
+                              style: TextStyle(
+                                color: palette.textPrimary,
+                                fontSize: 14,
+                                height: 1.35,
+                                fontWeight: selected
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          if (selected) ...[
+                            const SizedBox(width: 7),
+                            Icon(Icons.check_circle_rounded,
+                                color: accent, size: 20),
+                          ],
+                        ],
                       ),
                     ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close_rounded, color: palette.textMuted),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          SizedBox(
-            height: 44,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              itemCount: cards.length,
-              itemBuilder: (context, idx) {
-                final isSel = idx == _selectedCardIndex;
-                return Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: ChoiceChip(
-                    label: Text(
-                      cards[idx].occasion,
-                      style: TextStyle(
-                        color: isSel ? palette.onAccentColor : palette.textPrimary,
-                        fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-                        fontSize: 12.5,
-                      ),
-                    ),
-                    selected: isSel,
-                    selectedColor: accent,
-                    backgroundColor: palette.cardColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      side: BorderSide(color: isSel ? accent : palette.dividerColor),
-                    ),
-                    onSelected: (val) {
-                      if (val) setState(() => _selectedCardIndex = idx);
-                    },
                   ),
                 );
               },
             ),
           ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Column(
-                children: [
-                  Firdaws4KCardShell(
-                    backdrop: Background500Catalog.forExtraSection(71 + _selectedCardIndex),
-                    isDark: palette.isDark,
-                    padding: const EdgeInsets.all(22),
-                    borderRadius: 24,
-                    borderWidth: 2.0,
-                    borderColor: accent,
-                    imageOpacity: palette.isDark ? 0.56 : 0.44,
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 56,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: accent.withOpacity(0.2),
-                            border: Border.all(color: accent, width: 2),
-                          ),
-                          child: Icon(selectedCard.icon, color: accent, size: 28),
-                        ),
-                        const SizedBox(height: 14),
-                        Text(
-                          selectedCard.title,
-                          style: TextStyle(
-                            color: accent,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 14),
-                        Text(
-                          selectedCard.message,
-                          style: TextStyle(
-                            color: palette.textPrimary,
-                            fontSize: 16,
-                            height: 1.6,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        Firdaws4KCardShell(
-                          backdrop: Background500Catalog.forExtraSection(80 + _selectedCardIndex),
-                          isDark: palette.isDark,
-                          padding: const EdgeInsets.all(12),
-                          borderRadius: 14,
-                          borderColor: accent.withOpacity(0.45),
-                          imageOpacity: 0.34,
-                          child: Text(
-                            selectedCard.hadithOrDua,
-                            style: TextStyle(
-                              color: palette.isDark
-                                  ? const Color(0xFFE2E8F0)
-                                  : palette.primaryColor,
-                              fontSize: 13,
-                              height: 1.5,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: accent,
-                      foregroundColor: palette.onAccentColor,
-                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      elevation: 4,
-                    ),
-                    icon: const Icon(Icons.copy_rounded, size: 18),
-                    label: const Text(
-                      "نسخ نص التهنئة لمشاركته",
+      ],
+    );
+  }
+
+  Widget _countBadge(ThemePalette palette, int count) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: palette.elevatedCardColor,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Text(
+        '$count من ${cards.length}',
+        style: TextStyle(
+          color: palette.textSecondary,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptySearch(ThemePalette palette) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: palette.cardColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: palette.dividerColor),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.search_off_rounded, color: palette.textSecondary, size: 27),
+          const SizedBox(height: 8),
+          Text(
+            'لا توجد مناسبة بهذا الاسم. جرّب كلمة أخرى.',
+            textAlign: TextAlign.center,
+            softWrap: true,
+            style: TextStyle(
+              color: palette.textPrimary,
+              height: 1.45,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              _searchController.clear();
+              setState(() => _query = '');
+            },
+            child: const Text('عرض كل المناسبات'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreview(
+    IslamicGreetingCard card,
+    ThemePalette palette,
+    Color accent, {
+    required bool showSectionTitle,
+  }) {
+    final cardIndex = cards.indexOf(card) + 1;
+    final preview = Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: palette.cardColor,
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: palette.dividerColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(palette.isDark ? .12 : .045),
+            blurRadius: 22,
+            offset: const Offset(0, 7),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: palette.elevatedCardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: accent.withOpacity(.3)),
+                ),
+                child: Icon(card.icon, color: accent, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      card.occasion,
+                      softWrap: true,
                       style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
+                        color: palette.textSecondary,
+                        fontSize: 13,
+                        height: 1.35,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    onPressed: () {
-                      final textToCopy =
-                          "${selectedCard.title}\n\n${selectedCard.message}\n\n${selectedCard.hadithOrDua}";
-                      Clipboard.setData(ClipboardData(text: textToCopy));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            "تم نسخ كرت ${selectedCard.occasion} بنجاح!",
-                            style: TextStyle(color: palette.textPrimary),
-                          ),
-                          backgroundColor: palette.cardColor,
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                ],
+                    const SizedBox(height: 5),
+                    Text(
+                      'معاينة البطاقة',
+                      softWrap: true,
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontSize: 17,
+                        height: 1.25,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                decoration: BoxDecoration(
+                  color: palette.elevatedCardColor,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '$cardIndex / ${cards.length}',
+                  textDirection: TextDirection.ltr,
+                  style: TextStyle(
+                    color: palette.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Text(
+            card.title,
+            softWrap: true,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: accent,
+              fontSize: 23,
+              height: 1.35,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(17),
+            decoration: BoxDecoration(
+              color: palette.elevatedCardColor,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              card.message,
+              softWrap: true,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: palette.textPrimary,
+                fontSize: 16,
+                height: 1.75,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: palette.scaffoldColor,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: palette.dividerColor),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'الدعاء أو النص المرفق',
+                  softWrap: true,
+                  style: TextStyle(
+                    color: palette.textSecondary,
+                    fontSize: 13,
+                    height: 1.4,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  card.hadithOrDua,
+                  softWrap: true,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: palette.textPrimary,
+                    fontSize: 15,
+                    height: 1.7,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
+    );
+
+    if (!showSectionTitle) return preview;
+    return ParadiseSection(
+      title: 'رسالتك المختارة',
+      child: preview,
     );
   }
 }

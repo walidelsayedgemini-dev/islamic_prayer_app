@@ -112,7 +112,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                                   : "${widget.themeOption.primaryEmoji} الفردوس • الواحة المباركة",
                               style: TextStyle(
                                 color: palette.textPrimary,
-                                fontSize: 15.5,
+                                fontSize: FirdawsType.body,
                                 fontWeight: FontWeight.bold,
                               ),
                               maxLines: 1,
@@ -126,7 +126,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                                 color: userProv.activeTitleLabel != null
                                     ? accent
                                     : palette.textSecondary,
-                                fontSize: 11,
+                                fontSize: FirdawsType.caption,
                                 fontWeight: userProv.activeTitleLabel != null
                                     ? FontWeight.bold
                                     : FontWeight.normal,
@@ -151,7 +151,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: FirdawsSpace.md),
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
@@ -425,7 +425,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                             style: TextStyle(
                               color: isSel ? palette.onAccentColor : palette.textPrimary,
                               fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-                              fontSize: 13,
+                              fontSize: FirdawsType.label,
                             ),
                           ),
                         ),
@@ -448,7 +448,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                       "القارئ:",
                       style: TextStyle(
                         color: palette.textSecondary,
-                        fontSize: 12,
+                        fontSize: FirdawsType.caption,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -474,7 +474,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                                   reciter.name,
                                   style: TextStyle(
                                     color: palette.textPrimary,
-                                    fontSize: 13,
+                                    fontSize: FirdawsType.label,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -496,11 +496,11 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 child: TextField(
                   controller: _searchController,
-                  style: TextStyle(color: palette.textPrimary, fontSize: 13),
+                  style: TextStyle(color: palette.textPrimary, fontSize: FirdawsType.label),
                   onChanged: (val) => setState(() => _searchQuery = val.trim()),
                   decoration: InputDecoration(
                     hintText: "ابحث عن اسم السورة أو رقمها...",
-                    hintStyle: TextStyle(color: palette.textMuted, fontSize: 12),
+                    hintStyle: TextStyle(color: palette.textMuted, fontSize: FirdawsType.caption),
                     prefixIcon: Icon(Icons.search_rounded, color: accent, size: 18),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
@@ -548,7 +548,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                     Expanded(
                       child: Text(
                         player.errorMessage!,
-                        style: TextStyle(color: palette.textPrimary, fontSize: 11),
+                        style: TextStyle(color: palette.textPrimary, fontSize: FirdawsType.caption),
                       ),
                     ),
                     GestureDetector(
@@ -609,7 +609,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                   backdrop: Background500Catalog.forExtraSection(1),
                   isDark: palette.isDark,
                   borderColor: accent,
-                  borderRadius: 16,
+                  borderRadius: FirdawsRadius.control,
                   borderWidth: 1.4,
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
@@ -634,12 +634,12 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                               style: TextStyle(
                                 color: palette.textPrimary,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 13,
+                                fontSize: FirdawsType.label,
                               ),
                             ),
                             Text(
                               "مراجعة Quran.com • تفسير • علامة القراءة",
-                              style: TextStyle(color: palette.textSecondary, fontSize: 10.5),
+                              style: TextStyle(color: palette.textSecondary, fontSize: FirdawsType.caption),
                             ),
                           ],
                         ),
@@ -659,7 +659,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                     backdrop: Background500Catalog.forExtraSection(3),
                     isDark: palette.isDark,
                     borderColor: offlineBadgeColor.withOpacity(0.55),
-                    borderRadius: 14,
+                    borderRadius: FirdawsRadius.control,
                     borderWidth: 1.1,
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
@@ -674,7 +674,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                             style: TextStyle(
                               color: palette.textPrimary,
                               fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                              fontSize: FirdawsType.caption,
                             ),
                           ),
                         ),
@@ -706,7 +706,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
           backdrop: Background500Catalog.forExtraSection(surah.number),
           isDark: palette.isDark,
           borderColor: isCurrent ? accent : palette.dividerColor,
-          borderRadius: 14,
+          borderRadius: FirdawsRadius.control,
           borderWidth: isCurrent ? 1.4 : 0.8,
           margin: const EdgeInsets.only(bottom: 6),
           padding: EdgeInsets.zero,
@@ -728,7 +728,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                   style: TextStyle(
                     color: isCurrent ? accent : palette.textSecondary,
                     fontWeight: FontWeight.bold,
-                    fontSize: 11.5,
+                    fontSize: FirdawsType.caption,
                   ),
                 ),
               ),
@@ -738,7 +738,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
               style: TextStyle(
                 color: isCurrent ? accent : palette.textPrimary,
                 fontWeight: FontWeight.bold,
-                fontSize: 14.5,
+                fontSize: FirdawsType.body,
               ),
             ),
             subtitle: Wrap(
@@ -750,7 +750,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                   "${surah.isMakki ? 'مكية' : 'مدنية'} • ${surah.versesCount} آية • ${surah.defaultDuration}",
                   style: TextStyle(
                     color: palette.textSecondary,
-                    fontSize: 10.5,
+                    fontSize: FirdawsType.caption,
                   ),
                 ),
                 if (isOfflineReady)
@@ -765,7 +765,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                       "بدون نت ✓",
                       style: TextStyle(
                         color: offlineBadgeColor,
-                        fontSize: 9.5,
+                        fontSize: FirdawsType.micro,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -879,7 +879,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
           backdrop: Background500Catalog.forExtraSection(10 + idx),
           isDark: palette.isDark,
           borderColor: isCurrent ? accent : palette.dividerColor,
-          borderRadius: 16,
+          borderRadius: FirdawsRadius.control,
           borderWidth: isCurrent ? 1.5 : 1.0,
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(12),
@@ -907,7 +907,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                           item.title,
                           style: TextStyle(
                             color: isCurrent ? accent : palette.textPrimary,
-                            fontSize: 14.5,
+                            fontSize: FirdawsType.body,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -917,7 +917,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                           children: [
                             Text(
                               "${item.reciter} • ${item.duration}",
-                              style: TextStyle(color: palette.textSecondary, fontSize: 11),
+                              style: TextStyle(color: palette.textSecondary, fontSize: FirdawsType.caption),
                             ),
                             if (isOfflineReady)
                               Container(
@@ -934,7 +934,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                                   "بدون نت ✓",
                                   style: TextStyle(
                                     color: offlineBadgeColor,
-                                    fontSize: 9.5,
+                                    fontSize: FirdawsType.micro,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -1017,7 +1017,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                   item.purpose,
                   style: TextStyle(
                     color: palette.isDark ? const Color(0xFFE2E8F0) : palette.primaryColor,
-                    fontSize: 11,
+                    fontSize: FirdawsType.caption,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1050,7 +1050,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
           backdrop: Background500Catalog.forExtraSection(25 + idx),
           isDark: palette.isDark,
           borderColor: isCurrent ? accent : palette.dividerColor,
-          borderRadius: 14,
+          borderRadius: FirdawsRadius.control,
           borderWidth: isCurrent ? 1.4 : 0.8,
           margin: const EdgeInsets.only(bottom: 8),
           padding: EdgeInsets.zero,
@@ -1063,7 +1063,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
               style: TextStyle(
                 color: isCurrent ? accent : palette.textPrimary,
                 fontWeight: FontWeight.bold,
-                fontSize: 13.5,
+                fontSize: FirdawsType.label,
               ),
             ),
             subtitle: Wrap(
@@ -1072,7 +1072,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
               children: [
                 Text(
                   "${item.reciter} • ${item.maqam} • ${item.duration}",
-                  style: TextStyle(color: palette.textSecondary, fontSize: 10.5),
+                  style: TextStyle(color: palette.textSecondary, fontSize: FirdawsType.caption),
                 ),
                 if (isOfflineReady)
                   Container(
@@ -1086,7 +1086,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                       "بدون نت ✓",
                       style: TextStyle(
                         color: offlineBadgeColor,
-                        fontSize: 9.5,
+                        fontSize: FirdawsType.micro,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -1166,7 +1166,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
 
   Widget _buildQuickShortcutsList(ThemePalette palette) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(FirdawsSpace.lg),
       children: [
         _buildShortcutTile(
           icon: Icons.palette_rounded,
@@ -1313,7 +1313,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
         palette: palette,
         glowColor: accent,
         padding: EdgeInsets.zero,
-        borderRadius: 16,
+        borderRadius: FirdawsRadius.control,
         depth: 4.0,
         child: ListTile(
           onTap: onTap,
@@ -1331,14 +1331,14 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
             style: TextStyle(
               color: palette.textPrimary,
               fontWeight: FontWeight.bold,
-              fontSize: 14,
+              fontSize: FirdawsType.label,
             ),
           ),
           subtitle: Text(
             subtitle,
             style: TextStyle(
               color: firdawsCrispSecondaryText(palette),
-              fontSize: 11,
+              fontSize: FirdawsType.caption,
             ),
           ),
           trailing: Icon(Icons.arrow_forward_ios_rounded, color: accent, size: 14),
@@ -1382,7 +1382,7 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                 label,
                 style: TextStyle(
                   color: palette.textPrimary,
-                  fontSize: 10.5,
+                  fontSize: FirdawsType.caption,
                   fontWeight: FontWeight.bold,
                 ),
               ),

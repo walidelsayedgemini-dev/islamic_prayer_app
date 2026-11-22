@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import '../models/backgrounds_500_catalog.dart';
+import '../theme/firdaws_design.dart';
 
 /// خدمة تخزين الصور فائقة الدقة 4K في قرص الجهاز مع عرض فوري للصور المحلية الاحتياطية أثناء التحميل أو دون نت
 class Firdaws4KCacheService {
@@ -23,7 +24,8 @@ class Firdaws4KCacheService {
     if (_cacheDir != null) return _cacheDir;
     try {
       final base = await getApplicationSupportDirectory();
-      final dir = Directory('${base.path}${Platform.pathSeparator}firdaws_4k_cache');
+      final dir =
+          Directory('${base.path}${Platform.pathSeparator}firdaws_4k_cache');
       if (!await dir.exists()) {
         await dir.create(recursive: true);
       }
@@ -35,7 +37,8 @@ class Firdaws4KCacheService {
   }
 
   String _safeKey(String url) {
-    final h1 = url.codeUnits.fold<int>(5381, (a, b) => ((a << 5) + a + b) & 0x7fffffff);
+    final h1 = url.codeUnits
+        .fold<int>(5381, (a, b) => ((a << 5) + a + b) & 0x7fffffff);
     final h2 = url.length * 131;
     return 'img_${h1}_$h2.jpg';
   }
@@ -80,12 +83,10 @@ class Firdaws4KCacheService {
       if (isInFailureCooldown(url)) {
         return null;
       }
-      final resp = await http
-          .get(
-            Uri.parse(url),
-            headers: const {'User-Agent': 'AlFirdawsApp/1.0 (https://github.com)'},
-          )
-          .timeout(const Duration(seconds: 6));
+      final resp = await http.get(
+        Uri.parse(url),
+        headers: const {'User-Agent': 'AlFirdawsApp/1.0 (https://github.com)'},
+      ).timeout(const Duration(seconds: 6));
       if (resp.statusCode == 200 && resp.bodyBytes.length > 1500) {
         await file.writeAsBytes(resp.bodyBytes, flush: true);
         _resolvedFiles[url] = file;
@@ -239,9 +240,7 @@ class _FirdawsResilientImageState extends State<FirdawsResilientImage> {
             height: widget.height,
             gaplessPlayback: true,
             filterQuality: widget.filterQuality,
-            headers: kIsWeb
-                ? null
-                : const {'User-Agent': 'AlFirdawsApp/1.0'},
+            headers: kIsWeb ? null : const {'User-Agent': 'AlFirdawsApp/1.0'},
             frameBuilder: (ctx, child, frame, wasSyncLoaded) {
               if (frame != null && !_netLoaded) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -291,9 +290,9 @@ class Firdaws4KCardShell extends StatelessWidget {
     required this.child,
     required this.isDark,
     this.borderColor,
-    this.borderRadius = 22,
+    this.borderRadius = FirdawsRadius.card,
     this.borderWidth = 0.0,
-    this.padding = const EdgeInsets.all(14),
+    this.padding = FirdawsSpace.cardPadding,
     this.margin,
     this.imageOpacity = 0.52,
     this.onTap,
@@ -301,66 +300,17 @@ class Firdaws4KCardShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(borderRadius);
-    final overlayStart = isDark
-        ? const Color(0xFF040B14).withOpacity(0.76)
-        : Colors.white.withOpacity(0.82);
-    final overlayEnd = isDark
-        ? const Color(0xFF06131E).withOpacity(0.62)
-        : const Color(0xFFF4F9F6).withOpacity(0.70);
-    final showSoftBorder = borderWidth > 0 && borderColor != Colors.transparent;
-
-    final box = Container(
-      margin: margin,
-      decoration: BoxDecoration(
-        borderRadius: radius,
-        border: showSoftBorder
-            ? Border.all(
-                color: (borderColor ??
-                        (isDark ? Colors.white : Colors.black))
-                    .withOpacity(isDark ? 0.16 : 0.09),
-                width: borderWidth.clamp(0.4, 1.0),
-              )
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: (borderColor ?? Colors.black).withOpacity(isDark ? 0.22 : 0.08),
-            blurRadius: 20,
-            spreadRadius: 1,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: radius,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Opacity(
-                opacity: imageOpacity,
-                child: FirdawsResilientImage.entry(backdrop),
-              ),
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
-                    colors: [overlayStart, overlayEnd],
-                  ),
-                ),
-              ),
-            ),
-            Padding(padding: padding, child: child),
-          ],
-        ),
-      ),
+    final scheme = Theme.of(context).colorScheme;
+    Widget box = Material(
+      color: scheme.surface,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(borderRadius),
+          side: BorderSide(color: scheme.outlineVariant)),
+      clipBehavior: Clip.antiAlias,
+      child:
+          InkWell(onTap: onTap, child: Padding(padding: padding, child: child)),
     );
-
-    if (onTap != null) {
-      return GestureDetector(onTap: onTap, child: box);
-    }
+    if (margin != null) box = Padding(padding: margin!, child: box);
     return box;
   }
 }

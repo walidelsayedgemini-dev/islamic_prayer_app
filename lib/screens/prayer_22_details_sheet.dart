@@ -3,12 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:adhan/adhan.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:provider/provider.dart';
-import '../models/backgrounds_500_catalog.dart';
 import '../models/prayer_identity_model.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
-import '../widgets/firdaws_resilient_image.dart';
+import '../widgets/calm_ui.dart';
+import '../widgets/paradise_ui.dart';
 import '../widgets/sacred_reference_widgets.dart';
 
 class Prayer22DetailsSheet extends StatefulWidget {
@@ -167,214 +167,378 @@ class _Prayer22DetailsSheetState extends State<Prayer22DetailsSheet> {
   @override
   Widget build(BuildContext context) {
     final info = Prayer22Distinctions.data[widget.prayer];
-    if (info == null) return const SizedBox.shrink();
-
     final settings = Provider.of<SettingsProvider>(context);
     final palette = IslamicTheme.resolvePalette(
       settings.selectedTheme,
       isNight: settings.isNightEffective,
     );
     final accent = palette.accentColor;
-    final badgeColor = palette.isDark ? const Color(0xFFFBBF24) : palette.primaryColor;
+    final scene = FirdawsParadiseRegistry.imageFor(settings.selectedTheme);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.88,
       minChildSize: 0.50,
       maxChildSize: 0.96,
       builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: palette.scaffoldColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border.all(color: accent.withOpacity(0.45), width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: (palette.isDark ? Colors.black : palette.primaryColor)
-                    .withOpacity(palette.isDark ? 0.85 : 0.22),
-                blurRadius: 30,
-                offset: const Offset(0, -6),
-              ),
-            ],
-          ),
-          child: ListView(
-            controller: scrollController,
-            padding: const EdgeInsets.all(20),
-            children: [
-              Center(
-                child: Container(
-                  width: 45,
-                  height: 4.5,
-                  decoration: BoxDecoration(
-                    color: palette.dividerColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+        return SafeArea(
+          top: false,
+          child: Container(
+            decoration: BoxDecoration(
+              color: palette.scaffoldColor,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(30)),
+              border: Border.all(color: accent.withOpacity(0.44), width: 1.2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(palette.isDark ? 0.42 : 0.12),
+                  blurRadius: 28,
+                  offset: const Offset(0, -8),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Firdaws4KCardShell(
-                backdrop: Background500Catalog.forExtraSection(57),
-                isDark: palette.isDark,
-                padding: const EdgeInsets.all(14),
-                borderRadius: 18,
-                borderColor: accent.withOpacity(0.45),
-                imageOpacity: 0.45,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: accent.withOpacity(0.18),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: accent, width: 1.5),
-                          ),
-                          child: Icon(info.visualIcon, color: accent, size: 28),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                info.arabicName,
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: accent,
-                                ),
-                              ),
-                              Text(
-                                info.celebrationBadge,
-                                style: TextStyle(
-                                  color: badgeColor,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      info.subtitle,
-                      style: TextStyle(color: palette.textSecondary, fontSize: 13, height: 1.4),
-                    ),
-                  ],
-                ),
-              ),
-              if (widget.prayerTime != null || widget.isPassed || widget.isCurrent) ...[
-                const SizedBox(height: 12),
-                _buildTimingStatusBanner(palette),
               ],
-              const SizedBox(height: 16),
-              Divider(color: palette.dividerColor),
-              const SizedBox(height: 8),
-              Firdaws4KCardShell(
-                backdrop: Background500Catalog.forExtraSection(58),
-                isDark: palette.isDark,
-                padding: const EdgeInsets.all(14),
-                borderRadius: 18,
-                borderColor: accent.withOpacity(0.45),
-                imageOpacity: palette.isDark ? 0.36 : 0.30,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.check_circle_rounded, color: accent, size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            "سجل إنجازي في هذه الصلاة اليوم (+${info.streakPoints} نقطة):",
-                            style: TextStyle(
-                              color: accent,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                            ),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                _buildSheetHeader(palette, info?.arabicName),
+                Expanded(
+                  child: info == null
+                      ? SingleChildScrollView(
+                          controller: scrollController,
+                          padding: const EdgeInsets.all(24),
+                          child: const CalmEmptyState(
+                            icon: Icons.menu_book_outlined,
+                            title: 'لا تتوفر تفاصيل لهذه الصلاة',
+                            subtitle:
+                                'يمكنك إغلاق هذه النافذة والعودة إلى جدول الصلاة.',
                           ),
+                        )
+                      : _buildDetailsContent(
+                          info,
+                          palette,
+                          scene,
+                          scrollController,
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    _buildCheckItem("صليت الفريضة في وقتها", _prayedOnTime, palette, (v) {
-                      setState(() => _prayedOnTime = v!);
-                      _syncPrayerStatus(palette);
-                    }),
-                    _buildCheckItem("صليت في جماعة / في المسجد", _prayedInGroup, palette, (v) {
-                      setState(() {
-                        _prayedInGroup = v!;
-                        if (_prayedInGroup) _prayedOnTime = true;
-                      });
-                      _syncPrayerStatus(palette);
-                    }),
-                    _buildCheckItem(
-                      "صليت السنن الرواتب (${info.sunnahRawatib})",
-                      _prayedSunnah,
-                      palette,
-                      (v) {
-                        setState(() => _prayedSunnah = v!);
-                        if (v == true && mounted) {
-                          Provider.of<FirdawsUserProvider>(context, listen: false)
-                              .updateDayNawafil(DateTime.now(), sunnahCount: 2);
-                        }
-                        _syncPrayerStatus(palette);
-                      },
-                    ),
-                    _buildCheckItem(
-                      "قرأت أذكار ما بعد الصلاة وآية الكرسي",
-                      _readAthkar,
-                      palette,
-                      (v) {
-                        setState(() => _readAthkar = v!);
-                        _syncPrayerStatus(palette);
-                      },
-                    ),
-                  ],
                 ),
-              ),
-              const SizedBox(height: 16),
-              _buildSectionBox("الآية الكريمة", info.quranAyah, Icons.menu_book_rounded, palette),
-              const SizedBox(height: 10),
-              _buildSectionBox("الحديث النبوي الشريف", info.hadithVirtue, Icons.format_quote_rounded, palette),
-              const SizedBox(height: 14),
-              Firdaws4KCardShell(
-                backdrop: Background500Catalog.forExtraSection(63),
-                isDark: palette.isDark,
-                padding: const EdgeInsets.fromLTRB(14, 14, 14, 4),
-                borderRadius: 18,
-                borderColor: accent.withOpacity(0.35),
-                imageOpacity: palette.isDark ? 0.30 : 0.24,
-                child: Column(
-                  children: [
-                    _buildInfoRow(Icons.access_time_rounded, "الوقت الفلكي", info.astronomicalDefinition, palette),
-                    _buildInfoRow(Icons.layers_rounded, "عدد الركعات", info.rakatsDetail, palette),
-                    _buildInfoRow(Icons.auto_awesome_rounded, "السنن الرواتب", info.sunnahRawatib, palette),
-                    _buildInfoRow(Icons.groups_rounded, "فضل الجماعة", info.congregationVirtue, palette),
-                    _buildInfoRow(Icons.visibility_rounded, "شهادة الملائكة", info.angelWitnessRole, palette),
-                    _buildInfoRow(Icons.favorite_rounded, "الأثر القلبي", info.spiritualFeeling, palette),
-                    _buildInfoRow(Icons.health_and_safety_rounded, "الفائدة الصحية", info.healthBenefit, palette),
-                    _buildInfoRow(Icons.child_care_rounded, "معلومة محببة للصغار", info.funChildFact, palette),
-                    _buildInfoRow(Icons.hearing_rounded, "نداء الأذان", info.adhanFeature, palette),
-                    _buildInfoRow(Icons.star_rounded, "السور المستحبة", info.recommendedSurahs, palette),
-                    _buildInfoRow(Icons.history_edu_rounded, "حدث تاريخي إسلامي", info.historicalEvent, palette),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
     );
   }
 
+  Widget _buildSheetHeader(ThemePalette palette, String? prayerName) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(18, 9, 12, 7),
+      child: Column(
+        children: [
+          Container(
+            width: 42,
+            height: 4,
+            decoration: BoxDecoration(
+              color: palette.dividerColor,
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'تفاصيل الصلاة',
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontSize: FirdawsType.body,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    if (prayerName != null)
+                      Text(
+                        prayerName,
+                        softWrap: true,
+                        style: TextStyle(
+                          color: palette.textSecondary,
+                          fontSize: FirdawsType.caption,
+                          height: 1.35,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton.filledTonal(
+                tooltip: 'إغلاق التفاصيل',
+                onPressed: () => Navigator.of(context).maybePop(),
+                icon: const Icon(Icons.close_rounded),
+                color: palette.textPrimary,
+                style: IconButton.styleFrom(
+                  backgroundColor: palette.elevatedCardColor,
+                  minimumSize: const Size(44, 44),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailsContent(
+    Prayer22Distinctions info,
+    ThemePalette palette,
+    String scene,
+    ScrollController scrollController,
+  ) {
+    final completed = [
+      _prayedOnTime,
+      _prayedInGroup,
+      _prayedSunnah,
+      _readAthkar,
+    ].where((value) => value).length;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final horizontal = constraints.maxWidth < 420 ? 16.0 : 28.0;
+        return SingleChildScrollView(
+          controller: scrollController,
+          padding: EdgeInsets.fromLTRB(horizontal, 8, horizontal, 32),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 900),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ParadiseHero(
+                    title: info.arabicName,
+                    subtitle: info.subtitle,
+                    imageAsset: scene,
+                    minHeight: constraints.maxWidth < 420 ? 184 : 210,
+                  ),
+                  const SizedBox(height: 22),
+                  if (widget.prayerTime != null ||
+                      widget.isPassed ||
+                      widget.isCurrent) ...[
+                    _buildTimingStatusBanner(palette),
+                    const SizedBox(height: 26),
+                  ],
+                  ParadiseSection(
+                    title: 'متابعة إنجازك اليوم',
+                    action: _buildProgressBadge(completed, palette),
+                    child: _buildPracticeCard(info, palette),
+                  ),
+                  const SizedBox(height: 30),
+                  ParadiseSection(
+                    title: 'من النصوص الواردة في فضائل الصلاة',
+                    child: Column(
+                      children: [
+                        _buildSectionBox(
+                          'الآية الكريمة',
+                          info.quranAyah,
+                          Icons.menu_book_rounded,
+                          palette,
+                        ),
+                        const SizedBox(height: 14),
+                        _buildSectionBox(
+                          'الحديث النبوي الشريف',
+                          info.hadithVirtue,
+                          Icons.format_quote_rounded,
+                          palette,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  ParadiseSection(
+                    title: 'دليل الصلاة',
+                    child: Column(
+                      children: [
+                        _buildInfoGroup(
+                          title: 'الوقت والهيئة',
+                          icon: Icons.schedule_rounded,
+                          palette: palette,
+                          initiallyExpanded: true,
+                          rows: [
+                            _InfoEntry(Icons.access_time_rounded, 'الوقت الفلكي', info.astronomicalDefinition),
+                            _InfoEntry(Icons.layers_rounded, 'عدد الركعات', info.rakatsDetail),
+                            _InfoEntry(Icons.auto_awesome_rounded, 'السنن الرواتب', info.sunnahRawatib),
+                            _InfoEntry(Icons.star_rounded, 'السور المستحبة', info.recommendedSurahs),
+                            _InfoEntry(Icons.hearing_rounded, 'نداء الأذان', info.adhanFeature),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        _buildInfoGroup(
+                          title: 'الفضل والأثر',
+                          icon: Icons.spa_outlined,
+                          palette: palette,
+                          rows: [
+                            _InfoEntry(Icons.groups_rounded, 'فضل الجماعة', info.congregationVirtue),
+                            _InfoEntry(Icons.visibility_rounded, 'شهادة الملائكة', info.angelWitnessRole),
+                            _InfoEntry(Icons.favorite_rounded, 'الأثر القلبي', info.spiritualFeeling),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        _buildInfoGroup(
+                          title: 'معارف إضافية',
+                          icon: Icons.auto_stories_rounded,
+                          palette: palette,
+                          rows: [
+                            _InfoEntry(Icons.history_edu_rounded, 'حدث تاريخي إسلامي', info.historicalEvent),
+                            _InfoEntry(Icons.health_and_safety_rounded, 'الفائدة الصحية', info.healthBenefit),
+                            _InfoEntry(Icons.child_care_rounded, 'معلومة محببة للصغار', info.funChildFact),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildProgressBadge(int completed, ThemePalette palette) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 40),
+      padding: const EdgeInsetsDirectional.fromSTEB(11, 7, 11, 7),
+      decoration: BoxDecoration(
+        color: palette.elevatedCardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: palette.dividerColor),
+      ),
+      child: Text(
+        '$completed من ٤',
+        style: TextStyle(
+          color: palette.textPrimary,
+          fontSize: FirdawsType.caption,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPracticeCard(Prayer22Distinctions info, ThemePalette palette) {
+    final completed = [
+      _prayedOnTime,
+      _prayedInGroup,
+      _prayedSunnah,
+      _readAthkar,
+    ].where((value) => value).length;
+    final progress = completed / 4;
+
+    return Container(
+      padding: const EdgeInsetsDirectional.fromSTEB(18, 17, 18, 16),
+      decoration: BoxDecoration(
+        color: palette.cardColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: palette.dividerColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(palette.isDark ? .12 : .035),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: palette.elevatedCardColor,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: palette.dividerColor),
+                ),
+                child: Icon(Icons.checklist_rounded, color: palette.accentColor),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'سجل إنجازي في هذه الصلاة اليوم (+${info.streakPoints} نقطة):',
+                  softWrap: true,
+                  style: TextStyle(
+                    color: palette.textPrimary,
+                    fontSize: FirdawsType.label,
+                    height: 1.4,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 7,
+              backgroundColor: palette.elevatedCardColor,
+              valueColor: AlwaysStoppedAnimation<Color>(palette.accentColor),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'سجّل ما أتممته، ويمكنك تعديل اختيارك في أي وقت.',
+            softWrap: true,
+            style: TextStyle(
+              color: palette.textSecondary,
+              fontSize: FirdawsType.caption,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 13),
+          _buildCheckItem('صليت الفريضة في وقتها', _prayedOnTime, palette, (v) {
+            setState(() => _prayedOnTime = v!);
+            _syncPrayerStatus(palette);
+          }),
+          _buildCheckItem('صليت في جماعة / في المسجد', _prayedInGroup, palette, (v) {
+            setState(() {
+              _prayedInGroup = v!;
+              if (_prayedInGroup) _prayedOnTime = true;
+            });
+            _syncPrayerStatus(palette);
+          }),
+          _buildCheckItem(
+            'صليت السنن الرواتب (${info.sunnahRawatib})',
+            _prayedSunnah,
+            palette,
+            (v) {
+              setState(() => _prayedSunnah = v!);
+              if (v == true && mounted) {
+                Provider.of<FirdawsUserProvider>(context, listen: false)
+                    .updateDayNawafil(DateTime.now(), sunnahCount: 2);
+              }
+              _syncPrayerStatus(palette);
+            },
+          ),
+          _buildCheckItem(
+            'قرأت أذكار ما بعد الصلاة وآية الكرسي',
+            _readAthkar,
+            palette,
+            (v) {
+              setState(() => _readAthkar = v!);
+              _syncPrayerStatus(palette);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTimingStatusBanner(ThemePalette palette) {
     final accent = palette.accentColor;
-    final formattedTime =
-        widget.prayerTime != null ? DateFormat('hh:mm a').format(widget.prayerTime!) : null;
+    final formattedTime = widget.prayerTime != null
+        ? DateFormat('hh:mm a').format(widget.prayerTime!)
+        : null;
     final Color statusColor = widget.isCurrent
         ? (palette.isDark ? const Color(0xFF34D399) : const Color(0xFF047857))
         : (widget.isPassed
@@ -394,37 +558,53 @@ class _Prayer22DetailsSheetState extends State<Prayer22DetailsSheet> {
             ? "من نام عن صلاة أو نسيها فليصلها إذا ذكرها، وتصفح فضائلها وسننها وأذكارها أدناه."
             : "استعد لها بإسباغ الوضوء وترديد الأذان والدعاء بعده.");
 
-    return Firdaws4KCardShell(
-      backdrop: Background500Catalog.forExtraSection(59),
-      isDark: palette.isDark,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-      borderRadius: 16,
-      borderColor: statusColor.withOpacity(0.55),
-      imageOpacity: 0.42,
+    return Container(
+      padding: const EdgeInsetsDirectional.fromSTEB(17, 16, 17, 16),
+      decoration: BoxDecoration(
+        color: palette.cardColor,
+        borderRadius: BorderRadius.circular(22),
+        border: BorderDirectional(
+          start: BorderSide(color: statusColor, width: 4),
+          top: BorderSide(color: palette.dividerColor),
+          end: BorderSide(color: palette.dividerColor),
+          bottom: BorderSide(color: palette.dividerColor),
+        ),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(statusIcon, color: statusColor, size: 22),
-          const SizedBox(width: 10),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(palette.isDark ? .16 : .09),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Icon(statusIcon, color: statusColor, size: 23),
+          ),
+          const SizedBox(width: 13),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   statusTitle,
+                  softWrap: true,
                   style: TextStyle(
                     color: statusColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    fontSize: FirdawsType.label,
+                    height: 1.35,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 5),
                 Text(
                   statusSub,
+                  softWrap: true,
                   style: TextStyle(
                     color: palette.textSecondary,
-                    fontSize: 11.5,
-                    height: 1.35,
+                    fontSize: FirdawsType.caption,
+                    height: 1.55,
                   ),
                 ),
               ],
@@ -442,16 +622,47 @@ class _Prayer22DetailsSheetState extends State<Prayer22DetailsSheet> {
     ValueChanged<bool?> onChanged,
   ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: CheckboxListTile(
-        dense: true,
-        contentPadding: EdgeInsets.zero,
-        title: Text(text, style: TextStyle(color: palette.textPrimary, fontSize: 13)),
-        value: value,
-        activeColor: palette.accentColor,
-        checkColor: palette.onAccentColor,
-        onChanged: onChanged,
-        controlAffinity: ListTileControlAffinity.leading,
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Material(
+        color: value ? palette.elevatedCardColor : Colors.transparent,
+        borderRadius: BorderRadius.circular(17),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(17),
+          onTap: () => onChanged(!value),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 54),
+            padding: const EdgeInsetsDirectional.fromSTEB(10, 4, 12, 4),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(17),
+              border: Border.all(
+                color: value ? palette.accentColor.withOpacity(.58) : palette.dividerColor,
+              ),
+            ),
+            child: Row(
+              children: [
+                Checkbox(
+                  value: value,
+                  activeColor: palette.accentColor,
+                  checkColor: palette.onAccentColor,
+                  onChanged: onChanged,
+                ),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    text,
+                    softWrap: true,
+                    style: TextStyle(
+                      color: palette.textPrimary,
+                      fontSize: FirdawsType.label,
+                      height: 1.4,
+                      fontWeight: value ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -462,33 +673,55 @@ class _Prayer22DetailsSheetState extends State<Prayer22DetailsSheet> {
     IconData icon,
     ThemePalette palette,
   ) {
-    final accent = palette.accentColor;
-    return Firdaws4KCardShell(
-      backdrop: Background500Catalog.forExtraSection(60 + (title.hashCode.abs() % 18)),
-      isDark: palette.isDark,
-      padding: const EdgeInsets.all(12),
-      borderRadius: 14,
-      borderColor: accent.withOpacity(0.35),
-      imageOpacity: palette.isDark ? 0.34 : 0.28,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsetsDirectional.fromSTEB(19, 18, 19, 16),
+      decoration: BoxDecoration(
+        color: palette.cardColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: palette.dividerColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(palette.isDark ? .10 : .025),
+            blurRadius: 16,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: accent, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: TextStyle(color: accent, fontWeight: FontWeight.bold, fontSize: 13),
+              Icon(icon, color: palette.accentColor, size: 21),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  title,
+                  softWrap: true,
+                  style: TextStyle(
+                    color: palette.textPrimary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: FirdawsType.label,
+                  ),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            content,
-            style: TextStyle(color: palette.textPrimary, fontSize: 13, height: 1.4),
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(0, 13, 0, 14),
+            child: Divider(height: 1, color: palette.dividerColor),
           ),
-          const SizedBox(height: 8),
+          SelectableText(
+            content,
+            textAlign: TextAlign.start,
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontSize: FirdawsType.body,
+              height: 1.9,
+            ),
+          ),
+          const SizedBox(height: 13),
           SacredEvidenceFooter(
             evidenceText: content,
             titleForHadith: title,
@@ -499,39 +732,140 @@ class _Prayer22DetailsSheetState extends State<Prayer22DetailsSheet> {
     );
   }
 
+  Widget _buildInfoGroup({
+    required String title,
+    required IconData icon,
+    required ThemePalette palette,
+    required List<_InfoEntry> rows,
+    bool initiallyExpanded = false,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: palette.cardColor,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: palette.dividerColor),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: initiallyExpanded,
+          tilePadding: const EdgeInsetsDirectional.fromSTEB(17, 5, 17, 5),
+          childrenPadding: const EdgeInsetsDirectional.fromSTEB(17, 0, 17, 15),
+          iconColor: palette.accentColor,
+          collapsedIconColor: palette.textSecondary,
+          title: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: palette.elevatedCardColor,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: palette.accentColor, size: 21),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  softWrap: true,
+                  style: TextStyle(
+                    color: palette.textPrimary,
+                    fontSize: FirdawsType.label,
+                    fontWeight: FontWeight.w700,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          children: [
+            Divider(height: 1, color: palette.dividerColor),
+            const SizedBox(height: 10),
+            for (var index = 0; index < rows.length; index++) ...[
+              _buildInfoRow(
+                rows[index].icon,
+                rows[index].label,
+                rows[index].value,
+                palette,
+              ),
+              if (index != rows.length - 1)
+                Divider(height: 20, color: palette.dividerColor),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildInfoRow(
     IconData icon,
     String label,
     String value,
     ThemePalette palette,
   ) {
-    final accent = palette.accentColor;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: accent, size: 18),
-          const SizedBox(width: 10),
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: TextStyle(
-                color: palette.isDark ? accent.withOpacity(0.9) : palette.primaryColor,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final narrow = constraints.maxWidth < 410;
+        final labelText = Text(
+          label,
+          softWrap: true,
+          style: TextStyle(
+            color: palette.textSecondary,
+            fontSize: FirdawsType.caption,
+            height: 1.4,
+            fontWeight: FontWeight.w700,
+          ),
+        );
+        final valueText = Text(
+          value,
+          softWrap: true,
+          textAlign: TextAlign.start,
+          style: TextStyle(
+            color: palette.textPrimary,
+            fontSize: FirdawsType.label,
+            height: 1.65,
+          ),
+        );
+
+        if (narrow) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: palette.accentColor, size: 19),
+                  const SizedBox(width: 9),
+                  Expanded(child: labelText),
+                ],
               ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(color: palette.textPrimary, fontSize: 12, height: 1.3),
-            ),
-          ),
-        ],
-      ),
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(28, 7, 0, 0),
+                child: valueText,
+              ),
+            ],
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: palette.accentColor, size: 19),
+            const SizedBox(width: 10),
+            SizedBox(width: 138, child: labelText),
+            const SizedBox(width: 12),
+            Expanded(child: valueText),
+          ],
+        );
+      },
     );
   }
+}
+
+class _InfoEntry {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _InfoEntry(this.icon, this.label, this.value);
 }

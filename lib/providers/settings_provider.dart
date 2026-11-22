@@ -11,21 +11,30 @@ import '../services/notification_service.dart';
 import '../theme/islamic_theme.dart';
 
 class SettingsProvider extends ChangeNotifier {
+  SettingsProvider({
+    Future<DetectedLocationResult> Function()? locationDetector,
+  }) : _locationDetector =
+            locationDetector ?? LocationService.detectCurrentLocation;
+
+  final Future<DetectedLocationResult> Function() _locationDetector;
   SharedPreferences? _prefs;
+  int _locationRequestGeneration = 0;
 
   // القيم الافتراضية لتطبيق الفردوس
   CalculationMethod _calculationMethod = CalculationMethod.umm_al_qura;
   Madhab _madhab = Madhab.shafi;
   String _selectedTheme = 'emerald_gold';
   String _selectedFont = 'Cairo';
-  String _brightnessMode = 'night'; // 'night', 'day', 'auto'
+  String _brightnessMode = 'day'; // 'night', 'day', 'auto'
   String? _selectedAppWallpaperAsset;
   String? _selectedGardenWallpaperAsset;
-  int _selectedJannatiSceneryIndex = 0; // 0..99 (من الـ 100 صورة 4K لجنتي - اختيار يدوي فقط)
+  int _selectedJannatiSceneryIndex =
+      0; // 0..99 (من الـ 100 صورة 4K لجنتي - اختيار يدوي فقط)
   bool _jannatiAutoCycleScenery = false;
-  int _selectedTasbihBackdropIndex = 0; // 0..29 (تتغير تلقائياً كل 100 تسبيحة عبر 30 صورة إسلامية)
+  int _selectedTasbihBackdropIndex =
+      0; // 0..29 (تتغير تلقائياً كل 100 تسبيحة عبر 30 صورة إسلامية)
   int _lastTasbihStageMilestone = 0;
-  bool _ambientSparklesEnabled = true;
+  bool _ambientSparklesEnabled = false;
   int _ambientShapePresetIndex = 0; // 0..499 (500 شكل طبيعي هادئ قابل للتخصيص)
   bool _gameSfxEnabled = true;
   String _adhanVoice = 'madinah';
@@ -33,6 +42,8 @@ class SettingsProvider extends ChangeNotifier {
   double _latitude = 24.7136; // افتراضي مؤقت حتى يكتشف الجهاز بلدك ومدينتك
   double _longitude = 46.6753;
   String _cityName = "جاري تحديد مدينتك وبلدك...";
+  String _locationSourceLabel = 'إحداثيات مؤقتة غير مؤكدة';
+  bool _hasConfirmedLocation = false;
   bool _isDetectingLocation = false;
   String _lastLocationStatus = 'لم يتم الفحص بعد';
   String? _lastLocationError;
@@ -40,12 +51,12 @@ class SettingsProvider extends ChangeNotifier {
   bool _autoMuteDuringPrayer = false;
 
   // 200 تأثير تفاعلي للمس وحركة المؤشر والماوس
-  bool _touchEffectsEnabled = true;
+  bool _touchEffectsEnabled = false;
   int _touchEffectNumber = 1; // 1..200
   bool _touchEffectsAutoCycle = false;
 
   // التذكير العائم بالصلاة على النبي ﷺ فوق كل التطبيقات
-  bool _salawatOverlayEnabled = true;
+  bool _salawatOverlayEnabled = false;
   int _salawatIntervalMinutes = 30;
   List<String> _salawatCustomTimes = ['09:00', '13:30', '20:00'];
 
@@ -80,6 +91,8 @@ class SettingsProvider extends ChangeNotifier {
   double get latitude => _latitude;
   double get longitude => _longitude;
   String get cityName => _cityName;
+  String get locationSourceLabel => _locationSourceLabel;
+  bool get hasConfirmedLocation => _hasConfirmedLocation;
   bool get isDetectingLocation => _isDetectingLocation;
   String get lastLocationStatus => _lastLocationStatus;
   String? get lastLocationError => _lastLocationError;
@@ -156,7 +169,9 @@ class SettingsProvider extends ChangeNotifier {
 
     final savedAppWp = _prefs!.getString('app_wallpaper_4k');
     _selectedAppWallpaperAsset =
-        (savedAppWp != null && savedAppWp.trim().isNotEmpty) ? savedAppWp : null;
+        (savedAppWp != null && savedAppWp.trim().isNotEmpty)
+            ? savedAppWp
+            : null;
 
     final savedGardenWp = _prefs!.getString('garden_wallpaper_4k');
     _selectedGardenWallpaperAsset =
@@ -173,42 +188,62 @@ class SettingsProvider extends ChangeNotifier {
     _lastTasbihStageMilestone =
         _prefs!.getInt('tasbih_backdrop_milestone') ?? 0;
     _ambientSparklesEnabled =
-        _prefs!.getBool('ambient_sparkles_enabled') ?? true;
+        _prefs!.getBool('ambient_sparkles_enabled') ?? false;
     _ambientShapePresetIndex =
         (_prefs!.getInt('ambient_shape_preset_idx') ?? 0).clamp(0, 499);
 
     _gameSfxEnabled = _prefs!.getBool('game_sfx_enabled') ?? true;
     ArenaSfxService.instance.setEnabled(_gameSfxEnabled);
 
-    final savedBrightness = _prefs!.getString('brightness_mode') ?? 'night';
-    if (savedBrightness == 'day' || savedBrightness == 'night' || savedBrightness == 'auto') {
+    final savedBrightness = _prefs!.getString('brightness_mode') ?? 'day';
+    if (savedBrightness == 'day' ||
+        savedBrightness == 'night' ||
+        savedBrightness == 'auto') {
       _brightnessMode = savedBrightness;
     }
 
     _adhanVoice = _prefs!.getString('adhan_voice') ?? 'madinah';
     _isAutoLocation = _prefs!.getBool('auto_loc') ?? true;
-    _latitude = _prefs!.getDouble('lat') ?? 24.7136;
-    _longitude = _prefs!.getDouble('lng') ?? 46.6753;
+    final savedLatitude = _prefs!.getDouble('lat');
+    final savedLongitude = _prefs!.getDouble('lng');
+    _latitude = savedLatitude ?? 24.7136;
+    _longitude = savedLongitude ?? 46.6753;
     final savedCity = _prefs!.getString('city_name');
-    if (savedCity != null &&
+    final hasSavedLocation = savedLatitude != null &&
+        savedLongitude != null &&
+        savedCity != null &&
         savedCity.trim().isNotEmpty &&
-        savedCity != "الموقع الحالي المكتشف (GPS)") {
+        savedCity != "الموقع الحالي المكتشف (GPS)" &&
+        !savedCity.contains('جاري');
+    if (hasSavedLocation) {
       _cityName = savedCity;
-      _lastLocationStatus = _isAutoLocation ? 'موقع محفوظ (سيتم التحديث)' : 'مدينة مختارة يدوياً';
+      _hasConfirmedLocation = true;
+      _locationSourceLabel = _prefs!.getString('location_source') ??
+          (_isAutoLocation
+              ? 'موقع محفوظ سابقاً'
+              : 'اختيار يدوي من قائمة المدن');
+      _lastLocationStatus = _isAutoLocation
+          ? 'موقع محفوظ سابقاً؛ قد يتغير بعد التحديث'
+          : 'مدينة مختارة يدوياً';
     } else {
-      _cityName = "جاري تحديد موقعك تلقائياً...";
+      _cityName = _isAutoLocation
+          ? 'جارٍ تحديد موقعك تلقائياً...'
+          : 'لم تُحدّد مدينة بعد';
+      _locationSourceLabel = 'إحداثيات مؤقتة غير مؤكدة';
+      _hasConfirmedLocation = false;
+      _lastLocationStatus = 'موقع غير مؤكد';
     }
 
     _playPreAdhanReminder = _prefs!.getBool('pre_adhan_reminder') ?? true;
     _autoMuteDuringPrayer = _prefs!.getBool('auto_mute') ?? false;
 
-    _touchEffectsEnabled = _prefs!.getBool('touch_fx_enabled') ?? true;
+    _touchEffectsEnabled = _prefs!.getBool('touch_fx_enabled') ?? false;
     _touchEffectNumber = (_prefs!.getInt('touch_fx_number') ?? 1).clamp(1, 200);
     _touchEffectsAutoCycle = _prefs!.getBool('touch_fx_autocycle') ?? false;
 
-    _salawatOverlayEnabled = _prefs!.getBool('salawat_enabled') ?? true;
+    _salawatOverlayEnabled = _prefs!.getBool('salawat_enabled') ?? false;
     _salawatIntervalMinutes =
-        (_prefs!.getInt('salawat_interval_mins') ?? 30).clamp(1, 180);
+        (_prefs!.getInt('salawat_interval_mins') ?? 30).clamp(0, 240);
     final savedTimes = _prefs!.getStringList('salawat_custom_times');
     if (savedTimes != null) {
       _salawatCustomTimes = List<String>.from(savedTimes);
@@ -233,7 +268,8 @@ class SettingsProvider extends ChangeNotifier {
   void setJannatiSceneryIndex(int index) {
     final safe = ((index % 100) + 100) % 100;
     _selectedJannatiSceneryIndex = safe;
-    _selectedGardenWallpaperAsset = null; // نمنح الأولوية للمنظر المختار من الـ 100 صورة 4K
+    _selectedGardenWallpaperAsset =
+        null; // نمنح الأولوية للمنظر المختار من الـ 100 صورة 4K
     _prefs?.setInt('jannati_scenery_idx_100', safe);
     _prefs?.remove('garden_wallpaper_4k');
     notifyListeners();
@@ -344,8 +380,7 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   void removeSalawatCustomTime(String hhMm) {
-    _salawatCustomTimes =
-        _salawatCustomTimes.where((t) => t != hhMm).toList();
+    _salawatCustomTimes = _salawatCustomTimes.where((t) => t != hhMm).toList();
     _prefs?.setStringList('salawat_custom_times', _salawatCustomTimes);
     notifyListeners();
     _syncSalawatReminders();
@@ -353,16 +388,19 @@ class SettingsProvider extends ChangeNotifier {
 
   void _syncSalawatReminders() {
     try {
+      // Retire the old over-app overlay scheduler without changing saved keys.
+      // InAppReminderHost owns the single quiet-hours-aware salawat schedule.
       FirdawsNativeService().scheduleSalawatReminders(
-        enabled: _salawatOverlayEnabled,
-        intervalMinutes: _salawatIntervalMinutes,
-        customTimes: _salawatCustomTimes,
+        enabled: false,
+        intervalMinutes: 0,
+        customTimes: const [],
       );
     } catch (_) {}
   }
 
   /// كشف الموقع الجغرافي الحالي واسم المدينة والبلد دون تعليق
-  Future<DetectedLocationResult> refreshCurrentLocation({bool silent = false}) async {
+  Future<DetectedLocationResult> refreshCurrentLocation(
+      {bool silent = false}) async {
     if (_isDetectingLocation) {
       return DetectedLocationResult(
         succeeded: false,
@@ -373,26 +411,40 @@ class SettingsProvider extends ChangeNotifier {
       );
     }
 
+    final requestGeneration = ++_locationRequestGeneration;
     _isDetectingLocation = true;
     _lastLocationError = null;
     if (!silent) {
       _lastLocationStatus = 'جاري تحديد موقعك وبلدك...';
-      notifyListeners();
     }
+    // Even a silent startup lookup must expose its loading state so the user
+    // can choose a city before it finishes.
+    notifyListeners();
 
     try {
-      final result = await LocationService.detectCurrentLocation();
-      if (result.succeeded && result.latitude != null && result.longitude != null) {
+      final result = await _locationDetector().timeout(
+        const Duration(seconds: 25),
+      );
+      if (requestGeneration != _locationRequestGeneration) {
+        return _supersededLocationResult();
+      }
+      if (result.succeeded &&
+          result.latitude != null &&
+          result.longitude != null) {
         _latitude = result.latitude!;
         _longitude = result.longitude!;
         _cityName = result.displayName;
         _isAutoLocation = true;
-        _lastLocationStatus = 'مُحدَّث عبر ${result.sourceLabel}';
+        _locationSourceLabel = result.sourceLabel;
+        _hasConfirmedLocation = true;
+        _lastLocationStatus = 'تم التحديث عبر ${result.sourceLabel}';
         _lastLocationError = null;
         _prefs?.setDouble('lat', _latitude);
         _prefs?.setDouble('lng', _longitude);
         _prefs?.setString('city_name', _cityName);
         _prefs?.setBool('auto_loc', true);
+        _prefs?.setString('location_source', _locationSourceLabel);
+        _prefs?.setBool('location_confirmed', true);
         _isDetectingLocation = false;
         notifyListeners();
         _rescheduleNotifications();
@@ -400,23 +452,19 @@ class SettingsProvider extends ChangeNotifier {
       } else {
         _lastLocationError = result.errorMessage;
         _lastLocationStatus = 'تعذر الكشف التلقائي';
-        if (_cityName.contains('جاري')) {
-          final fallback = LocationService.presetCities[5]; // القاهرة كافتراضي عربي واضح عند فشل الشبكة والـ GPS أول مرة فقط
-          _latitude = fallback.latitude;
-          _longitude = fallback.longitude;
-          _cityName = fallback.name;
-        }
         _isDetectingLocation = false;
         notifyListeners();
         return result;
       }
     } catch (e) {
-      _isDetectingLocation = false;
-      _lastLocationError = 'تعذر الاتصال بخدمة الموقع حالياً';
-      _lastLocationStatus = 'فشل مؤقت';
-      if (_cityName.contains('جاري')) {
-        _cityName = "مكة المكرمة، السعودية";
+      if (requestGeneration != _locationRequestGeneration) {
+        return _supersededLocationResult();
       }
+      _isDetectingLocation = false;
+      _lastLocationError = e.toString().contains('TimeoutException')
+          ? 'انتهت مهلة تحديد الموقع. يمكنك اختيار المدينة يدوياً.'
+          : 'تعذر الاتصال بخدمة الموقع حالياً';
+      _lastLocationStatus = 'فشل مؤقت';
       notifyListeners();
       return DetectedLocationResult(
         succeeded: false,
@@ -427,6 +475,34 @@ class SettingsProvider extends ChangeNotifier {
         errorMessage: _lastLocationError,
       );
     }
+  }
+
+  DetectedLocationResult _supersededLocationResult() => DetectedLocationResult(
+        succeeded: false,
+        latitude: _latitude,
+        longitude: _longitude,
+        cityArabic: _cityName,
+        countryArabic: '',
+        displayName: _cityName,
+        sourceLabel: _locationSourceLabel,
+        errorMessage: 'تم تغيير الموقع أثناء الفحص؛ احتُفظ بالاختيار الأحدث.',
+      );
+
+  void setAutomaticLocationEnabled(bool enabled) {
+    if (_isAutoLocation == enabled) return;
+    _isAutoLocation = enabled;
+    _prefs?.setBool('auto_loc', enabled);
+    if (!enabled) {
+      // Turning automatic detection off also invalidates a pending lookup.
+      _locationRequestGeneration++;
+      _isDetectingLocation = false;
+      _lastLocationStatus = _hasConfirmedLocation
+          ? 'تم تثبيت الموقع الحالي؛ لن يُحدّث تلقائياً'
+          : 'الموقع المؤقت غير مؤكد؛ اختر مدينة يدوياً';
+    } else {
+      _lastLocationStatus = 'بانتظار تحديث الموقع تلقائياً';
+    }
+    notifyListeners();
   }
 
   void setCalculationMethod(CalculationMethod method) {
@@ -542,16 +618,23 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   void setManualLocation(double lat, double lng, String name) {
+    // Manual selection always wins over an older GPS/IP request still in flight.
+    _locationRequestGeneration++;
+    _isDetectingLocation = false;
     _latitude = lat;
     _longitude = lng;
     _cityName = name;
     _isAutoLocation = false;
+    _locationSourceLabel = 'اختيار يدوي من قائمة المدن';
+    _hasConfirmedLocation = true;
     _lastLocationStatus = 'مدينة مختارة يدوياً';
     _lastLocationError = null;
     _prefs?.setDouble('lat', lat);
     _prefs?.setDouble('lng', lng);
     _prefs?.setString('city_name', name);
     _prefs?.setBool('auto_loc', false);
+    _prefs?.setString('location_source', _locationSourceLabel);
+    _prefs?.setBool('location_confirmed', true);
     notifyListeners();
     _rescheduleNotifications();
   }

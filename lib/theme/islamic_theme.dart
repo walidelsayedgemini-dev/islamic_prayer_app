@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:adhan/adhan.dart';
 import 'islamic_theme_extra.dart';
+import 'firdaws_design.dart';
+export 'firdaws_design.dart';
+part 'paradise_theme_registry.dart';
 
 enum ThemeCategory {
   haramain, // الحرمين والمشاعر
@@ -108,6 +111,165 @@ class ThemePalette {
   });
 }
 
+/// Quiet product identity; curated nature palettes keep all surfaces coherent.
+abstract final class FirdawsCalmPalettes {
+  static const day = ThemePalette(
+    isDark: false,
+    primaryColor: Color(0xFF176B5B),
+    accentColor: Color(0xFF176B5B),
+    scaffoldColor: Color(0xFFF6F8F5),
+    cardColor: Colors.white,
+    elevatedCardColor: Color(0xFFEDF3EE),
+    textPrimary: Color(0xFF1E3027),
+    textSecondary: Color(0xFF63776B),
+    textMuted: Color(0xFF718578),
+    dividerColor: Color(0xFFE0E9E2),
+    onAccentColor: Colors.white,
+    skyGradients: [Color(0xFFF6F8F5), Color(0xFFF6F8F5)],
+  );
+  static const night = ThemePalette(
+    isDark: true,
+    primaryColor: Color(0xFF8CC7AD),
+    accentColor: Color(0xFF8CC7AD),
+    scaffoldColor: Color(0xFF101A16),
+    cardColor: Color(0xFF18251E),
+    elevatedCardColor: Color(0xFF22332A),
+    textPrimary: Color(0xFFEBF1ED),
+    textSecondary: Color(0xFFAABEB1),
+    textMuted: Color(0xFF96AB9D),
+    dividerColor: Color(0xFF2C4033),
+    onAccentColor: Color(0xFF10231A),
+    skyGradients: [Color(0xFF101A16), Color(0xFF101A16)],
+  );
+}
+
+const firdawsNatureThemes = [
+  (
+    key: 'emerald_gold',
+    label: 'الفردوس',
+    asset: 'assets/images/garden/garden_day_paradise.jpg'
+  ),
+  (
+    key: 'olive_palestine',
+    label: 'الغابة',
+    asset: 'assets/images/garden/garden_sidrat_sunbeams.jpg'
+  ),
+  (
+    key: 'salsabil_spring',
+    label: 'الواحة',
+    asset: 'assets/images/garden/garden_emerald_falls.jpg'
+  ),
+  (
+    key: 'maghrib_crimson',
+    label: 'الغروب',
+    asset: 'assets/images/garden/garden_sunset_eden.jpg'
+  ),
+];
+
+abstract final class FirdawsNaturePalettes {
+  static const forestDay = ThemePalette(
+    isDark: false,
+    primaryColor: Color(0xFF506C36),
+    accentColor: Color(0xFF506C36),
+    scaffoldColor: Color(0xFFF7F8F1),
+    cardColor: Colors.white,
+    elevatedCardColor: Color(0xFFEFF2E7),
+    textPrimary: Color(0xFF293324),
+    textSecondary: Color(0xFF66725C),
+    textMuted: Color(0xFF75816A),
+    dividerColor: Color(0xFFE2E8D9),
+    onAccentColor: Colors.white,
+    skyGradients: [Color(0xFFF7F8F1), Color(0xFFF7F8F1)],
+  );
+  static const forestNight = ThemePalette(
+    isDark: true,
+    primaryColor: Color(0xFFB5CAA1),
+    accentColor: Color(0xFFB5CAA1),
+    scaffoldColor: Color(0xFF171E13),
+    cardColor: Color(0xFF222C1C),
+    elevatedCardColor: Color(0xFF303C26),
+    textPrimary: Color(0xFFF0F4EB),
+    textSecondary: Color(0xFFBEC8B3),
+    textMuted: Color(0xFFA4B196),
+    dividerColor: Color(0xFF3B4930),
+    onAccentColor: Color(0xFF192313),
+    skyGradients: [Color(0xFF171E13), Color(0xFF171E13)],
+  );
+  static const waterDay = ThemePalette(
+    isDark: false,
+    primaryColor: Color(0xFF146C80),
+    accentColor: Color(0xFF146C80),
+    scaffoldColor: Color(0xFFF3F8F9),
+    cardColor: Colors.white,
+    elevatedCardColor: Color(0xFFE7F1F3),
+    textPrimary: Color(0xFF213B42),
+    textSecondary: Color(0xFF5B737C),
+    textMuted: Color(0xFF6B838B),
+    dividerColor: Color(0xFFD9E6E8),
+    onAccentColor: Colors.white,
+    skyGradients: [Color(0xFFF3F8F9), Color(0xFFF3F8F9)],
+  );
+  static const waterNight = ThemePalette(
+    isDark: true,
+    primaryColor: Color(0xFFA0CED4),
+    accentColor: Color(0xFFA0CED4),
+    scaffoldColor: Color(0xFF101B1F),
+    cardColor: Color(0xFF18272B),
+    elevatedCardColor: Color(0xFF223A40),
+    textPrimary: Color(0xFFEEF6F6),
+    textSecondary: Color(0xFFACC2C6),
+    textMuted: Color(0xFF92ACB2),
+    dividerColor: Color(0xFF30484E),
+    onAccentColor: Color(0xFF10282D),
+    skyGradients: [Color(0xFF101B1F), Color(0xFF101B1F)],
+  );
+  static const sunsetDay = ThemePalette(
+    isDark: false,
+    primaryColor: Color(0xFF996038),
+    accentColor: Color(0xFF996038),
+    scaffoldColor: Color(0xFFFAF6F0),
+    cardColor: Colors.white,
+    elevatedCardColor: Color(0xFFF3EBDD),
+    textPrimary: Color(0xFF3C2E23),
+    textSecondary: Color(0xFF766659),
+    textMuted: Color(0xFF867667),
+    dividerColor: Color(0xFFEBE0D3),
+    onAccentColor: Colors.white,
+    skyGradients: [Color(0xFFFAF6F0), Color(0xFFFAF6F0)],
+  );
+  static const sunsetNight = ThemePalette(
+    isDark: true,
+    primaryColor: Color(0xFFE4BC8B),
+    accentColor: Color(0xFFE4BC8B),
+    scaffoldColor: Color(0xFF201A14),
+    cardColor: Color(0xFF2A221B),
+    elevatedCardColor: Color(0xFF392F25),
+    textPrimary: Color(0xFFF7EFE5),
+    textSecondary: Color(0xFFCDBDAB),
+    textMuted: Color(0xFFB3A18F),
+    dividerColor: Color(0xFF4D4032),
+    onAccentColor: Color(0xFF322416),
+    skyGradients: [Color(0xFF201A14), Color(0xFF201A14)],
+  );
+
+  static ThemePalette resolve(String key, bool night) =>
+      FirdawsParadiseRegistry.paletteFor(key, night);
+
+  static String sceneryFor(String key, bool night) =>
+      FirdawsParadiseRegistry.imageFor(key);
+}
+
+class FirdawsNatureLook extends ThemeExtension<FirdawsNatureLook> {
+  final String sceneryAsset;
+  const FirdawsNatureLook(this.sceneryAsset);
+  @override
+  FirdawsNatureLook copyWith({String? sceneryAsset}) =>
+      FirdawsNatureLook(sceneryAsset ?? this.sceneryAsset);
+  @override
+  FirdawsNatureLook lerp(covariant FirdawsNatureLook? other, double t) =>
+      other == null || t < .5 ? this : other;
+}
+
 class ThemeOption {
   // 1. المفتاح البرمجي
   final String key;
@@ -194,7 +356,8 @@ class ThemeOption {
     required this.landmarkSilhouetteAsset,
   });
 
-  ThemePalette resolve({required bool isNight}) => isNight ? nightPalette : dayPalette;
+  ThemePalette resolve({required bool isNight}) =>
+      FirdawsParadiseRegistry.paletteFor(key, isNight);
 
   ThemeEnvironmentKind get environmentKind {
     switch (key) {
@@ -303,13 +466,23 @@ class ThemeEmojiRegistry {
     'andalus_orange_blossom': ['🍊', '🌸', '🌳', '💧', '✨', '☀️', '🕌', '💚'],
     'royal_emerald_marble': ['💚', '🪨', '✨', '👑', '🕌', '🌟', '💎', '🤲'],
     'pearl_blush_marble': ['🤍', '🌸', '✨', '🪨', '👑', '🌷', '🕌', '💛'],
-    'alabaster_veined_marble': ['🕊️', '🏛️', '✨', '🤍', '🪨', '💎', '🕌', '🌿'],
+    'alabaster_veined_marble': [
+      '🕊️',
+      '🏛️',
+      '✨',
+      '🤍',
+      '🪨',
+      '💎',
+      '🕌',
+      '🌿'
+    ],
     'snow_hermon_dawn': ['❄️', '🏔️', '🤍', '✨', '🕌', '💎', '🩵', '🌟'],
   };
 
   static List<String> packFor(String key) {
     final normalized = key == 'emerald' ? 'emerald_gold' : key;
-    return packsByKey[normalized] ?? const ['🕌', '✨', '🌙', '🌿', '🤲', '📖', '💚', '⭐'];
+    return packsByKey[normalized] ??
+        const ['🕌', '✨', '🌙', '🌿', '🤲', '📖', '💚', '⭐'];
   }
 
   static String primaryFor(String key) => packFor(key).first;
@@ -322,7 +495,8 @@ class IslamicTheme {
       key: 'emerald_gold',
       name: 'واحة الزمرد والذهب',
       subtitle: 'جلال الروضة الشريفة وأروقة المسجد النبوي بالمدينة المنورة',
-      historicalStory: 'مستوحى من خضرة القبة النبوية المطهرة ورخام الروضة الشريفة حيث السلام على رسول الله ﷺ وصاحبيه.',
+      historicalStory:
+          'مستوحى من خضرة القبة النبوية المطهرة ورخام الروضة الشريفة حيث السلام على رسول الله ﷺ وصاحبيه.',
       landmarkName: 'المسجد النبوي الشريف',
       landmarkIcon: Icons.mosque_rounded,
       category: ThemeCategory.haramain,
@@ -361,7 +535,11 @@ class IslamicTheme {
         skyGradients: [Color(0xFFD9EDE2), Color(0xFFF1F7F4), Color(0xFFFFFFFF)],
       ),
       beadColors: [Color(0xFF6EE7B7), Color(0xFF059669), Color(0xFF064E3B)],
-      markerBeadColors: [Color(0xFFFFFBEB), Color(0xFFFBBF24), Color(0xFF78350F)],
+      markerBeadColors: [
+        Color(0xFFFFFBEB),
+        Color(0xFFFBBF24),
+        Color(0xFF78350F)
+      ],
       threadColor: Color(0xFFD4AF37),
       beadMaterialName: 'زمرد مدني خام مصقول مع فواصل ذهبية',
       motifName: 'سعف نخل طيبة والقبة الخضراء',
@@ -380,7 +558,8 @@ class IslamicTheme {
       key: 'kaaba_black_gold',
       name: 'كسوة الكعبة المشرفة',
       subtitle: 'هيبة البيت العتيق مع حزام الذهب الخالص وقناديل الحرم',
-      historicalStory: 'مستوحى من جلال الكعبة المشرفة وحرير كسوتها السوداء المطرزة بأسلاك الذهب والفضة بآيات التوحيد.',
+      historicalStory:
+          'مستوحى من جلال الكعبة المشرفة وحرير كسوتها السوداء المطرزة بأسلاك الذهب والفضة بآيات التوحيد.',
       landmarkName: 'الكعبة المشرفة ومقام إبراهيم',
       landmarkIcon: Icons.crop_square_rounded,
       category: ThemeCategory.haramain,
@@ -419,7 +598,11 @@ class IslamicTheme {
         skyGradients: [Color(0xFFEFE6D2), Color(0xFFF8F5ED), Color(0xFFFFFFFF)],
       ),
       beadColors: [Color(0xFF404040), Color(0xFF1F1F1F), Color(0xFF000000)],
-      markerBeadColors: [Color(0xFFFFFBEB), Color(0xFFF3C644), Color(0xFF855A05)],
+      markerBeadColors: [
+        Color(0xFFFFFBEB),
+        Color(0xFFF3C644),
+        Color(0xFF855A05)
+      ],
       threadColor: Color(0xFFF3C644),
       beadMaterialName: 'عقيق أسود ملكي مطعم برقائق الذهب الخالص',
       motifName: 'قناديل الذهب وآيات الكسوة الشريفة',
@@ -427,7 +610,8 @@ class IslamicTheme {
       sunColors: [Color(0xFFFFFFFF), Color(0xFFF3C644), Color(0xFFB45309)],
       moonColors: [Color(0xFFFFFFFF), Color(0xFFF3C644), Color(0xFF451A03)],
       particleType: ThemeParticleType.goldenLeaves,
-      spiritualGreeting: 'لبيك اللهم لبيك، مرحباً بك في رحاب بيت الله الحرام بمكة',
+      spiritualGreeting:
+          'لبيك اللهم لبيك، مرحباً بك في رحاب بيت الله الحرام بمكة',
       soundAmbienceName: 'تكبيرات الحرم المكي الشريف والترتيل الخاشع',
       badgeHonor: 'وسام حزام الكعبة وتوحيد القبلة 🕋',
       landmarkSilhouetteAsset: 'kaaba_shrine',
@@ -438,7 +622,8 @@ class IslamicTheme {
       key: 'andalusian',
       name: 'رخام الحرمين الشريفين الملكي',
       subtitle: 'رخام ثاسوس الأبيض البارد مع عروق الذهب الخالص والنقوش الملكية',
-      historicalStory: 'مستوحى من رخام ساحات الحرم المكي الشريف والمسجد النبوي بالمدينة، الرخام اليوناني البارد الطبيعي المطعم بفواصل النحاس والذهب الخالص.',
+      historicalStory:
+          'مستوحى من رخام ساحات الحرم المكي الشريف والمسجد النبوي بالمدينة، الرخام اليوناني البارد الطبيعي المطعم بفواصل النحاس والذهب الخالص.',
       landmarkName: 'ساحات الحرمين الشريفين ورخام ثاسوس',
       landmarkIcon: Icons.account_balance_rounded,
       category: ThemeCategory.haramain,
@@ -477,7 +662,11 @@ class IslamicTheme {
         skyGradients: [Color(0xFFE4ECEF), Color(0xFFF6F8F9), Color(0xFFFFFFFF)],
       ),
       beadColors: [Color(0xFFFFFFFF), Color(0xFFE2E8F0), Color(0xFF94A3B8)],
-      markerBeadColors: [Color(0xFFFFFBEB), Color(0xFFFBBF24), Color(0xFF78350F)],
+      markerBeadColors: [
+        Color(0xFFFFFBEB),
+        Color(0xFFFBBF24),
+        Color(0xFF78350F)
+      ],
       threadColor: Color(0xFFD4AF37),
       beadMaterialName: 'رخام ثاسوس الأبيض المنحوت مع فواصل الذهب البراق',
       motifName: 'نقوش الرخام الملكي وأعمدة الحرمين',
@@ -485,7 +674,8 @@ class IslamicTheme {
       sunColors: [Color(0xFFFFFFFF), Color(0xFFD4AF37), Color(0xFF103327)],
       moonColors: [Color(0xFFFFFFFF), Color(0xFFE2E8F0), Color(0xFF0D9488)],
       particleType: ThemeParticleType.goldenLeaves,
-      spiritualGreeting: 'برودة رخام الحرمين وسكينة الساحات الطاهرة تملأ روحك طمأنينة',
+      spiritualGreeting:
+          'برودة رخام الحرمين وسكينة الساحات الطاهرة تملأ روحك طمأنينة',
       soundAmbienceName: 'أذان الحرم المكي وترتيل أئمة الحرمين الشريفين',
       badgeHonor: 'وسام رخام الحرمين الشريفين الملكي 🏛️',
       landmarkSilhouetteAsset: 'nabawi_courtyard_marble',
@@ -496,7 +686,8 @@ class IslamicTheme {
       key: 'makkah_rose',
       name: 'سماء مكة الوردية',
       subtitle: 'ألوان شروق الحرم المكي مع تدرج الياقوت والورد الطائفي',
-      historicalStory: 'مستلهم من جبال مكة وقت السحر وعبير مزارع الورد الطائفي النبيل التي يغسل بها الكعبة المشرفة سنوياً.',
+      historicalStory:
+          'مستلهم من جبال مكة وقت السحر وعبير مزارع الورد الطائفي النبيل التي يغسل بها الكعبة المشرفة سنوياً.',
       landmarkName: 'جبال الصفا ومزارع الورد الطائفي',
       landmarkIcon: Icons.local_florist_rounded,
       category: ThemeCategory.haramain,
@@ -535,7 +726,11 @@ class IslamicTheme {
         skyGradients: [Color(0xFFFBDCE8), Color(0xFFFDF4F7), Color(0xFFFFFFFF)],
       ),
       beadColors: [Color(0xFFFBCFE8), Color(0xFFDB2777), Color(0xFF500724)],
-      markerBeadColors: [Color(0xFFFEF08A), Color(0xFFF59E0B), Color(0xFF78350F)],
+      markerBeadColors: [
+        Color(0xFFFEF08A),
+        Color(0xFFF59E0B),
+        Color(0xFF78350F)
+      ],
       threadColor: Color(0xFFF472B6),
       beadMaterialName: 'كوارتز الورد الطائفي المنحوت بأيدي الصاغة',
       motifName: 'بتلات الورد الطائفي وقطرات الندى',
@@ -543,7 +738,8 @@ class IslamicTheme {
       sunColors: [Color(0xFFFFFFFF), Color(0xFFF472B6), Color(0xFFE11D48)],
       moonColors: [Color(0xFFFFFFFF), Color(0xFFF472B6), Color(0xFF831843)],
       particleType: ThemeParticleType.rosePetals,
-      spiritualGreeting: 'عطر الله قلبك وأيامك بعبير الورد المكي ونفحات المغفرة',
+      spiritualGreeting:
+          'عطر الله قلبك وأيامك بعبير الورد المكي ونفحات المغفرة',
       soundAmbienceName: 'همسات التكبير الرقيقة في نسائم الصباح المكي',
       badgeHonor: 'وسام الورد الطائفي وشروق الحرم 🌸',
       landmarkSilhouetteAsset: 'makkah_skyline',
@@ -554,7 +750,8 @@ class IslamicTheme {
       key: 'blue_mosque',
       name: 'فيروزي المسجد الأزرق',
       subtitle: 'خزف إسطنبول الفيروزي وزهرة التوليب العثمانية',
-      historicalStory: 'يجسد روعة أكثر من عشرين ألف قطعة خزف فيروزي مصنوعة يدوياً بقصر توبكابي ومسجد السلطان أحمد التاريخي.',
+      historicalStory:
+          'يجسد روعة أكثر من عشرين ألف قطعة خزف فيروزي مصنوعة يدوياً بقصر توبكابي ومسجد السلطان أحمد التاريخي.',
       landmarkName: 'مسجد السلطان أحمد وقباب إسطنبول',
       landmarkIcon: Icons.brightness_auto_rounded,
       category: ThemeCategory.landmarks,
@@ -593,7 +790,11 @@ class IslamicTheme {
         skyGradients: [Color(0xFFD2EEF9), Color(0xFFEFF8FC), Color(0xFFFFFFFF)],
       ),
       beadColors: [Color(0xFF67E8F9), Color(0xFF0891B2), Color(0xFF083344)],
-      markerBeadColors: [Color(0xFFE0E7FF), Color(0xFF38BDF8), Color(0xFF0369A1)],
+      markerBeadColors: [
+        Color(0xFFE0E7FF),
+        Color(0xFF38BDF8),
+        Color(0xFF0369A1)
+      ],
       threadColor: Color(0xFF22D3EE),
       beadMaterialName: 'فيروز سينائي ملكي مطعم بالفضة الاسترلينية',
       motifName: 'زهرة التوليب والفسيفساء الإزنيقية',
@@ -601,7 +802,8 @@ class IslamicTheme {
       sunColors: [Color(0xFFFFFFFF), Color(0xFF38BDF8), Color(0xFF0284C7)],
       moonColors: [Color(0xFFFFFFFF), Color(0xFF22D3EE), Color(0xFF0891B2)],
       particleType: ThemeParticleType.geometricZellij,
-      spiritualGreeting: 'خزف إسطنبول الفيروزي ونسائم البوسفور تملأ قلبك طمأنينة',
+      spiritualGreeting:
+          'خزف إسطنبول الفيروزي ونسائم البوسفور تملأ قلبك طمأنينة',
       soundAmbienceName: 'أذان إسطنبول المتبادل بين المآذن الشامخة',
       badgeHonor: 'وسام زهرة التوليب والخزف الفيروزي 💎',
       landmarkSilhouetteAsset: 'blue_mosque_domes',
@@ -612,7 +814,8 @@ class IslamicTheme {
       key: 'desert_night',
       name: 'ليل الصحراء والنجوم',
       subtitle: 'سكون البادية الصافية مع تلألؤ كواكب الفضة والثريا',
-      historicalStory: 'يعيدنا إلى ليالي الصحراء العربية الصافية حين كان الأجداد يهتدون بالنجوم في ظلمات البر والبحر.',
+      historicalStory:
+          'يعيدنا إلى ليالي الصحراء العربية الصافية حين كان الأجداد يهتدون بالنجوم في ظلمات البر والبحر.',
       landmarkName: 'بادية الحجاز ومرصد النجوم الكونية',
       landmarkIcon: Icons.nights_stay_rounded,
       category: ThemeCategory.skyPrayer,
@@ -651,7 +854,11 @@ class IslamicTheme {
         skyGradients: [Color(0xFFDBE7FA), Color(0xFFF2F6FD), Color(0xFFFFFFFF)],
       ),
       beadColors: [Color(0xFFBFDBFE), Color(0xFF2563EB), Color(0xFF0A1B3F)],
-      markerBeadColors: [Color(0xFFFFFFFF), Color(0xFF93C5FD), Color(0xFF1E3A8A)],
+      markerBeadColors: [
+        Color(0xFFFFFFFF),
+        Color(0xFF93C5FD),
+        Color(0xFF1E3A8A)
+      ],
       threadColor: Color(0xFF93C5FD),
       beadMaterialName: 'لازورد سماوي كحلي مرصع بحبيبات البيريت الذهبية',
       motifName: 'عناقيد الثريا ونجم الجدي القاطع',
@@ -670,7 +877,8 @@ class IslamicTheme {
       key: 'dome_of_rock',
       name: 'أرجوان قبة الصخرة',
       subtitle: 'جلال القدس الشريف مع الذهب النوراني للقبة المباركة',
-      historicalStory: 'مستوحى من قدسية المسجد الأقصى المبارك وقبة الصخرة المشرفة التي عرج منها النبي ﷺ إلى السماوات العلى.',
+      historicalStory:
+          'مستوحى من قدسية المسجد الأقصى المبارك وقبة الصخرة المشرفة التي عرج منها النبي ﷺ إلى السماوات العلى.',
       landmarkName: 'المسجد الأقصى وقبة الصخرة الذهبية',
       landmarkIcon: Icons.temple_buddhist_rounded,
       category: ThemeCategory.landmarks,
@@ -709,7 +917,11 @@ class IslamicTheme {
         skyGradients: [Color(0xFFEBDDF9), Color(0xFFF7F2FC), Color(0xFFFFFFFF)],
       ),
       beadColors: [Color(0xFFE9D5FF), Color(0xFF7E22CE), Color(0xFF2E0854)],
-      markerBeadColors: [Color(0xFFFEF08A), Color(0xFFFBBF24), Color(0xFF78350F)],
+      markerBeadColors: [
+        Color(0xFFFEF08A),
+        Color(0xFFFBBF24),
+        Color(0xFF78350F)
+      ],
       threadColor: Color(0xFFFBBF24),
       beadMaterialName: 'جمشت أرجواني فاخر محلى بالنحاس القدسي المذهب',
       motifName: 'أغصان زيتون القدس وقبة الذهب العالية',
@@ -717,7 +929,8 @@ class IslamicTheme {
       sunColors: [Color(0xFFFFFFFF), Color(0xFFFBBF24), Color(0xFFA855F7)],
       moonColors: [Color(0xFFFFFFFF), Color(0xFFFBBF24), Color(0xFF7E22CE)],
       particleType: ThemeParticleType.oliveLeaves,
-      spiritualGreeting: 'سلام للأرض المباركة ومسرى خير البرية ﷺ والقبلة الأولى',
+      spiritualGreeting:
+          'سلام للأرض المباركة ومسرى خير البرية ﷺ والقبلة الأولى',
       soundAmbienceName: 'أذان المسجد الأقصى المبارك الشجي المؤثر',
       badgeHonor: 'وسام بركة الأقصى وزيتون القدس 🕊️',
       landmarkSilhouetteAsset: 'dome_of_rock_golden',
@@ -728,7 +941,8 @@ class IslamicTheme {
       key: 'damascus_bronze',
       name: 'خريف دمشق الأموي',
       subtitle: 'أصالة النحاس الدمشقي العتيق وخشب الصندل المعتق',
-      historicalStory: 'يستحضر عظمة الجامع الأموي الكبير بدمشق، وفن التخريم النحاسي العريق الذي تفرد به حرفيو الشام عبر القرون.',
+      historicalStory:
+          'يستحضر عظمة الجامع الأموي الكبير بدمشق، وفن التخريم النحاسي العريق الذي تفرد به حرفيو الشام عبر القرون.',
       landmarkName: 'الجامع الأموي الكبير بدمشق',
       landmarkIcon: Icons.fireplace_rounded,
       category: ThemeCategory.landmarks,
@@ -767,7 +981,11 @@ class IslamicTheme {
         skyGradients: [Color(0xFFF6E2D1), Color(0xFFFBF5EF), Color(0xFFFFFFFF)],
       ),
       beadColors: [Color(0xFFFED7AA), Color(0xFFC2410C), Color(0xFF431407)],
-      markerBeadColors: [Color(0xFFFFFBEB), Color(0xFFF59E0B), Color(0xFF78350F)],
+      markerBeadColors: [
+        Color(0xFFFFFBEB),
+        Color(0xFFF59E0B),
+        Color(0xFF78350F)
+      ],
       threadColor: Color(0xFFFB923C),
       beadMaterialName: 'خشب الصندل الدمشقي المعتق برائحة دهن العود',
       motifName: 'النقش النحاسي الشامي وشجرة بردى',
@@ -775,7 +993,8 @@ class IslamicTheme {
       sunColors: [Color(0xFFFFFFFF), Color(0xFFFB923C), Color(0xFFEA580C)],
       moonColors: [Color(0xFFFFFFFF), Color(0xFFFB923C), Color(0xFF7C2D12)],
       particleType: ThemeParticleType.copperGlow,
-      spiritualGreeting: 'أصالة دمشق وعطر ياسمينها وتاريخ حضارتها الإسلامية العريقة',
+      spiritualGreeting:
+          'أصالة دمشق وعطر ياسمينها وتاريخ حضارتها الإسلامية العريقة',
       soundAmbienceName: 'تراتيل الجامع الأموي وابتهالات السحر الشامية',
       badgeHonor: 'وسام بردى والفسيفساء الأموية 🍂',
       landmarkSilhouetteAsset: 'umayyad_mosque',
@@ -786,7 +1005,8 @@ class IslamicTheme {
       key: 'baghdad_amber',
       name: 'عنبر بغداد الذهبي',
       subtitle: 'عصر الحضارة وبساتين دجلة المذهبة بالعنبر والمسك',
-      historicalStory: 'مستوحى من عصر بيت الحكمة الذهبي في بغداد، حيث كان العلماء يسطرون أبهى صفحات الطب والفلك والهندسة.',
+      historicalStory:
+          'مستوحى من عصر بيت الحكمة الذهبي في بغداد، حيث كان العلماء يسطرون أبهى صفحات الطب والفلك والهندسة.',
       landmarkName: 'بيت الحكمة ونهر دجلة الخالد',
       landmarkIcon: Icons.star_rounded,
       category: ThemeCategory.landmarks,
@@ -825,7 +1045,11 @@ class IslamicTheme {
         skyGradients: [Color(0xFFF7E9C8), Color(0xFFFCF8EC), Color(0xFFFFFFFF)],
       ),
       beadColors: [Color(0xFFFDE68A), Color(0xFFD97706), Color(0xFF451A03)],
-      markerBeadColors: [Color(0xFFFFFFFF), Color(0xFFF59E0B), Color(0xFF78350F)],
+      markerBeadColors: [
+        Color(0xFFFFFFFF),
+        Color(0xFFF59E0B),
+        Color(0xFF78350F)
+      ],
       threadColor: Color(0xFFF59E0B),
       beadMaterialName: 'كهرمان بلطيقي شفاف يحبس الضوء بألقه الدافئ',
       motifName: 'نجمة بيت الحكمة وعناقيد العنبر والمسك',
@@ -844,7 +1068,8 @@ class IslamicTheme {
       key: 'madinah_sands',
       name: 'رمال المدينة المنورة',
       subtitle: 'دفء رمال طيبة وسعف نخيل العالية المبارك',
-      historicalStory: 'يخلد ذكرى أول مسجد بني في الإسلام بـ (قباء) وبساتين النخيل التي آوت المهاجرين والأنصار في صفاء العقيدة.',
+      historicalStory:
+          'يخلد ذكرى أول مسجد بني في الإسلام بـ (قباء) وبساتين النخيل التي آوت المهاجرين والأنصار في صفاء العقيدة.',
       landmarkName: 'مسجد قباء وبساتين عوالي المدينة',
       landmarkIcon: Icons.forest_rounded,
       category: ThemeCategory.haramain,
@@ -883,7 +1108,11 @@ class IslamicTheme {
         skyGradients: [Color(0xFFEFE3D3), Color(0xFFFAF6F0), Color(0xFFFFFFFF)],
       ),
       beadColors: [Color(0xFFF5EBE1), Color(0xFFB89B77), Color(0xFF382E20)],
-      markerBeadColors: [Color(0xFFD9F99D), Color(0xFF84CC16), Color(0xFF365314)],
+      markerBeadColors: [
+        Color(0xFFD9F99D),
+        Color(0xFF84CC16),
+        Color(0xFF365314)
+      ],
       threadColor: Color(0xFFD4B996),
       beadMaterialName: 'نوى تمر العجوة المبارك مع حجر جبل أحد',
       motifName: 'سعف نخيل المدينة المنورة وقباب قباء',
@@ -902,7 +1131,8 @@ class IslamicTheme {
       key: 'arabian_pearl',
       name: 'لؤلؤ الخليج العربي',
       subtitle: 'نقاء دانات الغوص وزرقة مياه بحر العرب وسكون السواحل',
-      historicalStory: 'يحيي تراث بحارة الخليج العربي ورحلات الغوص للبحث عن اللؤلؤ الحر وهم يصدحون بالتهليل والتسبيح بين الأمواج.',
+      historicalStory:
+          'يحيي تراث بحارة الخليج العربي ورحلات الغوص للبحث عن اللؤلؤ الحر وهم يصدحون بالتهليل والتسبيح بين الأمواج.',
       landmarkName: 'منارات سواحل الخليج ومحار الدانة',
       landmarkIcon: Icons.water_rounded,
       category: ThemeCategory.skyPrayer,
@@ -941,7 +1171,11 @@ class IslamicTheme {
         skyGradients: [Color(0xFFD4ECFA), Color(0xFFF0F8FC), Color(0xFFFFFFFF)],
       ),
       beadColors: [Color(0xFFF0FDF4), Color(0xFFE0F2FE), Color(0xFF0284C7)],
-      markerBeadColors: [Color(0xFFFFFFFF), Color(0xFF38BDF8), Color(0xFF0369A1)],
+      markerBeadColors: [
+        Color(0xFFFFFFFF),
+        Color(0xFF38BDF8),
+        Color(0xFF0369A1)
+      ],
       threadColor: Color(0xFF38BDF8),
       beadMaterialName: 'لؤلؤ طبيعي حر من بحار الخليج عالي البريق',
       motifName: 'أصداف الدانة وموج البحر الهادئ',
@@ -960,7 +1194,8 @@ class IslamicTheme {
       key: 'celestial_rayyan',
       name: 'الزمرد النوراني وباب الريان',
       subtitle: 'بشرى الفردوس الأعلى وأنهار الكوثر للصائمين والقائمين',
-      historicalStory: 'مستلهم من وصف الجنة في الكتاب والسنة: رياض خضراء، وسندس واستبرق، وحوض الكوثر الذي ترابه المسك.',
+      historicalStory:
+          'مستلهم من وصف الجنة في الكتاب والسنة: رياض خضراء، وسندس واستبرق، وحوض الكوثر الذي ترابه المسك.',
       landmarkName: 'باب الريان ورياض الفردوس الأعلى',
       landmarkIcon: Icons.auto_awesome_rounded,
       category: ThemeCategory.jannahNature,
@@ -999,7 +1234,11 @@ class IslamicTheme {
         skyGradients: [Color(0xFFCFF5E5), Color(0xFFEFFBF7), Color(0xFFFFFFFF)],
       ),
       beadColors: [Color(0xFFA7F3D0), Color(0xFF10B981), Color(0xFF064E3B)],
-      markerBeadColors: [Color(0xFFFFFBEB), Color(0xFF34D399), Color(0xFF047857)],
+      markerBeadColors: [
+        Color(0xFFFFFBEB),
+        Color(0xFF34D399),
+        Color(0xFF047857)
+      ],
       threadColor: Color(0xFF34D399),
       beadMaterialName: 'بلور زمردي فائق النقاوة يشع نوراً كأشجار الجنة',
       motifName: 'أوراق سدرة المنتهى وأنهار الكوثر',
@@ -1039,7 +1278,7 @@ class IslamicTheme {
   static ThemeData getTheme(
     String key, {
     bool isNight = true,
-    String fontFamily = 'Aref Ruqaa',
+    String fontFamily = 'Cairo',
   }) {
     final palette = resolvePalette(key, isNight: isNight);
     const fallbackFonts = [
@@ -1051,44 +1290,202 @@ class IslamicTheme {
       'sans-serif',
     ];
 
-    final baseTextTheme =
-        palette.isDark ? Typography.whiteMountainView : Typography.blackMountainView;
+    final baseTextTheme = palette.isDark
+        ? Typography.whiteMountainView
+        : Typography.blackMountainView;
+    TextStyle role(double size, {bool bold = false, bool compact = false}) =>
+        TextStyle(
+          fontFamily: fontFamily,
+          fontFamilyFallback: fallbackFonts,
+          fontSize: size,
+          fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
+          height:
+              compact ? FirdawsType.compactHeight : FirdawsType.readingHeight,
+          letterSpacing: 0,
+          color: palette.textPrimary,
+        );
+    final textTheme = baseTextTheme
+        .apply(
+          fontFamily: fontFamily,
+          fontFamilyFallback: fallbackFonts,
+          bodyColor: palette.textPrimary,
+          displayColor: palette.textPrimary,
+        )
+        .copyWith(
+          displayLarge: role(48, bold: true, compact: true),
+          displayMedium: role(40, bold: true, compact: true),
+          displaySmall: role(FirdawsType.display, bold: true, compact: true),
+          headlineLarge: role(28, bold: true, compact: true),
+          headlineMedium: role(FirdawsType.headline, bold: true, compact: true),
+          headlineSmall: role(FirdawsType.title, bold: true, compact: true),
+          titleLarge: role(FirdawsType.title, bold: true, compact: true),
+          titleMedium: role(FirdawsType.section, bold: true, compact: true),
+          titleSmall: role(FirdawsType.body, bold: true, compact: true),
+          bodyLarge: role(FirdawsType.body),
+          bodyMedium: role(FirdawsType.body),
+          bodySmall:
+              role(FirdawsType.label).copyWith(color: palette.textSecondary),
+          labelLarge: role(FirdawsType.label, bold: true, compact: true),
+          labelMedium: role(FirdawsType.caption, bold: true, compact: true),
+          labelSmall: role(FirdawsType.micro, compact: true),
+        );
+    final controlShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(FirdawsRadius.control),
+    );
 
     return ThemeData(
       useMaterial3: true,
       fontFamily: fontFamily,
       fontFamilyFallback: fallbackFonts,
+      extensions: [
+        FirdawsNatureLook(FirdawsNaturePalettes.sceneryFor(key, isNight)),
+      ],
       brightness: palette.isDark ? Brightness.dark : Brightness.light,
       primaryColor: palette.primaryColor,
       scaffoldBackgroundColor: palette.scaffoldColor,
-      textTheme: baseTextTheme.apply(
-        fontFamily: fontFamily,
-        fontFamilyFallback: fallbackFonts,
-        bodyColor: palette.textPrimary,
-        displayColor: palette.textPrimary,
-      ),
+      textTheme: textTheme,
       colorScheme: ColorScheme.fromSeed(
         seedColor: palette.accentColor,
         brightness: palette.isDark ? Brightness.dark : Brightness.light,
-        primary: palette.primaryColor,
+        primary: palette.accentColor,
+        onPrimary: palette.onAccentColor,
+        primaryContainer: palette.elevatedCardColor,
+        onPrimaryContainer: palette.textPrimary,
         secondary: palette.accentColor,
+        onSecondary: palette.onAccentColor,
         surface: palette.cardColor,
+        surfaceContainerLow: palette.cardColor,
+        surfaceContainer: palette.cardColor,
+        surfaceContainerHigh: palette.elevatedCardColor,
         onSurface: palette.textPrimary,
+        onSurfaceVariant: palette.textSecondary,
+        outline: palette.textMuted,
+        outlineVariant: palette.dividerColor,
       ),
       dividerColor: palette.dividerColor,
+      iconTheme: IconThemeData(color: palette.accentColor, size: 22),
+      cardTheme: CardThemeData(
+        color: palette.cardColor,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(FirdawsRadius.card),
+          side: BorderSide(color: palette.dividerColor),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: palette.cardColor,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(FirdawsRadius.sheet),
+        ),
+        titleTextStyle: textTheme.titleLarge,
+        contentTextStyle: textTheme.bodyMedium,
+      ),
+      listTileTheme: ListTileThemeData(
+        contentPadding: const EdgeInsets.symmetric(horizontal: FirdawsSpace.lg),
+        iconColor: palette.accentColor,
+        textColor: palette.textPrimary,
+        titleTextStyle: textTheme.bodyMedium,
+        subtitleTextStyle: textTheme.bodySmall,
+      ),
+      tabBarTheme: TabBarThemeData(
+        labelStyle: textTheme.labelLarge,
+        unselectedLabelStyle: textTheme.labelLarge,
+        labelColor: palette.accentColor,
+        unselectedLabelColor: palette.textSecondary,
+        indicatorColor: palette.accentColor,
+        dividerColor: Colors.transparent,
+      ),
       appBarTheme: AppBarTheme(
-        backgroundColor: palette.isDark ? palette.primaryColor : palette.cardColor,
+        backgroundColor: palette.cardColor,
+        surfaceTintColor: Colors.transparent,
         foregroundColor: palette.textPrimary,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: true,
-        titleTextStyle: TextStyle(
-          fontFamily: fontFamily,
-          fontFamilyFallback: fallbackFonts,
-          color: palette.textPrimary,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
+        titleSpacing: FirdawsSpace.pageGutter,
+        titleTextStyle: textTheme.titleLarge,
         iconTheme: IconThemeData(color: palette.textPrimary),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: palette.cardColor,
+        contentPadding: FirdawsSpace.controlPadding,
+        hintStyle: textTheme.bodyMedium!.copyWith(color: palette.textMuted),
+        labelStyle:
+            textTheme.bodyMedium!.copyWith(color: palette.textSecondary),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(FirdawsRadius.control),
+          borderSide: BorderSide(color: palette.dividerColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(FirdawsRadius.control),
+          borderSide: BorderSide(color: palette.dividerColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(FirdawsRadius.control),
+          borderSide: BorderSide(color: palette.accentColor, width: 1.5),
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: palette.scaffoldColor,
+        modalBackgroundColor: palette.scaffoldColor,
+        surfaceTintColor: Colors.transparent,
+        showDragHandle: false,
+        dragHandleColor: palette.dividerColor,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: palette.elevatedCardColor,
+        contentTextStyle: TextStyle(
+          color: palette.textPrimary,
+          fontFamily: fontFamily,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: palette.accentColor,
+          foregroundColor: palette.onAccentColor,
+          minimumSize: const Size(48, 48),
+          padding: FirdawsSpace.controlPadding,
+          shape: controlShape,
+          textStyle: textTheme.labelLarge,
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: palette.accentColor,
+          foregroundColor: palette.onAccentColor,
+          elevation: 0,
+          minimumSize: const Size(48, 48),
+          padding: FirdawsSpace.controlPadding,
+          shape: controlShape,
+          textStyle: textTheme.labelLarge,
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: palette.accentColor,
+          side: BorderSide(color: palette.dividerColor),
+          minimumSize: const Size(48, 48),
+          padding: FirdawsSpace.controlPadding,
+          shape: controlShape,
+          textStyle: textTheme.labelLarge,
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: palette.accentColor,
+          minimumSize: const Size(48, 44),
+          shape: controlShape,
+          textStyle: textTheme.labelLarge,
+        ),
       ),
     );
   }

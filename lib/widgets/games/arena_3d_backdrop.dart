@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -9,7 +10,6 @@ import '../../providers/settings_provider.dart';
 import '../../theme/islamic_theme.dart';
 import '../firdaws_portrait_avatar.dart';
 import 'gfx/arena_4k_stage_compositor.dart';
-import 'gfx/arena_ui_image_cache.dart';
 
 class ArenaMatchConfig {
   final ArenaGameDefinition game;
@@ -67,7 +67,7 @@ class ArenaMatchConfig {
   }
 }
 
-/// شريط قيادة علوي موحد للمباريات 3D يُظهر الصور الواقعية والسباق المباشر ورصيد الحسنات
+/// بطاقة قيادة المباراة: النقاط أولًا، ثم الوقت والمسار في تسلسل مقروء.
 class ArenaHudBar extends StatelessWidget {
   final ArenaMatchConfig config;
   final ThemePalette palette;
@@ -90,10 +90,22 @@ class ArenaHudBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rivalName = config.isDualPlayer ? config.p2Name : config.virtualRival.name;
+    final rivalName =
+        config.isDualPlayer ? config.p2Name : config.virtualRival.name;
     final rivalId = config.isDualPlayer ? 'p2' : config.virtualRival.id;
     final p1Ahead = p1Score >= p2OrRivalScore;
     final urgent = secondsLeft <= 8;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final compact = screenWidth < 400;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final surface = dark ? const Color(0xF1192922) : const Color(0xF8FFFDF6);
+    final insetSurface =
+        dark ? const Color(0xFF263A31) : const Color(0xFFF1F4EC);
+    final ink = dark ? const Color(0xFFF5F6EF) : const Color(0xFF19352A);
+    final mutedInk = dark ? const Color(0xFFC2D1C7) : const Color(0xFF50685C);
+    final border = config.activeEvent?.primaryColor ?? const Color(0xFFB89A5C);
+    const playerColor = Color(0xFF267553);
+    const rivalColor = Color(0xFF527B8A);
 
     int hasanatBalance = 0;
     bool hasProvider = false;
@@ -107,209 +119,97 @@ class ArenaHudBar extends StatelessWidget {
     final rivalProgress = (p2OrRivalScore / maxSpan).clamp(0.04, 0.96);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 4, 10, 4),
+      padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+            padding: EdgeInsets.all(compact ? 8 : 12),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              color: const Color(0xFF070E1E).withOpacity(0.88),
-              border: Border.all(
-                color: (config.activeEvent?.primaryColor ?? config.world.glowColor)
-                    .withOpacity(0.55),
-                width: 1.4,
-              ),
+              color: surface,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: border.withOpacity(0.56), width: 1.2),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.45),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withOpacity(0.18),
+                  blurRadius: 18,
+                  offset: const Offset(0, 7),
                 ),
               ],
             ),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // لاعب ١ بالصورة الواقعية
                     Expanded(
-                      child: Row(
-                        children: [
-                          FirdawsPortraitAvatar(
-                            entityId: 'you',
-                            displayName: config.p1Name,
-                            size: 34,
-                            ringColor: const Color(0xFF10B981),
-                            isHighlighted: p1Ahead,
-                          ),
-                          const SizedBox(width: 7),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  config.p1Name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Color(0xFF34D399),
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                                Text(
-                                  '$p1Score نقطة',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: p1Ahead ? Colors.white : Colors.white70,
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                      child: _ArenaPlayerScore(
+                        name: config.p1Name,
+                        score: p1Score,
+                        entityId: 'you',
+                        color: playerColor,
+                        textColor: ink,
+                        labelColor: mutedInk,
+                        tileColor: insetSurface,
+                        progress: p1Progress,
+                        compact: compact,
+                        highlight: p1Ahead,
+                        alignEnd: true,
                       ),
                     ),
-                    // عداد الزمن + رصيد الحسنات والحدث
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Column(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 11, vertical: 3.5),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(14),
-                              gradient: LinearGradient(
-                                colors: urgent
-                                    ? const [Color(0xFFEF4444), Color(0xFFB91C1C)]
-                                    : [
-                                        config.world.glowColor,
-                                        config.game.accentColor,
-                                      ],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: (urgent
-                                          ? const Color(0xFFEF4444)
-                                          : config.world.glowColor)
-                                      .withOpacity(0.45),
-                                  blurRadius: 10,
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              '⏱ $secondsLeft ث',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 12.5,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (hasProvider)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 1.5),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF59E0B)
-                                        .withOpacity(0.18),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: const Color(0xFFF59E0B)
-                                          .withOpacity(0.55),
-                                      width: 0.9,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    '🪙 $hasanatBalance',
-                                    style: const TextStyle(
-                                      color: Color(0xFFFBBF24),
-                                      fontSize: 9.5,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ),
-                              if (config.activeEvent != null) ...[
-                                const SizedBox(width: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 5, vertical: 1.5),
-                                  decoration: BoxDecoration(
-                                    color: config.activeEvent!.primaryColor
-                                        .withOpacity(0.24),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    '×${config.activeEvent!.hasanatMultiplier}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 9.5,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ],
-                      ),
+                    SizedBox(width: compact ? 6 : 10),
+                    _ArenaTimerTile(
+                      secondsLeft: secondsLeft,
+                      urgent: urgent,
+                      compact: compact,
+                      dark: dark,
                     ),
-                    // المنافس بالصورة الواقعية
+                    SizedBox(width: compact ? 6 : 10),
                     Expanded(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  rivalName,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Color(0xFF38BDF8),
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                                Text(
-                                  '$p2OrRivalScore نقطة',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: !p1Ahead ? Colors.white : Colors.white70,
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 7),
-                          FirdawsPortraitAvatar(
-                            entityId: rivalId,
-                            displayName: rivalName,
-                            size: 34,
-                            ringColor: const Color(0xFF38BDF8),
-                            isHighlighted: !p1Ahead,
-                          ),
-                        ],
+                      child: _ArenaPlayerScore(
+                        name: rivalName,
+                        score: p2OrRivalScore,
+                        entityId: rivalId,
+                        color: rivalColor,
+                        textColor: ink,
+                        labelColor: mutedInk,
+                        tileColor: insetSurface,
+                        progress: rivalProgress,
+                        compact: compact,
+                        highlight: !p1Ahead,
+                        alignEnd: false,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
-                // مسار السباق المباشر 🏁
+                if (hasProvider || config.activeEvent != null) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    runAlignment: WrapAlignment.center,
+                    spacing: 7,
+                    runSpacing: 6,
+                    children: [
+                      if (hasProvider)
+                        _ArenaInfoPill(
+                          icon: Icons.spa_rounded,
+                          label: 'الرصيد $hasanatBalance',
+                          color: const Color(0xFF927537),
+                          dark: dark,
+                        ),
+                      if (config.activeEvent != null)
+                        _ArenaInfoPill(
+                          icon: Icons.local_activity_rounded,
+                          label:
+                              '×${config.activeEvent!.hasanatMultiplier} فعالية',
+                          color: config.activeEvent!.primaryColor,
+                          dark: dark,
+                        ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 8),
                 _LiveRaceTrackStrip(
                   p1Progress: p1Progress,
                   rivalProgress: rivalProgress,
@@ -318,37 +218,266 @@ class ArenaHudBar extends StatelessWidget {
                   rivalName: rivalName,
                   shieldActive: shieldActive,
                   glowColor: config.world.glowColor,
+                  playerColor: playerColor,
+                  rivalColor: rivalColor,
+                  dark: dark,
                 ),
               ],
             ),
           ),
-          if (villainAlert != null && villainAlert!.isNotEmpty)
+          if (villainAlert != null && villainAlert!.isNotEmpty) ...[
+            const SizedBox(height: 6),
             Container(
-              margin: const EdgeInsets.only(top: 5),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4.5),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                color: config.game.villain.accentColor.withOpacity(0.24),
-                border: Border.all(
-                  color: config.game.villain.accentColor.withOpacity(0.85),
+                color: dark ? const Color(0xF0322923) : const Color(0xF9FFF8EF),
+                borderRadius: BorderRadius.circular(15),
+                border: BorderDirectional(
+                  start: BorderSide(
+                    color: config.game.villain.accentColor.withOpacity(0.88),
+                    width: 3,
+                  ),
                 ),
               ),
-              child: Text(
-                '${config.game.villain.emoji} ${config.game.villain.name}: $villainAlert',
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
-                ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    size: 19,
+                    color: config.game.villain.accentColor,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${config.game.villain.name}: $villainAlert',
+                      textAlign: TextAlign.start,
+                      softWrap: true,
+                      style: TextStyle(
+                        color: dark
+                            ? const Color(0xFFF6EDE2)
+                            : const Color(0xFF352A20),
+                        fontWeight: FontWeight.w700,
+                        height: 1.25,
+                        fontSize: compact ? 12 : 13,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
+          ],
         ],
       ),
     );
   }
+}
+
+class _ArenaPlayerScore extends StatelessWidget {
+  final String name;
+  final int score;
+  final String entityId;
+  final Color color;
+  final Color textColor;
+  final Color labelColor;
+  final Color tileColor;
+  final double progress;
+  final bool compact;
+  final bool highlight;
+  final bool alignEnd;
+
+  const _ArenaPlayerScore({
+    required this.name,
+    required this.score,
+    required this.entityId,
+    required this.color,
+    required this.textColor,
+    required this.labelColor,
+    required this.tileColor,
+    required this.progress,
+    required this.compact,
+    required this.highlight,
+    required this.alignEnd,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final details = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment:
+          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Text(
+          name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: alignEnd ? TextAlign.end : TextAlign.start,
+          style: TextStyle(
+            color: labelColor,
+            fontWeight: FontWeight.w700,
+            fontSize: compact ? 11.5 : 12.5,
+            height: 1.2,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          '$score نقطة',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: alignEnd ? TextAlign.end : TextAlign.start,
+          style: TextStyle(
+            color: highlight ? color : textColor,
+            fontWeight: FontWeight.w900,
+            fontSize: compact ? 14 : 17,
+            height: 1.15,
+          ),
+        ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: LinearProgressIndicator(
+            value: progress,
+            minHeight: 4,
+            color: color,
+            backgroundColor: color.withOpacity(0.16),
+          ),
+        ),
+      ],
+    );
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: compact ? 7 : 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: tileColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withOpacity(highlight ? 0.52 : 0.23),
+          width: highlight ? 1.2 : 0.8,
+        ),
+      ),
+      child: Row(
+        children: [
+          if (!compact && alignEnd) ...[
+            FirdawsPortraitAvatar(
+              entityId: entityId,
+              displayName: name,
+              size: 32,
+              ringColor: color,
+              isHighlighted: highlight,
+            ),
+            const SizedBox(width: 7),
+          ],
+          Expanded(child: details),
+          if (!compact && !alignEnd) ...[
+            const SizedBox(width: 7),
+            FirdawsPortraitAvatar(
+              entityId: entityId,
+              displayName: name,
+              size: 32,
+              ringColor: color,
+              isHighlighted: highlight,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ArenaTimerTile extends StatelessWidget {
+  final int secondsLeft;
+  final bool urgent;
+  final bool compact;
+  final bool dark;
+
+  const _ArenaTimerTile({
+    required this.secondsLeft,
+    required this.urgent,
+    required this.compact,
+    required this.dark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final background = urgent
+        ? (dark ? const Color(0xFF6A332E) : const Color(0xFFFBE8E2))
+        : (dark ? const Color(0xFF203D30) : const Color(0xFFE7F1E8));
+    final foreground = urgent
+        ? (dark ? const Color(0xFFFFD8D0) : const Color(0xFF812E24))
+        : (dark ? const Color(0xFFD6EBDD) : const Color(0xFF245C43));
+    return Container(
+      width: compact ? 61 : 75,
+      constraints: const BoxConstraints(minHeight: 58),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(color: foreground.withOpacity(0.38)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.hourglass_bottom_rounded, size: 18, color: foreground),
+          const SizedBox(height: 3),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              '$secondsLeft ث',
+              maxLines: 1,
+              style: TextStyle(
+                color: foreground,
+                fontWeight: FontWeight.w900,
+                fontSize: compact ? 13 : 15,
+                height: 1.1,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ArenaInfoPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final bool dark;
+
+  const _ArenaInfoPill({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.dark,
+  });
+
+  @override
+  Widget build(BuildContext context) => Container(
+        constraints: const BoxConstraints(minHeight: 31),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: dark ? const Color(0xFF263930) : const Color(0xFFEEF2E8),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: color.withOpacity(0.28)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: color),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              softWrap: true,
+              style: TextStyle(
+                color: dark ? const Color(0xFFE5EEE7) : const Color(0xFF344D3F),
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                height: 1.2,
+              ),
+            ),
+          ],
+        ),
+      );
 }
 
 class _LiveRaceTrackStrip extends StatelessWidget {
@@ -359,6 +488,9 @@ class _LiveRaceTrackStrip extends StatelessWidget {
   final String rivalName;
   final bool shieldActive;
   final Color glowColor;
+  final Color playerColor;
+  final Color rivalColor;
+  final bool dark;
 
   const _LiveRaceTrackStrip({
     required this.p1Progress,
@@ -368,79 +500,103 @@ class _LiveRaceTrackStrip extends StatelessWidget {
     required this.rivalName,
     required this.shieldActive,
     required this.glowColor,
+    required this.playerColor,
+    required this.rivalColor,
+    required this.dark,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 22,
-      child: LayoutBuilder(
-        builder: (_, box) {
-          final trackW = math.max(80.0, box.maxWidth - 26);
-          final p1Left = 6.0 + trackW * p1Progress;
-          final rLeft = 6.0 + trackW * rivalProgress;
+    return Container(
+      padding: const EdgeInsetsDirectional.fromSTEB(10, 6, 8, 6),
+      decoration: BoxDecoration(
+        color: dark ? const Color(0xFF12231B) : const Color(0xFFE8EEE5),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color:
+              dark ? Colors.white.withOpacity(0.10) : const Color(0xFFD7E0D5),
+        ),
+      ),
+      child: SizedBox(
+        height: 26,
+        child: LayoutBuilder(
+          builder: (_, box) {
+            final trackW = math.max(80.0, box.maxWidth - 36);
+            final p1Left = 10.0 + trackW * p1Progress;
+            final rivalLeft = 10.0 + trackW * rivalProgress;
 
-          return Stack(
-            alignment: Alignment.centerLeft,
-            children: [
-              // خلفية المضمار
-              Container(
-                height: 6,
-                margin: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(6),
-                  color: Colors.white.withOpacity(0.10),
-                  border: Border.all(
-                    color: glowColor.withOpacity(0.32),
-                    width: 0.8,
+            return Stack(
+              alignment: Alignment.centerLeft,
+              children: [
+                Positioned(
+                  left: 10,
+                  right: 13,
+                  child: Container(
+                    height: 5,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      gradient: LinearGradient(
+                        colors: [
+                          playerColor.withOpacity(0.58),
+                          glowColor.withOpacity(0.30),
+                          rivalColor.withOpacity(0.58),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              // شارة الدرع إن كانت نشطة
-              if (shieldActive)
+                if (shieldActive)
+                  Positioned(
+                    left: 0,
+                    child: Icon(
+                      Icons.shield_rounded,
+                      size: 15,
+                      color: dark
+                          ? const Color(0xFFE3D09D)
+                          : const Color(0xFF82672F),
+                    ),
+                  ),
                 const Positioned(
-                  left: 0,
-                  child: Text('🛡️', style: TextStyle(fontSize: 11)),
+                  right: 0,
+                  child: Icon(
+                    Icons.flag_rounded,
+                    size: 15,
+                    color: Color(0xFF5F7469),
+                  ),
                 ),
-              // خط النهاية
-              const Positioned(
-                right: 0,
-                child: Text('🏁', style: TextStyle(fontSize: 12)),
-              ),
-              // مؤشر المنافس
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 220),
-                left: rLeft - 9,
-                top: 2,
-                child: FirdawsPortraitAvatar(
-                  entityId: rivalId,
-                  displayName: rivalName,
-                  size: 18,
-                  ringColor: const Color(0xFF38BDF8),
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 220),
+                  left: rivalLeft - 9,
+                  top: 3,
+                  child: FirdawsPortraitAvatar(
+                    entityId: rivalId,
+                    displayName: rivalName,
+                    size: 19,
+                    ringColor: rivalColor,
+                  ),
                 ),
-              ),
-              // مؤشر اللاعب ١
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 220),
-                left: p1Left - 10,
-                top: 1,
-                child: FirdawsPortraitAvatar(
-                  entityId: 'you',
-                  displayName: p1Name,
-                  size: 20,
-                  ringColor: const Color(0xFF10B981),
-                  isHighlighted: true,
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 220),
+                  left: p1Left - 10,
+                  top: 2,
+                  child: FirdawsPortraitAvatar(
+                    entityId: 'you',
+                    displayName: p1Name,
+                    size: 21,
+                    ringColor: playerColor,
+                    isHighlighted: true,
+                  ),
                 ),
-              ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 }
 
-/// حاوية خلفية 4K مستقلّة داخل RepaintBoundary لتحسين السلاسة إلى 60fps
+/// طبقة المنظر منفصلة حتى لا تعيد حركة الصورة رسم بقية واجهة اللعب.
 class Arena4KBackdropLayer extends StatefulWidget {
   final ArenaMatchConfig config;
   final bool drawPerspectiveFloor;
@@ -470,6 +626,21 @@ class _Arena4KBackdropLayerState extends State<Arena4KBackdropLayer>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncScenicMotion();
+  }
+
+  void _syncScenicMotion() {
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    if (reduceMotion) {
+      if (_anim.isAnimating) _anim.stop();
+    } else if (!_anim.isAnimating) {
+      _anim.repeat();
+    }
+  }
+
+  @override
   void didUpdateWidget(covariant Arena4KBackdropLayer oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.config.resolvedBackdropAsset !=
@@ -479,7 +650,7 @@ class _Arena4KBackdropLayerState extends State<Arena4KBackdropLayer>
   }
 
   Future<void> _warmAsset() async {
-    await ArenaUiImageCache.loadImage(
+    await Arena4KStageCompositor.warmBackdropImage(
       widget.config.resolvedBackdropAsset,
       targetWidth: 1080,
     );
@@ -517,7 +688,7 @@ class _Arena4KBackdropLayerState extends State<Arena4KBackdropLayer>
   }
 }
 
-/// رسّام الخلفية ثلاثية الأبعاد الواقعية لكل عالم من العوالم الـ 90 + طبقات الـ 4K والمؤثرات
+/// رسّام المنظر الطبيعي مع حارس الحجم وطبقة الأرضية الاختيارية.
 class ArenaWorld3DPainter extends CustomPainter {
   final GameWorldSpec world;
   final double phase;
@@ -539,189 +710,24 @@ class ArenaWorld3DPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (backdropAsset != null && backdropAsset!.isNotEmpty) {
-      Arena4KStageCompositor.paintBackdropLayer(
-        canvas: canvas,
-        size: size,
-        world: world,
-        phase: phase,
-        isDark: isDark,
-        backdropAsset: backdropAsset!,
-        vfxStyleKey: vfxStyleKey,
-        eventAccent: eventAccent,
-      );
+    if (!size.width.isFinite ||
+        !size.height.isFinite ||
+        size.width <= 0 ||
+        size.height <= 0) {
       return;
     }
 
-    // Fallback احتياطي إذا لم تُمرر خلفية 4K
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            world.skyTop,
-            world.skyBottom,
-            world.groundColor,
-          ],
-          stops: const [0.0, 0.56, 1.0],
-        ).createShader(Offset.zero & size),
+    Arena4KStageCompositor.paintBackdropLayer(
+      canvas: canvas,
+      size: size,
+      world: world,
+      phase: phase,
+      isDark: isDark,
+      backdropAsset: backdropAsset ?? '',
+      vfxStyleKey: vfxStyleKey,
+      eventAccent: eventAccent,
+      drawPerspectiveFloor: drawPerspectiveFloor,
     );
-
-    final horizonY = size.height * 0.52;
-
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(size.width * 0.5, horizonY),
-        width: size.width * 1.1,
-        height: size.height * 0.28,
-      ),
-      Paint()
-        ..shader = RadialGradient(
-          colors: [
-            world.glowColor.withOpacity(0.26),
-            Colors.transparent,
-          ],
-        ).createShader(
-          Rect.fromCenter(
-            center: Offset(size.width * 0.5, horizonY),
-            width: size.width * 1.1,
-            height: size.height * 0.28,
-          ),
-        ),
-    );
-
-    final starPaint = Paint()..color = Colors.white.withOpacity(0.55);
-    for (int i = 0; i < 24; i++) {
-      final sx = ((i * 73 + phase * 18) % 100) / 100.0 * size.width;
-      final sy = ((i * 37) % 45) / 100.0 * size.height + 12;
-      final r = (i % 3 == 0) ? 1.8 : 1.0;
-      canvas.drawCircle(Offset(sx, sy), r, starPaint);
-    }
-
-    _paintWorldLandmarks(canvas, size, horizonY);
-
-    if (drawPerspectiveFloor) {
-      final groundRect =
-          Rect.fromLTWH(0, horizonY, size.width, size.height - horizonY);
-      canvas.drawRect(
-        groundRect,
-        Paint()
-          ..shader = LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color.lerp(world.groundColor, world.glowColor, 0.14)!,
-              world.groundColor,
-              Colors.black,
-            ],
-          ).createShader(groundRect),
-      );
-
-      final gridPaint = Paint()
-        ..color = world.glowColor.withOpacity(0.22)
-        ..strokeWidth = 1.0;
-      final vanish = Offset(size.width * 0.5, horizonY);
-
-      for (int i = -6; i <= 6; i++) {
-        final bx = size.width * 0.5 + i * (size.width * 0.18);
-        canvas.drawLine(vanish, Offset(bx, size.height), gridPaint);
-      }
-
-      for (int k = 1; k <= 8; k++) {
-        final t =
-            math.pow((k / 8.0 + (phase % 0.125)), 1.7).toDouble().clamp(0.0, 1.0);
-        final y = horizonY + (size.height - horizonY) * t;
-        canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-      }
-    }
-  }
-
-  void _paintWorldLandmarks(Canvas canvas, Size size, double horizonY) {
-    final silColor = Color.lerp(world.groundColor, Colors.black, 0.45)!
-        .withOpacity(0.52);
-    final rimColor = world.glowColor.withOpacity(0.28);
-    final silPaint = Paint()..color = silColor;
-    final rimPaint = Paint()
-      ..color = rimColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.3;
-
-    switch (world.landmarkStyle) {
-      case WorldLandmarkStyle.domes:
-        for (int i = 0; i < 4; i++) {
-          final cx = size.width * (0.14 + i * 0.24);
-          final r = 22.0 + (i % 2) * 12.0;
-          final base = Rect.fromLTWH(cx - r, horizonY - r, r * 2, r);
-          canvas.drawRect(base, silPaint);
-          canvas.drawArc(
-            Rect.fromCircle(center: Offset(cx, horizonY - r), radius: r),
-            math.pi,
-            math.pi,
-            true,
-            silPaint,
-          );
-          canvas.drawArc(
-            Rect.fromCircle(center: Offset(cx, horizonY - r), radius: r),
-            math.pi,
-            math.pi,
-            false,
-            rimPaint,
-          );
-        }
-        break;
-      case WorldLandmarkStyle.mountains:
-      case WorldLandmarkStyle.canyon:
-        final path = Path()..moveTo(0, horizonY);
-        final peaks = [0.08, 0.22, 0.38, 0.54, 0.72, 0.88, 1.0];
-        final heights = [32.0, 58.0, 38.0, 64.0, 36.0, 54.0, 28.0];
-        for (int i = 0; i < peaks.length; i++) {
-          path.lineTo(size.width * peaks[i], horizonY - heights[i]);
-        }
-        path.lineTo(size.width, horizonY);
-        path.close();
-        canvas.drawPath(path, silPaint);
-        canvas.drawPath(path, rimPaint);
-        break;
-      case WorldLandmarkStyle.columns:
-      case WorldLandmarkStyle.arches:
-        for (int i = 0; i < 6; i++) {
-          final x = size.width * (0.08 + i * 0.17);
-          final h = (i.isEven ? 46.0 : 34.0);
-          final r = Rect.fromLTWH(x - 7, horizonY - h, 14, h);
-          canvas.drawRect(r, silPaint);
-          canvas.drawRect(r, rimPaint);
-        }
-        break;
-      case WorldLandmarkStyle.stars:
-        for (int i = 0; i < 3; i++) {
-          final cx = size.width * (0.20 + i * 0.30);
-          final cy = horizonY - 36 - (i % 2) * 14;
-          canvas.drawCircle(
-            Offset(cx, cy),
-            22.0 + i * 4,
-            Paint()
-              ..color = world.glowColor.withOpacity(0.14)
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 1.6,
-          );
-        }
-        break;
-      case WorldLandmarkStyle.dunes:
-      case WorldLandmarkStyle.waves:
-        final dune = Path()
-          ..moveTo(0, horizonY)
-          ..quadraticBezierTo(
-              size.width * 0.25, horizonY - 40, size.width * 0.52, horizonY - 10)
-          ..quadraticBezierTo(
-              size.width * 0.78, horizonY - 46, size.width, horizonY - 14)
-          ..lineTo(size.width, horizonY)
-          ..close();
-        canvas.drawPath(dune, silPaint);
-        canvas.drawPath(dune, rimPaint);
-        break;
-    }
   }
 
   @override
@@ -729,5 +735,8 @@ class ArenaWorld3DPainter extends CustomPainter {
       oldDelegate.phase != phase ||
       oldDelegate.world.id != world.id ||
       oldDelegate.backdropAsset != backdropAsset ||
-      oldDelegate.vfxStyleKey != vfxStyleKey;
+      oldDelegate.vfxStyleKey != vfxStyleKey ||
+      oldDelegate.eventAccent != eventAccent ||
+      oldDelegate.isDark != isDark ||
+      oldDelegate.drawPerspectiveFloor != drawPerspectiveFloor;
 }

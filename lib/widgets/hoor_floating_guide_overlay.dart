@@ -77,7 +77,7 @@ class _HoorFloatingGuideOverlayState extends State<HoorFloatingGuideOverlay>
                   child: Material(
                     color: Colors.transparent,
                     child: Container(
-                      padding: const EdgeInsets.all(14),
+                      padding: const EdgeInsets.all(FirdawsSpace.lg),
                       decoration: BoxDecoration(
                         color: isDark
                             ? const Color(0xFF0A211B).withOpacity(0.95)
@@ -123,13 +123,13 @@ class _HoorFloatingGuideOverlayState extends State<HoorFloatingGuideOverlay>
                                       style: TextStyle(
                                         color: palette.accentColor,
                                         fontWeight: FontWeight.w800,
-                                        fontSize: 13,
+                                        fontSize: FirdawsType.label,
                                       ),
                                     ),
                                     Text(
                                       '${hoor.activeSkin.badgeEmoji} اسحبني لأي مكان بالشاشة ✨',
                                       style: TextStyle(
-                                        fontSize: 11,
+                                        fontSize: FirdawsType.caption,
                                         color: palette.textSecondary,
                                       ),
                                     ),
@@ -158,7 +158,7 @@ class _HoorFloatingGuideOverlayState extends State<HoorFloatingGuideOverlay>
                             '💡 ${guide.practicalTip}',
                             style: TextStyle(
                               color: palette.accentColor,
-                              fontSize: 12,
+                              fontSize: FirdawsType.caption,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -175,7 +175,7 @@ class _HoorFloatingGuideOverlayState extends State<HoorFloatingGuideOverlay>
                               '«${guide.paradiseHadith}» — ${guide.hadithSource}',
                               style: TextStyle(
                                 color: palette.accentColor,
-                                fontSize: 11.2,
+                                fontSize: FirdawsType.caption,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -192,7 +192,7 @@ class _HoorFloatingGuideOverlayState extends State<HoorFloatingGuideOverlay>
                                     Icons.chat_bubble_outline_rounded,
                                     size: 16),
                                 label: const Text('فضفض الآن 🤍',
-                                    style: TextStyle(fontSize: 12)),
+                                    style: TextStyle(fontSize: FirdawsType.caption)),
                               ),
                               const Spacer(),
                               TextButton(
@@ -201,7 +201,7 @@ class _HoorFloatingGuideOverlayState extends State<HoorFloatingGuideOverlay>
                                 child: Text(
                                   'إخفاء المساعد',
                                   style: TextStyle(
-                                    fontSize: 11.5,
+                                    fontSize: FirdawsType.caption,
                                     color: palette.textSecondary,
                                   ),
                                 ),
@@ -297,7 +297,7 @@ class _HoorFloatingGuideOverlayState extends State<HoorFloatingGuideOverlay>
                           hoor.guidePopupOpen ? 'إغلاق' : hoor.companionName,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 12,
+                            fontSize: FirdawsType.caption,
                             fontWeight: FontWeight.w800,
                           ),
                         ),

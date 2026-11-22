@@ -16,7 +16,8 @@ class CityPreset {
   });
 
   String get cityOnly => name.split('،').first.trim();
-  String get countryOnly => name.contains('،') ? name.split('،').last.trim() : '';
+  String get countryOnly =>
+      name.contains('،') ? name.split('،').last.trim() : '';
 }
 
 class DetectedLocationResult {
@@ -43,8 +44,12 @@ class DetectedLocationResult {
 
 class LocationService {
   static const List<CityPreset> presetCities = [
-    CityPreset(name: "مكة المكرمة، السعودية", latitude: 21.4225, longitude: 39.8262),
-    CityPreset(name: "المدينة المنورة، السعودية", latitude: 24.4672, longitude: 39.6111),
+    CityPreset(
+        name: "مكة المكرمة، السعودية", latitude: 21.4225, longitude: 39.8262),
+    CityPreset(
+        name: "المدينة المنورة، السعودية",
+        latitude: 24.4672,
+        longitude: 39.6111),
     CityPreset(name: "الرياض، السعودية", latitude: 24.7136, longitude: 46.6753),
     CityPreset(name: "جدة، السعودية", latitude: 21.5433, longitude: 39.1728),
     CityPreset(name: "الدمام، السعودية", latitude: 26.4207, longitude: 50.0888),
@@ -67,23 +72,29 @@ class LocationService {
     CityPreset(name: "بنها، مصر", latitude: 30.4660, longitude: 31.1848),
     CityPreset(name: "دمنهور، مصر", latitude: 31.0341, longitude: 30.4682),
     CityPreset(name: "شرم الشيخ، مصر", latitude: 27.9158, longitude: 34.3300),
-    CityPreset(name: "القدس الشريف، فلسطين", latitude: 31.7683, longitude: 35.2137),
+    CityPreset(
+        name: "القدس الشريف، فلسطين", latitude: 31.7683, longitude: 35.2137),
     CityPreset(name: "غزة، فلسطين", latitude: 31.5017, longitude: 34.4668),
     CityPreset(name: "دبي، الإمارات", latitude: 25.2048, longitude: 55.2708),
     CityPreset(name: "أبوظبي، الإمارات", latitude: 24.4539, longitude: 54.3773),
-    CityPreset(name: "الشارقة، الإمارات", latitude: 25.3463, longitude: 55.4209),
+    CityPreset(
+        name: "الشارقة، الإمارات", latitude: 25.3463, longitude: 55.4209),
     CityPreset(name: "إسطنبول، تركيا", latitude: 41.0082, longitude: 28.9784),
     CityPreset(name: "أنقرة، تركيا", latitude: 39.9334, longitude: 32.8597),
     CityPreset(name: "الرباط، المغرب", latitude: 34.0209, longitude: -6.8416),
-    CityPreset(name: "الدار البيضاء، المغرب", latitude: 33.5731, longitude: -7.5898),
-    CityPreset(name: "تونس العاصمة، تونس", latitude: 36.8065, longitude: 10.1815),
-    CityPreset(name: "الجزائر العاصمة، الجزائر", latitude: 36.7538, longitude: 3.0588),
+    CityPreset(
+        name: "الدار البيضاء، المغرب", latitude: 33.5731, longitude: -7.5898),
+    CityPreset(
+        name: "تونس العاصمة، تونس", latitude: 36.8065, longitude: 10.1815),
+    CityPreset(
+        name: "الجزائر العاصمة، الجزائر", latitude: 36.7538, longitude: 3.0588),
     CityPreset(name: "طرابلس، ليبيا", latitude: 32.8872, longitude: 13.1913),
     CityPreset(name: "الخرطوم، السودان", latitude: 15.5007, longitude: 32.5599),
     CityPreset(name: "عمّان، الأردن", latitude: 31.9454, longitude: 35.9284),
     CityPreset(name: "دمشق، سوريا", latitude: 33.5138, longitude: 36.2765),
     CityPreset(name: "بيروت، لبنان", latitude: 33.8938, longitude: 35.5018),
-    CityPreset(name: "الكويت العاصمة، الكويت", latitude: 29.3759, longitude: 47.9774),
+    CityPreset(
+        name: "الكويت العاصمة، الكويت", latitude: 29.3759, longitude: 47.9774),
     CityPreset(name: "الدوحة، قطر", latitude: 25.2854, longitude: 51.5310),
     CityPreset(name: "المنامة، البحرين", latitude: 26.2285, longitude: 50.5860),
     CityPreset(name: "مسقط، عُمان", latitude: 23.5880, longitude: 58.3829),
@@ -97,12 +108,16 @@ class LocationService {
     CityPreset(name: "مدريد، إسبانيا", latitude: 40.4168, longitude: -3.7038),
     CityPreset(name: "نيويورك، أمريكا", latitude: 40.7128, longitude: -74.0060),
     CityPreset(name: "تورونتو، كندا", latitude: 43.6532, longitude: -79.3832),
-    CityPreset(name: "كوالالمبور، ماليزيا", latitude: 3.1390, longitude: 101.6869),
-    CityPreset(name: "جاكرتا، إندونيسيا", latitude: -6.2088, longitude: 106.8456),
-    CityPreset(name: "إسلام آباد، باكستان", latitude: 33.6844, longitude: 73.0479),
+    CityPreset(
+        name: "كوالالمبور، ماليزيا", latitude: 3.1390, longitude: 101.6869),
+    CityPreset(
+        name: "جاكرتا، إندونيسيا", latitude: -6.2088, longitude: 106.8456),
+    CityPreset(
+        name: "إسلام آباد، باكستان", latitude: 33.6844, longitude: 73.0479),
     CityPreset(name: "دكا، بنغلاديش", latitude: 23.8103, longitude: 90.4125),
     CityPreset(name: "طوكيو، اليابان", latitude: 35.6762, longitude: 139.6503),
-    CityPreset(name: "سيدني، أستراليا", latitude: -33.8688, longitude: 151.2093),
+    CityPreset(
+        name: "سيدني، أستراليا", latitude: -33.8688, longitude: 151.2093),
   ];
 
   /// كشف كامل للموقع (GPS + آخر موقع محفوظ + الشبكة IP + تحديد اسم البلد والمدينة بالعربية) دون تعليق أبداً
@@ -114,12 +129,14 @@ class LocationService {
 
     // 1) محاولة GPS الفعلي على الجهاز
     try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled().timeout(
+      final serviceEnabled =
+          await Geolocator.isLocationServiceEnabled().timeout(
         const Duration(seconds: 3),
         onTimeout: () => false,
       );
       if (serviceEnabled) {
-        LocationPermission permission = await Geolocator.checkPermission().timeout(
+        LocationPermission permission =
+            await Geolocator.checkPermission().timeout(
           const Duration(seconds: 3),
           onTimeout: () => LocationPermission.denied,
         );
@@ -153,7 +170,8 @@ class LocationService {
             } catch (_) {}
           }
         } else {
-          permissionNote = 'يرجى السماح بإذن الموقع لتحديد أدق (جاري استخدام الشبكة)';
+          permissionNote =
+              'يرجى السماح بإذن الموقع لتحديد أدق (جاري استخدام الشبكة)';
         }
       } else {
         permissionNote = 'خدمة GPS مغلقة على الجهاز (جاري التحديد عبر الشبكة)';
@@ -211,7 +229,8 @@ class LocationService {
       longitude: lng,
       cityArabic: 'موقعك الحالي',
       countryArabic: '${lat.toStringAsFixed(2)}, ${lng.toStringAsFixed(2)}',
-      displayName: 'موقعك (${lat.toStringAsFixed(2)}°، ${lng.toStringAsFixed(2)}°)',
+      displayName:
+          'موقعك (${lat.toStringAsFixed(2)}°، ${lng.toStringAsFixed(2)}°)',
       sourceLabel: sourceLabel,
     );
   }
@@ -300,7 +319,8 @@ class LocationService {
           }
           final nearest = findNearestPresetCity(lat, lng);
           final city = nearest?.cityOnly ?? (data['city'] ?? '').toString();
-          final country = nearest?.countryOnly ?? (data['country_name'] ?? '').toString();
+          final country =
+              nearest?.countryOnly ?? (data['country_name'] ?? '').toString();
           return DetectedLocationResult(
             succeeded: true,
             latitude: lat,
@@ -320,7 +340,8 @@ class LocationService {
   }
 
   /// تحويل الإحداثيات إلى المدينة والبلد باللغة العربية عبر BigDataCloud
-  static Future<({String city, String country, String display})?> reverseGeocodeArabic(
+  static Future<({String city, String country, String display})?>
+      reverseGeocodeArabic(
     double lat,
     double lng,
   ) async {
@@ -342,7 +363,9 @@ class LocationService {
         if (cityRaw.isNotEmpty || countryRaw.isNotEmpty) {
           final cleanCountry = countryRaw.replaceAll(' (the)', '').trim();
           final city = cityRaw.isNotEmpty ? cityRaw : cleanCountry;
-          final display = (city.isNotEmpty && cleanCountry.isNotEmpty && city != cleanCountry)
+          final display = (city.isNotEmpty &&
+                  cleanCountry.isNotEmpty &&
+                  city != cleanCountry)
               ? '$city، $cleanCountry'
               : (cleanCountry.isNotEmpty ? cleanCountry : city);
           return (city: city, country: cleanCountry, display: display);
@@ -355,7 +378,8 @@ class LocationService {
   }
 
   /// مطابقة أوفلاين لأقرب مدينة خلال نصف قطر ~350 كم
-  static CityPreset? findNearestPresetCity(double lat, double lng, {double maxKm = 350}) {
+  static CityPreset? findNearestPresetCity(double lat, double lng,
+      {double maxKm = 350}) {
     CityPreset? best;
     double bestDist = double.infinity;
     for (final city in presetCities) {
@@ -371,7 +395,8 @@ class LocationService {
     return null;
   }
 
-  static double _haversineKm(double lat1, double lon1, double lat2, double lon2) {
+  static double _haversineKm(
+      double lat1, double lon1, double lat2, double lon2) {
     const r = 6371.0;
     final dLat = _deg2rad(lat2 - lat1);
     final dLon = _deg2rad(lon2 - lon1);

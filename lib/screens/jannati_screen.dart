@@ -1,4 +1,3 @@
-import 'package:adhan/adhan.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -13,94 +12,44 @@ import '../providers/hoor_companion_provider.dart';
 import '../providers/jannati_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
-import '../widgets/firdaws_brand_logo.dart';
-import '../widgets/firdaws_resilient_image.dart';
-import '../widgets/hoor_companion_widget.dart';
+import '../widgets/calm_ui.dart';
 import '../widgets/islamic_qa_explorer_widget.dart';
+import '../widgets/jannati_atlas_and_covenant_views.dart';
+import '../widgets/nature_ui.dart';
+import '../widgets/paradise_ui.dart';
+import '../widgets/sacred_reference_widgets.dart';
+import '../widgets/wallpaper_70_picker_sheet.dart';
 import 'events_missions_screen.dart';
 import 'hasanat_store_screen.dart';
-import '../widgets/islamic_theme_effects_canvas.dart';
-import '../widgets/jannati_atlas_and_covenant_views.dart';
-import '../widgets/real_mosque_background.dart';
-import '../widgets/sacred_reference_widgets.dart';
-import '../widgets/firdaws_3d_ui.dart';
-import '../widgets/wallpaper_70_picker_sheet.dart';
 
-/// واحة الفردوس الأعلى التفاعلية («جنتي» مع رفيق حُور + ٥٠٠٠ سؤال وجواب):
-/// 5 تبويبات متكاملة:
-/// 0. رفيقي في جنتي: حُور (أو رفيق مخصص) + الفضفضة + خزينة الباقيات الـ ١٤ + البناء السريع + سجل الأعمال
-/// 1. مهندس الجنة اليومي: جدول الـ ١٦ ورداً يومياً + الـ ١٤ استثماراً نبوياً ببناء متدرج
-/// 2. أطلس الجنة الموسوعي: الأبواب الـ ٨ + الدرجات الـ ١٢ + الأنهار الـ ٨ + النعيم الـ ١٨ + رفقة النبي ﷺ
-/// 3. صك أمنياتي والاختبار: ميثاق الأمنيات الشخصي + سلم الـ ١٢ مقاماً + اختبار ٢٥ سؤالاً
-/// 4. اسألني (٥٠٠٠ س&ج): موسوعة ٥٠٠٠ سؤال وجواب مقسمة ومنظمة بالبحث الفوري بالعامية والفصحى
+enum _JannatiMenuAction {
+  dailyPlan,
+  atlas,
+  covenant,
+  questions,
+  events,
+  store,
+  scenery
+}
+
 class JannatiScreen extends StatefulWidget {
   final ValueNotifier<int?>? tabRequestNotifier;
 
-  const JannatiScreen({
-    super.key,
-    this.tabRequestNotifier,
-  });
+  const JannatiScreen({super.key, this.tabRequestNotifier});
 
   @override
   State<JannatiScreen> createState() => _JannatiScreenState();
 }
 
-class _JannatiScreenState extends State<JannatiScreen>
-    with TickerProviderStateMixin {
+class _JannatiScreenState extends State<JannatiScreen> {
   int _activeTab = 0;
-  bool _showAll14TreasuryMetrics = false;
-  String _deedCategoryFilter = 'all'; // all, dhikr, salah, sunnah, sadaqah
 
   static const List<({String label, IconData icon})> _tabSpecs = [
-    (label: 'حُور وجنّتي', icon: Icons.auto_awesome_rounded),
-    (label: 'مُهندس الجنة', icon: Icons.architecture_rounded),
-    (label: 'أطلس الجنة', icon: Icons.menu_book_rounded),
-    (label: 'ميثاقي والاختبار', icon: Icons.auto_stories_rounded),
-    (label: '٥٠٠٠ سؤال وجواب', icon: Icons.question_answer_rounded),
-  ];
-
-  static const List<({String title, String arabicText, String source, String reflection})>
-      _paradiseDuas = [
-    (
-      title: 'سؤال الفردوس الأعلى وجوار الرحمن',
-      arabicText:
-          'اللَّهُمَّ إِنِّي أَسْأَلُكَ الْفِرْدَوْسَ الْأَعْلَى مِنَ الْجَنَّةِ بِغَيْرِ حِسَابٍ وَلَا سَابِقَةِ عَذَابٍ، وَأَسْأَلُكَ رِضَاكَ وَالنَّظَرَ إِلَى وَجْهِكَ الْكَرِيمِ',
-      source: 'مقتبس من حديث صحيح البخاري (2790) وصحيح مسلم',
-      reflection:
-          'علّو الهمة في الدعاء عبادة يُحبها الله؛ فلا تطلب القليل وقد فُتحت لك خزائن الفردوس!',
-    ),
-    (
-      title: 'الدعاء النبوي الجامع للجنة والاستعاذة من النار',
-      arabicText:
-          'اللَّهُمَّ إِنِّي أَسْأَلُكَ الْجَنَّةَ وَمَا قَرَّبَ إِلَيْهَا مِنْ قَوْلٍ أَوْ عَمَلٍ، وَأَعُوذُ بِكَ مِنَ النَّارِ وَمَا قَرَّبَ إِلَيْهَا مِنْ قَوْلٍ أَوْ عَمَلٍ',
-      source: 'سنن ابن ماجه (3846) ومسند أحمد — صحيح',
-      reflection:
-          'يجمع لك سؤال الجنة وطلب التوفيق للأعمال الصالحة الموصلة إليها في كلمة واحدة جامعة.',
-    ),
-    (
-      title: 'مرافقة النبي ﷺ في أعلى عليين',
-      arabicText:
-          'اللَّهُمَّ إِنِّي أَسْأَلُكَ إِيمَانًا لَا يَرْتَدُّ، وَنَعِيمًا لَا يَنْفَدُ، وَمُرَافَقَةَ نَبِيِّنَا مُحَمَّدٍ ﷺ فِي أَعْلَى جَنَّةِ الْخُلْدِ',
-      source: 'مسند أحمد وصحيح ابن حبان (حديث ابن مسعود رضي الله عنه)',
-      reflection:
-          'كان عبد الله بن مسعود يدعو بهذا الدعاء كلما خلَا بربه، وأمَرَنا النبي ﷺ أن نعلو بهممنا في الدعاء ونسأل الله الفردوس الأعلى.',
-    ),
-    (
-      title: 'دعاء لذة النظر إلى وجه الله والشوق إلى لقائه',
-      arabicText:
-          'اللَّهُمَّ إِنِّي أَسْأَلُكَ لَذَّةَ النَّظَرِ إِلَى وَجْهِكَ، وَالشَّوْقَ إِلَى لِقَائِكَ، فِي غَيْرِ ضَرَّاءَ مُضِرَّةٍ وَلَا فِتْنَةٍ مُضِلَّةٍ',
-      source: 'سنن النسائي (1305) — صحيح عن عمار بن ياسر رضي الله عنهما',
-      reflection:
-          'أعظم نعيم أهل الجنة على الإطلاق حين يُرفع الحجاب فينظرون إلى ربهم جل جلاله.',
-    ),
-    (
-      title: 'دعاء دخول الجنة بسلام مع الوالدين والأحبة',
-      arabicText:
-          'رَبَّنَا وَأَدْخِلْهُمْ جَنَّاتِ عَدْنٍ الَّتِي وَعَدْتَهُمْ وَمَنْ صَلَحَ مِنْ آبَائِهِمْ وَأَزْوَاجِهِمْ وَذُرِّيَّاتِهِمْ ۚ إِنَّكَ أَنْتَ الْعَزِيزُ الْحَكِيمُ',
-      source: 'سورة غافر — الآية (8)',
-      reflection:
-          'جمعة الأحبة تحت ظلال طوبى مع من سبقونا ومن يعيشون معنا على الإيمان.',
-    ),
+    (label: 'يومك مع الخير', icon: Icons.checklist_rounded),
+    (label: 'خطة اليوم', icon: Icons.event_note_rounded),
+    (label: 'أطلس المعرفة', icon: Icons.menu_book_rounded),
+    (label: 'الميثاق والاختبار', icon: Icons.fact_check_outlined),
+    (label: 'أسئلة وأجوبة', icon: Icons.question_answer_outlined),
   ];
 
   @override
@@ -113,12 +62,12 @@ class _JannatiScreenState extends State<JannatiScreen>
   void _consumeTabRequest() {
     final notifier = widget.tabRequestNotifier;
     if (notifier == null) return;
-    final req = notifier.value;
-    if (req != null && req >= 0 && req < _tabSpecs.length) {
+    final request = notifier.value;
+    if (request != null && request >= 0 && request < _tabSpecs.length) {
       if (mounted) {
-        setState(() => _activeTab = req);
+        setState(() => _activeTab = request);
       } else {
-        _activeTab = req;
+        _activeTab = request;
       }
       notifier.value = null;
     }
@@ -140,754 +89,154 @@ class _JannatiScreenState extends State<JannatiScreen>
     super.dispose();
   }
 
-  void _triggerPulse() {}
-
-  Future<void> _handleInvestmentTap(
-    JannahInvestment inv,
-    ThemePalette palette,
-  ) async {
-    final jannati = Provider.of<JannatiProvider>(context, listen: false);
-    final userProv = Provider.of<FirdawsUserProvider>(context, listen: false);
-    final outcome = await jannati.performInvestmentTap(inv.id);
-    if (!mounted) return;
-
-    try {
-      Provider.of<HoorCompanionProvider>(context, listen: false)
-          .onJannahDeedPerformed(
-        deedTitle: inv.shortLabel,
-        userName: userProv.displayName,
-        isFemale: userProv.isFemale,
-      );
-    } catch (_) {}
-
-    try {
-      final hasanat = Provider.of<HasanatProvider>(context, listen: false);
-      final delta = outcome.completedCycle
-          ? inv.pointsPerCompletion.clamp(6, 40)
-          : inv.pointsPerTap.clamp(2, 12);
-      hasanat.earnHasanat(
-        delta,
-        reason: 'غراس جنتي: ${inv.shortLabel}',
-        sourceTag: 'جنتي',
-      );
-      hasanat.recordMetric(EventMissionMetric.jannahDeedsCount, delta: 1);
-    } catch (_) {}
-
-    _triggerPulse();
-    if (outcome.completedCycle) {
-      HapticFeedback.mediumImpact();
-    } else {
-      HapticFeedback.lightImpact();
-    }
-
-    _showSacredBannerToast(
-      userProv.formatPhrase(outcome.feedbackMessage),
-      palette,
-      accentOverride: inv.colorFor(palette.isDark),
-      icon: inv.icon,
-    );
-
-    if (outcome.promotedToRank != null && mounted) {
-      HapticFeedback.heavyImpact();
-      await _showRankPromotionDialog(
-        rank: outcome.promotedToRank!,
-        palette: palette,
-        displayName: userProv.displayName,
-      );
-    }
-  }
-
-  void _showSacredBannerToast(
-    String message,
-    ThemePalette palette, {
-    Color? accentOverride,
-    IconData icon = Icons.workspace_premium_rounded,
-  }) {
-    final accent = accentOverride ?? palette.accentColor;
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: palette.cardColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: accent, width: 1.5),
-        ),
-        content: Row(
-          children: [
-            Icon(icon, color: accent, size: 22),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                message,
-                style: TextStyle(
-                  color: palette.textPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ],
-        ),
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-
-  Future<void> _showRankPromotionDialog({
-    required JannahRankTier rank,
-    required ThemePalette palette,
-    required String displayName,
-  }) async {
-    final accent = rank.badgeColor;
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) {
-        return Dialog(
-          backgroundColor: palette.scaffoldColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(26),
-            side: BorderSide(color: accent, width: 2.0),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(22),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: accent.withOpacity(0.18),
-                    border: Border.all(color: accent, width: 2.2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: accent.withOpacity(0.45),
-                        blurRadius: 20,
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Icon(
-                      rank.icon,
-                      color: accent,
-                      size: 36,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  'تَرْقِيَةٌ إِيمَانِيَّةٌ فِي «جَنَّتِي» 🎉',
-                  style: TextStyle(
-                    color: accent,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13.5,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'مبارك يا $displayName!',
-                  style: TextStyle(
-                    color: palette.textPrimary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: accent.withOpacity(0.16),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: accent.withOpacity(0.5)),
-                  ),
-                  child: Text(
-                    'المقام ${rank.level}: ${rank.arabicTitle}',
-                    style: TextStyle(
-                      color: accent,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  rank.arabicSubtitle,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: palette.textSecondary,
-                    fontSize: 12.5,
-                    height: 1.45,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                ElevatedButton.icon(
-                  onPressed: () => Navigator.pop(ctx),
-                  icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-                  label: const Text(
-                    'الحمد لله • استمرار البناء',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: accent,
-                    foregroundColor: palette.onAccentColor,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _inspectInvestmentSheet(
-    JannahInvestment inv,
-    JannatiProvider jannati,
-    ThemePalette palette,
-  ) {
-    final c = inv.colorFor(palette.isDark);
-    final count = jannati.countFor(inv.id);
-    final cycle = jannati.cycleProgressFor(inv.id);
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (sheetCtx) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.72,
-          minChildSize: 0.48,
-          maxChildSize: 0.92,
-          builder: (_, sc) {
-            return Container(
-              decoration: BoxDecoration(
-                color: palette.scaffoldColor,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-                border: Border.all(color: c.withOpacity(0.55), width: 1.5),
-              ),
-              child: ListView(
-                controller: sc,
-                padding: const EdgeInsets.all(20),
-                children: [
-                  Center(
-                    child: Container(
-                      width: 46,
-                      height: 4.5,
-                      decoration: BoxDecoration(
-                        color: palette.dividerColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: c.withOpacity(0.18),
-                          border: Border.all(color: c, width: 1.6),
-                        ),
-                        child: Icon(inv.icon, color: c, size: 26),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              inv.title,
-                              style: TextStyle(
-                                color: c,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              inv.shortLabel,
-                              style: TextStyle(color: palette.textSecondary, fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Firdaws4KCardShell(
-                    backdrop: Background500Catalog.forExtraSection(
-                      74 + (inv.id.hashCode.abs() % 12),
-                    ),
-                    isDark: palette.isDark,
-                    borderColor: c.withOpacity(0.45),
-                    borderRadius: 16,
-                    borderWidth: 1.0,
-                    padding: const EdgeInsets.all(14),
-                    imageOpacity: 0.30,
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: Text(
-                        inv.dhikrOrAction,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: palette.isDark ? const Color(0xFFF1F5F9) : palette.primaryColor,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _sheetInfoBox(
-                    title: '📜 الدليل الشرعي والحديث الصحيح',
-                    body: '${inv.exactHadith}\n(${inv.sourceReference})',
-                    icon: Icons.verified_rounded,
-                    color: c,
-                    palette: palette,
-                  ),
-                  const SizedBox(height: 6),
-                  SacredEvidenceFooter(
-                    evidenceText: '${inv.exactHadith}\n(${inv.sourceReference})',
-                    titleForHadith: inv.title,
-                    hadithVerbatim: inv.exactHadith,
-                    trackInJannati: true,
-                  ),
-                  const SizedBox(height: 10),
-                  _sheetInfoBox(
-                    title: 'الثمرة ووصف النعيم',
-                    body: inv.paradiseDescription,
-                    icon: Icons.auto_awesome_rounded,
-                    color: palette.accentColor,
-                    palette: palette,
-                  ),
-                  const SizedBox(height: 10),
-                  _sheetInfoBox(
-                    title: 'الثواب والنقاط المكتسبة',
-                    body:
-                        'الذكر أو العمل: ${inv.dhikrOrAction}\n• الأثر: +${inv.pointsPerTap} لكل خطوة، و+${inv.pointsPerCompletion} عند إتمام ${inv.unitSingular}.',
-                    icon: Icons.lightbulb_rounded,
-                    color: const Color(0xFF10B981),
-                    palette: palette,
-                  ),
-                  const SizedBox(height: 12),
-                  Firdaws4KCardShell(
-                    backdrop: Background500Catalog.forExtraSection(86),
-                    isDark: palette.isDark,
-                    borderColor: palette.dividerColor,
-                    borderRadius: 14,
-                    borderWidth: 1.0,
-                    padding: const EdgeInsets.all(12),
-                    imageOpacity: 0.28,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'رصيدك المحفوظ: $count ${inv.unitPlural}',
-                          style: TextStyle(
-                            color: palette.textPrimary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
-                        if (inv.cycleTarget > 1)
-                          Text(
-                            'التقدم الحالي: $cycle / ${inv.cycleTarget}',
-                            style: TextStyle(
-                              color: c,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(sheetCtx);
-                      _handleInvestmentTap(inv, palette);
-                    },
-                    icon: Icon(inv.icon, size: 20),
-                    label: Text(
-                      inv.buttonText,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: c,
-                      foregroundColor:
-                          ThemeData.estimateBrightnessForColor(c) == Brightness.dark
-                              ? Colors.white
-                              : const Color(0xFF04120E),
-                      padding: const EdgeInsets.symmetric(vertical: 13),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _sheetInfoBox({
-    required String title,
-    required String body,
-    required IconData icon,
-    required Color color,
-    required ThemePalette palette,
-  }) {
-    return Firdaws4KCardShell(
-      backdrop: Background500Catalog.forExtraSection(
-        87 + (title.hashCode.abs() % 14),
-      ),
-      isDark: palette.isDark,
-      borderColor: color.withOpacity(0.35),
-      borderRadius: 14,
-      borderWidth: 1.0,
-      padding: const EdgeInsets.all(12),
-      imageOpacity: 0.28,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: 17),
-              const SizedBox(width: 6),
-              Text(
-                title,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12.5,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            body,
-            style: TextStyle(
-              color: palette.textPrimary,
-              fontSize: 12,
-              height: 1.45,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final settings = Provider.of<SettingsProvider>(context);
-    final jannati = Provider.of<JannatiProvider>(context);
-    final userProv = Provider.of<FirdawsUserProvider>(context);
-
-    final isNight = settings.isNightEffective;
+    final settings = context.watch<SettingsProvider>();
+    final jannati = context.watch<JannatiProvider>();
+    final user = context.watch<FirdawsUserProvider>();
     final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
-    final palette = themeOption.resolve(isNight: isNight);
+    final palette = themeOption.resolve(isNight: settings.isNightEffective);
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: palette.scaffoldColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
+        fit: StackFit.expand,
         children: [
-          Positioned.fill(
-            child: RealMosqueBackground(
-              currentPrayer: isNight ? Prayer.isha : Prayer.dhuhr,
-              themeOption: themeOption,
-              isNightMode: isNight,
-              enableMotion: false,
-            ),
-          ),
-          Positioned.fill(
-            child: IslamicThemeEffectsCanvas(
-              themeOption: themeOption,
-              isNightMode: isNight,
-            ),
-          ),
+          const Positioned.fill(child: BotanicalBackdrop()),
           SafeArea(
-            child: Column(
-              children: [
-                // 1. الترويسة الملكية وشريط المقام والنقاط والإحصائيات الحركية
-                _buildRoyalSanctuaryHeader(
+            bottom: false,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final wide = constraints.maxWidth >= 760;
+                final horizontal = constraints.maxWidth < 420 ? 14.0 : 22.0;
+                final activeBody = _buildActiveTabBody(
                   palette: palette,
                   jannati: jannati,
-                  userProv: userProv,
-                  themeOption: themeOption,
-                ),
+                  user: user,
+                );
 
-                // 2. شريط التبويبات الخمسة
-                _buildTabsBar(palette: palette),
-
-                const SizedBox(height: 6),
-
-                // 3. محتوى التبويب النشط
-                Expanded(
-                  child: _buildActiveTabBody(
-                    palette: palette,
-                    jannati: jannati,
-                    userProv: userProv,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRoyalSanctuaryHeader({
-    required ThemePalette palette,
-    required JannatiProvider jannati,
-    required FirdawsUserProvider userProv,
-    required ThemeOption themeOption,
-  }) {
-    final accent = palette.accentColor;
-    final rank = jannati.currentRank;
-    final nextRank = jannati.nextRank;
-    final rankColor = rank.badgeColor;
-    final vibrancyPct = (jannati.gardenVibrancy * 100).round();
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
-      child: Firdaws3DCard(
-        palette: palette,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        borderRadius: 22,
-        depth: 5,
-        child: Column(
-          children: [
-            Row(
-              children: [
-                FirdawsBrandLogo(
-                  size: 46,
-                  borderColor: accent,
-                  glowColor: accent,
-                  userAvatarBytes: userProv.avatarBytes,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        userProv.profile.hasCustomName
-                            ? '${themeOption.primaryEmoji} جَنَّةُ ${userProv.displayName} • مَوْسُوعَةُ الفِرْدَوْس'
-                            : '${themeOption.primaryEmoji} جَنَّتِي • الْفِرْدَوْسُ الْأَعْلَى',
-                        style: TextStyle(
-                          color: accent,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Row(
+                return Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1280),
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(horizontal, 10, horizontal, 18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Icon(rank.icon, color: rankColor, size: 12),
-                          const SizedBox(width: 4),
+                          _buildPageHeader(theme.colorScheme, palette),
+                          const SizedBox(height: 14),
+                          if (!wide) ...[
+                            _buildTabsBar(),
+                            const SizedBox(height: 14),
+                          ],
                           Expanded(
-                            child: Text(
-                              '${rank.arabicTitle} • نماء الفردوس $vibrancyPct% • ${themeOption.name} ${themeOption.emojiStrip}',
-                              style: TextStyle(
-                                color: palette.textSecondary,
-                                fontSize: 10.5,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                            child: wide
+                                ? Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      SizedBox(
+                                        width: 224,
+                                        child: _buildWideTabsRail(),
+                                      ),
+                                      const SizedBox(width: 18),
+                                      Expanded(child: activeBody),
+                                    ],
+                                  )
+                                : activeBody,
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: rankColor.withOpacity(0.18),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: rankColor.withOpacity(0.65)),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '✨ ${jannati.totalJannahPoints}',
-                        style: TextStyle(
-                          color: rankColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13.5,
-                        ),
-                      ),
-                      Text(
-                        'نقطة جنة',
-                        style: TextStyle(
-                          color: palette.textSecondary,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                );
+              },
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: LinearProgressIndicator(
-                      value: jannati.rankProgress,
-                      minHeight: 6,
-                      backgroundColor: palette.dividerColor,
-                      valueColor: AlwaysStoppedAnimation<Color>(rankColor),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  fit: FlexFit.loose,
-                  child: Text(
-                    nextRank != null
-                        ? 'التالي: ${nextRank.arabicTitle} (${nextRank.minPoints - jannati.totalJannahPoints})'
-                        : 'بلغت أعلى مقام في جنتي 👑',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: rankColor,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            // شريط إحصائيات ثابت 100% لا يهتز ولا يتحرك عند الضغط على الاستغفار أو التسبيح
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
-              decoration: BoxDecoration(
-                color: palette.elevatedCardColor,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: accent.withOpacity(0.28),
-                  width: 1.1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _staticMiniStat(
-                      '🌳',
-                      '${jannati.totalGardenTrees}',
-                      'شجرة',
-                      const Color(0xFF10B981),
-                      palette,
-                    ),
-                  ),
-                  Expanded(
-                    child: _staticMiniStat(
-                      '🏰',
-                      '${jannati.palacesCount}',
-                      'قصر',
-                      const Color(0xFF38BDF8),
-                      palette,
-                    ),
-                  ),
-                  Expanded(
-                    child: _staticMiniStat(
-                      '💎',
-                      '${jannati.treasuresCount}',
-                      'كنز',
-                      const Color(0xFF8B5CF6),
-                      palette,
-                    ),
-                  ),
-                  Expanded(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 360),
-                      transitionBuilder: (child, anim) => ScaleTransition(
-                        scale: Tween<double>(begin: 0.86, end: 1.0).animate(anim),
-                        child: child,
-                      ),
-                      child: KeyedSubtree(
-                        key: ValueKey<int>(jannati.hadithsReadCount),
-                        child: _staticMiniStat(
-                          '📖',
-                          '${jannati.hadithsReadCount}',
-                          'حديث',
-                          const Color(0xFF2DD4BF),
-                          palette,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _staticMiniStat(
-    String emoji,
-    String value,
-    String label,
-    Color color,
-    ThemePalette palette,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
+  Widget _buildPageHeader(ColorScheme scheme, ThemePalette palette) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 10, 8, 10),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFB99C64).withOpacity(.42)),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.primary.withOpacity(.06),
+            blurRadius: 18,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 13)),
-          const SizedBox(width: 4),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12,
-                  fontFeatures: const [FontFeature.tabularFigures()],
+          const CalmIconBadge(Icons.spa_outlined, size: 46),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'جنتي',
+                  softWrap: true,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    height: 1.2,
+                  ),
                 ),
+                const SizedBox(height: 3),
+                Text(
+                  'أعمال اليوم، المعرفة، وخياراتك',
+                  softWrap: true,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          PopupMenuButton<_JannatiMenuAction>(
+            tooltip: 'خيارات إضافية',
+            icon: const Icon(Icons.more_horiz_rounded),
+            onSelected: (action) => _handleMenuAction(action, palette),
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: _JannatiMenuAction.dailyPlan,
+                child: Text('خطة الأعمال والاستثمارات'),
               ),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: palette.textMuted,
-                  fontSize: 9.2,
-                  fontWeight: FontWeight.w600,
-                ),
+              PopupMenuItem(
+                value: _JannatiMenuAction.atlas,
+                child: Text('أطلس المعرفة'),
+              ),
+              PopupMenuItem(
+                value: _JannatiMenuAction.covenant,
+                child: Text('الميثاق والاختبار'),
+              ),
+              PopupMenuItem(
+                value: _JannatiMenuAction.questions,
+                child: Text('موسوعة الأسئلة'),
+              ),
+              PopupMenuDivider(),
+              PopupMenuItem(
+                value: _JannatiMenuAction.events,
+                child: Text('المهام والفعاليات'),
+              ),
+              PopupMenuItem(
+                value: _JannatiMenuAction.store,
+                child: Text('متجر الحسنات'),
+              ),
+              PopupMenuItem(
+                value: _JannatiMenuAction.scenery,
+                child: Text('اختيار خلفية جنتي'),
               ),
             ],
           ),
@@ -896,89 +245,154 @@ class _JannatiScreenState extends State<JannatiScreen>
     );
   }
 
-  Widget _buildTabsBar({required ThemePalette palette}) {
-    final accent = palette.accentColor;
+  void _handleMenuAction(_JannatiMenuAction action, ThemePalette palette) {
+    switch (action) {
+      case _JannatiMenuAction.dailyPlan:
+        _selectTab(1);
+      case _JannatiMenuAction.atlas:
+        _selectTab(2);
+      case _JannatiMenuAction.covenant:
+        _selectTab(3);
+      case _JannatiMenuAction.questions:
+        _selectTab(4);
+      case _JannatiMenuAction.events:
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const EventsMissionsScreen()),
+        );
+      case _JannatiMenuAction.store:
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => const HasanatStoreScreen(
+              initialCategory: StoreItemCategory.gardenSkin,
+            ),
+          ),
+        );
+      case _JannatiMenuAction.scenery:
+        _showJannatiSceneryPicker(palette);
+    }
+  }
 
-    return SizedBox(
-      height: 44,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        itemCount: _tabSpecs.length,
-        itemBuilder: (_, idx) {
-          final spec = _tabSpecs[idx];
-          final isSel = _activeTab == idx;
-          return Padding(
-            padding: const EdgeInsets.only(left: 8),
-            child: InkWell(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                setState(() => _activeTab = idx);
-              },
-              borderRadius: BorderRadius.circular(20),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isSel
-                      ? accent
-                      : palette.cardColor.withOpacity(palette.isDark ? 0.85 : 0.92),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isSel ? accent : palette.dividerColor,
-                    width: isSel ? 1.5 : 1.0,
-                  ),
-                  boxShadow: isSel
-                      ? [
-                          BoxShadow(
-                            color: accent.withOpacity(0.32),
-                            blurRadius: 10,
-                          ),
-                        ]
-                      : null,
+  void _selectTab(int index) {
+    HapticFeedback.selectionClick();
+    setState(() => _activeTab = index);
+  }
+
+  Widget _buildTabsBar() {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: List<Widget>.generate(_tabSpecs.length, (index) {
+        final tab = _tabSpecs[index];
+        return ParadiseChip(
+          label: tab.label,
+          icon: tab.icon,
+          selected: _activeTab == index,
+          onTap: () => _selectTab(index),
+        );
+      }),
+    );
+  }
+
+  Widget _buildWideTabsRail() {
+    final scheme = Theme.of(context).colorScheme;
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(4, 4, 4, 12),
+          child: Text(
+            'مسارات جنتي',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      spec.icon,
-                      size: 16,
-                      color: isSel ? palette.onAccentColor : accent,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      spec.label,
-                      style: TextStyle(
-                        color: isSel ? palette.onAccentColor : palette.textPrimary,
-                        fontWeight: isSel ? FontWeight.bold : FontWeight.w600,
-                        fontSize: 12,
+          ),
+        ),
+        ...List<Widget>.generate(_tabSpecs.length, (index) {
+          final tab = _tabSpecs[index];
+          final selected = _activeTab == index;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 9),
+            child: Semantics(
+              button: true,
+              selected: selected,
+              child: Material(
+                color: selected ? scheme.primaryContainer : scheme.surface,
+                borderRadius: BorderRadius.circular(18),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(18),
+                  onTap: () => _selectTab(index),
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 64),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: selected
+                            ? const Color(0xFFB99C64).withOpacity(.74)
+                            : const Color(0xFFB99C64).withOpacity(.32),
                       ),
                     ),
-                  ],
+                    child: Row(
+                      children: [
+                        Icon(
+                          tab.icon,
+                          size: 21,
+                          color: selected
+                              ? scheme.onPrimaryContainer
+                              : scheme.primary,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            tab.label,
+                            softWrap: true,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: scheme.onSurface,
+                                  fontWeight: selected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  height: 1.3,
+                                ),
+                          ),
+                        ),
+                        if (selected) ...[
+                          const SizedBox(width: 6),
+                          Icon(Icons.check_circle_rounded,
+                              color: scheme.primary, size: 18),
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
           );
-        },
-      ),
+        }),
+      ],
     );
   }
 
   Widget _buildActiveTabBody({
     required ThemePalette palette,
     required JannatiProvider jannati,
-    required FirdawsUserProvider userProv,
+    required FirdawsUserProvider user,
   }) {
     switch (_activeTab) {
       case 0:
-        return _buildInteractiveGardenTab(palette, jannati, userProv);
+        return _buildDailyHome(jannati, palette);
       case 1:
         return JannatiArchitectTabView(
           palette: palette,
           jannati: jannati,
-          onTapInvestment: (inv) => _handleInvestmentTap(inv, palette),
-          onInspectInvestment: (inv) => _inspectInvestmentSheet(inv, jannati, palette),
+          onTapInvestment: (investment) =>
+              _handleInvestmentTap(investment, palette),
+          onInspectInvestment: (investment) =>
+              _inspectInvestmentSheet(investment, jannati, palette),
         );
       case 2:
         return JannatiAtlasTabView(palette: palette);
@@ -986,1216 +400,683 @@ class _JannatiScreenState extends State<JannatiScreen>
         return JannatiCovenantAndQuizTabView(
           palette: palette,
           jannati: jannati,
-          user: userProv,
+          user: user,
         );
       case 4:
       default:
         return IslamicQaExplorerWidget(
           palette: palette,
           initialCategory: IslamicQaCategory.jannah,
-          headerTitle: 'مَوْسُوعَةُ الفَرْدَوْسِ • ٥٠٠٠ سُؤَالٍ وَجَوَابٍ مُنَظَّمَةٍ',
-          headerSubtitle:
-              'تصفح ٥٠ قسماً فرعياً منظماً أو اضغط «الكل (٥٠٠٠)» واسأل أي سؤال بالعامية أو الفصحى!',
+          headerTitle: 'معرفة نافعة عن الجنة',
+          headerSubtitle: 'تصفّح الأسئلة أو ابحث عمّا تريد معرفته.',
         );
     }
   }
 
-  String _categoryKeyFor(String id) {
-    switch (id) {
-      case 'ikhlas_palaces':
-      case 'parents_crowns':
-        return 'quran';
-      case 'rawatib_houses':
-      case 'duha_homes':
-      case 'mosque_shares':
-      case 'wudu_gates':
-        return 'salah';
-      case 'ethics_palaces':
-      case 'charity_pavilions':
-        return 'akhlaq';
-      default:
-        return 'dhikr';
-    }
-  }
+  Widget _buildDailyHome(JannatiProvider jannati, ThemePalette palette) {
+    final settings = context.watch<SettingsProvider>();
+    final themeScene =
+        Theme.of(context).extension<FirdawsNatureLook>()?.sceneryAsset;
+    final sceneryAsset = settings.selectedGardenWallpaperAsset ??
+        (settings.selectedJannatiSceneryIndex == 0
+            ? themeScene ??
+                (settings.isNightEffective
+                    ? 'assets/images/garden/garden_night_starlight.jpg'
+                    : settings.activeJannatiScenery.fallbackAsset)
+            : settings.activeJannatiScenery.fallbackAsset);
+    const actions = JannatiCatalog.dailyArchitectChecklist;
+    final checkedIds = jannati.dailyCheckedIds;
+    final checkedCount =
+        actions.where((action) => checkedIds.contains(action.id)).length;
+    final remainingCount = actions.length - checkedCount;
+    final progress = actions.isEmpty ? 0.0 : checkedCount / actions.length;
 
-  Widget _buildInteractiveGardenTab(
-    ThemePalette palette,
-    JannatiProvider jannati,
-    FirdawsUserProvider userProv,
-  ) {
-    final accent = palette.accentColor;
-    final emeraldColor =
-        palette.isDark ? const Color(0xFF10B981) : const Color(0xFF047857);
-    final goldColor =
-        palette.isDark ? const Color(0xFFF59E0B) : const Color(0xFFB45309);
-    final violetColor =
-        palette.isDark ? const Color(0xFF8B5CF6) : const Color(0xFF6D28D9);
-    final cyanColor =
-        palette.isDark ? const Color(0xFF06B6D4) : const Color(0xFF0E7490);
-
-    final filteredQuickDeeds = JannatiCatalog.investments.where((inv) {
-      if (_deedCategoryFilter == 'all') return true;
-      return _categoryKeyFor(inv.id) == _deedCategoryFilter;
-    }).toList();
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(14, 2, 14, 105),
-      physics: const BouncingScrollPhysics(),
-      children: [
-        // 1. الشخصية التفاعلية الفرفوشة «حُور» (أو رفيق الفردوس) بخلفيات ١٠٠٠ وسكنات ١٠٠٠ وخانة الفضفضة
-        HoorCompanionWidget(
-          palette: palette,
-          onOpenParadiseSceneryPicker: () =>
-              _showJannati100ScenerySheet(context, palette),
-        ),
-
-        const SizedBox(height: 10),
-        Builder(
-          builder: (ctx) {
-            int bal = 220;
-            String skinName = 'روضة النخيل';
-            try {
-              final hp = ctx.watch<HasanatProvider>();
-              bal = hp.hasanatBalance;
-              skinName = hp.equippedSkin(StoreItemCategory.gardenSkin).name;
-            } catch (_) {}
-            return Firdaws3DCard(
-              palette: palette,
-              glowColor: const Color(0xFFF59E0B),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              borderRadius: 18,
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 760;
+        return ListView(
+          padding: const EdgeInsets.only(bottom: 28),
+          children: [
+            ParadiseHero(
+              title: 'يومك، خطوةً خطوة',
+              subtitle: 'تابع ما أنجزته واختر من قائمتك ما يلائم وقتك.',
+              imageAsset: sceneryAsset,
+              minHeight: wide ? 276 : 248,
+              footer: Wrap(
+                spacing: 9,
+                runSpacing: 9,
                 children: [
-                  Firdaws3DPill(
-                    icon: Icons.monetization_on_rounded,
-                    label: '$bal حسنة 🪙',
-                    accentColor: const Color(0xFFF59E0B),
-                    palette: palette,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const HasanatStoreScreen(
-                          initialCategory: StoreItemCategory.gardenSkin,
-                        ),
-                      ),
+                  FilledButton.icon(
+                    onPressed: () => _selectTab(1),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFF3E8C8),
+                      foregroundColor: const Color(0xFF17382C),
+                      minimumSize: const Size(44, 46),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 15, vertical: 10),
                     ),
+                    icon: const Icon(Icons.event_note_rounded),
+                    label: const Text('فتح خطة اليوم'),
                   ),
-                  Firdaws3DPill(
-                    icon: Icons.auto_awesome_rounded,
-                    label: 'سكنات الجنة: $skinName',
-                    accentColor: const Color(0xFF10B981),
-                    palette: palette,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const HasanatStoreScreen(
-                          initialCategory: StoreItemCategory.gardenSkin,
-                        ),
-                      ),
+                  OutlinedButton.icon(
+                    onPressed: () => _showJannatiSceneryPicker(palette),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: BorderSide(color: Colors.white.withOpacity(.82)),
+                      minimumSize: const Size(44, 46),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 15, vertical: 10),
                     ),
-                  ),
-                  Firdaws3DPill(
-                    icon: Icons.photo_library_rounded,
-                    label: '١٠٠ منظر 4K لجنتي 🌅',
-                    accentColor: accent,
-                    palette: palette,
-                    onTap: () => _showJannati100ScenerySheet(context, palette),
-                  ),
-                  Firdaws3DPill(
-                    icon: Icons.flash_on_rounded,
-                    label: 'المهام والأحداث ⚡',
-                    accentColor: const Color(0xFF38BDF8),
-                    palette: palette,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const EventsMissionsScreen(),
-                      ),
-                    ),
+                    icon: const Icon(Icons.landscape_outlined),
+                    label: const Text('تغيير المشهد'),
                   ),
                 ],
               ),
-            );
-          },
-        ),
-        const SizedBox(height: 12),
-
-        // 2. صرح خزائن الفردوس (4 كبرى + توسعة إلى الـ 14 ذخر كاملة)
-        _buildExpandedRoyalTreasuryVault(
-          palette: palette,
-          jannati: jannati,
-          emeraldColor: emeraldColor,
-          goldColor: goldColor,
-          violetColor: violetColor,
-          cyanColor: cyanColor,
-        ),
-
-        const SizedBox(height: 12),
-
-        // 3. شريط انتقال سريع للأطلس والاختبار وموسوعة 5000 س&ج
-        _buildQuickFeatureLauncherRow(palette: palette),
-
-        const SizedBox(height: 14),
-
-        // 4. عنوان وفلاتر الأعمال الصالحة
-        Row(
-          children: [
-            Icon(Icons.volunteer_activism_rounded, color: accent, size: 18),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                'غِرَاسُ الجَنَّةِ التَّفَاعُلِيَّةُ (١٤ بَاباً نَبَوِيّاً)',
-                style: TextStyle(
-                  color: accent,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
             ),
-            Flexible(
-              child: Text(
-                firdawsCountLabel(
-                  filteredQuickDeeds.length,
-                  singular: 'باب',
-                  dual: 'بابان',
-                  plural3To10: 'أبواب',
-                  singular11Plus: 'باباً',
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: palette.textMuted, fontSize: 11.5),
-              ),
+            const SizedBox(height: 18),
+            _buildDailySummary(
+              actionCount: actions.length,
+              checkedCount: checkedCount,
+              remainingCount: remainingCount,
+              progress: progress,
             ),
-          ],
-        ),
-        const SizedBox(height: 8),
-
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(),
-          child: Row(
-            children: [
-              _filterDeedChip('all', 'جميع الأبواب (١٤)', palette),
-              _filterDeedChip('dhikr', 'الذكر والغراس', palette),
-              _filterDeedChip('quran', 'القرآن', palette),
-              _filterDeedChip('salah', 'الصلاة والمساجد', palette),
-              _filterDeedChip('akhlaq', 'الأخلاق والصدقة', palette),
+            const SizedBox(height: 24),
+            if (wide)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 6,
+                    child: _buildDailyChecklist(actions, checkedIds),
+                  ),
+                  const SizedBox(width: 18),
+                  Expanded(child: _buildDiscoverySection()),
+                ],
+              )
+            else ...[
+              _buildDailyChecklist(actions, checkedIds),
+              const SizedBox(height: 24),
+              _buildDiscoverySection(),
             ],
-          ),
-        ),
-        const SizedBox(height: 10),
-
-        // 5. بطاقات الاستثمارات النبوية الـ ١٤ بالعد التفاعلي والتفاصيل
-        ...filteredQuickDeeds.asMap().entries.map((entry) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _buildSacredInvestmentCard(
-              inv: entry.value,
-              cardIdx: entry.key,
-              jannati: jannati,
-              palette: palette,
-            ),
-          );
-        }),
-
-        const SizedBox(height: 8),
-
-        // 6. سجل الحسنات الأخيرة في جنتك
-        _buildRecentDeedLedgerCard(palette: palette, jannati: jannati),
-
-        const SizedBox(height: 14),
-
-        // 7. مختارات أدعية طلب الفردوس الأعلى القابلة للنسخ
-        _buildParadiseDuasCarousel(palette: palette, userProv: userProv),
-      ],
+          ],
+        );
+      },
     );
   }
 
-  Widget _filterDeedChip(String key, String label, ThemePalette palette) {
-    final accent = palette.accentColor;
-    final isSel = _deedCategoryFilter == key;
-    return Padding(
-      padding: const EdgeInsets.only(left: 7),
-      child: ChoiceChip(
-        label: Text(
-          label,
-          style: TextStyle(
-            color: isSel ? palette.onAccentColor : palette.textPrimary,
-            fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-            fontSize: 11.5,
-          ),
-        ),
-        selected: isSel,
-        selectedColor: accent,
-        backgroundColor: palette.cardColor,
-        side: BorderSide(color: isSel ? accent : palette.dividerColor),
-        onSelected: (_) => setState(() => _deedCategoryFilter = key),
-      ),
-    );
-  }
-
-  Widget _buildExpandedRoyalTreasuryVault({
-    required ThemePalette palette,
-    required JannatiProvider jannati,
-    required Color emeraldColor,
-    required Color goldColor,
-    required Color violetColor,
-    required Color cyanColor,
+  Widget _buildDailySummary({
+    required int actionCount,
+    required int checkedCount,
+    required int remainingCount,
+    required double progress,
   }) {
-    final accent = palette.accentColor;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final status = actionCount == 0
+        ? 'لا توجد عناصر في القائمة الآن.'
+        : remainingCount == 0
+            ? 'اكتملت قائمة اليوم.'
+            : checkedCount == 0
+                ? 'ابدأ بعنصر واحد يناسب وقتك.'
+                : 'بقي $remainingCount من عناصر القائمة.';
 
-    return Firdaws4KCardShell(
-      backdrop: Background500Catalog.forExtraSection(11),
-      isDark: palette.isDark,
-      borderColor: accent.withOpacity(0.55),
-      borderRadius: 22,
-      borderWidth: 1.5,
-      padding: const EdgeInsets.all(15),
-      imageOpacity: 0.40,
+    return CalmCard(
+      padding: const EdgeInsets.all(18),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              Icon(Icons.shield_rounded, color: accent, size: 18),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'خَزِينَةُ البَاقِيَاتِ الصَّالِحَاتِ المَحْفُوظَة',
-                  style: TextStyle(
-                    color: accent,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13.5,
-                  ),
-                ),
-              ),
-              TextButton.icon(
-                onPressed: () {
-                  setState(() {
-                    _showAll14TreasuryMetrics = !_showAll14TreasuryMetrics;
-                  });
-                },
-                icon: Icon(
-                  _showAll14TreasuryMetrics
-                      ? Icons.keyboard_arrow_up_rounded
-                      : Icons.grid_view_rounded,
-                  size: 16,
-                  color: accent,
-                ),
-                label: Text(
-                  _showAll14TreasuryMetrics ? 'طي الـ١٤' : 'كل الـ١٤',
-                  style: TextStyle(
-                    color: accent,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 11.5,
-                  ),
-                ),
-                style: TextButton.styleFrom(
-                  backgroundColor: accent.withOpacity(0.14),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Expanded(
-                child: _buildTreasuryMedallion(
-                  firdawsCountLabel(
-                    jannati.totalGardenTrees,
-                    singular: 'شجرة',
-                    dual: 'شجرتان',
-                    plural3To10: 'شجرات',
-                    singular11Plus: 'شجرة',
-                  ),
-                  'غِراس الفردوس',
-                  Icons.forest_rounded,
-                  emeraldColor,
-                  palette,
-                ),
-              ),
-              Expanded(
-                child: _buildTreasuryMedallion(
-                  firdawsCountLabel(
-                    jannati.palacesCount,
-                    singular: 'قصر',
-                    dual: 'قصران',
-                    plural3To10: 'قصور',
-                    singular11Plus: 'قصراً',
-                  ),
-                  'لؤلؤ وياقوت',
-                  Icons.castle_rounded,
-                  goldColor,
-                  palette,
-                ),
-              ),
-              Expanded(
-                child: _buildTreasuryMedallion(
-                  firdawsCountLabel(
-                    jannati.treasuresCount,
-                    singular: 'كنز',
-                    dual: 'كنزان',
-                    plural3To10: 'كنوز',
-                    singular11Plus: 'كنزاً',
-                  ),
-                  'تحت العرش',
-                  Icons.diamond_rounded,
-                  violetColor,
-                  palette,
-                ),
-              ),
-              Expanded(
-                child: _buildTreasuryMedallion(
-                  firdawsCountLabel(
-                    jannati.housesCount + jannati.grovesCount,
-                    singular: 'روضة',
-                    dual: 'روضتان',
-                    plural3To10: 'روضات',
-                    singular11Plus: 'روضة',
-                  ),
-                  'بيوت وغراس',
-                  Icons.spa_rounded,
-                  cyanColor,
-                  palette,
-                ),
-              ),
-            ],
-          ),
-          if (_showAll14TreasuryMetrics) ...[
-            const SizedBox(height: 14),
-            Divider(color: palette.dividerColor, height: 10),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: JannatiCatalog.investments.map((inv) {
-                final c = inv.colorFor(palette.isDark);
-                final cnt = jannati.countFor(inv.id);
-                return SizedBox(
-                  width: 102,
-                  child: Firdaws4KCardShell(
-                    backdrop: Background500Catalog.forExtraSection(
-                      56 + (inv.id.hashCode.abs() % 18),
-                    ),
-                    isDark: palette.isDark,
-                    borderColor: c.withOpacity(0.45),
-                    borderRadius: 12,
-                    borderWidth: 1.0,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    imageOpacity: 0.34,
-                    onTap: () => _handleInvestmentTap(inv, palette),
-                    child: Column(
-                      children: [
-                        Icon(inv.icon, color: c, size: 18),
-                        const SizedBox(height: 4),
-                        Text(
-                          '$cnt ${inv.unitSingular}',
-                          style: TextStyle(
-                            color: palette.textPrimary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 11,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          inv.shortLabel,
-                          style: TextStyle(color: c, fontSize: 9.5),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTreasuryMedallion(
-    String title,
-    String subtitle,
-    IconData icon,
-    Color color,
-    ThemePalette palette,
-  ) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: RadialGradient(
-              colors: [color.withOpacity(0.35), color.withOpacity(0.08)],
-            ),
-            border: Border.all(color: color.withOpacity(0.75), width: 1.5),
-          ),
-          child: Icon(icon, color: color, size: 21),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          title,
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: palette.textPrimary,
-            fontSize: 11.5,
-            fontWeight: FontWeight.bold,
-            fontFeatures: const [FontFeature.tabularFigures()],
-          ),
-        ),
-        Text(
-          subtitle,
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: color,
-            fontSize: 9.5,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuickFeatureLauncherRow({required ThemePalette palette}) {
-    return Row(
-      children: [
-        Expanded(
-          child: _featureJumpCard(
-            slotIdx: 12,
-            title: 'مهندس اليوم',
-            subtitle: '١٦ ورداً يومياً',
-            icon: Icons.architecture_rounded,
-            color: const Color(0xFF10B981),
-            palette: palette,
-            onTap: () => setState(() => _activeTab = 1),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _featureJumpCard(
-            slotIdx: 13,
-            title: 'أطلس الجنة',
-            subtitle: 'أبواب وأنهار ونعيم',
-            icon: Icons.menu_book_rounded,
-            color: const Color(0xFFF59E0B),
-            palette: palette,
-            onTap: () => setState(() => _activeTab = 2),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _featureJumpCard(
-            slotIdx: 14,
-            title: '٥٠٠٠ سؤال وجواب',
-            subtitle: 'موسوعة منظمة',
-            icon: Icons.question_answer_rounded,
-            color: const Color(0xFF38BDF8),
-            palette: palette,
-            onTap: () => setState(() => _activeTab = 4),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _featureJumpCard({
-    required int slotIdx,
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required ThemePalette palette,
-    required VoidCallback onTap,
-  }) {
-    final resolved =
-        palette.isDark ? color : Color.lerp(color, Colors.black, 0.22)!;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Firdaws4KCardShell(
-        backdrop: Background500Catalog.forExtraSection(slotIdx),
-        isDark: palette.isDark,
-        borderColor: resolved.withOpacity(0.5),
-        borderRadius: 16,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-        imageOpacity: 0.44,
-        child: Column(
-          children: [
-            Icon(icon, color: resolved, size: 22),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: TextStyle(
-                color: palette.textPrimary,
-                fontWeight: FontWeight.bold,
-                fontSize: 11.5,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            Text(
-              subtitle,
-              style: TextStyle(color: resolved, fontSize: 9.5),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSacredInvestmentCard({
-    required JannahInvestment inv,
-    required int cardIdx,
-    required JannatiProvider jannati,
-    required ThemePalette palette,
-  }) {
-    final c = inv.colorFor(palette.isDark);
-    final btnFg = ThemeData.estimateBrightnessForColor(c) == Brightness.dark
-        ? Colors.white
-        : const Color(0xFF04120E);
-    final count = jannati.countFor(inv.id);
-    final cycle = jannati.cycleProgressFor(inv.id);
-
-    return Firdaws4KCardShell(
-      backdrop: Background500Catalog.forExtraSection(15 + (cardIdx % 14)),
-      isDark: palette.isDark,
-      borderColor: c.withOpacity(0.48),
-      borderRadius: 20,
-      borderWidth: 1.3,
-      padding: const EdgeInsets.all(15),
-      imageOpacity: 0.34,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: c.withOpacity(0.16),
-                  border: Border.all(color: c, width: 1.2),
-                ),
-                child: Icon(inv.icon, color: c, size: 20),
-              ),
-              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      inv.title,
-                      style: TextStyle(
-                        color: c,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                      'ملخّص اليوم',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
+                    const SizedBox(height: 5),
                     Text(
-                      inv.paradiseDescription,
-                      style: TextStyle(color: palette.textSecondary, fontSize: 11),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      '$checkedCount من $actionCount أعمال أُنجزت',
+                      softWrap: true,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      status,
+                      softWrap: true,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        height: 1.4,
+                      ),
                     ),
                   ],
                 ),
               ),
-              IconButton(
-                icon: Icon(Icons.menu_book_rounded, color: c, size: 19),
-                tooltip: 'الشرح والدليل الشرعي',
-                onPressed: () => _inspectInvestmentSheet(inv, jannati, palette),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Firdaws4KCardShell(
-            backdrop: Background500Catalog.forExtraSection(
-              74 + (inv.id.hashCode.abs() % 12),
-            ),
-            isDark: palette.isDark,
-            borderColor: c.withOpacity(0.35),
-            borderRadius: 14,
-            borderWidth: 1.0,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            imageOpacity: 0.28,
-            child: SizedBox(
-              width: double.infinity,
-              child: Text(
-                inv.dhikrOrAction,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: palette.isDark ? const Color(0xFFF1F5F9) : palette.primaryColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14.5,
-                  height: 1.4,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          InkWell(
-            onTap: () => SacredNavigator.openHadithSheet(
-              context,
-              '${inv.exactHadith} (${inv.sourceReference})',
-              titleOverride: inv.title,
-              verbatimText: inv.exactHadith,
-              trackInJannati: true,
-            ),
-            borderRadius: BorderRadius.circular(10),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Text(
-                '📜 ${inv.exactHadith} (${inv.sourceReference})',
-                style: TextStyle(
-                  color: palette.textPrimary,
-                  fontSize: 11.5,
-                  height: 1.4,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          SacredEvidenceFooter(
-            evidenceText: '${inv.exactHadith} (${inv.sourceReference})',
-            titleForHadith: inv.title,
-            hadithVerbatim: inv.exactHadith,
-            trackInJannati: true,
-          ),
-          if (inv.cycleTarget > 1) ...[
-            const SizedBox(height: 10),
-            Row(
-              children: List.generate(inv.cycleTarget, (i) {
-                final done = i < cycle;
-                return Expanded(
-                  child: Container(
-                    height: 6,
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
-                    decoration: BoxDecoration(
-                      color: done ? c : palette.dividerColor,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                );
-              }),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'التقدّم نحو ثمرة (${inv.unitSingular}): $cycle من ${inv.cycleTarget}',
-              style: TextStyle(color: c, fontSize: 10.5, fontWeight: FontWeight.bold),
-            ),
-          ],
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _handleInvestmentTap(inv, palette),
-                  icon: Icon(inv.icon, size: 18),
-                  label: Text(
-                    inv.cycleTarget > 1
-                        ? '${inv.buttonText} ($cycle/${inv.cycleTarget})'
-                        : '${inv.buttonText} (+${inv.pointsPerCompletion})',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: c,
-                    foregroundColor: btnFg,
-                    padding: const EdgeInsets.symmetric(vertical: 11),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                decoration: BoxDecoration(
-                  color: c.withOpacity(0.14),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: c.withOpacity(0.45)),
-                ),
-                child: Text(
-                  '$count ${inv.unitSingular}',
-                  style: TextStyle(
-                    color: c,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 11.5,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecentDeedLedgerCard({
-    required ThemePalette palette,
-    required JannatiProvider jannati,
-  }) {
-    final accent = palette.accentColor;
-    final logs = jannati.recentLogs.take(8).toList();
-
-    return Firdaws4KCardShell(
-      backdrop: Background500Catalog.forExtraSection(29),
-      isDark: palette.isDark,
-      borderColor: accent.withOpacity(0.45),
-      borderRadius: 18,
-      padding: const EdgeInsets.all(14),
-      imageOpacity: 0.36,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.history_edu_rounded, color: accent, size: 18),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'أَحْدَثُ سِجِلٍّ لِلْبَاقِيَاتِ الصَّالِحَاتِ',
-                  style: TextStyle(
-                    color: accent,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13.5,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          if (logs.isEmpty)
-            Text(
-              'ابدأ أول غرسة أو تسبيحة بالأعلى ليُسجَّل أثرك النوراني هنا فوراً ويُحفظ على جهازك.',
-              style: TextStyle(color: palette.textSecondary, fontSize: 12),
-            )
-          else
-            ...logs.map((log) {
-              String timeLabel = '';
-              try {
-                final dt = DateTime.parse(log.timestampIso);
-                timeLabel =
-                    '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-              } catch (_) {}
-              return Firdaws4KCardShell(
-                backdrop: Background500Catalog.forExtraSection(
-                  20 + (log.title.hashCode.abs() % 20),
-                ),
-                isDark: palette.isDark,
-                borderColor: accent.withOpacity(0.28),
-                borderRadius: 12,
-                borderWidth: 0.9,
-                margin: const EdgeInsets.only(bottom: 6),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                imageOpacity: 0.24,
-                child: Row(
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 74,
+                height: 74,
+                child: Stack(
+                  fit: StackFit.expand,
                   children: [
-                    Icon(
-                      log.completedCycle
-                          ? Icons.verified_rounded
-                          : Icons.timelapse_rounded,
-                      color: log.completedCycle ? const Color(0xFF10B981) : accent,
-                      size: 16,
+                    CircularProgressIndicator(
+                      value: progress,
+                      strokeWidth: 6,
+                      backgroundColor: scheme.surfaceContainerHighest,
+                      color: scheme.primary,
+                      semanticsLabel: 'نسبة إنجاز قائمة اليوم',
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        log.title,
-                        style: TextStyle(
-                          color: palette.textPrimary,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      '+${log.pointsEarned}  • $timeLabel',
-                      style: TextStyle(
-                        color: accent,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildParadiseDuasCarousel({
-    required ThemePalette palette,
-    required FirdawsUserProvider userProv,
-  }) {
-    final accent = palette.accentColor;
-
-    return Firdaws4KCardShell(
-      backdrop: Background500Catalog.forExtraSection(30),
-      isDark: palette.isDark,
-      borderColor: accent.withOpacity(0.48),
-      borderRadius: 18,
-      padding: const EdgeInsets.all(14),
-      imageOpacity: 0.36,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.auto_awesome_rounded, color: accent, size: 18),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'أَدْعِيَةُ طَلَبِ الفِرْدَوْسِ الأَعْلَى (لَكَ يَا ${userProv.displayName})',
-                  style: TextStyle(
-                    color: accent,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          ..._paradiseDuas.map((dua) {
-            return Firdaws4KCardShell(
-              backdrop: Background500Catalog.forExtraSection(
-                31 + (dua.title.hashCode.abs() % 18),
-              ),
-              isDark: palette.isDark,
-              borderColor: palette.dividerColor,
-              borderRadius: 14,
-              borderWidth: 1.0,
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(12),
-              imageOpacity: 0.30,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
+                    Center(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
                         child: Text(
-                          dua.title,
-                          style: TextStyle(
-                            color: accent,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12.5,
+                          '${(progress * 100).round()}٪',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: scheme.primary,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
-                      IconButton(
-                        constraints: const BoxConstraints(),
-                        padding: EdgeInsets.zero,
-                        icon: Icon(Icons.copy_rounded, color: accent, size: 17),
-                        tooltip: 'نسخ الدعاء',
-                        onPressed: () {
-                          Clipboard.setData(
-                            ClipboardData(text: '${dua.arabicText}\n(${dua.source})'),
-                          );
-                          _showSacredBannerToast(
-                            'تم نسخ دعاء طلب الفردوس الأعلى 📋✨',
-                            palette,
-                          );
-                        },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 7,
+              backgroundColor: scheme.surfaceContainerHighest,
+              color: scheme.primary,
+              semanticsLabel: 'التقدم في أعمال اليوم',
+            ),
+          ),
+          const SizedBox(height: 13),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ParadiseChip(
+                label: '$checkedCount مكتمل',
+                icon: Icons.check_circle_outline_rounded,
+              ),
+              ParadiseChip(
+                label: '$remainingCount متبقٍ',
+                icon: Icons.schedule_rounded,
+              ),
+            ],
+          ),
+          const SizedBox(height: 9),
+          Text(
+            'اختر ما تيسّر لك؛ يُحفظ إنجازك لهذا اليوم على جهازك.',
+            softWrap: true,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDailyChecklist(
+    List<DailyJannahAction> actions,
+    Iterable<String> checkedIds,
+  ) {
+    return ParadiseSection(
+      title: 'خطوات اليوم',
+      action: TextButton.icon(
+        onPressed: () => _selectTab(1),
+        icon: const Icon(Icons.arrow_back_rounded),
+        label: const Text('خطة أوسع'),
+      ),
+      child: actions.isEmpty
+          ? const CalmEmptyState(
+              icon: Icons.checklist_rounded,
+              title: 'لا توجد خطوات معروضة',
+              subtitle: 'يمكنك الانتقال إلى خطة اليوم لمراجعة التفاصيل.',
+            )
+          : CalmCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: List<Widget>.generate(actions.length * 2 - 1, (index) {
+                  if (index.isOdd) {
+                    return Divider(
+                      height: 1,
+                      indent: 16,
+                      endIndent: 16,
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    );
+                  }
+                  final action = actions[index ~/ 2];
+                  return _buildDailyActionRow(
+                    action,
+                    checkedIds.contains(action.id),
+                  );
+                }),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildDailyActionRow(DailyJannahAction action, bool isDone) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _toggleDailyAction(action.id),
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(14, 13, 8, 13),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: CalmIconBadge(action.icon, size: 42),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        action.title,
+                        softWrap: true,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          height: 1.4,
+                          color: isDone ? scheme.onSurfaceVariant : null,
+                          decoration:
+                              isDone ? TextDecoration.lineThrough : null,
+                        ),
+                      ),
+                      const SizedBox(height: 7),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [action.timeWindow, action.rewardPromise]
+                            .map(
+                              (detail) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 9, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: scheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  detail,
+                                  softWrap: true,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: scheme.onSurfaceVariant,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    dua.arabicText,
-                    style: TextStyle(
-                      color: palette.textPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13.5,
-                      height: 1.6,
+                ),
+              ),
+              const SizedBox(width: 3),
+              Padding(
+                padding: const EdgeInsets.only(top: 1),
+                child: Checkbox.adaptive(
+                  value: isDone,
+                  onChanged: (_) => _toggleDailyAction(action.id),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDiscoverySection() {
+    return ParadiseSection(
+      title: 'استكشف جنتي',
+      child: Column(
+        children: [
+          _buildKnowledgeLink(
+            icon: Icons.menu_book_outlined,
+            title: 'أبواب الجنة ودرجاتها',
+            subtitle: 'تصفّح الموضوعات في أطلس المعرفة.',
+            onTap: () => _selectTab(2),
+          ),
+          const SizedBox(height: 9),
+          _buildKnowledgeLink(
+            icon: Icons.fact_check_outlined,
+            title: 'ميثاقك واختبار قصير',
+            subtitle: 'راجع ما أعددته وتابع اختبار المعرفة.',
+            onTap: () => _selectTab(3),
+          ),
+          const SizedBox(height: 9),
+          _buildKnowledgeLink(
+            icon: Icons.question_answer_outlined,
+            title: 'ابحث في الأسئلة والأجوبة',
+            subtitle: 'موسوعة منظّمة للقراءة والبحث.',
+            onTap: () => _selectTab(4),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildKnowledgeLink({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return CalmCard(
+      padding: EdgeInsets.zero,
+      child: CalmActionTile(
+        icon: icon,
+        title: title,
+        subtitle: subtitle,
+        onTap: onTap,
+      ),
+    );
+  }
+
+  Future<void> _toggleDailyAction(String actionId) async {
+    HapticFeedback.selectionClick();
+    await context.read<JannatiProvider>().toggleDailyAction(actionId);
+  }
+
+  Future<void> _handleInvestmentTap(
+    JannahInvestment investment,
+    ThemePalette palette,
+  ) async {
+    final jannati = context.read<JannatiProvider>();
+    final user = context.read<FirdawsUserProvider>();
+    final outcome = await jannati.performInvestmentTap(investment.id);
+    if (!mounted) return;
+
+    try {
+      context.read<HoorCompanionProvider>().onJannahDeedPerformed(
+            deedTitle: investment.shortLabel,
+            userName: user.displayName,
+            isFemale: user.isFemale,
+          );
+    } catch (_) {}
+
+    try {
+      final hasanat = context.read<HasanatProvider>();
+      final delta = outcome.completedCycle
+          ? investment.pointsPerCompletion.clamp(6, 40)
+          : investment.pointsPerTap.clamp(2, 12);
+      hasanat.earnHasanat(
+        delta,
+        reason: 'غراس جنتي: ${investment.shortLabel}',
+        sourceTag: 'جنتي',
+      );
+      hasanat.recordMetric(EventMissionMetric.jannahDeedsCount, delta: 1);
+    } catch (_) {}
+
+    if (outcome.completedCycle) {
+      HapticFeedback.mediumImpact();
+    } else {
+      HapticFeedback.lightImpact();
+    }
+    _showToast(
+      outcome.completedCycle
+          ? 'تم تسجيل العمل، تقبّل الله منك.'
+          : 'حُفظ تقدمك في هذا العمل.',
+      palette,
+    );
+
+    if (outcome.promotedToRank != null && mounted) {
+      HapticFeedback.heavyImpact();
+      await _showProgressDialog(outcome.promotedToRank!, palette);
+    }
+  }
+
+  Future<void> _showProgressDialog(
+    JannahRankTier rank,
+    ThemePalette palette,
+  ) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: CalmIconBadge(rank.icon, size: 52),
+        title: const Text('تقدّم في سجلّ أعمالك'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              rank.arabicTitle,
+              style: Theme.of(dialogContext).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(dialogContext).colorScheme.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(rank.arabicSubtitle, textAlign: TextAlign.center),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('متابعة'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showToast(String message, ThemePalette palette) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          backgroundColor: palette.cardColor,
+          behavior: SnackBarBehavior.floating,
+          content: Text(
+            message,
+            style: TextStyle(color: palette.textPrimary),
+          ),
+        ),
+      );
+  }
+
+  void _inspectInvestmentSheet(
+    JannahInvestment investment,
+    JannatiProvider jannati,
+    ThemePalette palette,
+  ) {
+    final theme = Theme.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: theme.colorScheme.surface,
+      builder: (sheetContext) => SafeArea(
+        child: FractionallySizedBox(
+          heightFactor: 0.82,
+          child: ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              Row(
+                children: [
+                  CalmIconBadge(investment.icon),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      investment.title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 5),
-                  Text(
-                    '${dua.source} — ${dua.reflection}',
-                    style: TextStyle(color: palette.textSecondary, fontSize: 10.5),
-                  ),
-                  const SizedBox(height: 6),
-                  SacredEvidenceFooter(
-                    evidenceText: '${dua.source}\n${dua.arabicText}',
-                    titleForHadith: dua.title,
-                    trackInJannati: true,
+                  IconButton(
+                    tooltip: 'إغلاق',
+                    onPressed: () => Navigator.pop(sheetContext),
+                    icon: const Icon(Icons.close_rounded),
                   ),
                 ],
               ),
-            );
-          }),
-        ],
+              const SizedBox(height: 18),
+              CalmCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(investment.dhikrOrAction,
+                        style: theme.textTheme.bodyLarge),
+                    const SizedBox(height: 14),
+                    Text(
+                      '${investment.exactHadith}\n${investment.sourceReference}',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    SacredEvidenceFooter(
+                      evidenceText:
+                          '${investment.exactHadith}\n${investment.sourceReference}',
+                      titleForHadith: investment.title,
+                      hadithVerbatim: investment.exactHadith,
+                      trackInJannati: true,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              CalmCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('المعنى والأثر', style: theme.textTheme.titleSmall),
+                    const SizedBox(height: 6),
+                    Text(investment.paradiseDescription),
+                    const SizedBox(height: 12),
+                    Text(
+                      'المحفوظ: ${jannati.countFor(investment.id)} ${investment.unitPlural}',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    if (investment.cycleTarget > 1) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'التقدم الحالي: ${jannati.cycleProgressFor(investment.id)} من ${investment.cycleTarget}',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  _handleInvestmentTap(investment, palette);
+                },
+                icon: Icon(investment.icon),
+                label: const Text('تسجيل هذا العمل'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Future<void> _showJannati100ScenerySheet(
-    BuildContext context,
-    ThemePalette palette,
-  ) async {
-    String query = '';
+  Future<void> _showJannatiSceneryPicker(ThemePalette palette) async {
+    var query = '';
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (sheetCtx) {
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      builder: (sheetContext) {
+        final settings = context.read<SettingsProvider>();
         return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            final settings = Provider.of<SettingsProvider>(ctx);
-            final accent = palette.accentColor;
-            final q = query.trim();
-            final filtered = <({int index, Background4KEntry item})>[];
-            for (int i = 0; i < Background500Catalog.jannati100.length; i++) {
-              final item = Background500Catalog.jannati100[i];
-              if (q.isEmpty ||
-                  item.title.contains(q) ||
-                  '${i + 1}' == q ||
-                  '#${i + 1}'.contains(q)) {
-                filtered.add((index: i, item: item));
-              }
-            }
+          builder: (context, setSheetState) {
+            final matchingIndices = List<int>.generate(
+              Background500Catalog.jannati100.length,
+              (index) => index,
+            ).where((index) {
+              final entry = Background500Catalog.jannati100[index];
+              return query.isEmpty ||
+                  entry.title.contains(query) ||
+                  '${index + 1}' == query;
+            }).toList();
 
-            return DraggableScrollableSheet(
-              initialChildSize: 0.85,
-              minChildSize: 0.50,
-              maxChildSize: 0.96,
-              builder: (_, scrollCtrl) {
-                return Container(
-                  decoration: BoxDecoration(
-                    color: palette.scaffoldColor,
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(28)),
-                    border:
-                        Border.all(color: accent.withOpacity(0.55), width: 1.5),
-                  ),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 10),
-                      Container(
-                        width: 46,
-                        height: 4.5,
-                        decoration: BoxDecoration(
-                          color: palette.dividerColor,
-                          borderRadius: BorderRadius.circular(10),
+            return SafeArea(
+              child: SizedBox(
+                height: MediaQuery.sizeOf(context).height * 0.78,
+                child: Column(
+                  children: [
+                    ListTile(
+                      title: const Text('اختيار خلفية جنتي'),
+                      subtitle: const Text('يمكنك تغيير اختيارك في أي وقت.'),
+                      trailing: TextButton(
+                        onPressed: () {
+                          Navigator.pop(sheetContext);
+                          Wallpaper70PickerSheet.show(
+                            this.context,
+                            initialTarget: WallpaperTarget.garden,
+                          );
+                        },
+                        child: const Text('خلفيات إضافية'),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 4),
+                      child: TextField(
+                        onChanged: (value) =>
+                            setSheetState(() => query = value.trim()),
+                        decoration: const InputDecoration(
+                          prefixIcon: Icon(Icons.search_rounded),
+                          hintText: 'ابحث بالاسم أو الرقم',
+                          border: OutlineInputBorder(),
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-                        child: Row(
-                          children: [
-                            Icon(Icons.landscape_rounded, color: accent),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'مكتبة جنتي • ١٠٠ منظر خلاب 4K من الطبيعة 🌅',
-                                style: TextStyle(
-                                  color: accent,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                ),
-                              ),
+                    ),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: matchingIndices.length,
+                        itemBuilder: (context, index) {
+                          final sceneryIndex = matchingIndices[index];
+                          final entry =
+                              Background500Catalog.jannati100[sceneryIndex];
+                          final selected =
+                              settings.selectedJannatiSceneryIndex ==
+                                      sceneryIndex &&
+                                  settings.selectedGardenWallpaperAsset == null;
+                          return ListTile(
+                            leading: CircleAvatar(
+                              child: Text('${sceneryIndex + 1}'),
                             ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(sheetCtx);
-                                Wallpaper70PickerSheet.show(
-                                  context,
-                                  initialTarget: WallpaperTarget.garden,
-                                );
-                              },
-                              child: Text(
-                                '+ ٧٠ خلفية',
-                                style: TextStyle(
-                                  color: accent,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11.5,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                            title: Text(entry.title),
+                            trailing: selected
+                                ? const Icon(Icons.check_rounded)
+                                : null,
+                            selected: selected,
+                            onTap: () {
+                              settings.setJannatiSceneryIndex(sceneryIndex);
+                              Navigator.pop(sheetContext);
+                              _showToast('تم تحديث اختيار الخلفية.', palette);
+                            },
+                          );
+                        },
                       ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: accent.withOpacity(0.10),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: accent.withOpacity(0.32)),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.touch_app_rounded, color: accent, size: 17),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'صور جنتي ثابتة وهادئة تتبدّل باختيارك اليدوي فقط دون ارتباط بالتسبيح ✨',
-                                  style: TextStyle(
-                                    color: palette.textPrimary,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 11.5,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(14, 2, 14, 8),
-                        child: TextField(
-                          style: TextStyle(
-                              color: palette.textPrimary, fontSize: 13),
-                          onChanged: (v) => setModalState(() => query = v),
-                          decoration: InputDecoration(
-                            hintText: 'ابحث برقم المشهد (١..١٠٠) أو اسمه...',
-                            hintStyle: TextStyle(
-                                color: palette.textMuted, fontSize: 12),
-                            prefixIcon: Icon(Icons.search_rounded, color: accent),
-                            filled: true,
-                            fillColor: palette.elevatedCardColor,
-                            contentPadding:
-                                const EdgeInsets.symmetric(vertical: 8),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: GridView.builder(
-                          controller: scrollCtrl,
-                          padding: const EdgeInsets.fromLTRB(14, 4, 14, 24),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                            childAspectRatio: 1.32,
-                          ),
-                          itemCount: filtered.length,
-                          itemBuilder: (_, gridIdx) {
-                            final rec = filtered[gridIdx];
-                            final isSelected =
-                                settings.selectedJannatiSceneryIndex ==
-                                        rec.index &&
-                                    settings.selectedGardenWallpaperAsset == null;
-                            return GestureDetector(
-                              onTap: () {
-                                HapticFeedback.mediumImpact();
-                                settings.setJannatiSceneryIndex(rec.index);
-                                Navigator.pop(sheetCtx);
-                                _showSacredBannerToast(
-                                  'تم اختيار المشهد #${rec.index + 1}: ${rec.item.title} 🌅✨',
-                                  palette,
-                                );
-                              },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? const Color(0xFF10B981)
-                                        : accent.withOpacity(0.35),
-                                    width: isSelected ? 2.4 : 1.0,
-                                  ),
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(14.5),
-                                  child: Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      FirdawsResilientImage.entry(
-                                        rec.item,
-                                        fit: BoxFit.cover,
-                                      ),
-                                      DecoratedBox(
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            begin: Alignment.topCenter,
-                                            end: Alignment.bottomCenter,
-                                            colors: [
-                                              Colors.transparent,
-                                              Colors.black.withOpacity(0.72),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        top: 6,
-                                        right: 6,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 7, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: isSelected
-                                                ? const Color(0xFF10B981)
-                                                : Colors.black.withOpacity(0.65),
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                          ),
-                                          child: Text(
-                                            isSelected
-                                                ? '✓ #${rec.index + 1}'
-                                                : '#${rec.index + 1}',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        bottom: 7,
-                                        right: 8,
-                                        left: 8,
-                                        child: Text(
-                                          rec.item.title,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 10.5,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+                    ),
+                  ],
+                ),
+              ),
             );
           },
         );

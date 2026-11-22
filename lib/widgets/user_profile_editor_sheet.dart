@@ -161,7 +161,7 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
             ),
             child: Column(
               children: [
-                const SizedBox(height: 10),
+                const SizedBox(height: FirdawsSpace.md),
                 Container(
                   width: 46,
                   height: 4.5,
@@ -171,7 +171,7 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 12, 18, 8),
+                  padding: const EdgeInsets.fromLTRB(FirdawsSpace.pageGutter, 12, FirdawsSpace.pageGutter, 8),
                   child: Row(
                     children: [
                       FirdawsBrandLogo(
@@ -192,12 +192,12 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                               style: TextStyle(
                                 color: accent,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 15.5,
+                                fontSize: FirdawsType.body,
                               ),
                             ),
                             Text(
                               '✨ يُخصَّص الاسم والصورة والنوع للـ 500 عبارة والألقاب الـ 200',
-                              style: TextStyle(color: palette.textSecondary, fontSize: 11),
+                              style: TextStyle(color: palette.textSecondary, fontSize: FirdawsType.caption),
                             ),
                           ],
                         ),
@@ -213,16 +213,16 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                 Expanded(
                   child: ListView(
                     controller: scrollController,
-                    padding: const EdgeInsets.fromLTRB(18, 14, 18, 28),
+                    padding: const EdgeInsets.fromLTRB(FirdawsSpace.pageGutter, 14, FirdawsSpace.pageGutter, 28),
                     children: [
                       // بطاقة الصورة الشخصية العصرية من المعرض
                       Firdaws4KCardShell(
                         backdrop: Background500Catalog.forExtraSection(42),
                         isDark: palette.isDark,
                         borderColor: accent.withOpacity(0.45),
-                        borderRadius: 20,
+                        borderRadius: FirdawsRadius.card,
                         borderWidth: 1.2,
-                        padding: const EdgeInsets.all(14),
+                        padding: const EdgeInsets.all(FirdawsSpace.lg),
                         imageOpacity: 0.42,
                         child: Row(
                           children: [
@@ -270,7 +270,7 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                                     style: TextStyle(
                                       color: palette.textPrimary,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 13.5,
+                                      fontSize: FirdawsType.label,
                                     ),
                                   ),
                                   const SizedBox(height: 3),
@@ -278,7 +278,7 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                                     'ارفع صورة من معرض جهازك لتظهر في ملفك والقائمة الجانبية',
                                     style: TextStyle(
                                       color: palette.textSecondary,
-                                      fontSize: 11,
+                                      fontSize: FirdawsType.caption,
                                     ),
                                   ),
                                   const SizedBox(height: 8),
@@ -296,7 +296,7 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                                               ? 'جاري الفتح...'
                                               : '📷 اختيار من المعرض',
                                           style: const TextStyle(
-                                            fontSize: 11.5,
+                                            fontSize: FirdawsType.caption,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -318,7 +318,7 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                                           icon: const Icon(Icons.delete_outline_rounded, size: 15),
                                           label: const Text(
                                             '🗑️ حذف',
-                                            style: TextStyle(fontSize: 11),
+                                            style: TextStyle(fontSize: FirdawsType.caption),
                                           ),
                                           style: OutlinedButton.styleFrom(
                                             foregroundColor: Colors.redAccent,
@@ -340,22 +340,22 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: FirdawsSpace.lg),
                       Text(
                         '🪪 الاسم (يظهر في التحيات والعبارات التشجيعية والألقاب)',
                         style: TextStyle(
                           color: accent,
                           fontWeight: FontWeight.bold,
-                          fontSize: 12.5,
+                          fontSize: FirdawsType.label,
                         ),
                       ),
                       const SizedBox(height: 6),
                       TextField(
                         controller: _nameController,
-                        style: TextStyle(color: palette.textPrimary, fontSize: 15),
+                        style: TextStyle(color: palette.textPrimary, fontSize: FirdawsType.body),
                         decoration: InputDecoration(
                           hintText: 'اكتب اسمك أو كنيتك (مثال: وليد، أحمد، فاطمة)',
-                          hintStyle: TextStyle(color: palette.textMuted, fontSize: 13),
+                          hintStyle: TextStyle(color: palette.textMuted, fontSize: FirdawsType.label),
                           prefixIcon: Icon(Icons.badge_rounded, color: accent),
                           filled: true,
                           fillColor: palette.cardColor,
@@ -373,7 +373,7 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: FirdawsSpace.lg),
                       Row(
                         children: [
                           Expanded(
@@ -386,7 +386,7 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                                   style: TextStyle(
                                     color: accent,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 12.5,
+                                    fontSize: FirdawsType.label,
                                   ),
                                 ),
                                 const SizedBox(height: 6),
@@ -398,7 +398,7 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                                   ],
                                   style: TextStyle(
                                     color: palette.textPrimary,
-                                    fontSize: 15,
+                                    fontSize: FirdawsType.body,
                                   ),
                                   decoration: InputDecoration(
                                     hintText: '24',
@@ -429,7 +429,7 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                                   style: TextStyle(
                                     color: accent,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 12.5,
+                                    fontSize: FirdawsType.label,
                                   ),
                                 ),
                                 const SizedBox(height: 6),
@@ -461,13 +461,13 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: FirdawsSpace.lg),
                       Text(
                         'هدف التسبيح والذكر اليومي',
                         style: TextStyle(
                           color: accent,
                           fontWeight: FontWeight.bold,
-                          fontSize: 12.5,
+                          fontSize: FirdawsType.label,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -484,7 +484,7 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                                     ? palette.onAccentColor
                                     : palette.textPrimary,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 12,
+                                fontSize: FirdawsType.caption,
                               ),
                             ),
                             selected: isSel,
@@ -495,13 +495,13 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                           );
                         }).toList(),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: FirdawsSpace.lg),
                       Text(
                         'تفضيلاتي الإيمانية واهتماماتي',
                         style: TextStyle(
                           color: accent,
                           fontWeight: FontWeight.bold,
-                          fontSize: 12.5,
+                          fontSize: FirdawsType.label,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -517,7 +517,7 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                                 color: selected
                                     ? palette.onAccentColor
                                     : palette.textPrimary,
-                                fontSize: 12,
+                                fontSize: FirdawsType.caption,
                                 fontWeight:
                                     selected ? FontWeight.bold : FontWeight.normal,
                               ),
@@ -543,12 +543,12 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                           );
                         }).toList(),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: FirdawsSpace.lg),
                       Firdaws4KCardShell(
                         backdrop: Background500Catalog.forExtraSection(43),
                         isDark: palette.isDark,
                         borderColor: palette.dividerColor,
-                        borderRadius: 16,
+                        borderRadius: FirdawsRadius.control,
                         borderWidth: 1.0,
                         padding: EdgeInsets.zero,
                         imageOpacity: 0.30,
@@ -559,7 +559,7 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                                 'عرض العبارات التشجيعية بالاسم (500 عبارة)',
                                 style: TextStyle(
                                   color: palette.textPrimary,
-                                  fontSize: 13,
+                                  fontSize: FirdawsType.label,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -574,7 +574,7 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                                 'مؤثرات أوقات الصلاة الحيّة في الشاشة الرئيسية',
                                 style: TextStyle(
                                   color: palette.textPrimary,
-                                  fontSize: 13,
+                                  fontSize: FirdawsType.label,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -594,7 +594,7 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
                           'حفظ البيانات وتخصيص الفردوس باسمي',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                            fontSize: FirdawsType.label,
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
@@ -652,7 +652,7 @@ class _UserProfileEditorSheetState extends State<UserProfileEditorSheet> {
               style: TextStyle(
                 color: selected ? palette.onAccentColor : palette.textPrimary,
                 fontWeight: FontWeight.bold,
-                fontSize: 13,
+                fontSize: FirdawsType.label,
               ),
             ),
           ],

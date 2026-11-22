@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'package:adhan/adhan.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -12,14 +11,13 @@ import '../providers/hasanat_provider.dart';
 import '../providers/jannati_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/arena_sfx_service.dart';
-import '../theme/islamic_theme.dart';
-import '../widgets/firdaws_3d_ui.dart';
 import '../widgets/firdaws_portrait_avatar.dart';
+import '../widgets/calm_ui.dart';
+import '../widgets/paradise_ui.dart';
 import '../widgets/games/arena_3d_backdrop.dart';
 import '../widgets/games/arena_3d_game_stage.dart';
 import '../widgets/games/gfx/arena_3d_craft_painter.dart';
 import '../widgets/games/gfx/arena_4k_stage_compositor.dart';
-import '../widgets/real_mosque_background.dart';
 import 'events_missions_screen.dart';
 import 'hasanat_store_screen.dart';
 
@@ -113,9 +111,8 @@ class _ArenaGamePlayScreenState extends State<ArenaGamePlayScreen> {
     final p1 = _p1NameCtrl.text.trim().isEmpty
         ? userProv.displayName
         : _p1NameCtrl.text.trim();
-    final p2 = _p2NameCtrl.text.trim().isEmpty
-        ? 'اللاعب ٢'
-        : _p2NameCtrl.text.trim();
+    final p2 =
+        _p2NameCtrl.text.trim().isEmpty ? 'اللاعب ٢' : _p2NameCtrl.text.trim();
 
     final won = p1Score >= p2OrRivalScore;
     if (won) {
@@ -123,8 +120,7 @@ class _ArenaGamePlayScreenState extends State<ArenaGamePlayScreen> {
     } else {
       ArenaSfxService.instance.playLose();
     }
-    final jannatiBonus =
-        won ? (25 + (p1Score ~/ 12).clamp(5, 85)) : 12;
+    final jannatiBonus = won ? (25 + (p1Score ~/ 12).clamp(5, 85)) : 12;
     await jannatiProv.recordArenaKnowledgeReward(
       '${widget.game.title} (${_selectedWorld.name})',
       jannatiBonus,
@@ -219,17 +215,16 @@ class _ArenaGamePlayScreenState extends State<ArenaGamePlayScreen> {
       difficulty: _difficulty,
       playMode: _playMode,
       virtualRival: effectiveRival,
-      p1Name: _p1NameCtrl.text.trim().isEmpty
-          ? 'البطل ١'
-          : _p1NameCtrl.text.trim(),
+      p1Name:
+          _p1NameCtrl.text.trim().isEmpty ? 'البطل ١' : _p1NameCtrl.text.trim(),
       p2Name: _p2NameCtrl.text.trim().isEmpty
           ? 'اللاعب ٢'
           : _p2NameCtrl.text.trim(),
       worldIndex: wIdx,
-      craftStyleKey:
-          hasanat?.equippedStyleKey(StoreItemCategory.craftSkin) ?? 'emerald_wings',
-      heroSkinStyleKey:
-          hasanat?.equippedStyleKey(StoreItemCategory.heroSkin) ?? 'classic_guardian',
+      craftStyleKey: hasanat?.equippedStyleKey(StoreItemCategory.craftSkin) ??
+          'emerald_wings',
+      heroSkinStyleKey: hasanat?.equippedStyleKey(StoreItemCategory.heroSkin) ??
+          'classic_guardian',
       vfxStyleKey:
           hasanat?.equippedStyleKey(StoreItemCategory.vfxSkin) ?? 'vfx_sparks',
       activeEvent: hasanat?.activeEvent,
@@ -245,146 +240,342 @@ class _ArenaGamePlayScreenState extends State<ArenaGamePlayScreen> {
       hasanat = Provider.of<HasanatProvider>(context);
     } catch (_) {}
     final palette = settings.currentPalette;
-    final accent = widget.game.accentColor;
 
     if (_phase == _ArenaStagePhase.playing) {
-      final cfg = _buildConfig(famProv, hasanat);
-      return Scaffold(
-        backgroundColor: Colors.black,
-        body: Column(
+      return _buildPlayingScaffold(palette, famProv, hasanat);
+    }
+    if (_phase == _ArenaStagePhase.results) {
+      return _buildResultsScaffold(famProv, hasanat);
+    }
+
+    return Scaffold(
+      backgroundColor: palette.scaffoldColor,
+      bottomNavigationBar: _buildLobbyLaunchDock(),
+      body: SafeArea(
+        child: Column(
           children: [
-            Container(
-              color: const Color(0xFF060B16),
-              padding: EdgeInsets.fromLTRB(
-                10,
-                MediaQuery.of(context).padding.top + 4,
-                10,
-                6,
-              ),
-              child: Row(
-                children: [
-                  Firdaws3DPill(
-                    icon: Icons.close_rounded,
-                    label: 'إنهاء',
-                    accentColor: const Color(0xFFEF4444),
-                    palette: palette,
-                    onTap: () =>
-                        setState(() => _phase = _ArenaStagePhase.lobby),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '${_selectedWorld.emblemEmoji} ${_selectedWorld.name} • ${_selectedHero.name}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Firdaws3DPill(
-                    label: _difficulty.arabicLabel,
-                    accentColor: _difficulty.color,
-                    palette: palette,
-                  ),
-                ],
-              ),
-            ),
+            _buildLobbyTopBar(hasanat),
             Expanded(
-              child: Arena3DGameStage(
-                key: ValueKey('match_${widget.game.id}_$_matchSeed'),
-                config: cfg,
-                palette: palette,
-                onFinished: _handleMatchFinished,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1080),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final compact = constraints.maxWidth < 420;
+                      return ListView(
+                        key: PageStorageKey<String>(
+                          'arena_game_lobby_${widget.game.id}',
+                        ),
+                        primary: false,
+                        physics: const BouncingScrollPhysics(),
+                        padding: EdgeInsets.fromLTRB(
+                          compact ? 14 : 24,
+                          10,
+                          compact ? 14 : 24,
+                          32,
+                        ),
+                        children: [
+                          _buildStoryCard(hasanat?.activeEvent?.backdropAsset),
+                          const SizedBox(height: 26),
+                          ParadiseSection(
+                            title: '01  المشهد',
+                            child: _buildWorldsSelector(),
+                          ),
+                          const SizedBox(height: 25),
+                          LayoutBuilder(
+                            builder: (context, sectionConstraints) {
+                              final heroes = ParadiseSection(
+                                title: '02  البطل',
+                                child: _buildHeroesSelector(),
+                              );
+                              final rival = _buildVillainWarningCard();
+                              if (sectionConstraints.maxWidth < 760) {
+                                return Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    heroes,
+                                    const SizedBox(height: 24),
+                                    rival,
+                                  ],
+                                );
+                              }
+                              return Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(flex: 6, child: heroes),
+                                  const SizedBox(width: 24),
+                                  Expanded(flex: 5, child: rival),
+                                ],
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 24),
+                          _buildAdvancedSettings(famProv, hasanat),
+                        ],
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
           ],
         ),
-      );
-    }
-
-    if (_phase == _ArenaStagePhase.results) {
-      return _buildResultsScaffold(palette, famProv, hasanat);
-    }
-
-    final gameBackdrop = Arena4KStageAssets.backdropForGame(
-      widget.game,
-      worldIndex: math.max(0, widget.game.worlds.indexOf(_selectedWorld)),
-      activeEventBackdrop: hasanat?.activeEvent?.backdropAsset,
+      ),
     );
-    final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
-    final isNight = settings.isNightEffective;
+  }
 
-    return Scaffold(
-      backgroundColor: palette.scaffoldColor,
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: RealMosqueBackground(
-              currentPrayer: isNight ? Prayer.isha : Prayer.dhuhr,
-              themeOption: themeOption,
-              isNightMode: isNight,
-              customAssetOverride:
-                  settings.selectedAppWallpaperAsset ?? gameBackdrop,
-              dimFactor: 0.92,
+  Widget _buildLobbyLaunchDock() {
+    final theme = Theme.of(context);
+    return SafeArea(
+      top: false,
+      minimum: const EdgeInsets.fromLTRB(14, 8, 14, 10),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1032),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(15, 12, 15, 13),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: const Color(0xFFB99C64).withOpacity(.44),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.primary.withOpacity(.10),
+                blurRadius: 20,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Wrap(
+                spacing: 7,
+                runSpacing: 6,
+                children: [
+                  ParadiseChip(
+                    label: _selectedWorld.name,
+                    icon: Icons.landscape_rounded,
+                  ),
+                  ParadiseChip(
+                    label: _selectedHero.name,
+                    icon: Icons.shield_moon_rounded,
+                  ),
+                  ParadiseChip(
+                    label: _difficulty.arabicLabel,
+                    icon: Icons.speed_rounded,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Semantics(
+                button: true,
+                label: _playMode == ArenaPlayMode.dualPlayerLocal
+                    ? 'انطلاق مباراة لاعبين في ${_selectedWorld.name}'
+                    : 'انطلق إلى ${_selectedWorld.name}',
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _launchMatch,
+                    icon: const Icon(Icons.play_arrow_rounded),
+                    label: const Text('ابدأ الجولة'),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(17),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLobbyTopBar(HasanatProvider? hasanat) {
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.surface,
+      elevation: 0,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1080),
+          child: Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(12, 8, 16, 10),
+            child: Row(
+              children: [
+                IconButton.filledTonal(
+                  tooltip: 'العودة إلى الألعاب',
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.arrow_forward_rounded),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'بوابة الجولة  •  ${widget.game.number}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.game.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          height: 1.2,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (hasanat != null) ...[
+                  const SizedBox(width: 8),
+                  Tooltip(
+                    message: 'رصيد النقاط داخل التطبيق — فتح المتجر',
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const HasanatStoreScreen(),
+                        ),
+                      ),
+                      icon: const Icon(Icons.stars_rounded, size: 18),
+                      label: Text('${hasanat.hasanatBalance}'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-          SafeArea(
-            child: Column(
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStoryCard(String? activeEventBackdrop) {
+    final game = widget.game;
+    final worldIndex = math.max(0, game.worlds.indexOf(_selectedWorld));
+    final backdrop = Arena4KStageAssets.backdropForGame(
+      game,
+      worldIndex: worldIndex,
+      activeEventBackdrop: activeEventBackdrop,
+    );
+    final fallbackBackdrop = Arena4KStageAssets.fallbackForGame(
+      game,
+      worldIndex: worldIndex,
+    );
+    final theme = Theme.of(context);
+    final compact = MediaQuery.sizeOf(context).width < 520;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(compact ? 26 : 34),
+            border: Border.all(color: const Color(0xFFD6BF88).withOpacity(.78)),
+            boxShadow: [
+              BoxShadow(
+                color: _selectedWorld.glowColor.withOpacity(.20),
+                blurRadius: 26,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: SizedBox(
+            height: compact ? 238 : 318,
+            child: Stack(
+              fit: StackFit.expand,
               children: [
-                _buildLobbyTopBar(palette, accent, hasanat),
-                Expanded(
-                  child: ListView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(14, 6, 14, 28),
-                    children: [
-                      _buildStoryCard(palette),
-                      const SizedBox(height: 12),
-                      if (hasanat != null) ...[
-                        _buildEquippedLoadoutCard(palette, hasanat),
-                        const SizedBox(height: 12),
+                Arena4KBackdropPreview(
+                  assetPath: backdrop,
+                  fallbackAssetPath: fallbackBackdrop,
+                  height: compact ? 238 : 318,
+                  borderRadius: 0,
+                  accentColor: _selectedWorld.glowColor,
+                ),
+                const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: [0, .38, 1],
+                      colors: [
+                        Color(0x4D07130E),
+                        Color(0x3307130E),
+                        Color(0xEB07130E),
                       ],
-                      _buildWorldsSelector(palette),
-                      const SizedBox(height: 12),
-                      _buildHeroesSelector(palette),
-                      const SizedBox(height: 12),
-                      _buildVillainWarningCard(palette),
-                      const SizedBox(height: 12),
-                      _buildDifficultySelector(palette),
-                      const SizedBox(height: 12),
-                      _buildPlayModeAndRivalsCard(palette, famProv),
-                      const SizedBox(height: 16),
-                      Firdaws3DButton(
-                        baseColor: _selectedWorld.glowColor,
-                        highlightColor: Color.lerp(
-                            _selectedWorld.glowColor, Colors.white, 0.25),
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        borderRadius: 18,
-                        elevationDepth: 6.0,
-                        onPressed: _launchMatch,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.rocket_launch_rounded,
-                                color: Colors.white, size: 22),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                _playMode == ArenaPlayMode.dualPlayerLocal
-                                    ? 'انطلاق مباراة ٢ لاعبين في ${_selectedWorld.name}!'
-                                    : 'انطلق إلى ${_selectedWorld.name}!',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 14.5,
-                                ),
-                              ),
-                            ),
+                    ),
+                  ),
+                ),
+                PositionedDirectional(
+                  start: compact ? 16 : 25,
+                  end: compact ? 16 : 25,
+                  top: compact ? 16 : 23,
+                  child: Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    runSpacing: 7,
+                    children: [
+                      _sceneLabel(
+                        '${game.category}  •  اللعبة ${game.number}',
+                        Icons.grid_view_rounded,
+                      ),
+                      _sceneLabel(
+                        game.engineType.arabicLabel,
+                        game.engineType.icon,
+                      ),
+                    ],
+                  ),
+                ),
+                PositionedDirectional(
+                  start: compact ? 19 : 29,
+                  end: compact ? 19 : 29,
+                  bottom: compact ? 18 : 25,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'المشهد المختار  •  ${_selectedWorld.name}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: const Color(0xFFF0D9A6),
+                          fontWeight: FontWeight.w700,
+                          height: 1.3,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        '${game.emoji}  ${game.title}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: Colors.white,
+                          fontSize: compact ? 25 : 34,
+                          height: 1.14,
+                          fontWeight: FontWeight.w800,
+                          shadows: const [
+                            Shadow(color: Colors.black54, blurRadius: 10),
                           ],
                         ),
                       ),
@@ -394,189 +585,108 @@ class _ArenaGamePlayScreenState extends State<ArenaGamePlayScreen> {
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLobbyTopBar(
-    ThemePalette palette,
-    Color accent,
-    HasanatProvider? hasanat,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
-      child: Row(
-        children: [
-          Firdaws3DPill(
-            icon: Icons.arrow_back_ios_new_rounded,
-            label: 'الألعاب',
-            accentColor: accent,
-            palette: palette,
-            onTap: () => Navigator.of(context).pop(),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${widget.game.emoji} ${widget.game.title}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: palette.textPrimary,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 14.5,
-                  ),
-                ),
-                Text(
-                  'اللعبة #${widget.game.number} • ${widget.game.engineType.arabicLabel}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: firdawsCrispSecondaryText(palette),
-                    fontSize: 10.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (hasanat != null) ...[
-            const SizedBox(width: 6),
-            Firdaws3DPill(
-              icon: Icons.monetization_on_rounded,
-              label: '${hasanat.hasanatBalance}',
-              accentColor: const Color(0xFFF59E0B),
-              palette: palette,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const HasanatStoreScreen(),
-                  ),
-                );
-              },
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStoryCard(ThemePalette palette) {
-    final g = widget.game;
-    final wIdx = math.max(0, g.worlds.indexOf(_selectedWorld));
-    final heroBackdrop = Arena4KStageAssets.backdropForGame(
-      g,
-      worldIndex: wIdx,
-    );
-    return Firdaws3DCard(
-      palette: palette,
-      glowColor: g.accentColor,
-      padding: EdgeInsets.zero,
-      borderRadius: 22,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(21)),
-            child: Arena4KBackdropPreview(
-              assetPath: heroBackdrop,
-              height: 112,
-              borderRadius: 0,
-              accentColor: g.accentColor,
-              overlayChild: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.42),
-                        borderRadius: BorderRadius.circular(14),
-                        border:
-                            Border.all(color: Colors.white.withOpacity(0.45)),
-                      ),
-                      child:
-                          Text(g.emoji, style: const TextStyle(fontSize: 26)),
+        ),
+        const SizedBox(height: 15),
+        CalmCard(
+          padding: EdgeInsets.all(compact ? 16 : 22),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const CalmIconBadge(Icons.auto_stories_rounded, size: 44),
+                  const SizedBox(width: 13),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'حكاية هذا التحدي',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          game.story,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            height: 1.6,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'قصة الملحمة • عرض 4K',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            g.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 15.5,
-                              shadows: [
-                                Shadow(color: Colors.black, blurRadius: 8),
-                              ],
-                            ),
-                          ),
-                        ],
+                  ),
+                ],
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 15),
+                child: CalmDivider(),
+              ),
+              ParadiseSection(
+                title: 'خطة الجولة',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      game.howToPlay,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        height: 1.55,
                       ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ParadiseChip(
+                          label:
+                              '${game.collectibleEmoji} ${game.collectibleLabel}',
+                          icon: Icons.stars_outlined,
+                        ),
+                        ParadiseChip(
+                          label: '${game.obstacleEmoji} انتبه إلى العوائق',
+                          icon: Icons.warning_amber_rounded,
+                        ),
+                        ParadiseChip(
+                          label: _selectedWorld.subtitle,
+                          icon: Icons.water_drop_outlined,
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-            ),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  g.story,
-                  style: TextStyle(
-                    color: palette.textPrimary,
-                    fontSize: 12.8,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: firdaws3DElevatedSurfaceColor(palette),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: g.accentColor.withOpacity(0.35),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(g.engineType.icon, color: g.accentColor, size: 18),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'كيف تلعب: ${g.howToPlay}',
-                          style: TextStyle(
-                            color: firdawsCrispSecondaryText(palette),
-                            fontSize: 11.5,
-                            height: 1.4,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+        ),
+      ],
+    );
+  }
+
+  Widget _sceneLabel(String label, IconData icon) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 36),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xED09251D),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0x88E4D0A0)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: const Color(0xFFE9D7A7)),
+          const SizedBox(width: 7),
+          Flexible(
+            child: Text(
+              label,
+              softWrap: true,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                height: 1.2,
+              ),
             ),
           ),
         ],
@@ -584,56 +694,323 @@ class _ArenaGamePlayScreenState extends State<ArenaGamePlayScreen> {
     );
   }
 
-  Widget _buildEquippedLoadoutCard(
-    ThemePalette palette,
-    HasanatProvider hasanat,
-  ) {
-    final craft = hasanat.equippedSkin(StoreItemCategory.craftSkin);
-    final heroSkin = hasanat.equippedSkin(StoreItemCategory.heroSkin);
-    final ev = hasanat.activeEvent;
+  Widget _buildWorldsSelector() {
+    final theme = Theme.of(context);
+    return CalmCard(
+      padding: const EdgeInsets.all(15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'كل عالم يغيّر لوحة المشهد والعوائق. اختر البيئة التي تناسب جولتك.',
+            style: theme.textTheme.bodyMedium?.copyWith(height: 1.45),
+          ),
+          const SizedBox(height: 13),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final count = constraints.maxWidth >= 650
+                  ? 3
+                  : constraints.maxWidth >= 310
+                      ? 2
+                      : 1;
+              final itemWidth =
+                  (constraints.maxWidth - (count - 1) * 10) / count;
+              return Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: widget.game.worlds.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final world = entry.value;
+                  final selected = _selectedWorld.id == world.id;
+                  final thumbnail = Arena4KStageAssets.backdropForGame(
+                    widget.game,
+                    worldIndex: index,
+                  );
+                  final fallbackThumbnail = Arena4KStageAssets.fallbackForGame(
+                    widget.game,
+                    worldIndex: index,
+                  );
+                  return SizedBox(
+                    width: itemWidth,
+                    child: Material(
+                      color: selected
+                          ? world.glowColor.withOpacity(.13)
+                          : theme.colorScheme.surface,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(19),
+                        side: BorderSide(
+                          color: selected
+                              ? world.glowColor
+                              : theme.colorScheme.outlineVariant,
+                          width: selected ? 1.8 : 1,
+                        ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => setState(() => _selectedWorld = world),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            SizedBox(
+                              height: itemWidth < 170 ? 74 : 104,
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  Arena4KBackdropPreview(
+                                    assetPath: thumbnail,
+                                    fallbackAssetPath: fallbackThumbnail,
+                                    height: itemWidth < 170 ? 74 : 104,
+                                    borderRadius: 0,
+                                    accentColor: world.glowColor,
+                                  ),
+                                  if (selected)
+                                    const Align(
+                                      alignment: AlignmentDirectional.topEnd,
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8),
+                                        child: Icon(
+                                          Icons.check_circle_rounded,
+                                          color: Colors.white,
+                                          size: 23,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.fromLTRB(10, 10, 10, 11),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${world.emblemEmoji}  ${world.name}',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      height: 1.25,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${world.subtitle}  •  ${world.obstacleStyle}',
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
-    return Firdaws3DCard(
-      palette: palette,
-      glowColor: craft.primaryColor,
-      padding: const EdgeInsets.all(12),
+  Widget _buildHeroesSelector() {
+    final theme = Theme.of(context);
+    return CalmCard(
+      padding: const EdgeInsets.all(15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'وازن بين أسلوبك وقدرة البطل السلبية قبل الانطلاق.',
+            style: theme.textTheme.bodyMedium?.copyWith(height: 1.45),
+          ),
+          const SizedBox(height: 13),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final count = constraints.maxWidth >= 390 ? 2 : 1;
+              final itemWidth =
+                  (constraints.maxWidth - (count - 1) * 9) / count;
+              return Wrap(
+                spacing: 9,
+                runSpacing: 9,
+                children: widget.game.heroes.map((hero) {
+                  final selected = _selectedHero.id == hero.id;
+                  return SizedBox(
+                    width: itemWidth,
+                    child: Material(
+                      color: selected
+                          ? hero.color.withOpacity(.11)
+                          : theme.colorScheme.surface,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(19),
+                        side: BorderSide(
+                          color: selected
+                              ? hero.color
+                              : theme.colorScheme.outlineVariant,
+                          width: selected ? 1.7 : 1,
+                        ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => setState(() => _selectedHero = hero),
+                        child: Padding(
+                          padding: const EdgeInsets.all(13),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 22,
+                                    backgroundColor:
+                                        hero.color.withOpacity(.16),
+                                    child: Text(
+                                      hero.emoji,
+                                      style: const TextStyle(fontSize: 22),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      hero.name,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style:
+                                          theme.textTheme.titleSmall?.copyWith(
+                                        fontWeight: FontWeight.w800,
+                                        height: 1.25,
+                                      ),
+                                    ),
+                                  ),
+                                  Icon(
+                                    selected
+                                        ? Icons.check_circle_rounded
+                                        : Icons.circle_outlined,
+                                    color: selected
+                                        ? hero.color
+                                        : theme.colorScheme.onSurfaceVariant,
+                                    size: 21,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 9),
+                              Text(
+                                hero.title,
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                  color: hero.color,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                hero.passivePower,
+                                softWrap: true,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVillainWarningCard() {
+    final villain = widget.game.villain;
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsetsDirectional.only(top: 43),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: const Color(0xFFB99C64).withOpacity(.45)),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(.06),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            'على دربك',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            'تعرّف إلى التحدي قبل أن تبدأ.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 16),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(
-                width: 82,
-                height: 62,
-                child: ArenaSkin3DPreviewWidget(
-                  categoryName: 'craftSkin',
-                  styleKey: craft.styleKey,
-                  primaryColor: craft.primaryColor,
-                  secondaryColor: craft.secondaryColor,
-                  height: 62,
-                ),
+              CircleAvatar(
+                radius: 25,
+                backgroundColor: villain.accentColor.withOpacity(.15),
+                child:
+                    Text(villain.emoji, style: const TextStyle(fontSize: 24)),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'تجهيزك الحالي: ${craft.name}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: palette.textPrimary,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 12.5,
+                      '${villain.name}  •  ${villain.title}',
+                      softWrap: true,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
+                    const SizedBox(height: 5),
                     Text(
-                      'زي البطل: ${heroSkin.name}${ev != null ? " • حدث: ×${ev.hasanatMultiplier}" : ""}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: firdawsCrispSecondaryText(palette),
-                        fontSize: 11,
+                      'تأثيره: ${villain.sabotagePower}',
+                      softWrap: true,
+                      style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
+                    ),
+                    const SizedBox(height: 9),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(11),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Text(
+                        '«${villain.tauntPhrase}»',
+                        softWrap: true,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontStyle: FontStyle.italic,
+                          height: 1.45,
+                        ),
                       ),
                     ),
                   ],
@@ -641,39 +1018,121 @@ class _ArenaGamePlayScreenState extends State<ArenaGamePlayScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdvancedSettings(
+    FamilyChallengeProvider famProv,
+    HasanatProvider? hasanat,
+  ) {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Theme(
+        data: theme.copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+          childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 16),
+          leading: Icon(Icons.tune_rounded, color: theme.colorScheme.primary),
+          title: Text(
+            'إعدادات الجولة المتقدمة',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          subtitle: Text(
+            'الصعوبة، نمط اللعب، الأسماء والتجهيزات',
+            style: theme.textTheme.bodySmall,
+          ),
+          children: [
+            _buildDifficultySelector(),
+            const SizedBox(height: 12),
+            _buildPlayModeAndRivalsCard(famProv),
+            if (hasanat != null) ...[
+              const SizedBox(height: 12),
+              _buildEquippedLoadoutCard(hasanat),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEquippedLoadoutCard(HasanatProvider hasanat) {
+    final craft = hasanat.equippedSkin(StoreItemCategory.craftSkin);
+    final heroSkin = hasanat.equippedSkin(StoreItemCategory.heroSkin);
+    final vfx = hasanat.equippedSkin(StoreItemCategory.vfxSkin);
+    final event = hasanat.activeEvent;
+    final theme = Theme.of(context);
+    return CalmCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionHeading('التجهيزات والحدث النشط', Icons.auto_awesome_rounded,
+              'المظاهر المجهزة تُستخدم في هذه الجولة.'),
+          const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(
-                child: Firdaws3DPill(
-                  icon: Icons.storefront_rounded,
-                  label: 'متجر السكنات 🪙',
-                  accentColor: const Color(0xFFF59E0B),
-                  palette: palette,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const HasanatStoreScreen(),
-                      ),
-                    );
-                  },
+              SizedBox(
+                width: 72,
+                height: 58,
+                child: ArenaSkin3DPreviewWidget(
+                  categoryName: 'craftSkin',
+                  styleKey: craft.styleKey,
+                  primaryColor: craft.primaryColor,
+                  secondaryColor: craft.secondaryColor,
+                  height: 58,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Expanded(
-                child: Firdaws3DPill(
-                  icon: Icons.bolt_rounded,
-                  label: 'المهام والأحداث ⚡',
-                  accentColor: const Color(0xFFA855F7),
-                  palette: palette,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const EventsMissionsScreen(),
-                      ),
-                    );
-                  },
+                child: Text(
+                  'المركبة: ${craft.name}\nالبطل: ${heroSkin.name}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.45),
                 ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'المؤثر: ${vfx.name}${event == null ? '' : ' • الحدث: ${event.title} (×${event.hasanatMultiplier})'}',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              TextButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const HasanatStoreScreen(),
+                  ),
+                ),
+                icon: const Icon(Icons.storefront_rounded, size: 18),
+                label: const Text('المتجر'),
+              ),
+              TextButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const EventsMissionsScreen(),
+                  ),
+                ),
+                icon: const Icon(Icons.event_available_rounded, size: 18),
+                label: const Text('المهام والأحداث'),
               ),
             ],
           ),
@@ -682,314 +1141,33 @@ class _ArenaGamePlayScreenState extends State<ArenaGamePlayScreen> {
     );
   }
 
-  Widget _buildWorldsSelector(ThemePalette palette) {
-    return Firdaws3DCard(
-      palette: palette,
-      glowColor: _selectedWorld.glowColor,
-      padding: const EdgeInsets.all(14),
+  Widget _buildDifficultySelector() {
+    final theme = Theme.of(context);
+    return CalmCard(
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '🌍 اختر العالم الساحر 4K (${widget.game.worlds.length} عوالم مختلفة):',
-            style: TextStyle(
-              color: palette.textPrimary,
-              fontWeight: FontWeight.w900,
-              fontSize: 13.5,
-            ),
-          ),
+          _sectionHeading('مستوى الصعوبة', Icons.speed_rounded,
+              'يؤثر في مستوى التحدي ومضاعف النقاط.'),
           const SizedBox(height: 10),
-          ...List.generate(widget.game.worlds.length, (idx) {
-            final w = widget.game.worlds[idx];
-            final sel = _selectedWorld.id == w.id;
-            final thumb = Arena4KStageAssets.backdropForGame(
-              widget.game,
-              worldIndex: idx,
-            );
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: GestureDetector(
-                onTap: () => setState(() => _selectedWorld = w),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.all(9),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    gradient: LinearGradient(
-                      colors: sel
-                          ? [
-                              w.skyTop,
-                              w.skyBottom,
-                            ]
-                          : [
-                              firdaws3DElevatedSurfaceColor(palette),
-                              firdaws3DSurfaceColor(palette),
-                            ],
-                    ),
-                    border: Border.all(
-                      color: sel ? w.glowColor : palette.dividerColor,
-                      width: sel ? 2.0 : 1.0,
-                    ),
-                    boxShadow: sel
-                        ? [
-                            BoxShadow(
-                              color: w.glowColor.withOpacity(0.32),
-                              blurRadius: 12,
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 58,
-                        height: 44,
-                        child: Arena4KBackdropPreview(
-                          assetPath: thumb,
-                          height: 44,
-                          borderRadius: 10,
-                          accentColor: w.glowColor,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${w.emblemEmoji} ${w.name}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: sel ? Colors.white : palette.textPrimary,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 13,
-                              ),
-                            ),
-                            Text(
-                              '${w.subtitle} • عوائق: ${w.obstacleStyle}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: sel
-                                    ? Colors.white.withOpacity(0.85)
-                                    : palette.textMuted,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (sel)
-                        Icon(Icons.check_circle_rounded,
-                            color: w.glowColor, size: 22),
-                    ],
-                  ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: ArenaDifficulty.values.map((difficulty) {
+              return ChoiceChip(
+                label: Text(
+                  '${difficulty.arabicLabel} · ×${difficulty.scoreMultiplier}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeroesSelector(ThemePalette palette) {
-    return Firdaws3DCard(
-      palette: palette,
-      glowColor: _selectedHero.color,
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '🦸 اختر البطل وقدرته الفريدة (${widget.game.heroes.length} أبطال):',
-            style: TextStyle(
-              color: palette.textPrimary,
-              fontWeight: FontWeight.w900,
-              fontSize: 13.5,
-            ),
-          ),
-          const SizedBox(height: 10),
-          ...widget.game.heroes.map((h) {
-            final sel = _selectedHero.id == h.id;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: GestureDetector(
-                onTap: () => setState(() => _selectedHero = h),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.all(11),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    color: sel
-                        ? h.color.withOpacity(0.18)
-                        : firdaws3DElevatedSurfaceColor(palette),
-                    border: Border.all(
-                      color: sel ? h.color : palette.dividerColor,
-                      width: sel ? 2.0 : 1.0,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(h.emoji, style: const TextStyle(fontSize: 26)),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${h.name} — ${h.title}',
-                              style: TextStyle(
-                                color: palette.textPrimary,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 13,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '⚡ القدرة: ${h.passivePower}',
-                              style: TextStyle(
-                                color: sel
-                                    ? h.color
-                                    : firdawsCrispSecondaryText(palette),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11.2,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (sel)
-                        Icon(Icons.verified_rounded, color: h.color, size: 22),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildVillainWarningCard(ThemePalette palette) {
-    final v = widget.game.villain;
-    return Firdaws3DCard(
-      palette: palette,
-      glowColor: v.accentColor,
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: v.accentColor.withOpacity(0.22),
-              border: Border.all(color: v.accentColor, width: 1.5),
-            ),
-            child: Center(
-              child: Text(v.emoji, style: const TextStyle(fontSize: 25)),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '👹 الزعيم الشرير: ${v.name} (${v.title})',
-                  style: TextStyle(
-                    color: v.accentColor,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'تخريبه: ${v.sabotagePower}',
-                  style: TextStyle(
-                    color: palette.textPrimary,
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '«${v.tauntPhrase}»',
-                  style: TextStyle(
-                    color: firdawsCrispSecondaryText(palette),
-                    fontSize: 11,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDifficultySelector(ThemePalette palette) {
-    return Firdaws3DCard(
-      palette: palette,
-      glowColor: _difficulty.color,
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '🎚️ مستوى الصعوبة ومضاعف النقاط:',
-            style: TextStyle(
-              color: palette.textPrimary,
-              fontWeight: FontWeight.w900,
-              fontSize: 13.5,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: ArenaDifficulty.values.map((diff) {
-              final sel = _difficulty == diff;
-              return Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                  child: Firdaws3DButton(
-                    baseColor: sel
-                        ? diff.color
-                        : firdaws3DElevatedSurfaceColor(palette),
-                    highlightColor: sel
-                        ? Color.lerp(diff.color, Colors.white, 0.18)
-                        : firdaws3DElevatedSurfaceColor(palette),
-                    rimColor: sel ? diff.color.withOpacity(0.85) : palette.dividerColor,
-                    padding: const EdgeInsets.symmetric(vertical: 9),
-                    borderRadius: 13,
-                    elevationDepth: sel ? 4.5 : 2.0,
-                    onPressed: () => setState(() => _difficulty = diff),
-                    child: Column(
-                      children: [
-                        Text(
-                          diff.arabicLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: sel ? Colors.white : palette.textPrimary,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 11,
-                          ),
-                        ),
-                        Text(
-                          '×${diff.scoreMultiplier}',
-                          style: TextStyle(
-                            color: sel ? Colors.white70 : palette.textMuted,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                selected: _difficulty == difficulty,
+                selectedColor: difficulty.color.withOpacity(0.18),
+                onSelected: (_) => setState(() => _difficulty = difficulty),
+                side: BorderSide(
+                  color: _difficulty == difficulty
+                      ? difficulty.color
+                      : theme.colorScheme.outlineVariant,
                 ),
               );
             }).toList(),
@@ -999,275 +1177,350 @@ class _ArenaGamePlayScreenState extends State<ArenaGamePlayScreen> {
     );
   }
 
-  Widget _buildPlayModeAndRivalsCard(
-    ThemePalette palette,
-    FamilyChallengeProvider famProv,
-  ) {
-    final accent = firdawsModernAccent(palette);
-    return Firdaws3DCard(
-      palette: palette,
-      glowColor: accent,
-      padding: const EdgeInsets.all(14),
+  Widget _buildPlayModeAndRivalsCard(FamilyChallengeProvider famProv) {
+    final theme = Theme.of(context);
+    final modes = <(ArenaPlayMode, String)>[
+      (ArenaPlayMode.vsVirtualRival, 'منافس افتراضي'),
+      (ArenaPlayMode.dualPlayerLocal, 'لاعبان على جهاز واحد'),
+      (ArenaPlayMode.familyChallenge, 'تحدي العائلة'),
+    ];
+    return CalmCard(
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '👥 وضع المنافسة واللاعبين:',
-            style: TextStyle(
-              color: palette.textPrimary,
-              fontWeight: FontWeight.w900,
-              fontSize: 13.5,
-            ),
-          ),
+          _sectionHeading('نمط اللعب والمنافس', Icons.groups_rounded,
+              'اختر خصمك وأدخل الأسماء عند اللعب المحلي.'),
           const SizedBox(height: 10),
-          Row(
-            children: [
-              _modeOptionButton(
-                mode: ArenaPlayMode.vsVirtualRival,
-                label: 'ضد افتراضيين',
-                icon: '🤖',
-                color: const Color(0xFF38BDF8),
-                palette: palette,
-              ),
-              const SizedBox(width: 6),
-              _modeOptionButton(
-                mode: ArenaPlayMode.dualPlayerLocal,
-                label: 'مشاركة ٢',
-                icon: '👥',
-                color: const Color(0xFF10B981),
-                palette: palette,
-              ),
-              const SizedBox(width: 6),
-              _modeOptionButton(
-                mode: ArenaPlayMode.familyChallenge,
-                label: 'العائلة والصحبة',
-                icon: '🏆',
-                color: const Color(0xFF8B5CF6),
-                palette: palette,
-              ),
-            ],
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: modes.map((entry) {
+              return ChoiceChip(
+                label: Text(entry.$2),
+                selected: _playMode == entry.$1,
+                onSelected: (_) => setState(() => _playMode = entry.$1),
+              );
+            }).toList(),
           ),
           const SizedBox(height: 12),
           if (_playMode == ArenaPlayMode.vsVirtualRival) ...[
-            Text(
-              'اختر المنافس الافتراضي:',
-              style: TextStyle(
-                color: palette.textSecondary,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 78,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: ArenaVirtualRival.presets.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (_, idx) {
-                  final r = ArenaVirtualRival.presets[idx];
-                  final sel = _virtualRival.id == r.id;
-                  return GestureDetector(
-                    onTap: () => setState(() => _virtualRival = r),
-                    child: Container(
-                      width: 155,
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        color: sel
-                            ? r.badgeColor.withOpacity(0.22)
-                            : firdaws3DElevatedSurfaceColor(palette),
-                        border: Border.all(
-                          color: sel ? r.badgeColor : palette.dividerColor,
-                          width: sel ? 1.8 : 1.0,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          FirdawsPortraitAvatar(
-                            entityId: r.id,
-                            displayName: r.name,
-                            size: 38,
-                            ringColor: r.badgeColor,
-                            isHighlighted: sel,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  r.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: palette.textPrimary,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 11.5,
-                                  ),
-                                ),
-                                Text(
-                                  r.title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: palette.textMuted,
-                                    fontSize: 9.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
+            Text('المنافس الافتراضي', style: theme.textTheme.titleSmall),
+            const SizedBox(height: 6),
+            ...ArenaVirtualRival.presets.map((rival) => _rivalOption(
+                  id: rival.id,
+                  name: rival.name,
+                  subtitle: rival.title,
+                  emoji: rival.emoji,
+                  selected: _virtualRival.id == rival.id,
+                  color: rival.badgeColor,
+                  onTap: () => setState(() => _virtualRival = rival),
+                )),
           ] else if (_playMode == ArenaPlayMode.dualPlayerLocal) ...[
-            TextField(
+            _nameField(
               controller: _p1NameCtrl,
-              style: TextStyle(color: palette.textPrimary, fontSize: 13),
-              decoration: InputDecoration(
-                labelText: 'اسم اللاعب الأول',
-                labelStyle: TextStyle(color: palette.textSecondary),
-                prefixIcon:
-                    const Icon(Icons.person_rounded, color: Color(0xFF10B981)),
-                filled: true,
-                fillColor: firdaws3DElevatedSurfaceColor(palette),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-              ),
+              label: 'اسم اللاعب الأول',
+              icon: Icons.person_rounded,
             ),
-            const SizedBox(height: 8),
-            TextField(
+            const SizedBox(height: 10),
+            _nameField(
               controller: _p2NameCtrl,
-              style: TextStyle(color: palette.textPrimary, fontSize: 13),
-              decoration: InputDecoration(
-                labelText: 'اسم اللاعب الثاني (مشاركة ٢ في نفس اللعبة)',
-                labelStyle: TextStyle(color: palette.textSecondary),
-                prefixIcon:
-                    const Icon(Icons.group_rounded, color: Color(0xFF38BDF8)),
-                filled: true,
-                fillColor: firdaws3DElevatedSurfaceColor(palette),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
+              label: 'اسم اللاعب الثاني',
+              icon: Icons.group_rounded,
+            ),
+          ] else if (famProv.members.isEmpty) ...[
+            Text(
+              'لا توجد أسماء عائلية محفوظة بعد؛ سيُستخدم المنافس المحدد في تحدي العائلة.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
           ] else ...[
-            Text(
-              'اختر المتسابق من العائلة أو الأصدقاء:',
-              style: TextStyle(
-                color: palette.textSecondary,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 68,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: famProv.members.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (_, idx) {
-                  final m = famProv.members[idx];
-                  final sel = _selectedFamilyId == m.id;
-                  return GestureDetector(
-                    onTap: () => setState(() => _selectedFamilyId = m.id),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        color: sel
-                            ? const Color(0xFF8B5CF6).withOpacity(0.22)
-                            : firdaws3DElevatedSurfaceColor(palette),
-                        border: Border.all(
-                          color: sel
-                              ? const Color(0xFF8B5CF6)
-                              : palette.dividerColor,
-                          width: sel ? 1.8 : 1.0,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          FirdawsPortraitAvatar(
-                            entityId: m.id,
-                            displayName: m.name,
-                            size: 36,
-                            ringColor: const Color(0xFF8B5CF6),
-                            isHighlighted: sel,
-                          ),
-                          const SizedBox(width: 8),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                m.name,
-                                style: TextStyle(
-                                  color: palette.textPrimary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11.5,
-                                ),
-                              ),
-                              Text(
-                                '${m.championScore} نقطة بطولة',
-                                style: TextStyle(
-                                  color: palette.textMuted,
-                                  fontSize: 9.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
+            Text('اختر فرد العائلة أو الصديق',
+                style: theme.textTheme.titleSmall),
+            const SizedBox(height: 6),
+            ...famProv.members.map((member) => _rivalOption(
+                  id: member.id,
+                  name: member.name,
+                  subtitle:
+                      '${member.relationLabel} • ${member.championScore} نقطة بطولة',
+                  emoji: member.avatarEmoji,
+                  selected: _selectedFamilyId == member.id,
+                  color: theme.colorScheme.primary,
+                  onTap: () => setState(() => _selectedFamilyId = member.id),
+                )),
           ],
         ],
       ),
     );
   }
 
-  Widget _modeOptionButton({
-    required ArenaPlayMode mode,
+  Widget _nameField({
+    required TextEditingController controller,
     required String label,
-    required String icon,
-    required Color color,
-    required ThemePalette palette,
+    required IconData icon,
   }) {
-    final sel = _playMode == mode;
-    return Expanded(
-      child: Firdaws3DButton(
-        baseColor: sel ? color : firdaws3DElevatedSurfaceColor(palette),
-        highlightColor: sel
-            ? Color.lerp(color, Colors.white, 0.18)
-            : firdaws3DElevatedSurfaceColor(palette),
-        rimColor: sel ? color.withOpacity(0.85) : palette.dividerColor,
-        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 4),
-        borderRadius: 13,
-        elevationDepth: sel ? 4.5 : 2.0,
-        onPressed: () => setState(() => _playMode = mode),
-        child: Text(
-          '$icon $label',
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: sel ? Colors.white : palette.textPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 11,
+    return TextField(
+      controller: controller,
+      textCapitalization: TextCapitalization.words,
+      style: Theme.of(context).textTheme.bodyLarge,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      ),
+    );
+  }
+
+  Widget _rivalOption({
+    required String id,
+    required String name,
+    required String subtitle,
+    required String emoji,
+    required bool selected,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Material(
+        color: selected ? color.withOpacity(0.11) : theme.colorScheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(
+            color: selected ? color : theme.colorScheme.outlineVariant,
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            child: Row(
+              children: [
+                FirdawsPortraitAvatar(
+                  entityId: id,
+                  displayName: name,
+                  size: 38,
+                  ringColor: color,
+                  isHighlighted: selected,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleSmall),
+                      Text(subtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          )),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(emoji, style: const TextStyle(fontSize: 19)),
+                const SizedBox(width: 6),
+                Icon(
+                  selected
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.radio_button_unchecked_rounded,
+                  color: selected ? color : theme.colorScheme.onSurfaceVariant,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionHeading(String title, IconData icon, String subtitle) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CalmIconBadge(icon, size: 42),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  )),
+              const SizedBox(height: 3),
+              Text(subtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    height: 1.35,
+                  )),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPlayingScaffold(
+    dynamic palette,
+    FamilyChallengeProvider famProv,
+    HasanatProvider? hasanat,
+  ) {
+    final config = _buildConfig(famProv, hasanat);
+    final theme = Theme.of(context);
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Column(
+        children: [
+          Material(
+            color: theme.colorScheme.surface,
+            elevation: 0,
+            child: SafeArea(
+              bottom: false,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1100),
+                  child: Padding(
+                    padding: const EdgeInsetsDirectional.fromSTEB(12, 7, 18, 8),
+                    child: Row(
+                      children: [
+                        IconButton.filledTonal(
+                          tooltip: 'إنهاء الجولة والعودة للإعدادات',
+                          onPressed: () =>
+                              setState(() => _phase = _ArenaStagePhase.lobby),
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${widget.game.emoji}  ${widget.game.title}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                '${_selectedWorld.emblemEmoji} ${_selectedWorld.name}  •  ${_selectedHero.name}  •  ${_difficulty.arabicLabel}',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  height: 1.25,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 11,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: const Color(0xFFB99C64).withOpacity(.38),
+                            ),
+                          ),
+                          child: Text(
+                            'الجولة نشطة',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.onPrimaryContainer,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Arena3DGameStage(
+              key: ValueKey('match_${widget.game.id}_$_matchSeed'),
+              config: config,
+              palette: palette,
+              onFinished: _handleMatchFinished,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResultsActionDock() {
+    final theme = Theme.of(context);
+    return SafeArea(
+      top: false,
+      minimum: const EdgeInsets.fromLTRB(14, 8, 14, 10),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 860),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: const Color(0xFFB99C64).withOpacity(.44),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                FilledButton.icon(
+                  onPressed: _launchMatch,
+                  icon: const Icon(Icons.replay_rounded),
+                  label: const Text('إعادة الجولة'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _selectedWorld.glowColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 8,
+                  runSpacing: 2,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          setState(() => _phase = _ArenaStagePhase.lobby),
+                      icon: const Icon(Icons.tune_rounded),
+                      label: const Text('تغيير الإعدادات'),
+                    ),
+                    TextButton.icon(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.arrow_forward_rounded),
+                      label: const Text('العودة إلى الألعاب'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1275,453 +1528,367 @@ class _ArenaGamePlayScreenState extends State<ArenaGamePlayScreen> {
   }
 
   Widget _buildResultsScaffold(
-    ThemePalette palette,
     FamilyChallengeProvider famProv,
     HasanatProvider? hasanat,
   ) {
-    final p1 = _p1NameCtrl.text.trim().isEmpty
-        ? 'اللاعب ١'
-        : _p1NameCtrl.text.trim();
-    final p2Label = _playMode == ArenaPlayMode.dualPlayerLocal
-        ? (_p2NameCtrl.text.trim().isEmpty ? 'اللاعب ٢' : _p2NameCtrl.text.trim())
-        : (_playMode == ArenaPlayMode.familyChallenge
-            ? famProv.members
-                .firstWhere((m) => m.id == _selectedFamilyId,
-                    orElse: () => famProv.selectedRival)
-                .name
-            : _virtualRival.name);
-    final p2Id = _playMode == ArenaPlayMode.dualPlayerLocal
-        ? 'p2'
-        : (_playMode == ArenaPlayMode.familyChallenge
-            ? (_selectedFamilyId ?? famProv.selectedRivalId)
-            : _virtualRival.id);
-
-    final thirdScore = math.max(
-      18,
-      (math.min(_lastP1Score, _lastP2OrRivalScore) * 0.78).round(),
-    );
-
-    final col = _userWon ? const Color(0xFF10B981) : const Color(0xFFEF4444);
     final settings = Provider.of<SettingsProvider>(context);
-    final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
-    final isNight = settings.isNightEffective;
-    final gameBackdrop = Arena4KStageAssets.backdropForGame(
+    final palette = settings.currentPalette;
+    final theme = Theme.of(context);
+    final rivalName = _playMode == ArenaPlayMode.dualPlayerLocal
+        ? (_p2NameCtrl.text.trim().isEmpty
+            ? 'اللاعب الثاني'
+            : _p2NameCtrl.text.trim())
+        : _playMode == ArenaPlayMode.familyChallenge
+            ? famProv.members
+                .firstWhere(
+                  (member) => member.id == _selectedFamilyId,
+                  orElse: () => famProv.selectedRival,
+                )
+                .name
+            : _virtualRival.name;
+    final playerName = _p1NameCtrl.text.trim().isEmpty
+        ? 'اللاعب الأول'
+        : _p1NameCtrl.text.trim();
+    final backdrop = Arena4KStageAssets.backdropForGame(
       widget.game,
       worldIndex: math.max(0, widget.game.worlds.indexOf(_selectedWorld)),
       activeEventBackdrop: hasanat?.activeEvent?.backdropAsset,
     );
-    final first = _userWon
-        ? (name: p1, id: 'you', score: _lastP1Score, color: const Color(0xFFF59E0B))
-        : (name: p2Label, id: p2Id, score: _lastP2OrRivalScore, color: const Color(0xFFF59E0B));
-    final second = _userWon
-        ? (name: p2Label, id: p2Id, score: _lastP2OrRivalScore, color: const Color(0xFF38BDF8))
-        : (name: p1, id: 'you', score: _lastP1Score, color: const Color(0xFF10B981));
-    final third = (
-      name: 'زيد العز',
-      id: 'vr_zaid',
-      score: thirdScore,
-      color: const Color(0xFFA855F7),
+    final compact = MediaQuery.sizeOf(context).width < 560;
+    final maxScore = math.max(
+      1,
+      math.max(_lastP1Score, _lastP2OrRivalScore),
     );
 
     return Scaffold(
       backgroundColor: palette.scaffoldColor,
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: RealMosqueBackground(
-              currentPrayer: isNight ? Prayer.isha : Prayer.dhuhr,
-              themeOption: themeOption,
-              isNightMode: isNight,
-              customAssetOverride:
-                  settings.selectedAppWallpaperAsset ?? gameBackdrop,
-              dimFactor: 0.90,
-            ),
-          ),
-          SafeArea(
+      bottomNavigationBar: _buildResultsActionDock(),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 900),
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+              physics: const BouncingScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(
+                  compact ? 14 : 24, 14, compact ? 14 : 24, 28),
               children: [
-                Firdaws3DCard(
-                  palette: palette,
-                  glowColor: col,
-                  padding: const EdgeInsets.all(18),
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 6),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          color: col.withOpacity(0.18),
-                          border: Border.all(color: col.withOpacity(0.75)),
-                        ),
-                        child: Text(
-                          _userWon
-                              ? '🏆 انتصار بطولي 4K!'
-                              : '💔 خسارة الجولة — عُد أقوى الآن!',
-                          style: TextStyle(
-                            color: col,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _userWon
-                            ? '🥇 منصة التتويج — فوز مستحق!'
-                            : '🏁 خُضتَ التحدي — تبقّى القليل للفوز!',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: _userWon ? col : const Color(0xFFFCA5A5),
-                          fontWeight: FontWeight.w900,
-                          fontSize: 17,
-                        ),
-                      ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${widget.game.title} • ${_selectedWorld.name} • ${_difficulty.arabicLabel}',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: firdawsCrispSecondaryText(palette),
-                      fontSize: 11.5,
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(compact ? 25 : 32),
+                    border: Border.all(
+                      color: const Color(0xFFD6BF88).withOpacity(.72),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  // منصة التتويج ثلاثية الأبعاد 🥇🥈🥉
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: _podiumColumn(
-                          rankBadge: '🥈 #2',
-                          name: second.name,
-                          entityId: second.id,
-                          score: second.score,
-                          color: second.color,
-                          pedestalHeight: 68,
-                          isWinner: false,
-                          palette: palette,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _podiumColumn(
-                          rankBadge: '🥇 #1',
-                          name: first.name,
-                          entityId: first.id,
-                          score: first.score,
-                          color: first.color,
-                          pedestalHeight: 92,
-                          isWinner: true,
-                          palette: palette,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _podiumColumn(
-                          rankBadge: '🥉 #3',
-                          name: third.name,
-                          entityId: third.id,
-                          score: third.score,
-                          color: third.color,
-                          pedestalHeight: 50,
-                          isWinner: false,
-                          palette: palette,
-                        ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _selectedWorld.glowColor.withOpacity(.17),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
-                  if (_lastHasanatEarned > 0) ...[
-                    const SizedBox(height: 14),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        gradient: LinearGradient(
-                          colors: [
-                            const Color(0xFFF59E0B).withOpacity(0.24),
-                            const Color(0xFF10B981).withOpacity(0.18),
-                          ],
+                  clipBehavior: Clip.antiAlias,
+                  child: SizedBox(
+                    height: compact ? 216 : 274,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Arena4KBackdropPreview(
+                          assetPath: backdrop,
+                          height: compact ? 216 : 274,
+                          borderRadius: 0,
+                          accentColor: _selectedWorld.glowColor,
                         ),
-                        border: Border.all(
-                          color: const Color(0xFFF59E0B).withOpacity(0.75),
+                        const DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Color(0x4407130E),
+                                Color(0xEB07130E),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.monetization_on_rounded,
-                              color: Color(0xFFF59E0B), size: 22),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              'ربحت +$_lastHasanatEarned حسنة 🪙${hasanat?.activeEvent != null ? " (بمضاعف الحدث ×${hasanat!.activeMultiplier})" : ""}',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: palette.textPrimary,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 13,
+                        PositionedDirectional(
+                          start: compact ? 18 : 26,
+                          end: compact ? 18 : 26,
+                          bottom: compact ? 18 : 24,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _userWon ? 'نهاية مشرّفة' : 'أُنجزت الجولة',
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                  color: const Color(0xFFF0D9A6),
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
+                              const SizedBox(height: 6),
+                              Text(
+                                _userWon
+                                    ? 'أحسنت، حققت الفوز'
+                                    : 'واصل المحاولة',
+                                softWrap: true,
+                                style: theme.textTheme.headlineSmall?.copyWith(
+                                  color: Colors.white,
+                                  fontSize: compact ? 26 : 34,
+                                  height: 1.17,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              Text(
+                                '${widget.game.title}  •  ${_selectedWorld.name}',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: Colors.white.withOpacity(.94),
+                                  height: 1.35,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 23),
+                ParadiseSection(
+                  title: 'مواجهة الجولة',
+                  child: CalmCard(
+                    padding: EdgeInsets.all(compact ? 13 : 19),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final first = _scoreComparisonRow(
+                          name: playerName,
+                          score: _lastP1Score,
+                          isWinner: _userWon,
+                          color: _userWon
+                              ? const Color(0xFF0B8F68)
+                              : theme.colorScheme.primary,
+                          maxScore: maxScore,
+                        );
+                        final second = _scoreComparisonRow(
+                          name: rivalName,
+                          score: _lastP2OrRivalScore,
+                          isWinner: !_userWon,
+                          color: !_userWon
+                              ? const Color(0xFF0B8F68)
+                              : theme.colorScheme.tertiary,
+                          maxScore: maxScore,
+                        );
+                        if (constraints.maxWidth < 490) {
+                          return Column(
+                            children: [
+                              first,
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8),
+                                child: Text(
+                                  'مقابل',
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              second,
+                            ],
+                          );
+                        }
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: first),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 20),
+                              child: Text(
+                                'مقابل',
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            Expanded(child: second),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                if (_lastHasanatEarned > 0) ...[
+                  const SizedBox(height: 21),
+                  ParadiseSection(
+                    title: 'رصيد الجولة',
+                    child: Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(compact ? 16 : 21),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surface,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: const Color(0xFFC89B42).withOpacity(.58),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFC89B42).withOpacity(.10),
+                            blurRadius: 18,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              const CalmIconBadge(
+                                Icons.stars_rounded,
+                                size: 46,
+                              ),
+                              const SizedBox(width: 13),
+                              Expanded(
+                                child: Text(
+                                  '+$_lastHasanatEarned نقطة داخل التطبيق',
+                                  softWrap: true,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (hasanat?.activeEvent != null) ...[
+                            const SizedBox(height: 10),
+                            Text(
+                              'يشمل مضاعف الحدث ×${hasanat!.activeMultiplier}',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 11),
+                          Text(
+                            'هذه نقاط للّعب داخل التطبيق، وليست مقياسًا للفضل أو الأجر الحقيقي.',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              height: 1.45,
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ],
+                  ),
                 ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            if (_resultPhrase.isNotEmpty)
-              Firdaws3DCard(
-                palette: palette,
-                glowColor: const Color(0xFF10B981),
-                padding: const EdgeInsets.all(15),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _playMode == ArenaPlayMode.dualPlayerLocal
-                          ? '🏆 عبارة الفوز التحفيزية:'
-                          : (_userWon
-                              ? '🏆 رسالة النصر (من ٤٠٠ عبارة فوز):'
-                              : '⚡ رسالة العودة القوية (من ٤٠٠ عبارة خسارة):'),
-                      style: const TextStyle(
-                        color: Color(0xFF10B981),
-                        fontWeight: FontWeight.w900,
-                        fontSize: 13,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      _resultPhrase,
-                      style: TextStyle(
-                        color: palette.textPrimary,
-                        fontSize: 13,
-                        height: 1.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (_resultSecondPhrase.isNotEmpty) ...[
-                      const Divider(height: 18),
-                      const Text(
-                        '🔥 عبارة التحفيز للمنافس:',
-                        style: TextStyle(
-                          color: Color(0xFF38BDF8),
-                          fontWeight: FontWeight.w900,
-                          fontSize: 12.5,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _resultSecondPhrase,
-                        style: TextStyle(
-                          color: firdawsCrispSecondaryText(palette),
-                          fontSize: 12.2,
-                          height: 1.45,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            const SizedBox(height: 14),
-            Firdaws3DButton(
-              baseColor: const Color(0xFF10B981),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              onPressed: _launchMatch,
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.replay_rounded, color: Colors.white),
-                  SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      'جولة جديدة الآن 🔥',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 14,
+                if (_resultPhrase.isNotEmpty) ...[
+                  const SizedBox(height: 21),
+                  ParadiseSection(
+                    title: 'رسالة الجولة',
+                    child: CalmCard(
+                      padding: EdgeInsets.all(compact ? 17 : 22),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            _resultPhrase,
+                            softWrap: true,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              height: 1.6,
+                            ),
+                          ),
+                          if (_resultSecondPhrase.isNotEmpty) ...[
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child: CalmDivider(),
+                            ),
+                            Text(
+                              _resultSecondPhrase,
+                              softWrap: true,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: Firdaws3DButton(
-                    baseColor: const Color(0xFFF59E0B),
-                    padding: const EdgeInsets.symmetric(vertical: 11),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const HasanatStoreScreen(),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      'متجر السكنات 🛍️',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Firdaws3DButton(
-                    baseColor: const Color(0xFFA855F7),
-                    padding: const EdgeInsets.symmetric(vertical: 11),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const EventsMissionsScreen(),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      'المهام والأحداث ⚡',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: Firdaws3DButton(
-                    baseColor: const Color(0xFF38BDF8),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    onPressed: () =>
-                        setState(() => _phase = _ArenaStagePhase.lobby),
-                    child: const Text(
-                      'تبديل العالم / البطل',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12.5,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Firdaws3DButton(
-                    baseColor: const Color(0xFF6366F1),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text(
-                      'قائمة الـ ٣٠ لعبة',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12.5,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _podiumColumn({
-    required String rankBadge,
+  Widget _scoreComparisonRow({
     required String name,
-    required String entityId,
     required int score,
-    required Color color,
-    required double pedestalHeight,
     required bool isWinner,
-    required ThemePalette palette,
+    required Color color,
+    required int maxScore,
   }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        FirdawsPortraitAvatar(
-          entityId: entityId,
-          displayName: name,
-          size: isWinner ? 54 : 44,
-          ringColor: color,
-          showCrown: isWinner,
-          isHighlighted: isWinner,
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(isWinner ? 0.1 : 0.05),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: color.withOpacity(isWinner ? 0.42 : 0.18),
         ),
-        const SizedBox(height: 6),
-        Text(
-          name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: palette.textPrimary,
-            fontWeight: FontWeight.w900,
-            fontSize: 11.5,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Container(
-          width: double.infinity,
-          height: pedestalHeight,
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-          decoration: BoxDecoration(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                color.withOpacity(0.85),
-                color.withOpacity(0.28),
-              ],
-            ),
-            border: Border.all(color: color, width: 1.5),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
             children: [
-              Text(
-                rankBadge,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 11,
+              Icon(
+                isWinner ? Icons.emoji_events_rounded : Icons.person_rounded,
+                color: color,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(width: 8),
               Text(
                 '$score',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 16,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],
           ),
-        ),
-      ],
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: maxScore == 0 ? 0.0 : score / maxScore,
+              minHeight: 7,
+              color: color,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

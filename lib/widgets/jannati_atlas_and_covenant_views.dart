@@ -46,7 +46,7 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
     }).toList();
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 105),
+      padding: const EdgeInsets.fromLTRB(FirdawsSpace.pageGutter, 8, FirdawsSpace.pageGutter, FirdawsSpace.navigationClearance),
       physics: const BouncingScrollPhysics(),
       children: [
         // 1. لوحة شرف مهندس الجنة اليومي
@@ -54,9 +54,9 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
           backdrop: Background500Catalog.forExtraSection(37),
           isDark: palette.isDark,
           borderColor: accent.withOpacity(0.55),
-          borderRadius: 22,
+          borderRadius: FirdawsRadius.card,
           borderWidth: 1.4,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(FirdawsSpace.lg),
           imageOpacity: 0.48,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,12 +82,12 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
                           style: TextStyle(
                             color: accent,
                             fontWeight: FontWeight.bold,
-                            fontSize: 14.5,
+                            fontSize: FirdawsType.body,
                           ),
                         ),
                         Text(
                           'أنجزت اليوم $checkedCount من أصل $totalChecklist ورداً في جدول البناء اليومي',
-                          style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
+                          style: TextStyle(color: palette.textSecondary, fontSize: FirdawsType.caption),
                         ),
                       ],
                     ),
@@ -103,7 +103,7 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
                       style: TextStyle(
                         color: palette.onAccentColor,
                         fontWeight: FontWeight.bold,
-                        fontSize: 13,
+                        fontSize: FirdawsType.label,
                       ),
                     ),
                   ),
@@ -156,7 +156,7 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
               ),
               isDark: palette.isDark,
               borderColor: isDone ? accent : palette.dividerColor,
-              borderRadius: 16,
+              borderRadius: FirdawsRadius.control,
               borderWidth: isDone ? 1.5 : 1.0,
               margin: const EdgeInsets.only(bottom: 8),
               padding: EdgeInsets.zero,
@@ -201,7 +201,7 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
                                 style: TextStyle(
                                   color: palette.textPrimary,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 13,
+                                  fontSize: FirdawsType.label,
                                   decoration: isDone ? TextDecoration.lineThrough : null,
                                 ),
                               ),
@@ -210,7 +210,7 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
                                 action.rewardPromise,
                                 style: TextStyle(
                                   color: palette.textSecondary,
-                                  fontSize: 11,
+                                  fontSize: FirdawsType.caption,
                                 ),
                               ),
                             ],
@@ -231,14 +231,14 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
                                 style: TextStyle(
                                   color: accent,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 10.5,
+                                  fontSize: FirdawsType.caption,
                                 ),
                               ),
                             ),
                             const SizedBox(height: 3),
                             Text(
                               action.timeWindow,
-                              style: TextStyle(color: palette.textMuted, fontSize: 10),
+                              style: TextStyle(color: palette.textMuted, fontSize: FirdawsType.micro),
                             ),
                           ],
                         ),
@@ -249,7 +249,7 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
               ),
             );
           }),
-          const SizedBox(height: 16),
+          const SizedBox(height: FirdawsSpace.lg),
         ],
 
         // 4. استثمارات الجنة الـ ١٤ التفاعلية
@@ -277,7 +277,7 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
           style: TextStyle(
             color: isSel ? palette.onAccentColor : palette.textPrimary,
             fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-            fontSize: 11.5,
+            fontSize: FirdawsType.caption,
           ),
         ),
         selected: isSel,
@@ -300,7 +300,7 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
             style: TextStyle(
               color: accent,
               fontWeight: FontWeight.bold,
-              fontSize: 13.5,
+              fontSize: FirdawsType.label,
             ),
           ),
         ),
@@ -323,10 +323,10 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
       ),
       isDark: palette.isDark,
       borderColor: invColor.withOpacity(0.55),
-      borderRadius: 20,
+      borderRadius: FirdawsRadius.card,
       borderWidth: 1.3,
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(15),
+      padding: const EdgeInsets.all(FirdawsSpace.lg),
       imageOpacity: 0.36,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -352,12 +352,12 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
                       style: TextStyle(
                         color: invColor,
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        fontSize: FirdawsType.label,
                       ),
                     ),
                     Text(
                       'رصيدك: $count ${count == 1 ? inv.unitSingular : inv.unitPlural} • ${inv.sourceReference}',
-                      style: TextStyle(color: palette.textSecondary, fontSize: 11),
+                      style: TextStyle(color: palette.textSecondary, fontSize: FirdawsType.caption),
                     ),
                   ],
                 ),
@@ -369,14 +369,14 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: FirdawsSpace.md),
           Firdaws4KCardShell(
             backdrop: Background500Catalog.forExtraSection(
               74 + (inv.id.hashCode.abs() % 12),
             ),
             isDark: palette.isDark,
             borderColor: invColor.withOpacity(0.38),
-            borderRadius: 14,
+            borderRadius: FirdawsRadius.control,
             borderWidth: 1.0,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             imageOpacity: 0.28,
@@ -388,7 +388,7 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
                 style: TextStyle(
                   color: palette.isDark ? const Color(0xFFF1F5F9) : palette.primaryColor,
                   fontWeight: FontWeight.bold,
-                  fontSize: 13.5,
+                  fontSize: FirdawsType.label,
                   height: 1.45,
                 ),
               ),
@@ -414,10 +414,10 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
           const SizedBox(height: 4),
           Text(
             inv.paradiseDescription,
-            style: TextStyle(color: palette.textSecondary, fontSize: 11, height: 1.35),
+            style: TextStyle(color: palette.textSecondary, fontSize: FirdawsType.caption, height: 1.35),
           ),
           if (inv.cycleTarget > 1) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: FirdawsSpace.md),
             Row(
               children: List.generate(inv.cycleTarget, (index) {
                 final filled = index < cycleProg;
@@ -436,7 +436,7 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
             const SizedBox(height: 4),
             Text(
               'التقدّم الحالي: $cycleProg من ${inv.cycleTarget} لنيل ثمرة (${inv.unitSingular})',
-              style: TextStyle(color: invColor, fontSize: 10.5, fontWeight: FontWeight.bold),
+              style: TextStyle(color: invColor, fontSize: FirdawsType.caption, fontWeight: FontWeight.bold),
             ),
           ],
           const SizedBox(height: 12),
@@ -455,7 +455,7 @@ class _JannatiArchitectTabViewState extends State<JannatiArchitectTabView> {
                 inv.cycleTarget > 1
                     ? '${inv.buttonText} ($cycleProg/${inv.cycleTarget})'
                     : '${inv.buttonText} (+${inv.pointsPerCompletion} نقطة)',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: FirdawsType.label),
               ),
             ),
           ),
@@ -493,7 +493,7 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
     final accent = palette.accentColor;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 105),
+      padding: const EdgeInsets.fromLTRB(FirdawsSpace.pageGutter, 8, FirdawsSpace.pageGutter, FirdawsSpace.navigationClearance),
       physics: const BouncingScrollPhysics(),
       children: [
         // 1. شريط اختيار القسم الموسوعي
@@ -511,7 +511,7 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                     style: TextStyle(
                       color: isSel ? palette.onAccentColor : palette.textPrimary,
                       fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-                      fontSize: 12,
+                      fontSize: FirdawsType.caption,
                     ),
                   ),
                   selected: isSel,
@@ -546,17 +546,17 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
         color: accent,
         palette: palette,
       ),
-      const SizedBox(height: 10),
+      const SizedBox(height: FirdawsSpace.md),
       ...JannatiCatalog.gatesOfJannah.map((gate) {
         final col = palette.isDark ? gate.nightColor : gate.dayColor;
         return Firdaws4KCardShell(
           backdrop: Background500Catalog.forExtraSection(86 + gate.number),
           isDark: palette.isDark,
           borderColor: col.withOpacity(0.55),
-          borderRadius: 20,
+          borderRadius: FirdawsRadius.card,
           borderWidth: 1.3,
           margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(15),
+          padding: const EdgeInsets.all(FirdawsSpace.lg),
           imageOpacity: 0.36,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -578,29 +578,29 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                           style: TextStyle(
                             color: col,
                             fontWeight: FontWeight.bold,
-                            fontSize: 14.5,
+                            fontSize: FirdawsType.body,
                           ),
                         ),
                         Text(
                           gate.subtitle,
-                          style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
+                          style: TextStyle(color: palette.textSecondary, fontSize: FirdawsType.caption),
                         ),
                       ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: FirdawsSpace.md),
               Text(
                 gate.qualifyingDeed,
-                style: TextStyle(color: palette.textPrimary, fontSize: 12.5, height: 1.45),
+                style: TextStyle(color: palette.textPrimary, fontSize: FirdawsType.label, height: 1.45),
               ),
               const SizedBox(height: 8),
               Firdaws4KCardShell(
                 backdrop: Background500Catalog.forExtraSection(94 + gate.number),
                 isDark: palette.isDark,
                 borderColor: col.withOpacity(0.35),
-                borderRadius: 12,
+                borderRadius: FirdawsRadius.small,
                 borderWidth: 1.0,
                 padding: const EdgeInsets.all(10),
                 imageOpacity: 0.28,
@@ -614,13 +614,13 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                         style: TextStyle(
                           color: palette.textPrimary,
                           fontWeight: FontWeight.bold,
-                          fontSize: 11.5,
+                          fontSize: FirdawsType.caption,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'ترحيب الملائكة: ${gate.angelGreeting}',
-                        style: TextStyle(color: col, fontSize: 11, fontWeight: FontWeight.w600),
+                        style: TextStyle(color: col, fontSize: FirdawsType.caption, fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(height: 6),
                       SacredEvidenceFooter(
@@ -640,7 +640,7 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                   Expanded(
                     child: Text(
                       'خطوتك اليوم: ${gate.dailyHabitTip}',
-                      style: TextStyle(color: palette.textSecondary, fontSize: 11),
+                      style: TextStyle(color: palette.textSecondary, fontSize: FirdawsType.caption),
                     ),
                   ),
                 ],
@@ -662,16 +662,16 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
         color: const Color(0xFFF59E0B),
         palette: palette,
       ),
-      const SizedBox(height: 10),
+      const SizedBox(height: FirdawsSpace.md),
       ...JannatiCatalog.levelsAndNames.map((lvl) {
         return Firdaws4KCardShell(
           backdrop: Background500Catalog.forExtraSection(103 + lvl.order),
           isDark: palette.isDark,
           borderColor: lvl.accentColor.withOpacity(0.55),
-          borderRadius: 18,
+          borderRadius: FirdawsRadius.card,
           borderWidth: 1.2,
           margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(FirdawsSpace.lg),
           imageOpacity: 0.36,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -693,7 +693,7 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                       style: TextStyle(
                         color: lvl.accentColor,
                         fontWeight: FontWeight.bold,
-                        fontSize: 13.5,
+                        fontSize: FirdawsType.label,
                       ),
                     ),
                   ),
@@ -704,7 +704,7 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                 backdrop: Background500Catalog.forExtraSection(115 + lvl.order),
                 isDark: palette.isDark,
                 borderColor: lvl.accentColor.withOpacity(0.32),
-                borderRadius: 12,
+                borderRadius: FirdawsRadius.small,
                 borderWidth: 1.0,
                 padding: const EdgeInsets.all(9),
                 imageOpacity: 0.26,
@@ -719,7 +719,7 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                         style: TextStyle(
                           color: palette.textPrimary,
                           fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                          fontSize: FirdawsType.caption,
                           height: 1.45,
                         ),
                       ),
@@ -736,14 +736,14 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
               const SizedBox(height: 8),
               Text(
                 lvl.distinction,
-                style: TextStyle(color: palette.textPrimary, fontSize: 12, height: 1.4),
+                style: TextStyle(color: palette.textPrimary, fontSize: FirdawsType.caption, height: 1.4),
               ),
               const SizedBox(height: 4),
               Text(
                 'أهلها: ${lvl.residentsDescription}',
                 style: TextStyle(
                   color: palette.textSecondary,
-                  fontSize: 11,
+                  fontSize: FirdawsType.caption,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -764,7 +764,7 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
         color: const Color(0xFF38BDF8),
         palette: palette,
       ),
-      const SizedBox(height: 10),
+      const SizedBox(height: FirdawsSpace.md),
       ...JannatiCatalog.riversAndSprings.map((riv) {
         return Firdaws4KCardShell(
           backdrop: Background500Catalog.forExtraSection(
@@ -772,10 +772,10 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
           ),
           isDark: palette.isDark,
           borderColor: riv.riverColor.withOpacity(0.6),
-          borderRadius: 18,
+          borderRadius: FirdawsRadius.card,
           borderWidth: 1.2,
           margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(FirdawsSpace.lg),
           imageOpacity: 0.36,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -793,7 +793,7 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                       style: TextStyle(
                         color: riv.riverColor,
                         fontWeight: FontWeight.bold,
-                        fontSize: 13.5,
+                        fontSize: FirdawsType.label,
                       ),
                     ),
                   ),
@@ -809,7 +809,7 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                 style: TextStyle(
                   color: riv.riverColor,
                   fontWeight: FontWeight.bold,
-                  fontSize: 11.2,
+                  fontSize: FirdawsType.caption,
                 ),
               ),
               const SizedBox(height: 6),
@@ -835,17 +835,17 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
         color: const Color(0xFFA78BFA),
         palette: palette,
       ),
-      const SizedBox(height: 10),
+      const SizedBox(height: FirdawsSpace.md),
       ...JannatiCatalog.atlasOfDelights.map((d) {
         final col = palette.isDark ? d.nightColor : d.dayColor;
         return Firdaws4KCardShell(
           backdrop: Background500Catalog.bySlot(150 + (d.title.hashCode.abs() % 40)),
           isDark: palette.isDark,
           borderColor: col.withOpacity(0.5),
-          borderRadius: 18,
+          borderRadius: FirdawsRadius.card,
           borderWidth: 1.2,
           margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(FirdawsSpace.lg),
           imageOpacity: 0.36,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -860,7 +860,7 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                       style: TextStyle(
                         color: col,
                         fontWeight: FontWeight.bold,
-                        fontSize: 13.5,
+                        fontSize: FirdawsType.label,
                       ),
                     ),
                   ),
@@ -877,7 +877,7 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: col,
-                          fontSize: 10,
+                          fontSize: FirdawsType.micro,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -892,7 +892,7 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                 ),
                 isDark: palette.isDark,
                 borderColor: col.withOpacity(0.32),
-                borderRadius: 12,
+                borderRadius: FirdawsRadius.small,
                 borderWidth: 1.0,
                 padding: const EdgeInsets.all(10),
                 imageOpacity: 0.26,
@@ -930,7 +930,7 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                 'كيف تناله اليوم: ${d.howToAttainToday}',
                 style: TextStyle(
                   color: col,
-                  fontSize: 11.2,
+                  fontSize: FirdawsType.caption,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -951,16 +951,16 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
         color: const Color(0xFF10B981),
         palette: palette,
       ),
-      const SizedBox(height: 10),
+      const SizedBox(height: FirdawsSpace.md),
       ...JannatiCatalog.companionshipPaths.map((p) {
         return Firdaws4KCardShell(
           backdrop: Background500Catalog.bySlot(220 + (p.rankNumber % 30)),
           isDark: palette.isDark,
           borderColor: p.accentColor.withOpacity(0.55),
-          borderRadius: 18,
+          borderRadius: FirdawsRadius.card,
           borderWidth: 1.2,
           margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(FirdawsSpace.lg),
           imageOpacity: 0.36,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -982,12 +982,12 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                           style: TextStyle(
                             color: p.accentColor,
                             fontWeight: FontWeight.bold,
-                            fontSize: 13.5,
+                            fontSize: FirdawsType.label,
                           ),
                         ),
                         Text(
                           p.companionName,
-                          style: TextStyle(color: palette.textSecondary, fontSize: 11),
+                          style: TextStyle(color: palette.textSecondary, fontSize: FirdawsType.caption),
                         ),
                       ],
                     ),
@@ -999,7 +999,7 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                 '${p.hadithText} (${p.source})',
                 style: TextStyle(
                   color: palette.textPrimary,
-                  fontSize: 12,
+                  fontSize: FirdawsType.caption,
                   fontStyle: FontStyle.italic,
                   height: 1.4,
                 ),
@@ -1016,7 +1016,7 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
                 'التطبيق العملي: ${p.practicalStep}',
                 style: TextStyle(
                   color: p.accentColor,
-                  fontSize: 11.5,
+                  fontSize: FirdawsType.caption,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -1040,9 +1040,9 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
       ),
       isDark: palette.isDark,
       borderColor: color.withOpacity(0.55),
-      borderRadius: 18,
+      borderRadius: FirdawsRadius.card,
       borderWidth: 1.2,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(FirdawsSpace.lg),
       imageOpacity: 0.44,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1055,12 +1055,12 @@ class _JannatiAtlasTabViewState extends State<JannatiAtlasTabView> {
               children: [
                 Text(
                   title,
-                  style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 14),
+                  style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: FirdawsType.label),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   subtitle,
-                  style: TextStyle(color: palette.textPrimary, fontSize: 11.5, height: 1.4),
+                  style: TextStyle(color: palette.textPrimary, fontSize: FirdawsType.caption, height: 1.4),
                 ),
               ],
             ),
@@ -1179,7 +1179,7 @@ class _JannatiCovenantAndQuizTabViewState
     final currentRank = widget.jannati.currentRank;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 105),
+      padding: const EdgeInsets.fromLTRB(FirdawsSpace.pageGutter, 8, FirdawsSpace.pageGutter, FirdawsSpace.navigationClearance),
       physics: const BouncingScrollPhysics(),
       children: [
         // 1. صك أمنياتي في الفردوس (مخصص باسم المستخدم)
@@ -1187,9 +1187,9 @@ class _JannatiCovenantAndQuizTabViewState
           backdrop: Background500Catalog.forExtraSection(110),
           isDark: palette.isDark,
           borderColor: accent.withOpacity(0.6),
-          borderRadius: 22,
+          borderRadius: FirdawsRadius.card,
           borderWidth: 1.5,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(FirdawsSpace.lg),
           imageOpacity: 0.42,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1204,7 +1204,7 @@ class _JannatiCovenantAndQuizTabViewState
                       style: TextStyle(
                         color: accent,
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        fontSize: FirdawsType.label,
                       ),
                     ),
                   ),
@@ -1213,18 +1213,18 @@ class _JannatiCovenantAndQuizTabViewState
               const SizedBox(height: 6),
               Text(
                 'سَجِّل ما تتمنى أن يرزقك الله إياه في جنة الفردوس الأعلى لتذكره دائماً في دعائك وسجودك:',
-                style: TextStyle(color: palette.textSecondary, fontSize: 11.5),
+                style: TextStyle(color: palette.textSecondary, fontSize: FirdawsType.caption),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: FirdawsSpace.md),
               Row(
                 children: [
                   Expanded(
                     child: TextField(
                       controller: _wishController,
-                      style: TextStyle(color: palette.textPrimary, fontSize: 13),
+                      style: TextStyle(color: palette.textPrimary, fontSize: FirdawsType.label),
                       decoration: InputDecoration(
                         hintText: 'اكتب أمنيتك الخاصة في الجنة...',
-                        hintStyle: TextStyle(color: palette.textMuted, fontSize: 11.5),
+                        hintStyle: TextStyle(color: palette.textMuted, fontSize: FirdawsType.caption),
                         filled: true,
                         fillColor: palette.elevatedCardColor,
                         isDense: true,
@@ -1257,7 +1257,7 @@ class _JannatiCovenantAndQuizTabViewState
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: FirdawsSpace.md),
               SizedBox(
                 height: 32,
                 child: ListView.builder(
@@ -1270,7 +1270,7 @@ class _JannatiCovenantAndQuizTabViewState
                       child: ActionChip(
                         label: Text(
                           '+ ${truncateArabicSafe(tpl, 26)}',
-                          style: TextStyle(color: palette.textPrimary, fontSize: 10.5),
+                          style: TextStyle(color: palette.textPrimary, fontSize: FirdawsType.caption),
                         ),
                         backgroundColor: palette.elevatedCardColor,
                         side: BorderSide(color: accent.withOpacity(0.4)),
@@ -1280,7 +1280,7 @@ class _JannatiCovenantAndQuizTabViewState
                   },
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: FirdawsSpace.md),
               ...widget.jannati.personalAspirations.asMap().entries.map((entry) {
                 return Firdaws4KCardShell(
                   backdrop: Background500Catalog.forExtraSection(
@@ -1288,7 +1288,7 @@ class _JannatiCovenantAndQuizTabViewState
                   ),
                   isDark: palette.isDark,
                   borderColor: accent.withOpacity(0.28),
-                  borderRadius: 12,
+                  borderRadius: FirdawsRadius.small,
                   borderWidth: 1.0,
                   margin: const EdgeInsets.only(bottom: 6),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1321,21 +1321,21 @@ class _JannatiCovenantAndQuizTabViewState
           ),
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: FirdawsSpace.lg),
 
         // 2. اختبار المعرفة بالجنة ونعيمها (٢٥ سؤالاً)
         _buildQuizCard(palette, accent),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: FirdawsSpace.lg),
 
         // 3. سلم رتب مهندس الفردوس الـ ١٢
         Firdaws4KCardShell(
           backdrop: Background500Catalog.forExtraSection(112),
           isDark: palette.isDark,
           borderColor: accent.withOpacity(0.5),
-          borderRadius: 22,
+          borderRadius: FirdawsRadius.card,
           borderWidth: 1.3,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(FirdawsSpace.lg),
           imageOpacity: 0.38,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1350,7 +1350,7 @@ class _JannatiCovenantAndQuizTabViewState
                       style: TextStyle(
                         color: accent,
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        fontSize: FirdawsType.label,
                       ),
                     ),
                   ),
@@ -1362,13 +1362,13 @@ class _JannatiCovenantAndQuizTabViewState
                       style: TextStyle(
                         color: palette.textSecondary,
                         fontWeight: FontWeight.bold,
-                        fontSize: 11.5,
+                        fontSize: FirdawsType.caption,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: FirdawsSpace.md),
               ...JannatiCatalog.ranks.map((tier) {
                 final unlocked = widget.jannati.totalJannahPoints >= tier.minPoints;
                 final isCurrent = tier.level == currentRank.level;
@@ -1378,7 +1378,7 @@ class _JannatiCovenantAndQuizTabViewState
                   borderColor: isCurrent
                       ? tier.badgeColor
                       : (unlocked ? tier.badgeColor.withOpacity(0.45) : palette.dividerColor),
-                  borderRadius: 14,
+                  borderRadius: FirdawsRadius.control,
                   borderWidth: isCurrent ? 1.8 : 1.0,
                   margin: const EdgeInsets.only(bottom: 7),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
@@ -1400,12 +1400,12 @@ class _JannatiCovenantAndQuizTabViewState
                               style: TextStyle(
                                 color: unlocked ? palette.textPrimary : palette.textMuted,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 12.5,
+                                fontSize: FirdawsType.label,
                               ),
                             ),
                             Text(
                               tier.arabicSubtitle,
-                              style: TextStyle(color: palette.textSecondary, fontSize: 10.5),
+                              style: TextStyle(color: palette.textSecondary, fontSize: FirdawsType.caption),
                             ),
                           ],
                         ),
@@ -1418,7 +1418,7 @@ class _JannatiCovenantAndQuizTabViewState
                           style: TextStyle(
                             color: unlocked ? tier.badgeColor : palette.textMuted,
                             fontWeight: FontWeight.bold,
-                            fontSize: 11,
+                            fontSize: FirdawsType.caption,
                           ),
                         ),
                       ),
@@ -1445,9 +1445,9 @@ class _JannatiCovenantAndQuizTabViewState
       backdrop: Background500Catalog.forExtraSection(113),
       isDark: palette.isDark,
       borderColor: accent.withOpacity(0.55),
-      borderRadius: 22,
+      borderRadius: FirdawsRadius.card,
       borderWidth: 1.4,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(FirdawsSpace.lg),
       imageOpacity: 0.40,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1465,12 +1465,12 @@ class _JannatiCovenantAndQuizTabViewState
                       style: TextStyle(
                         color: accent,
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        fontSize: FirdawsType.label,
                       ),
                     ),
                     Text(
                       'أفضل نتيجة: ${widget.jannati.bestQuizScore}/${questions.length} • المحاولات: ${widget.jannati.quizzesCompleted}',
-                      style: TextStyle(color: palette.textSecondary, fontSize: 11),
+                      style: TextStyle(color: palette.textSecondary, fontSize: FirdawsType.caption),
                     ),
                   ],
                 ),
@@ -1501,9 +1501,9 @@ class _JannatiCovenantAndQuizTabViewState
               backdrop: Background500Catalog.forExtraSection(114),
               isDark: palette.isDark,
               borderColor: accent,
-              borderRadius: 14,
+              borderRadius: FirdawsRadius.control,
               borderWidth: 1.2,
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(FirdawsSpace.lg),
               imageOpacity: 0.34,
               child: SizedBox(
                 width: double.infinity,
@@ -1514,19 +1514,19 @@ class _JannatiCovenantAndQuizTabViewState
                       style: TextStyle(
                         color: accent,
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontSize: FirdawsType.body,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'نِلتَ مكافأة +${_quizScore * 20 + (_quizScore == questions.length ? 100 : 0)} نقطة في خزينة الفردوس!',
-                      style: TextStyle(color: palette.textPrimary, fontSize: 12),
+                      style: TextStyle(color: palette.textPrimary, fontSize: FirdawsType.caption),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: FirdawsSpace.md),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
@@ -1546,7 +1546,7 @@ class _JannatiCovenantAndQuizTabViewState
                     style: TextStyle(
                       color: accent,
                       fontWeight: FontWeight.bold,
-                      fontSize: 11.5,
+                      fontSize: FirdawsType.caption,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -1555,11 +1555,11 @@ class _JannatiCovenantAndQuizTabViewState
                     style: TextStyle(
                       color: palette.textPrimary,
                       fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                      fontSize: FirdawsType.label,
                       height: 1.4,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: FirdawsSpace.md),
                   ...List.generate(q.options.length, (optIdx) {
                     final isPicked = _selectedOption == optIdx;
                     final isRight = q.correctIndex == optIdx;
@@ -1578,7 +1578,7 @@ class _JannatiCovenantAndQuizTabViewState
                       ),
                       isDark: palette.isDark,
                       borderColor: borderCol,
-                      borderRadius: 12,
+                      borderRadius: FirdawsRadius.small,
                       borderWidth: 1.3,
                       margin: const EdgeInsets.only(bottom: 7),
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -1590,7 +1590,7 @@ class _JannatiCovenantAndQuizTabViewState
                           q.options[optIdx],
                           style: TextStyle(
                             color: palette.textPrimary,
-                            fontSize: 12.5,
+                            fontSize: FirdawsType.label,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -1603,7 +1603,7 @@ class _JannatiCovenantAndQuizTabViewState
                       backdrop: Background500Catalog.forExtraSection(115),
                       isDark: palette.isDark,
                       borderColor: accent.withOpacity(0.4),
-                      borderRadius: 12,
+                      borderRadius: FirdawsRadius.small,
                       borderWidth: 1.0,
                       padding: const EdgeInsets.all(10),
                       imageOpacity: 0.26,
@@ -1611,11 +1611,11 @@ class _JannatiCovenantAndQuizTabViewState
                         width: double.infinity,
                         child: Text(
                           '${q.explanation} (${q.dalil})',
-                          style: TextStyle(color: palette.textPrimary, fontSize: 11.5),
+                          style: TextStyle(color: palette.textPrimary, fontSize: FirdawsType.caption),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: FirdawsSpace.md),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(

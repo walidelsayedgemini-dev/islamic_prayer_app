@@ -1,24 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:adhan/adhan.dart';
 import 'package:provider/provider.dart';
-import '../models/backgrounds_500_catalog.dart';
+
 import '../models/help_me_1000_catalog.dart';
 import '../models/help_me_model.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
-import '../widgets/firdaws_resilient_image.dart';
+import '../widgets/calm_ui.dart';
+import '../widgets/paradise_ui.dart';
 import '../widgets/islamic_qa_explorer_widget.dart';
-import '../widgets/islamic_theme_effects_canvas.dart';
-import '../widgets/real_mosque_background.dart';
 import '../widgets/sacred_reference_widgets.dart';
 
 class HelpMeScreen extends StatefulWidget {
   final ValueNotifier<bool?>? openQaNotifier;
 
-  const HelpMeScreen({
-    super.key,
-    this.openQaNotifier,
-  });
+  const HelpMeScreen({super.key, this.openQaNotifier});
 
   @override
   State<HelpMeScreen> createState() => _HelpMeScreenState();
@@ -26,11 +21,12 @@ class HelpMeScreen extends StatefulWidget {
 
 class _HelpMeScreenState extends State<HelpMeScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _breathingController;
-  int _modeIndex = 0; // 0: صيدلية الروح (٧ كتجريهات • ١٠٠٠ موضوع)، 1: اسألني (٥٠٠ سؤال وجواب)
-  String _selectedDomainId = 'all';
-  final Set<String> _expandedSubCategories = <String>{};
+  late final AnimationController _breathingController;
   final TextEditingController _searchController = TextEditingController();
+
+  int _modeIndex = 0;
+  String _selectedDomainId = 'all';
+  String? _selectedSubCategory;
   String _searchQuery = '';
 
   @override
@@ -47,16 +43,15 @@ class _HelpMeScreenState extends State<HelpMeScreen>
   void _consumeOpenQaRequest() {
     final notifier = widget.openQaNotifier;
     if (notifier == null) return;
-    final val = notifier.value;
-    if (val != null) {
-      final target = val ? 1 : 0;
-      if (mounted) {
-        setState(() => _modeIndex = target);
-      } else {
-        _modeIndex = target;
-      }
-      notifier.value = null;
+    final requestedMode = notifier.value;
+    if (requestedMode == null) return;
+
+    if (mounted) {
+      setState(() => _modeIndex = requestedMode ? 1 : 0);
+    } else {
+      _modeIndex = requestedMode ? 1 : 0;
     }
+    notifier.value = null;
   }
 
   @override
@@ -77,1530 +72,1048 @@ class _HelpMeScreenState extends State<HelpMeScreen>
     super.dispose();
   }
 
-  Color _resolveCatAccent(HelpMeCategory category, bool isDark) {
-    return isDark
-        ? category.accentColor
-        : Color.lerp(category.primaryColor, Colors.black, 0.20)!;
-  }
-
-  Color _resolveAccentColor(Color primary, Color accent, bool isDark) {
-    return isDark ? accent : Color.lerp(primary, Colors.black, 0.22)!;
-  }
-
-  void _showCaseDetails(
-    BuildContext context,
-    HelpMeCaseEntry entry,
-    ThemePalette palette,
-  ) {
-    final catAccent =
-        _resolveAccentColor(entry.primaryColor, entry.accentColor, palette.isDark);
-    final btnForeground =
-        ThemeData.estimateBrightnessForColor(catAccent) == Brightness.dark
-            ? Colors.white
-            : Colors.black;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.86,
-          minChildSize: 0.50,
-          maxChildSize: 0.96,
-          builder: (context, scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                color: palette.scaffoldColor,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-                border: Border.all(color: catAccent.withOpacity(0.45), width: 1.5),
-              ),
-              child: ListView(
-                controller: scrollController,
-                padding: const EdgeInsets.all(20),
-                children: [
-                  Center(
-                    child: Container(
-                      width: 45,
-                      height: 4.5,
-                      decoration: BoxDecoration(
-                        color: palette.dividerColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: entry.primaryColor.withOpacity(0.18),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: catAccent, width: 1.4),
-                        ),
-                        child: Text(entry.emoji, style: const TextStyle(fontSize: 22)),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '#${entry.number}/١٠٠٠ • ${entry.domainLabel}',
-                              style: TextStyle(
-                                color: catAccent,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              entry.title,
-                              style: TextStyle(
-                                fontSize: 16.5,
-                                fontWeight: FontWeight.bold,
-                                color: palette.textPrimary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    entry.summary,
-                    style: TextStyle(
-                      color: palette.textSecondary,
-                      fontSize: 12.5,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Firdaws4KCardShell(
-                    backdrop: Background500Catalog.forHelpMeBanner(1),
-                    isDark: palette.isDark,
-                    borderColor: catAccent.withOpacity(0.5),
-                    borderRadius: 16,
-                    padding: const EdgeInsets.all(14),
-                    imageOpacity: 0.50,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          '📖 ${entry.quranAyah}',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: palette.textPrimary,
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.bold,
-                            height: 1.5,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        SacredEvidenceFooter(
-                          evidenceText: entry.quranAyah,
-                          titleForHadith: entry.title,
-                          trackInJannati: true,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Firdaws4KCardShell(
-                    backdrop: Background500Catalog.forHelpMeBanner(2),
-                    isDark: palette.isDark,
-                    borderColor: catAccent.withOpacity(0.45),
-                    borderRadius: 16,
-                    padding: const EdgeInsets.all(14),
-                    imageOpacity: 0.45,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '📜 الدليل النبوي الصحيح:',
-                          style: TextStyle(
-                            color: catAccent,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          entry.hadithReference,
-                          style: TextStyle(
-                            color: palette.textPrimary,
-                            fontSize: 13.5,
-                            height: 1.5,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        SacredEvidenceFooter(
-                          evidenceText: entry.hadithReference,
-                          titleForHadith: entry.title,
-                          hadithVerbatim: entry.dua,
-                          trackInJannati: true,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  // إيه أه / إيه لأ
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withOpacity(0.14),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: const Color(0xFF10B981).withOpacity(0.45),
-                      ),
-                    ),
-                    child: Text(
-                      '✅ إيه أه (افعل): ${entry.doAction}',
-                      style: TextStyle(
-                        color: palette.textPrimary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        height: 1.45,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEF4444).withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: const Color(0xFFEF4444).withOpacity(0.42),
-                      ),
-                    ),
-                    child: Text(
-                      '🚫 إيه لأ (اجتنب): ${entry.dontAction}',
-                      style: TextStyle(
-                        color: palette.textPrimary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        height: 1.45,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Firdaws4KCardShell(
-                    backdrop: Background500Catalog.forHelpMeCategory(15),
-                    isDark: palette.isDark,
-                    borderColor: catAccent.withOpacity(0.42),
-                    borderRadius: 14,
-                    padding: const EdgeInsets.all(12),
-                    imageOpacity: 0.42,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '🤲 الدعاء الجامع المأثور:',
-                          style: TextStyle(
-                            color: catAccent,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          entry.dua,
-                          style: TextStyle(
-                            color: palette.textPrimary,
-                            fontSize: 14,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (entry.hasBreathingGuide) ...[
-                    const SizedBox(height: 14),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _openBreathingExercise(
-                          context,
-                          HelpMeCategory.categories.first,
-                          palette,
-                        );
-                      },
-                      icon: const Icon(Icons.air_rounded, size: 20),
-                      label: const Text(
-                        "ابدأ تمرين التنفس والسكينة الإسلامي 🌬️",
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: catAccent,
-                        foregroundColor: btnForeground,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _showCategoryDetails(
-    BuildContext context,
-    HelpMeCategory category,
-    ThemePalette palette,
-  ) {
-    final catAccent = _resolveCatAccent(category, palette.isDark);
-    final btnForeground =
-        ThemeData.estimateBrightnessForColor(catAccent) == Brightness.dark
-            ? Colors.white
-            : Colors.black;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.85,
-          minChildSize: 0.50,
-          maxChildSize: 0.95,
-          builder: (context, scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                color: palette.scaffoldColor,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-                border: Border.all(color: catAccent.withOpacity(0.45), width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: (palette.isDark ? Colors.black : palette.primaryColor)
-                        .withOpacity(palette.isDark ? 0.85 : 0.22),
-                    blurRadius: 30,
-                    offset: const Offset(0, -6),
-                  ),
-                ],
-              ),
-              child: ListView(
-                controller: scrollController,
-                padding: const EdgeInsets.all(20),
-                children: [
-                  Center(
-                    child: Container(
-                      width: 45,
-                      height: 4.5,
-                      decoration: BoxDecoration(
-                        color: palette.dividerColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: category.primaryColor.withOpacity(0.18),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: catAccent, width: 1.5),
-                        ),
-                        child: Icon(category.icon, color: catAccent, size: 26),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              category.title,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: catAccent,
-                              ),
-                            ),
-                            Text(
-                              category.subtitle,
-                              style: TextStyle(color: palette.textSecondary, fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Divider(color: palette.dividerColor),
-                  const SizedBox(height: 10),
-                  Firdaws4KCardShell(
-                    backdrop: Background500Catalog.forHelpMeBanner(1),
-                    isDark: palette.isDark,
-                    borderColor: catAccent.withOpacity(0.5),
-                    borderRadius: 16,
-                    padding: const EdgeInsets.all(14),
-                    imageOpacity: 0.56,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          '📖 ${category.quranAyah}',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: palette.textPrimary,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            height: 1.5,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        SacredEvidenceFooter(
-                          evidenceText: category.quranAyah,
-                          titleForHadith: category.title,
-                          trackInJannati: true,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Firdaws4KCardShell(
-                    backdrop: Background500Catalog.forHelpMeBanner(2),
-                    isDark: palette.isDark,
-                    borderColor: catAccent.withOpacity(0.45),
-                    borderRadius: 16,
-                    padding: const EdgeInsets.all(14),
-                    imageOpacity: 0.52,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.record_voice_over_rounded, color: catAccent, size: 18),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                "🤲 دعاء الكرب وتفريج الضيق:",
-                                style: TextStyle(
-                                  color: catAccent,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          category.mainDuha,
-                          style: TextStyle(
-                            color: palette.textPrimary,
-                            fontSize: 14,
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          '📜 ${category.hadithReference}',
-                          style: TextStyle(
-                            color: palette.textSecondary,
-                            fontSize: 11,
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        SacredEvidenceFooter(
-                          evidenceText: category.hadithReference,
-                          titleForHadith: category.title,
-                          hadithVerbatim: category.mainDuha,
-                          trackInJannati: true,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (category.hasBreathingGuide) ...[
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _openBreathingExercise(context, category, palette);
-                      },
-                      icon: const Icon(Icons.air_rounded, size: 20),
-                      label: const Text(
-                        "ابدأ تمرين التنفس والسكينة الإسلامي 🌬️",
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: catAccent,
-                        foregroundColor: btnForeground,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  Text(
-                    "خطوات الهدي النبوي العملية:",
-                    style: TextStyle(
-                      color: catAccent,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  ...category.sunnahSteps.asMap().entries.map((stepEntry) {
-                    final sIdx = stepEntry.key;
-                    final step = stepEntry.value;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Firdaws4KCardShell(
-                        backdrop: Background500Catalog.forHelpMeCategory(20 + (sIdx % 30)),
-                        isDark: palette.isDark,
-                        borderColor: catAccent.withOpacity(0.42),
-                        borderRadius: 14,
-                        padding: const EdgeInsets.all(12),
-                        imageOpacity: 0.48,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(step.icon, color: catAccent, size: 20),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    step.title,
-                                    style: TextStyle(
-                                      color: palette.textPrimary,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    step.description,
-                                    style: TextStyle(
-                                      color: palette.textSecondary,
-                                      fontSize: 12,
-                                      height: 1.3,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _openBreathingExercise(
-    BuildContext context,
-    HelpMeCategory category,
-    ThemePalette palette,
-  ) {
-    final catAccent = _resolveCatAccent(category, palette.isDark);
-    final btnForeground =
-        ThemeData.estimateBrightnessForColor(catAccent) == Brightness.dark
-            ? Colors.white
-            : Colors.black;
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return Dialog(
-              backgroundColor: palette.scaffoldColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-                side: BorderSide(color: catAccent, width: 1.5),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(22),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "مرشد السكينة والتنفس الإيماني",
-                      style: TextStyle(
-                        color: catAccent,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      "﴿أَلا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ﴾",
-                      style: TextStyle(color: palette.textSecondary, fontSize: 12),
-                    ),
-                    const SizedBox(height: 24),
-                    AnimatedBuilder(
-                      animation: _breathingController,
-                      builder: (context, _) {
-                        final val = _breathingController.value;
-                        final isInhaling =
-                            _breathingController.status == AnimationStatus.forward;
-                        final size = 120.0 + val * 65.0;
-
-                        return Container(
-                          width: 200,
-                          height: 200,
-                          alignment: Alignment.center,
-                          child: Container(
-                            width: size,
-                            height: size,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: catAccent.withOpacity(0.18 + val * 0.15),
-                              border: Border.all(color: catAccent, width: 2.5),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: catAccent.withOpacity(0.35 * val),
-                                  blurRadius: 30,
-                                  spreadRadius: 4,
-                                )
-                              ],
-                            ),
-                            child: Center(
-                              child: Text(
-                                isInhaling
-                                    ? "شَهِيق عَمِيق\n(أَسْتَغْفِرُ اللَّه)"
-                                    : "زَفِير بَطِيء\n(الْحَمْدُ لِلَّه)",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: palette.textPrimary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      "اتبع نبض الدائرة: شهيق هادئ يملأ الرئتين مع الاستغفار، ثم زفير بطيء يطرد التوتر مع الحمد.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: palette.textSecondary,
-                        fontSize: 11,
-                        height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: catAccent,
-                        foregroundColor: btnForeground,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        "تم والحمد لله",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
-    final isNight = settings.isNightEffective;
-    final themeOption = IslamicTheme.getThemeOption(settings.selectedTheme);
-    final palette = themeOption.resolve(isNight: isNight);
-    final accentColor = palette.accentColor;
+    final palette = IslamicTheme.getThemeOption(settings.selectedTheme)
+        .resolve(isNight: settings.isNightEffective);
+    final scene = FirdawsParadiseRegistry.imageFor(settings.selectedTheme);
 
     return Scaffold(
-      backgroundColor: palette.scaffoldColor,
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: RealMosqueBackground(
-              currentPrayer: isNight ? Prayer.isha : Prayer.dhuhr,
-              themeOption: themeOption,
-              isNightMode: isNight,
-            ),
-          ),
-          Positioned.fill(
-            child: IslamicThemeEffectsCanvas(
-              themeOption: themeOption,
-              isNightMode: isNight,
-            ),
-          ),
-          SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
-                  child: Firdaws4KCardShell(
-                    backdrop: Background500Catalog.forHelpMeBanner(0),
-                    isDark: isNight,
-                    borderColor: accentColor.withOpacity(0.55),
-                    borderRadius: 20,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    imageOpacity: 0.62,
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: accentColor.withOpacity(0.18),
-                                shape: BoxShape.circle,
-                                border: Border.all(color: accentColor, width: 1.2),
-                              ),
-                              child: Icon(
-                                _modeIndex == 0
-                                    ? Icons.favorite_rounded
-                                    : Icons.question_answer_rounded,
-                                color: accentColor,
-                                size: 22,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _modeIndex == 0
-                                        ? "سَاعِدْنِي • ١٠٠٠ موضوع وحل عملي"
-                                        : "اسْأَلْنِي • موسوعة ٥٠٠ سؤال وجواب",
-                                    style: TextStyle(
-                                      color: accentColor,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15.5,
-                                    ),
-                                  ),
-                                  Text(
-                                    _modeIndex == 0
-                                        ? "التنمر، الفتن، الملهيات، الصحبة، المال الحلال، وإيه أه وإيه لأ"
-                                        : "ابحث بالعربية الفصحى أو العامية في العقيدة والفقه والجَنَّة والحياة",
-                                    style: TextStyle(color: palette.textSecondary, fontSize: 11),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () => setState(() => _modeIndex = 0),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 220),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _modeIndex == 0
-                                        ? accentColor
-                                        : palette.elevatedCardColor,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: _modeIndex == 0
-                                          ? accentColor
-                                          : palette.dividerColor,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.healing_rounded,
-                                        size: 15,
-                                        color: _modeIndex == 0
-                                            ? palette.onAccentColor
-                                            : palette.textSecondary,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Flexible(
-                                        child: Text(
-                                          "صيدلية الروح",
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: _modeIndex == 0
-                                                ? palette.onAccentColor
-                                                : palette.textPrimary,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 11.5,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () => setState(() => _modeIndex = 1),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 220),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _modeIndex == 1
-                                        ? accentColor
-                                        : palette.elevatedCardColor,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: _modeIndex == 1
-                                          ? accentColor
-                                          : palette.dividerColor,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.question_answer_rounded,
-                                        size: 15,
-                                        color: _modeIndex == 1
-                                            ? palette.onAccentColor
-                                            : palette.textSecondary,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Flexible(
-                                        child: Text(
-                                          "٥٠٠ سؤال وجواب",
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: _modeIndex == 1
-                                                ? palette.onAccentColor
-                                                : palette.textPrimary,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 11.5,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        bottom: false,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 420;
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1180),
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    compact ? 16 : 24,
+                    compact ? 8 : 16,
+                    compact ? 16 : 24,
+                    24,
                   ),
-                ),
-                Expanded(
-                  child: _modeIndex == 1
-                      ? SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 98),
-                          physics: const BouncingScrollPhysics(),
-                          child: IslamicQaExplorerWidget(
-                            palette: palette,
-                            headerTitle: 'مَوْسُوعَةُ الفَرْدَوْسِ • ٥٠٠ سُؤَالٍ وَجَوَابٍ',
-                            headerSubtitle:
-                                'اكتب أي سؤال بالعامية أو الفصحى لتصلك الإجابة الشرعية والدليل فوراً',
-                          ),
-                        )
-                      : _buildStructuredHelpDirectory(palette, accentColor, isNight),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStructuredHelpDirectory(
-    ThemePalette palette,
-    Color accentColor,
-    bool isNight,
-  ) {
-    final trimmedQuery = _searchQuery.trim();
-    final isSearching = trimmedQuery.isNotEmpty;
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: TextField(
-            controller: _searchController,
-            style: TextStyle(color: palette.textPrimary, fontSize: 13),
-            onChanged: (v) => setState(() => _searchQuery = v),
-            decoration: InputDecoration(
-              hintText: 'ابحث في ١٠٠٠ موضوع وتصنيف: تنمر، فتن، صحبة، رزق حلال...',
-              hintStyle: TextStyle(color: palette.textMuted, fontSize: 12),
-              prefixIcon: Icon(Icons.search_rounded, color: accentColor),
-              suffixIcon: isSearching
-                  ? IconButton(
-                      tooltip: 'مسح البحث',
-                      icon: Icon(Icons.close_rounded, color: palette.textMuted, size: 19),
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() => _searchQuery = '');
-                      },
-                    )
-                  : null,
-              isDense: true,
-              filled: true,
-              fillColor: palette.cardColor.withOpacity(0.92),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: palette.dividerColor),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Expanded(
-          child: isSearching
-              ? _buildSearchGroupedResults(palette, accentColor, isNight)
-              : (_selectedDomainId == 'all'
-                  ? _buildCategoriesOverview(palette, accentColor, isNight)
-                  : _buildSelectedDomainSubFolders(palette, accentColor, isNight)),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCategoriesOverview(
-    ThemePalette palette,
-    Color accentColor,
-    bool isNight,
-  ) {
-    const quickCategories = HelpMeCategory.categories;
-    return ListView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 2, 16, 98),
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Row(
-            children: [
-              Icon(Icons.folder_special_rounded, color: accentColor, size: 18),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  'الأقسام والكتجريهات الرئيسية (٧ كتجريهات • ١٠٥ تصنيفاً فرعياً)',
-                  style: TextStyle(
-                    color: accentColor,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        for (int i = 0; i < HelpMe1000Catalog.domains.length; i++) ...[
-          _buildMainDomainFolderCard(
-            HelpMe1000Catalog.domains[i],
-            i,
-            palette,
-            isNight,
-          ),
-        ],
-        const SizedBox(height: 6),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            children: [
-              Icon(Icons.healing_rounded, color: accentColor, size: 18),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  'تصنيف إسعافات القلوب العاجلة (٦ حالات قلبية)',
-                  style: TextStyle(
-                    color: accentColor,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        for (int r = 0; r < quickCategories.length; r += 2) ...[
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildQuickEmergencyTile(
-                    quickCategories[r],
-                    palette,
-                    isNight,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: (r + 1 < quickCategories.length)
-                      ? _buildQuickEmergencyTile(
-                          quickCategories[r + 1],
-                          palette,
-                          isNight,
-                        )
-                      : const SizedBox.shrink(),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildMainDomainFolderCard(
-    HelpMeDomain dom,
-    int index,
-    ThemePalette palette,
-    bool isNight,
-  ) {
-    final domAccent =
-        _resolveAccentColor(dom.primaryColor, dom.accentColor, palette.isDark);
-    final domCases = HelpMe1000Catalog.filter(domainId: dom.id);
-    final subNames = HelpMe1000Catalog.subCategoriesForDomain(dom.id);
-
-    return Firdaws4KCardShell(
-      backdrop: Background500Catalog.forHelpMeCategory((index * 4) % 30),
-      isDark: isNight,
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      borderColor: domAccent.withOpacity(0.55),
-      borderRadius: 20,
-      imageOpacity: isNight ? 0.44 : 0.34,
-      onTap: () {
-        setState(() {
-          _selectedDomainId = dom.id;
-          _expandedSubCategories
-            ..clear()
-            ..add(subNames.first);
-        });
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: dom.primaryColor.withOpacity(0.20),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: domAccent.withOpacity(0.65)),
-                ),
-                child: Text(dom.emoji, style: const TextStyle(fontSize: 22)),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      dom.label,
-                      style: TextStyle(
-                        color: palette.textPrimary,
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: [
-                        _buildCountBadge(
-                          '📂 ${subNames.length} تصنيفاً فرعياً',
-                          domAccent,
-                        ),
-                        _buildCountBadge(
-                          '📌 ${domCases.length} موقفاً وحلاً',
-                          domAccent,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: domAccent,
-                size: 16,
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 6,
-            runSpacing: 5,
-            children: subNames.take(3).map((sub) {
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: palette.scaffoldColor.withOpacity(0.55),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: domAccent.withOpacity(0.32)),
-                ),
-                child: Text(
-                  sub,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: palette.textSecondary,
-                    fontSize: 10.5,
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickEmergencyTile(
-    HelpMeCategory cat,
-    ThemePalette palette,
-    bool isNight,
-  ) {
-    final cAcc = _resolveCatAccent(cat, palette.isDark);
-    return Firdaws4KCardShell(
-      backdrop: Background500Catalog.forHelpMeCategory(cat.state.index * 5),
-      isDark: isNight,
-      borderColor: cAcc.withOpacity(0.52),
-      borderRadius: 16,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      imageOpacity: isNight ? 0.38 : 0.28,
-      onTap: () => _showCategoryDetails(context, cat, palette),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(
-              color: cat.primaryColor.withOpacity(0.18),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(cat.icon, size: 17, color: cAcc),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              cat.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: palette.textPrimary,
-                fontSize: 11.5,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSelectedDomainSubFolders(
-    ThemePalette palette,
-    Color accentColor,
-    bool isNight,
-  ) {
-    final dom = HelpMe1000Catalog.domains.firstWhere(
-      (d) => d.id == _selectedDomainId,
-      orElse: () => HelpMe1000Catalog.domains.first,
-    );
-    final domAccent =
-        _resolveAccentColor(dom.primaryColor, dom.accentColor, palette.isDark);
-    final entries = HelpMe1000Catalog.filter(domainId: dom.id);
-    final grouped = HelpMe1000Catalog.groupBySubCategory(entries);
-    final subEntries = grouped.entries.toList();
-    final allExpanded = subEntries.isNotEmpty &&
-        subEntries.every((e) => _expandedSubCategories.contains(e.key));
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Firdaws4KCardShell(
-            backdrop: Background500Catalog.forHelpMeBanner(3),
-            isDark: isNight,
-            borderRadius: 16,
-            borderColor: domAccent.withOpacity(0.55),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            imageOpacity: isNight ? 0.42 : 0.30,
-            child: Row(
-              children: [
-                TextButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _selectedDomainId = 'all';
-                      _expandedSubCategories.clear();
-                    });
-                  },
-                  style: TextButton.styleFrom(
-                    foregroundColor: domAccent,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  icon: const Icon(Icons.arrow_forward_rounded, size: 17),
-                  label: const Text(
-                    'كل الأقسام',
-                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        '${dom.emoji} ${dom.label}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: palette.textPrimary,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        '${subEntries.length} تصنيفاً فرعياً • ${entries.length} موضوعاً',
-                        style: TextStyle(color: palette.textSecondary, fontSize: 10.5),
+                      _buildPageMasthead(),
+                      const SizedBox(height: 12),
+                      _buildModeSelector(),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: _modeIndex == 0
+                            ? _buildTopicsMode(scene)
+                            : SingleChildScrollView(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: IslamicQaExplorerWidget(
+                                  palette: palette,
+                                  headerTitle: 'الأسئلة والأجوبة',
+                                  headerSubtitle:
+                                      'ابحث في مسائل العقيدة والعبادة والحياة اليومية',
+                                ),
+                              ),
                       ),
                     ],
                   ),
                 ),
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      if (allExpanded) {
-                        _expandedSubCategories.clear();
-                      } else {
-                        _expandedSubCategories.addAll(subEntries.map((e) => e.key));
-                      }
-                    });
-                  },
-                  style: TextButton.styleFrom(
-                    foregroundColor: domAccent,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Text(
-                    allExpanded ? 'طي الكل' : 'فتح الكل',
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
-        const SizedBox(height: 8),
+      ),
+    );
+  }
+
+  Widget _buildPageMasthead() {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Row(
+      children: [
+        const CalmIconBadge(Icons.volunteer_activism_outlined, size: 46),
+        const SizedBox(width: 12),
         Expanded(
-          child: ListView.builder(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 2, 16, 98),
-            itemCount: subEntries.length,
-            itemBuilder: (context, subIdx) {
-              final subGroup = subEntries[subIdx];
-              final isExpanded = _expandedSubCategories.contains(subGroup.key);
-              return _buildSubCategoryAccordionCard(
-                folderNumber: subIdx + 1,
-                subTitle: subGroup.key,
-                cases: subGroup.value,
-                catAccent: domAccent,
-                isExpanded: isExpanded,
-                palette: palette,
-                isNight: isNight,
-                onToggle: () {
-                  setState(() {
-                    if (isExpanded) {
-                      _expandedSubCategories.remove(subGroup.key);
-                    } else {
-                      _expandedSubCategories.add(subGroup.key);
-                    }
-                  });
-                },
-              );
-            },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'المساندة والأسئلة',
+                softWrap: true,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  height: 1.2,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                'اختر موضوعاً للإرشاد أو افتح موسوعة الأسئلة',
+                softWrap: true,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  height: 1.4,
+                ),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  Widget _buildSearchGroupedResults(
-    ThemePalette palette,
-    Color accentColor,
-    bool isNight,
-  ) {
-    final results = HelpMe1000Catalog.filter(
-      domainId: _selectedDomainId,
-      query: _searchQuery,
+  Widget _buildModeSelector() {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.48),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: .75)),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          _buildModeButton(
+            index: 0,
+            label: 'موضوعات وإرشاد',
+            icon: Icons.spa_outlined,
+          ),
+          const SizedBox(width: 5),
+          _buildModeButton(
+            index: 1,
+            label: 'أسئلة وأجوبة',
+            icon: Icons.forum_outlined,
+          ),
+        ],
+      ),
     );
-    final grouped = HelpMe1000Catalog.groupBySubCategory(results);
-    final groups = grouped.entries.toList();
+  }
 
-    if (results.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            'لم يتم العثور على مواقف مطابقة لـ «$_searchQuery»\nجرّب كلمة أبسط مثل: تنمر، فتن، صحبة، رزق، قلق',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: palette.textSecondary, fontSize: 13.5),
+  Widget _buildModeButton({
+    required int index,
+    required String label,
+    required IconData icon,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final selected = _modeIndex == index;
+    return Expanded(
+      child: Material(
+        color: selected ? scheme.primary : Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => setState(() => _modeIndex = index),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 54),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    icon,
+                    size: 19,
+                    color: selected ? scheme.onPrimary : scheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      label,
+                      softWrap: true,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: selected ? scheme.onPrimary : scheme.onSurface,
+                        fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                        height: 1.2,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTopicsMode(String scene) {
+    final query = _searchQuery.trim();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildSearchField(),
+        const SizedBox(height: 10),
+        Expanded(
+          child: query.isNotEmpty
+              ? _buildSearchResults(query)
+              : _selectedDomainId == 'all'
+                  ? _buildDirectoryOverview(scene)
+                  : _selectedSubCategory == null
+                      ? _buildSubCategoryDirectory()
+                      : _buildTopicList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSearchField() {
+    final scheme = Theme.of(context).colorScheme;
+    final isSearching = _searchQuery.trim().isNotEmpty;
+    return TextField(
+      controller: _searchController,
+      textDirection: TextDirection.rtl,
+      textInputAction: TextInputAction.search,
+      onChanged: (value) => setState(() => _searchQuery = value),
+      decoration: InputDecoration(
+        hintText: 'ابحث عن موضوع أو موقف',
+        prefixIcon: Icon(Icons.search_rounded, color: scheme.primary),
+        suffixIcon: isSearching
+            ? IconButton(
+                tooltip: 'مسح البحث',
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() => _searchQuery = '');
+                },
+                icon: const Icon(Icons.close_rounded),
+              )
+            : null,
+        filled: true,
+        fillColor: scheme.surface,
+        contentPadding: const EdgeInsets.symmetric(vertical: 15),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: scheme.outlineVariant),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: scheme.outlineVariant),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: scheme.primary, width: 1.5),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDirectoryOverview(String scene) {
+    const domains = HelpMe1000Catalog.domains;
+    const categories = HelpMeCategory.categories;
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 18),
+      children: [
+        ParadiseHero(
+          title: 'خذ خطوة واضحة، على مهل',
+          subtitle: 'اختر مجالاً قريباً من سؤالك، أو استكشف الإرشاد بحسب الحال.',
+          imageAsset: scene,
+          minHeight: 178,
+          footer: const Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ParadiseChip(label: 'موضوعات ومواقف', icon: Icons.menu_book_outlined),
+              ParadiseChip(label: 'إرشاد بحسب الحال', icon: Icons.favorite_border),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(
+              child: ParadiseMetric(
+                value: '${domains.length}',
+                label: 'مجالات للإرشاد',
+                icon: Icons.explore_outlined,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: ParadiseMetric(
+                value: '${categories.length}',
+                label: 'موضوعات بحسب الحال',
+                icon: Icons.favorite_border_rounded,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 22),
+        ParadiseSection(
+          title: 'اختر المجال الأقرب',
+          child: _buildDomainGrid(domains),
+        ),
+        const SizedBox(height: 24),
+        ParadiseSection(
+          title: 'إرشاد بحسب الحال',
+          child: _buildCategoryGrid(categories),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDomainGrid(List<HelpMeDomain> domains) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 820
+            ? 3
+            : constraints.maxWidth >= 540
+                ? 2
+                : 1;
+        const gap = 12.0;
+        final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (final domain in domains)
+              SizedBox(width: width, child: _buildDomainTile(domain)),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildCategoryGrid(List<HelpMeCategory> categories) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 820
+            ? 3
+            : constraints.maxWidth >= 540
+                ? 2
+                : 1;
+        const gap = 12.0;
+        final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (final category in categories)
+              SizedBox(width: width, child: _buildEmotionalCategoryTile(category)),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildDomainTile(HelpMeDomain domain) {
+    final theme = Theme.of(context);
+    return CalmCard(
+      padding: const EdgeInsets.all(14),
+      onTap: () {
+        setState(() {
+          _selectedDomainId = domain.id;
+          _selectedSubCategory = null;
+        });
+      },
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          CalmIconBadge(domain.icon, size: 44),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  domain.label,
+                  softWrap: true,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'استكشف الموضوعات',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(Icons.arrow_back_rounded, color: theme.colorScheme.primary, size: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmotionalCategoryTile(HelpMeCategory category) {
+    final theme = Theme.of(context);
+    return CalmCard(
+      padding: const EdgeInsets.all(14),
+      onTap: () => _showCategoryDetails(category),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CalmIconBadge(category.icon, size: 42),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  category.title,
+                  softWrap: true,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  category.subtitle,
+                  softWrap: true,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(Icons.arrow_back_rounded, color: theme.colorScheme.primary, size: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubCategoryDirectory() {
+    final domain = HelpMe1000Catalog.domains.firstWhere(
+      (item) => item.id == _selectedDomainId,
+      orElse: () => HelpMe1000Catalog.domains.first,
+    );
+    final subCategories = HelpMe1000Catalog.subCategoriesForDomain(domain.id);
+
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 16),
+      children: [
+        _buildDirectoryBackHeader(
+          title: domain.label,
+          subtitle: 'اختر موضوعاً فرعياً لعرض الحالات والإرشادات المرتبطة به.',
+          onBack: () => setState(() {
+            _selectedDomainId = 'all';
+            _selectedSubCategory = null;
+          }),
+        ),
+        const SizedBox(height: 18),
+        ParadiseSection(
+          title: 'تصفّح الموضوعات',
+          child: Column(
+            children: [
+              for (final subCategory in subCategories)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: CalmCard(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                    onTap: () => setState(() => _selectedSubCategory = subCategory),
+                    child: Row(
+                      children: [
+                        const CalmIconBadge(Icons.article_outlined, size: 40),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            subCategory,
+                            softWrap: true,
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.35,
+                                ),
+                          ),
+                        ),
+                        Icon(Icons.arrow_back_rounded,
+                            color: Theme.of(context).colorScheme.primary),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDirectoryBackHeader({
+    required String title,
+    required String subtitle,
+    required VoidCallback onBack,
+  }) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return CalmCard(
+      padding: const EdgeInsetsDirectional.fromSTEB(8, 10, 16, 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          IconButton(
+            tooltip: 'رجوع إلى المستوى السابق',
+            onPressed: onBack,
+            icon: Icon(Icons.arrow_forward_rounded, color: scheme.primary),
+          ),
+          const SizedBox(width: 5),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    softWrap: true,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      height: 1.3,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    subtitle,
+                    softWrap: true,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      height: 1.45,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopicList() {
+    final domain = HelpMe1000Catalog.domains.firstWhere(
+      (item) => item.id == _selectedDomainId,
+      orElse: () => HelpMe1000Catalog.domains.first,
+    );
+    final entries = HelpMe1000Catalog.filter(
+      domainId: domain.id,
+      subCategory: _selectedSubCategory!,
+    );
+
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: 16),
+      itemCount: entries.length + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: _buildDirectoryBackHeader(
+              title: _selectedSubCategory!,
+              subtitle: domain.label,
+              onBack: () => setState(() => _selectedSubCategory = null),
+            ),
+          );
+        }
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: _buildTopicTile(entries[index - 1]),
+        );
+      },
+    );
+  }
+
+  Widget _buildSearchResults(String query) {
+    final results = HelpMe1000Catalog.filter(
+      domainId: _selectedDomainId,
+      query: query,
+    );
+    if (results.isEmpty) {
+      final theme = Theme.of(context);
+      return ListView(
+        padding: const EdgeInsets.only(top: 12, bottom: 16),
+        children: [
+          CalmCard(
+            padding: const EdgeInsets.fromLTRB(20, 26, 20, 20),
+            child: Column(
+              children: [
+                const CalmEmptyState(
+                  icon: Icons.search_off_rounded,
+                  title: 'لا توجد نتيجة بهذه الصياغة',
+                  subtitle: 'جرّب كلمة أقصر أو عبارة مختلفة للعثور على موضوع قريب.',
+                ),
+                const SizedBox(height: 8),
+                FilledButton.tonalIcon(
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = '');
+                  },
+                  icon: const Icon(Icons.restart_alt_rounded),
+                  label: const Text('مسح البحث والعودة إلى المجالات'),
+                ),
+                const SizedBox(height: 6),
+                TextButton.icon(
+                  onPressed: () => setState(() => _modeIndex = 1),
+                  icon: const Icon(Icons.forum_outlined),
+                  label: const Text('جرّب البحث في الأسئلة والأجوبة'),
+                ),
+                Text(
+                  'يمكنك البحث بكلمة أو بوصف موجز للموقف.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       );
     }
 
     return ListView.builder(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 2, 16, 98),
-      itemCount: groups.length + 1,
-      itemBuilder: (context, idx) {
-        if (idx == 0) {
+      padding: const EdgeInsets.only(bottom: 16),
+      itemCount: results.length + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) {
           return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              '🔍 ${results.length} نتيجة موزعة داخل ${groups.length} تصنيفاً منظماً',
-              style: TextStyle(
-                color: accentColor,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
+            padding: const EdgeInsetsDirectional.fromSTEB(2, 10, 2, 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'موضوعات مقترحة',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ),
+                ParadiseChip(
+                  label: '${results.length} نتيجة',
+                  icon: Icons.manage_search_rounded,
+                ),
+              ],
             ),
           );
         }
-        final grp = groups[idx - 1];
-        final first = grp.value.first;
-        final catAccent = _resolveAccentColor(
-          first.primaryColor,
-          first.accentColor,
-          palette.isDark,
-        );
-        return _buildSubCategoryAccordionCard(
-          folderNumber: idx,
-          subTitle: '${first.domainLabel} › ${grp.key}',
-          cases: grp.value,
-          catAccent: catAccent,
-          isExpanded: true,
-          palette: palette,
-          isNight: isNight,
-          onToggle: () {},
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: _buildTopicTile(results[index - 1]),
         );
       },
     );
   }
 
-  Widget _buildSubCategoryAccordionCard({
-    required int folderNumber,
-    required String subTitle,
-    required List<HelpMeCaseEntry> cases,
-    required Color catAccent,
-    required bool isExpanded,
-    required ThemePalette palette,
-    required bool isNight,
-    required VoidCallback onToggle,
-  }) {
-    return Firdaws4KCardShell(
-      backdrop: Background500Catalog.forHelpMeCategory(folderNumber % 30),
-      isDark: isNight,
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
-      borderColor: catAccent.withOpacity(isExpanded ? 0.68 : 0.42),
-      borderRadius: 18,
-      imageOpacity: isNight ? 0.38 : 0.28,
+  Widget _buildTopicTile(HelpMeCaseEntry entry) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return CalmCard(
+      padding: const EdgeInsets.all(16),
+      onTap: () => _showCaseDetails(entry),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          InkWell(
-            onTap: onToggle,
-            borderRadius: BorderRadius.circular(12),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(7),
-                  decoration: BoxDecoration(
-                    color: catAccent.withOpacity(0.18),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    cases.first.emoji,
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                ),
-                const SizedBox(width: 9),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '📂 $folderNumber. $subTitle',
-                        style: TextStyle(
-                          color: palette.textPrimary,
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        '${cases.length} حالة موثقة بالقرآن والسنة',
-                        style: TextStyle(
-                          color: catAccent,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  isExpanded
-                      ? Icons.keyboard_arrow_up_rounded
-                      : Icons.keyboard_arrow_down_rounded,
-                  color: catAccent,
-                  size: 22,
-                ),
-              ],
-            ),
-          ),
-          if (isExpanded) ...[
-            const SizedBox(height: 8),
-            Divider(color: catAccent.withOpacity(0.25), height: 1),
-            const SizedBox(height: 8),
-            for (final entry in cases)
-              InkWell(
-                onTap: () => _showCaseDetails(context, entry, palette),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 7),
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: palette.scaffoldColor.withOpacity(isNight ? 0.56 : 0.72),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: catAccent.withOpacity(0.28)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: catAccent.withOpacity(0.18),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              '#${entry.number}',
-                              style: TextStyle(
-                                color: catAccent,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              entry.title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: palette.textPrimary,
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Icon(
-                            Icons.chevron_left_rounded,
-                            color: catAccent,
-                            size: 18,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '✅ إيه أه: ${entry.doAction}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: palette.textSecondary,
-                          fontSize: 11,
-                        ),
-                      ),
-                      Text(
-                        '🚫 إيه لأ: ${entry.dontAction}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: palette.textMuted,
-                          fontSize: 10.5,
-                        ),
-                      ),
-                    ],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  '${entry.domainLabel}  /  ${entry.subCategory}',
+                  softWrap: true,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: scheme.primary,
+                    fontWeight: FontWeight.w700,
+                    height: 1.35,
                   ),
                 ),
               ),
-          ],
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: scheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${entry.number}',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: scheme.onPrimaryContainer,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            entry.title,
+            softWrap: true,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            entry.summary,
+            softWrap: true,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(Icons.arrow_back_rounded, size: 18, color: scheme.primary),
+              const SizedBox(width: 6),
+              Text(
+                'عرض الإرشاد والمراجع',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: scheme.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildCountBadge(String text, Color accent) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(
-        color: accent.withOpacity(0.16),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: accent.withOpacity(0.35)),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: accent,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
+  void _showCaseDetails(HelpMeCaseEntry entry) {
+    final theme = Theme.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => DraggableScrollableSheet(
+        initialChildSize: 0.82,
+        minChildSize: 0.48,
+        maxChildSize: 0.95,
+        builder: (context, controller) => Material(
+          color: theme.colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          clipBehavior: Clip.antiAlias,
+          child: ListView(
+            controller: controller,
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+            children: [
+              _buildSheetHandle(),
+              const SizedBox(height: 20),
+              Text(entry.domainLabel,
+                  style: theme.textTheme.labelLarge
+                      ?.copyWith(color: theme.colorScheme.primary)),
+              const SizedBox(height: 6),
+              Text(entry.title, style: theme.textTheme.titleLarge),
+              const SizedBox(height: 12),
+              Text(entry.summary,
+                  style: theme.textTheme.bodyLarge?.copyWith(height: 1.55)),
+              const SizedBox(height: 20),
+              _buildEvidenceCard(
+                label: 'من القرآن الكريم',
+                text: entry.quranAyah,
+                evidenceText: entry.quranAyah,
+                title: entry.title,
+              ),
+              const SizedBox(height: 12),
+              _buildEvidenceCard(
+                label: 'من السنة النبوية',
+                text: entry.hadithReference,
+                evidenceText: entry.hadithReference,
+                title: entry.title,
+                hadithVerbatim: entry.hadithReference,
+              ),
+              const SizedBox(height: 16),
+              _buildAdviceCard(
+                title: 'ما يمكن فعله',
+                text: entry.doAction,
+                icon: Icons.check_circle_outline_rounded,
+              ),
+              const SizedBox(height: 10),
+              _buildAdviceCard(
+                title: 'ما يُستحسن اجتنابه',
+                text: entry.dontAction,
+                icon: Icons.remove_circle_outline_rounded,
+              ),
+              const SizedBox(height: 12),
+              _buildEvidenceCard(
+                label: 'دعاء',
+                text: entry.dua,
+                evidenceText: entry.dua,
+                title: entry.title,
+              ),
+              if (entry.hasBreathingGuide) ...[
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(sheetContext).pop();
+                    _openBreathingExercise();
+                  },
+                  icon: const Icon(Icons.air_rounded),
+                  label: const Text('تمرين تنفس هادئ'),
+                ),
+              ],
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  void _showCategoryDetails(HelpMeCategory category) {
+    final theme = Theme.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => DraggableScrollableSheet(
+        initialChildSize: 0.84,
+        minChildSize: 0.48,
+        maxChildSize: 0.95,
+        builder: (context, controller) => Material(
+          color: theme.colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          clipBehavior: Clip.antiAlias,
+          child: ListView(
+            controller: controller,
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+            children: [
+              _buildSheetHandle(),
+              const SizedBox(height: 20),
+              Text(category.title, style: theme.textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Text(category.subtitle,
+                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.5)),
+              const SizedBox(height: 20),
+              _buildEvidenceCard(
+                label: 'من القرآن الكريم',
+                text: category.quranAyah,
+                evidenceText: category.quranAyah,
+                title: category.title,
+              ),
+              const SizedBox(height: 12),
+              _buildEvidenceCard(
+                label: 'من السنة النبوية',
+                text: category.hadithReference,
+                evidenceText: category.hadithReference,
+                title: category.title,
+                hadithVerbatim: category.hadithReference,
+              ),
+              const SizedBox(height: 12),
+              _buildEvidenceCard(
+                label: 'دعاء',
+                text: category.mainDuha,
+                evidenceText: category.hadithReference,
+                title: category.title,
+                hadithVerbatim: category.mainDuha,
+              ),
+              if (category.hasBreathingGuide) ...[
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(sheetContext).pop();
+                    _openBreathingExercise();
+                  },
+                  icon: const Icon(Icons.air_rounded),
+                  label: const Text('تمرين تنفس هادئ'),
+                ),
+              ],
+              if (category.sunnahSteps.isNotEmpty) ...[
+                const CalmSectionTitle('خطوات عملية'),
+                for (final step in category.sunnahSteps)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: CalmCard(
+                      padding: const EdgeInsets.all(14),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CalmIconBadge(step.icon, size: 40),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(step.title,
+                                    style: theme.textTheme.titleSmall),
+                                const SizedBox(height: 5),
+                                Text(step.description,
+                                    style: theme.textTheme.bodyMedium
+                                        ?.copyWith(height: 1.5)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSheetHandle() {
+    return Center(
+      child: Container(
+        width: 40,
+        height: 4,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.outlineVariant,
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEvidenceCard({
+    required String label,
+    required String text,
+    required String evidenceText,
+    required String title,
+    String? hadithVerbatim,
+  }) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return CalmCard(
+      padding: const EdgeInsets.all(17),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const CalmIconBadge(Icons.auto_stories_outlined, size: 38),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 7),
+                  child: Text(
+                    label,
+                    softWrap: true,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: scheme.primary,
+                      fontWeight: FontWeight.w700,
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            text,
+            softWrap: true,
+            style: theme.textTheme.bodyLarge?.copyWith(height: 1.8),
+          ),
+          const SizedBox(height: 12),
+          Divider(color: scheme.outlineVariant, height: 1),
+          const SizedBox(height: 8),
+          SacredEvidenceFooter(
+            evidenceText: evidenceText,
+            titleForHadith: title,
+            hadithVerbatim: hadithVerbatim,
+            trackInJannati: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdviceCard({
+    required String title,
+    required String text,
+    required IconData icon,
+  }) {
+    final theme = Theme.of(context);
+    return CalmCard(
+      padding: const EdgeInsets.all(15),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CalmIconBadge(icon, size: 40),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  softWrap: true,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  text,
+                  softWrap: true,
+                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openBreathingExercise() {
+    final theme = Theme.of(context);
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('لحظة هدوء'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'اتبع إيقاعاً مريحاً لنَفَسك، واستحضر ذكر الله بهدوء.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+            ),
+            const SizedBox(height: 18),
+            AnimatedBuilder(
+              animation: _breathingController,
+              builder: (context, child) {
+                final value = _breathingController.value;
+                final inhaling =
+                    _breathingController.status == AnimationStatus.forward;
+                final diameter = 118 + value * 28;
+                return SizedBox(
+                  width: 168,
+                  height: 168,
+                  child: Center(
+                    child: Container(
+                      width: diameter,
+                      height: diameter,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primaryContainer,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: theme.colorScheme.primary),
+                      ),
+                      child: Text(
+                        inhaling ? 'شهيق هادئ' : 'زفير ببطء',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: theme.colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('إغلاق'),
+          ),
+        ],
       ),
     );
   }

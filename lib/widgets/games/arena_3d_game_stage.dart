@@ -8,7 +8,7 @@ import 'engine_strategy_rhythm_3d.dart';
 import 'engine_word_astrolabe_3d.dart';
 import 'gfx/arena_live_events_controller.dart';
 import 'gfx/arena_stage_fx.dart';
-import 'gfx/arena_ui_image_cache.dart';
+import 'gfx/arena_4k_stage_compositor.dart';
 
 /// الموجّه الموحد الذي يشغّل المحرك ثلاثي الأبعاد المناسب لكل واحدة من الـ 30 لعبة
 /// مع طبقة الأحداث الحية وصناديق الجوائز وتدفئة خلفيات 4K والمؤثرات البصرية والصوتية (VFX & SFX).
@@ -34,10 +34,31 @@ class _Arena3DGameStageState extends State<Arena3DGameStage> {
   @override
   void initState() {
     super.initState();
-    ArenaUiImageCache.loadImage(
-      widget.config.resolvedBackdropAsset,
-      targetWidth: 1080,
-    );
+    _warmScenes();
+  }
+
+  void _warmScenes() {
+    final source = widget.config.resolvedBackdropAsset;
+    Arena4KStageCompositor.prepareFallback(
+      source,
+      Arena4KStageAssets.fallbackForGame(widget.config.game,
+          worldIndex: widget.config.worldIndex),
+    ).then((_) {
+      if (mounted) setState(() {});
+    });
+    Arena4KStageCompositor.warmBackdropImage(source, targetWidth: 1080)
+        .then((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant Arena3DGameStage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.config.resolvedBackdropAsset !=
+        widget.config.resolvedBackdropAsset) {
+      _warmScenes();
+    }
   }
 
   @override
@@ -109,7 +130,9 @@ class _Arena3DGameStageState extends State<Arena3DGameStage> {
             child: AnimatedBuilder(
               animation: _fxController,
               builder: (_, child) => Transform.translate(
-                offset: _fxController.shakeOffset,
+                offset: MediaQuery.disableAnimationsOf(context)
+                    ? Offset.zero
+                    : _fxController.shakeOffset,
                 child: child,
               ),
               child: RepaintBoundary(

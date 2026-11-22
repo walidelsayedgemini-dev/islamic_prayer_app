@@ -16,8 +16,9 @@ import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../services/bluetooth_challenge_service.dart';
 import '../widgets/firdaws_3d_ui.dart';
+import '../widgets/calm_ui.dart';
+import '../widgets/paradise_ui.dart';
 import '../widgets/firdaws_portrait_avatar.dart';
-import '../widgets/firdaws_resilient_image.dart';
 import 'arena_hub_screen.dart';
 import 'events_missions_screen.dart';
 import 'hasanat_store_screen.dart';
@@ -45,7 +46,8 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
   int _p1DuelCount = 0;
   int _p2DuelCount = 0;
   Timer? _duelTimer;
-  final TextEditingController _p2NameCtrl = TextEditingController(text: 'صديقي');
+  final TextEditingController _p2NameCtrl =
+      TextEditingController(text: 'صديقي');
   DualPlayerPhraseOutcome? _lastDualOutcome;
 
   // تصفح موسوعة الـ 800 عبارة وبحث وتصفية المتنافسين
@@ -152,126 +154,179 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
     final userProv = Provider.of<FirdawsUserProvider>(context);
     final challenge = Provider.of<FamilyChallengeProvider>(context);
     final isNight = settings.isNightEffective;
-    final palette =
-        IslamicTheme.resolvePalette(settings.selectedTheme, isNight: isNight);
+    final palette = FirdawsParadiseRegistry.paletteFor(
+      settings.selectedTheme,
+      isNight,
+    );
     final accent = firdawsModernAccent(palette);
 
     return Scaffold(
       backgroundColor: palette.scaffoldColor,
       appBar: AppBar(
-        backgroundColor: firdaws3DSurfaceColor(palette),
+        backgroundColor: palette.cardColor,
+        foregroundColor: palette.textPrimary,
         elevation: 0,
         title: const Text(
-          'تحدي العائلة والصحبة 🏆',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          'تحدي العائلة',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
         ),
         actions: [
           IconButton(
-            tooltip: 'تحدي البلوتوث القريب 📡',
-            icon: const Icon(Icons.bluetooth_searching_rounded,
-                color: Color(0xFF10B981)),
-            onPressed: () =>
-                _showBluetoothChallengeSheet(palette, accent, challenge, userProv),
+            tooltip: 'تحدٍّ قريب عبر البلوتوث',
+            icon: Icon(Icons.bluetooth_searching_rounded, color: accent),
+            onPressed: () => _showBluetoothChallengeSheet(
+                palette, accent, challenge, userProv),
           ),
-          Builder(
-            builder: (ctx) {
-              int bal = 0;
-              try {
-                bal = ctx.watch<HasanatProvider>().hasanatBalance;
-              } catch (_) {}
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: Firdaws3DPill(
-                    label: '$bal 🪙',
-                    accentColor: const Color(0xFFF59E0B),
-                    palette: palette,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const HasanatStoreScreen(),
-                      ),
+          PopupMenuButton<String>(
+            tooltip: 'المزيد من خيارات التحدي',
+            icon: const Icon(Icons.more_horiz_rounded),
+            onSelected: (value) {
+              switch (value) {
+                case 'store':
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const HasanatStoreScreen(),
                     ),
-                  ),
-                ),
-              );
+                  );
+                  break;
+                case 'missions':
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const EventsMissionsScreen(),
+                    ),
+                  );
+                  break;
+                case 'member':
+                  _showChallengerEditorSheet(palette, challenge);
+                  break;
+              }
             },
-          ),
-          IconButton(
-            tooltip: 'المهام والأحداث ⚡',
-            icon: const Icon(Icons.flash_on_rounded, color: Color(0xFF38BDF8)),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const EventsMissionsScreen()),
-            ),
-          ),
-          IconButton(
-            tooltip: 'إضافة فرد من العائلة أو صديق',
-            icon: Icon(Icons.person_add_alt_1_rounded, color: accent),
-            onPressed: () => _showChallengerEditorSheet(palette, challenge),
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'store',
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.savings_outlined),
+                  title: Text('رصيد الحسنات والمتجر'),
+                ),
+              ),
+              PopupMenuItem(
+                value: 'missions',
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.flag_outlined),
+                  title: Text('المهام والأحداث'),
+                ),
+              ),
+              PopupMenuItem(
+                value: 'member',
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.person_add_alt_1_rounded),
+                  title: Text('إضافة مشارك'),
+                ),
+              ),
+            ],
           ),
         ],
-        bottom: TabBar(
-          controller: _tabCtrl,
-          isScrollable: true,
-          indicatorColor: accent,
-          labelColor: accent,
-          unselectedLabelColor: palette.textSecondary,
-          labelStyle:
-              const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-          tabs: const [
-            Tab(text: '📿 مين سبّح أكتر؟'),
-            Tab(text: '👑 مين بطل أكتر؟'),
-            Tab(text: '⚔️ مبارزة ثنائية ٢ ضد ٢'),
-            Tab(text: '📜 الـ 800 عبارة تحفيزية'),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(72),
+          child: Material(
+            color: palette.cardColor,
+            child: TabBar(
+              controller: _tabCtrl,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              dividerHeight: 0,
+              indicatorSize: TabBarIndicatorSize.label,
+              indicatorColor: accent,
+              labelColor: accent,
+              unselectedLabelColor: palette.textSecondary,
+              labelStyle: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: FirdawsType.caption,
+              ),
+              tabs: const [
+                Tab(icon: Icon(Icons.auto_awesome_outlined), text: 'التسبيح'),
+                Tab(icon: Icon(Icons.emoji_events_outlined), text: 'الأبطال'),
+                Tab(
+                    icon: Icon(Icons.touch_app_outlined),
+                    text: 'مبارزة ثنائية'),
+                Tab(icon: Icon(Icons.format_quote_rounded), text: 'العبارات'),
+              ],
+            ),
+          ),
         ),
       ),
-      body: Stack(
+      body: Column(
         children: [
-          Positioned.fill(
-            child: settings.selectedAppWallpaperAsset != null
-                ? Image.asset(
-                    settings.selectedAppWallpaperAsset!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => FirdawsResilientImage.entry(
-                      Background500Catalog.forFamilySection(0),
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : FirdawsResilientImage.entry(
-                    Background500Catalog.forFamilySection(0),
-                    fit: BoxFit.cover,
+          if (challenge.lastMatchPhrase != null)
+            _buildLastResultBanner(palette, accent, challenge),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1240),
+                child: ParadiseHero(
+                  title: 'منافسة تقرّبكم',
+                  subtitle:
+                      'تابعوا الذكر والإنجازات معاً، واختاروا تحدياً يناسب لَمّتكم.',
+                  imageAsset:
+                      FirdawsParadiseRegistry.imageFor(settings.selectedTheme),
+                  minHeight: 188,
+                  footer: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      ParadiseChip(
+                        label: '${challenge.members.length} مشارك',
+                        icon: Icons.groups_outlined,
+                      ),
+                      ParadiseChip(
+                        label: '${challenge.userTasbihCount} تسبيحة',
+                        icon: Icons.spa_outlined,
+                      ),
+                      ParadiseChip(
+                        label: '${challenge.userWins} فوز',
+                        icon: Icons.emoji_events_outlined,
+                      ),
+                      TextButton.icon(
+                        onPressed: () =>
+                            _showChallengerEditorSheet(palette, challenge),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: Colors.white.withOpacity(.12),
+                          minimumSize: const Size(44, 44),
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          shape: const StadiumBorder(
+                            side: BorderSide(color: Color(0x88E8D6A7)),
+                          ),
+                        ),
+                        icon: const Icon(Icons.person_add_alt_1_rounded),
+                        label: const Text('أضف شخصاً'),
+                      ),
+                    ],
                   ),
-          ),
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    palette.scaffoldColor.withOpacity(isNight ? 0.78 : 0.78),
-                    palette.scaffoldColor.withOpacity(isNight ? 0.90 : 0.88),
-                  ],
                 ),
               ),
             ),
           ),
-          Column(
-            children: [
-              if (challenge.lastMatchPhrase != null)
-                _buildLastResultBanner(palette, accent, challenge),
-              Expanded(
-                child: TabBarView(
-                  controller: _tabCtrl,
-                  children: [
+          Expanded(
+            child: TabBarView(
+              controller: _tabCtrl,
+              children: [
                 _buildLeaderboardTab(
                   palette: palette,
                   accent: accent,
-                  title: 'سباق التسبيح والذكر: مين سبّح أكتر؟ 🌿',
+                  title: 'مسار الذكر',
                   subtitle:
-                      'كل تسبيحة في السبحة أو جنتي ترفع رصيدك مباشرة أمام الأهل والصحبة!',
+                      'تتبعوا التسبيح المسجّل لكل فرد، وأضيفوا ورداً جديداً متى شئتم.',
                   unitLabel: 'تسبيحة',
-                  entries: challenge.buildTasbihLeaderboard(userProv.displayName),
+                  entries:
+                      challenge.buildTasbihLeaderboard(userProv.displayName),
                   isTasbihTab: true,
                   challenge: challenge,
                   userProv: userProv,
@@ -279,10 +334,10 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                 _buildLeaderboardTab(
                   palette: palette,
                   accent: accent,
-                  title: 'ساحة الأبطال: مين بطل أكتر؟ 🏆',
+                  title: 'لوحة الإنجاز',
                   subtitle:
-                      'مجموع نقاط المسابقات والـ 30 لعبة ومن سيربح المليون والتحديات!',
-                  unitLabel: 'نقطة مجد',
+                      'ترتيب يجمع نقاط المسابقات والألعاب والتحديات المسجّلة.',
+                  unitLabel: 'نقطة',
                   entries:
                       challenge.buildChampionLeaderboard(userProv.displayName),
                   isTasbihTab: false,
@@ -305,8 +360,6 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
           ),
         ],
       ),
-        ],
-      ),
     );
   }
 
@@ -317,58 +370,56 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
   ) {
     final won = challenge.lastMatchWon ?? true;
     final bannerAccent =
-        won ? const Color(0xFF10B981) : const Color(0xFF38BDF8);
+        won ? const Color(0xFF18805F) : const Color(0xFF2877A3);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 2),
-      child: Firdaws3DCard(
-        palette: palette,
-        glowColor: bannerAccent,
-        padding: const EdgeInsets.all(12),
-        borderRadius: 18,
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: bannerAccent.withOpacity(0.18),
-                shape: BoxShape.circle,
-                border: Border.all(color: bannerAccent.withOpacity(0.55)),
-              ),
-              child: Icon(
-                won ? Icons.emoji_events_rounded : Icons.bolt_rounded,
-                color: bannerAccent,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${challenge.lastModeTitle ?? 'آخر تحدٍّ'} • ${won ? 'فوز مستحق' : 'تحفيز العودة'}',
-                    style: TextStyle(
-                      color: bannerAccent,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 11,
-                    ),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1240),
+          child: CalmCard(
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+            color: palette.cardColor,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  won ? Icons.emoji_events_outlined : Icons.trending_up_rounded,
+                  color: bannerAccent,
+                  size: 22,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${challenge.lastModeTitle ?? 'آخر تحدٍّ'} · ${won ? 'فوز مستحق' : 'فرصة جديدة للمحاولة'}',
+                        softWrap: true,
+                        style: TextStyle(
+                          color: bannerAccent,
+                          fontWeight: FontWeight.w700,
+                          fontSize: FirdawsType.caption,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        challenge.lastMatchPhrase ?? '',
+                        softWrap: true,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: palette.textPrimary,
+                          fontWeight: FontWeight.w500,
+                          fontSize: FirdawsType.caption,
+                          height: 1.45,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 3),
-                  Text(
-                    challenge.lastMatchPhrase ?? '',
-                    style: TextStyle(
-                      color: palette.textPrimary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                      height: 1.4,
-                    ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -386,525 +437,549 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
     required FirdawsUserProvider userProv,
   }) {
     final top3 = entries.take(3).toList();
-    final mq = _memberSearch.trim();
-    final filteredEntries = entries.where((e) {
+    final query = _memberSearch.trim();
+    final filteredEntries = entries.where((entry) {
       if (_memberGroupFilter == 'family' &&
-          !e.isCurrentUser &&
-          e.group != ChallengerGroup.family) {
+          !entry.isCurrentUser &&
+          entry.group != ChallengerGroup.family) {
         return false;
       }
       if (_memberGroupFilter == 'friend' &&
-          !e.isCurrentUser &&
-          e.group != ChallengerGroup.friend) {
+          !entry.isCurrentUser &&
+          entry.group != ChallengerGroup.friend) {
         return false;
       }
       if (_memberGroupFilter == 'customGroup' &&
-          !e.isCurrentUser &&
-          e.group != ChallengerGroup.customGroup) {
+          !entry.isCurrentUser &&
+          entry.group != ChallengerGroup.customGroup) {
         return false;
       }
-      if (mq.isEmpty) return true;
-      return e.name.contains(mq) ||
-          e.relation.contains(mq) ||
-          e.traits.any((t) => t.contains(mq));
+      if (query.isEmpty) return true;
+      return entry.name.contains(query) ||
+          entry.relation.contains(query) ||
+          entry.traits.any((trait) => trait.contains(query));
     }).toList();
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 30),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 30),
       physics: const BouncingScrollPhysics(),
       children: [
-        Firdaws4KCardShell(
-          backdrop: Background500Catalog.forFamilySection(isTasbihTab ? 1 : 2),
-          isDark: palette.isDark,
-          borderColor: accent.withOpacity(0.5),
-          borderRadius: 22,
-          padding: const EdgeInsets.all(14),
-          imageOpacity: 0.44,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  color: palette.textPrimary,
-                  fontSize: 15.5,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  color: firdawsCrispSecondaryText(palette),
-                  fontSize: 11.5,
-                ),
-              ),
-              const SizedBox(height: 14),
-              // منصة تتويج 3D لأول 3 متسابقين
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (top3.length > 1)
-                    Expanded(
-                      child: _buildPodiumColumn(
-                        entry: top3[1],
-                        rank: 2,
-                        height: 82,
-                        medalColor: const Color(0xFF94A3B8),
-                        unitLabel: unitLabel,
-                        palette: palette,
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 980),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                CalmCard(
+                  color: palette.cardColor,
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        softWrap: true,
+                        style: TextStyle(
+                          color: palette.textPrimary,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          height: 1.25,
+                        ),
                       ),
-                    ),
-                  if (top3.isNotEmpty)
-                    Expanded(
-                      child: _buildPodiumColumn(
-                        entry: top3[0],
-                        rank: 1,
-                        height: 108,
-                        medalColor: const Color(0xFF10B981),
-                        unitLabel: unitLabel,
-                        palette: palette,
+                      const SizedBox(height: 5),
+                      Text(
+                        subtitle,
+                        softWrap: true,
+                        style: TextStyle(
+                          color: palette.textSecondary,
+                          fontSize: FirdawsType.caption,
+                          height: 1.45,
+                        ),
                       ),
-                    ),
-                  if (top3.length > 2)
-                    Expanded(
-                      child: _buildPodiumColumn(
-                        entry: top3[2],
-                        rank: 3,
-                        height: 68,
-                        medalColor: const Color(0xFF38BDF8),
-                        unitLabel: unitLabel,
-                        palette: palette,
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: Firdaws3DButton(
-                      baseColor: const Color(0xFF10B981),
-                      onPressed: () {
-                        if (isTasbihTab) {
-                          challenge.recordUserTasbih(33);
-                          Provider.of<JannatiProvider>(context, listen: false)
-                              .recordTasbihForGarden(
-                            'سبحان الله وبحمده',
-                            count: 33,
-                          );
-                          try {
-                            final hp = Provider.of<HasanatProvider>(
-                              context,
-                              listen: false,
-                            );
-                            hp.earnHasanat(
-                              12,
-                              reason: 'ورد ٣٣ تسبيحة في سباق العائلة',
-                              sourceTag: 'العائلة',
-                            );
-                            hp.recordMetric(
-                              EventMissionMetric.tasbihCount,
-                              delta: 33,
-                            );
-                          } catch (_) {}
-                          HapticFeedback.mediumImpact();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: firdaws3DSurfaceColor(palette),
-                              content: Text(
-                                'تمت إضافة ٣٣ تسبيحة لرصيدك ولرفيقك في جنتي ✨',
-                                style: TextStyle(color: palette.textPrimary),
+                      const SizedBox(height: 18),
+                      ParadiseSection(
+                        title: 'المراكز الأولى',
+                        child: top3.isEmpty
+                            ? const CalmEmptyState(
+                                icon: Icons.groups_outlined,
+                                title: 'لا يوجد ترتيب بعد',
+                                subtitle:
+                                    'أضيفوا أفراد العائلة أو الأصدقاء لبدء لوحة التحدي.',
+                              )
+                            : Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  for (var i = 0; i < top3.length; i++) ...[
+                                    if (i > 0) const SizedBox(width: 8),
+                                    Expanded(
+                                      child: _buildPodiumColumn(
+                                        entry: top3[i],
+                                        rank: i + 1,
+                                        height:
+                                            i == 0 ? 108 : (i == 1 ? 88 : 76),
+                                        medalColor: i == 0
+                                            ? const Color(0xFFB18B3C)
+                                            : (i == 1
+                                                ? const Color(0xFF728495)
+                                                : const Color(0xFF986E4C)),
+                                        unitLabel: unitLabel,
+                                        palette: palette,
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
+                      ),
+                      const SizedBox(height: 18),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor:
+                                isTasbihTab ? const Color(0xFF176B5B) : accent,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size.fromHeight(50),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
                             ),
-                          );
-                        } else {
-                          _simulateQuickChallengeDuel(
-                            palette,
-                            challenge,
-                            userProv,
-                          );
-                        }
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            isTasbihTab
-                                ? Icons.fingerprint_rounded
-                                : Icons.sports_esports_rounded,
-                            color: Colors.white,
-                            size: 18,
                           ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              isTasbihTab
-                                  ? 'سبّح ٣٣ الآن وارفع رصيدك 📿'
-                                  : 'تحدَّ المنافس المختار الآن ⚔️',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                              ),
-                            ),
+                          onPressed: () {
+                            if (isTasbihTab) {
+                              challenge.recordUserTasbih(33);
+                              Provider.of<JannatiProvider>(context,
+                                      listen: false)
+                                  .recordTasbihForGarden(
+                                'سبحان الله وبحمده',
+                                count: 33,
+                              );
+                              try {
+                                final hp = Provider.of<HasanatProvider>(
+                                  context,
+                                  listen: false,
+                                );
+                                hp.earnHasanat(
+                                  12,
+                                  reason: 'ورد ٣٣ تسبيحة في سباق العائلة',
+                                  sourceTag: 'العائلة',
+                                );
+                                hp.recordMetric(
+                                  EventMissionMetric.tasbihCount,
+                                  delta: 33,
+                                );
+                              } catch (_) {}
+                              HapticFeedback.mediumImpact();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  backgroundColor: palette.cardColor,
+                                  content: Text(
+                                    'أُضيفت ٣٣ تسبيحة إلى رصيدك ورفيقك في جنتي.',
+                                    style:
+                                        TextStyle(color: palette.textPrimary),
+                                  ),
+                                ),
+                              );
+                            } else {
+                              _simulateQuickChallengeDuel(
+                                palette,
+                                challenge,
+                                userProv,
+                              );
+                            }
+                          },
+                          icon: Icon(
+                            isTasbihTab
+                                ? Icons.add_circle_outline_rounded
+                                : Icons.sports_esports_outlined,
+                          ),
+                          label: Text(
+                            isTasbihTab
+                                ? 'إضافة ورد من ٣٣ تسبيحة'
+                                : 'ابدأ تحدياً سريعاً مع المنافس المختار',
+                            softWrap: true,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ParadiseSection(
+                  title: 'قائمة المشاركين',
+                  action: TextButton.icon(
+                    onPressed: () =>
+                        _showChallengerEditorSheet(palette, challenge),
+                    icon: const Icon(Icons.person_add_alt_1_rounded),
+                    label: const Text('إضافة مشارك'),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        '${filteredEntries.length} من ${entries.length} مشاركاً',
+                        style: TextStyle(
+                          color: palette.textSecondary,
+                          fontSize: FirdawsType.caption,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        style: TextStyle(
+                          color: palette.textPrimary,
+                          fontSize: FirdawsType.label,
+                        ),
+                        onChanged: (value) =>
+                            setState(() => _memberSearch = value),
+                        decoration: InputDecoration(
+                          hintText: 'ابحث بالاسم أو القرابة أو الصفة',
+                          hintStyle: TextStyle(
+                            color: palette.textMuted,
+                            fontSize: FirdawsType.caption,
+                          ),
+                          prefixIcon: Icon(Icons.search_rounded, color: accent),
+                          isDense: true,
+                          filled: true,
+                          fillColor: palette.cardColor,
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 13),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: palette.dividerColor),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: palette.dividerColor),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          _groupFilterChip('all', 'الكل (${entries.length})',
+                              palette, accent),
+                          _groupFilterChip(
+                              'family', 'العائلة', palette, accent),
+                          _groupFilterChip(
+                              'friend', 'الأصدقاء', palette, accent),
+                          _groupFilterChip(
+                            'customGroup',
+                            challenge.customGroupName,
+                            palette,
+                            accent,
+                          ),
+                          TextButton.icon(
+                            onPressed: () => _showRenameCustomGroupDialog(
+                                palette, challenge),
+                            icon: const Icon(Icons.edit_outlined, size: 18),
+                            label: const Text('تسمية المجموعة'),
                           ),
                         ],
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text(
-                'ترتيب جميع المتنافسين (${filteredEntries.length}/${entries.length})',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: accent,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13.5,
-                ),
-              ),
-            ),
-            TextButton.icon(
-              onPressed: () => _showChallengerEditorSheet(palette, challenge),
-              icon: Icon(Icons.add_circle_outline_rounded,
-                  size: 16, color: accent),
-              label: Text(
-                'إضافة وتخصيص فرد',
-                style: TextStyle(color: accent, fontSize: 11.5),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                style: TextStyle(color: palette.textPrimary, fontSize: 12.5),
-                onChanged: (v) => setState(() => _memberSearch = v),
-                decoration: InputDecoration(
-                  hintText: 'ابحث بالاسم أو الصفة أو القرابة...',
-                  hintStyle: TextStyle(color: palette.textMuted, fontSize: 11.5),
-                  prefixIcon: Icon(Icons.search_rounded, color: accent, size: 19),
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 9),
-                  filled: true,
-                  fillColor: firdaws3DElevatedSurfaceColor(palette),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _groupFilterChip('all', 'الكل (${entries.length})', palette, accent),
-              _groupFilterChip('family', 'العائلة 👨‍👩‍👧‍👦', palette, accent),
-              _groupFilterChip('friend', 'الأصدقاء 🤝', palette, accent),
-              _groupFilterChip(
-                'customGroup',
-                '${challenge.customGroupName} 🌟',
-                palette,
-                accent,
-              ),
-              IconButton(
-                tooltip: 'تغيير اسم مجموعة ${challenge.customGroupName}',
-                onPressed: () => _showRenameCustomGroupDialog(palette, challenge),
-                icon: Icon(Icons.edit_note_rounded, color: accent, size: 20),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        ...filteredEntries.asMap().entries.map((item) {
-          final e = item.value;
-          final rank = entries.indexWhere((x) => x.id == e.id) + 1;
-          final isSelectedRival =
-              !e.isCurrentUser && challenge.selectedRivalId == e.id;
-          final rowAccent = e.isCurrentUser
-              ? const Color(0xFF10B981)
-              : (isSelectedRival ? accent : palette.dividerColor);
-
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Firdaws4KCardShell(
-              backdrop: Background500Catalog.forFamilySection(3 + (rank % 20)),
-              isDark: palette.isDark,
-              borderColor: rowAccent.withOpacity(0.55),
-              borderRadius: 18,
-              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
-              imageOpacity: 0.28,
-              onTap: e.isCurrentUser
-                  ? null
-                  : () {
-                      challenge.selectRival(e.id);
-                      HapticFeedback.selectionClick();
-                    },
-              child: Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: rowAccent.withOpacity(0.20),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: rowAccent.withOpacity(0.65)),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '#$rank',
-                        style: TextStyle(
-                          color: rowAccent,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 11.5,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 9),
-                  FirdawsPortraitAvatar(
-                    entityId: e.isCurrentUser
-                        ? 'you'
-                        : (e.emoji.contains('_') ? e.emoji : e.id),
-                    displayName: e.name,
-                    customBytes: e.isCurrentUser ? userProv.avatarBytes : null,
-                    customPhotoBase64:
-                        e.isCurrentUser ? null : e.customPhotoBase64,
-                    networkPhotoUrl:
-                        e.isCurrentUser ? null : e.networkPhotoUrl,
-                    size: 46,
-                    ringColor: rowAccent,
-                    showCrown: rank == 1,
-                    isHighlighted: e.isCurrentUser || isSelectedRival,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Wrap(
-                          spacing: 5,
-                          runSpacing: 4,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            Text(
-                              e.name,
-                              style: TextStyle(
-                                color: palette.textPrimary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13.5,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            if (!e.isCurrentUser)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 1.5),
-                                decoration: BoxDecoration(
-                                  color: accent.withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  '${e.age} سنة',
-                                  style: TextStyle(
-                                    color: accent,
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            if (isSelectedRival)
-                              Firdaws3DPill(
-                                label: 'المنافس المختار',
-                                accentColor: accent,
-                                palette: palette,
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${e.relation} • فوز ${e.wins} | خسارة ${e.losses}${!e.isCurrentUser ? ' • هدف ${e.dailyTasbihGoal}' : ''}',
-                          style: TextStyle(
-                            color: palette.textSecondary,
-                            fontSize: 10.5,
+                      const SizedBox(height: 12),
+                      if (filteredEntries.isEmpty)
+                        CalmCard(
+                          color: palette.cardColor,
+                          child: const CalmEmptyState(
+                            icon: Icons.person_search_outlined,
+                            title: 'لا توجد نتائج مطابقة',
+                            subtitle:
+                                'غيّر كلمة البحث أو اختر مجموعة أخرى لعرض أفرادها.',
                           ),
-                        ),
-                        if (e.traits.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Wrap(
-                            spacing: 4,
-                            runSpacing: 4,
-                            children: e.traits.take(3).map((t) {
-                              return Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: accent.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                      color: accent.withOpacity(0.32)),
-                                ),
-                                child: Text(
-                                  t,
-                                  style: TextStyle(
-                                    color: palette.textPrimary,
-                                    fontSize: 9.2,
-                                    fontWeight: FontWeight.w600,
+                        )
+                      else
+                        ...filteredEntries.map((entry) {
+                          final rank = entries
+                                  .indexWhere((item) => item.id == entry.id) +
+                              1;
+                          final isSelectedRival = !entry.isCurrentUser &&
+                              challenge.selectedRivalId == entry.id;
+                          final rowAccent = entry.isCurrentUser
+                              ? const Color(0xFF176B5B)
+                              : (isSelectedRival
+                                  ? accent
+                                  : palette.dividerColor);
+                          void selectRival() {
+                            if (entry.isCurrentUser) return;
+                            challenge.selectRival(entry.id);
+                            HapticFeedback.selectionClick();
+                          }
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: CalmCard(
+                              color: palette.cardColor,
+                              padding: const EdgeInsets.all(14),
+                              onTap: entry.isCurrentUser ? null : selectRival,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        constraints:
+                                            const BoxConstraints(minWidth: 35),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 7,
+                                          vertical: 5,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: rowAccent.withOpacity(.11),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        child: Text(
+                                          '#$rank',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: rowAccent,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      FirdawsPortraitAvatar(
+                                        entityId: entry.isCurrentUser
+                                            ? 'you'
+                                            : (entry.emoji.contains('_')
+                                                ? entry.emoji
+                                                : entry.id),
+                                        displayName: entry.name,
+                                        customBytes: entry.isCurrentUser
+                                            ? userProv.avatarBytes
+                                            : null,
+                                        customPhotoBase64: entry.isCurrentUser
+                                            ? null
+                                            : entry.customPhotoBase64,
+                                        networkPhotoUrl: entry.isCurrentUser
+                                            ? null
+                                            : entry.networkPhotoUrl,
+                                        size: 44,
+                                        ringColor: rowAccent,
+                                        showCrown: rank == 1,
+                                        isHighlighted: entry.isCurrentUser ||
+                                            isSelectedRival,
+                                      ),
+                                      const SizedBox(width: 11),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Wrap(
+                                              spacing: 7,
+                                              runSpacing: 5,
+                                              crossAxisAlignment:
+                                                  WrapCrossAlignment.center,
+                                              children: [
+                                                Text(
+                                                  entry.name,
+                                                  softWrap: true,
+                                                  style: TextStyle(
+                                                    color: palette.textPrimary,
+                                                    fontWeight: FontWeight.w700,
+                                                    fontSize: FirdawsType.label,
+                                                  ),
+                                                ),
+                                                if (isSelectedRival)
+                                                  const ParadiseChip(
+                                                    label: 'المنافس المختار',
+                                                    selected: true,
+                                                  ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              '${entry.relation} · فوز ${entry.wins} · خسارة ${entry.losses}${!entry.isCurrentUser ? ' · هدف ${entry.dailyTasbihGoal}' : ''}',
+                                              softWrap: true,
+                                              style: TextStyle(
+                                                color: palette.textSecondary,
+                                                fontSize: FirdawsType.caption,
+                                                height: 1.35,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            '${entry.value}',
+                                            style: TextStyle(
+                                              color: entry.isCurrentUser
+                                                  ? const Color(0xFF176B5B)
+                                                  : accent,
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 19,
+                                            ),
+                                          ),
+                                          Text(
+                                            unitLabel,
+                                            style: TextStyle(
+                                              color: palette.textSecondary,
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  if (entry.traits.isNotEmpty) ...[
+                                    const SizedBox(height: 10),
+                                    Wrap(
+                                      spacing: 6,
+                                      runSpacing: 6,
+                                      children:
+                                          entry.traits.take(4).map((trait) {
+                                        return Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 9,
+                                            vertical: 5,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: palette.elevatedCardColor,
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                          ),
+                                          child: Text(
+                                            trait,
+                                            softWrap: true,
+                                            style: TextStyle(
+                                              color: palette.textPrimary,
+                                              fontSize: FirdawsType.caption,
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ],
+                                  if (!entry.isCurrentUser &&
+                                      (isTasbihTab ||
+                                          entry.memberRef != null)) ...[
+                                    const SizedBox(height: 7),
+                                    Wrap(
+                                      spacing: 6,
+                                      runSpacing: 4,
+                                      children: [
+                                        TextButton.icon(
+                                          onPressed: selectRival,
+                                          icon: Icon(
+                                            isSelectedRival
+                                                ? Icons
+                                                    .check_circle_outline_rounded
+                                                : Icons.sports_kabaddi_outlined,
+                                            size: 18,
+                                          ),
+                                          label: Text(isSelectedRival
+                                              ? 'محدد للتحدي'
+                                              : 'اختيار المنافس'),
+                                        ),
+                                        if (isTasbihTab)
+                                          TextButton.icon(
+                                            onPressed: () =>
+                                                challenge.addMemberTasbihManual(
+                                                    entry.id, 33),
+                                            icon: const Icon(
+                                              Icons.add_circle_outline_rounded,
+                                              size: 18,
+                                            ),
+                                            label: const Text('+٣٣ تسبيحة'),
+                                          ),
+                                        if (entry.memberRef != null)
+                                          TextButton.icon(
+                                            onPressed: () =>
+                                                _showChallengerEditorSheet(
+                                              palette,
+                                              challenge,
+                                              existing: entry.memberRef,
+                                            ),
+                                            icon: const Icon(
+                                              Icons.tune_rounded,
+                                              size: 18,
+                                            ),
+                                            label: const Text('تعديل'),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+                      if (!isTasbihTab && challenge.history.isNotEmpty) ...[
+                        const SizedBox(height: 14),
+                        ParadiseSection(
+                          title: 'أحدث المواجهات',
+                          child: Column(
+                            children: challenge.history.take(10).map((match) {
+                              final matchColor = match.won
+                                  ? const Color(0xFF18805F)
+                                  : const Color(0xFF2877A3);
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: CalmCard(
+                                  color: palette.cardColor,
+                                  padding: const EdgeInsets.all(14),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              '${match.modeTitle} · ${match.rivalName}',
+                                              softWrap: true,
+                                              style: TextStyle(
+                                                color: matchColor,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            '${match.userScore} – ${match.rivalScore}',
+                                            style: TextStyle(
+                                              color: palette.textPrimary,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        match.phraseShown,
+                                        softWrap: true,
+                                        style: TextStyle(
+                                          color: palette.textSecondary,
+                                          height: 1.45,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               );
                             }).toList(),
                           ),
-                        ],
+                        ),
                       ],
-                    ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '${e.value}',
-                        style: TextStyle(
-                          color: e.isCurrentUser
-                              ? const Color(0xFF10B981)
-                              : accent,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 15,
-                        ),
-                      ),
-                      Text(
-                        unitLabel,
-                        style: TextStyle(
-                          color: palette.textMuted,
-                          fontSize: 9.5,
-                        ),
-                      ),
                     ],
                   ),
-                  if (!e.isCurrentUser) ...[
-                    if (isTasbihTab)
-                      IconButton(
-                        style: IconButton.styleFrom(
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          minimumSize: const Size(30, 30),
-                          padding: EdgeInsets.zero,
-                        ),
-                        tooltip: 'تسجيل +33 تسبيحة لهذا المنافس',
-                        icon: const Icon(
-                          Icons.add_circle_rounded,
-                          color: Color(0xFF10B981),
-                          size: 20,
-                        ),
-                        onPressed: () => challenge.addMemberTasbihManual(e.id, 33),
-                      ),
-                    if (e.memberRef != null)
-                      IconButton(
-                        style: IconButton.styleFrom(
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          minimumSize: const Size(30, 30),
-                          padding: EdgeInsets.zero,
-                        ),
-                        tooltip: 'تعديل الاسم والصورة والصفات',
-                        icon: Icon(
-                          Icons.tune_rounded,
-                          color: accent,
-                          size: 19,
-                        ),
-                        onPressed: () => _showChallengerEditorSheet(
-                          palette,
-                          challenge,
-                          existing: e.memberRef,
-                        ),
-                      ),
-                  ],
-                ],
-              ),
-            ),
-          );
-        }),
-        if (!isTasbihTab && challenge.history.isNotEmpty) ...[
-          const SizedBox(height: 14),
-          Text(
-            'سجل أحدث التحديات والنتائج 📜',
-            style: TextStyle(
-              color: palette.textPrimary,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          ...challenge.history.take(10).map((h) {
-            final c = h.won ? const Color(0xFF10B981) : const Color(0xFF38BDF8);
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Firdaws3DCard(
-                palette: palette,
-                glowColor: c,
-                padding: const EdgeInsets.all(11),
-                borderRadius: 16,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '${h.modeTitle} ضد ${h.rivalName}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: c,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${h.userScore} - ${h.rivalScore}',
-                          style: TextStyle(
-                            color: palette.textPrimary,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      h.phraseShown,
-                      style: TextStyle(
-                        color: firdawsCrispSecondaryText(palette),
-                        fontSize: 11,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
-        ],
+        ),
       ],
     );
   }
@@ -918,9 +993,12 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
     required ThemePalette palette,
   }) {
     final userProv = context.read<FirdawsUserProvider>();
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+    final rankLabel = rank == 1 ? 'الأول' : (rank == 2 ? 'الثاني' : 'الثالث');
+    return CalmCard(
+      color: palette.cardColor,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           FirdawsPortraitAvatar(
             entityId: entry.id,
@@ -928,14 +1006,22 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
             customBytes: entry.isCurrentUser ? userProv.avatarBytes : null,
             customPhotoBase64:
                 entry.isCurrentUser ? null : entry.customPhotoBase64,
-            networkPhotoUrl:
-                entry.isCurrentUser ? null : entry.networkPhotoUrl,
-            size: rank == 1 ? 52 : 42,
+            networkPhotoUrl: entry.isCurrentUser ? null : entry.networkPhotoUrl,
+            size: 42,
             ringColor: medalColor,
             showCrown: rank == 1,
             isHighlighted: rank == 1,
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 8),
+          Text(
+            rankLabel,
+            style: TextStyle(
+              color: medalColor,
+              fontSize: FirdawsType.caption,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 3),
           Text(
             entry.name,
             maxLines: 1,
@@ -943,47 +1029,20 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
             textAlign: TextAlign.center,
             style: TextStyle(
               color: palette.textPrimary,
-              fontWeight: FontWeight.bold,
-              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              fontSize: FirdawsType.caption,
             ),
           ),
+          const SizedBox(height: 3),
           Text(
             '${entry.value} $unitLabel',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
             style: TextStyle(
-              color: medalColor,
-              fontWeight: FontWeight.w900,
-              fontSize: 10.5,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Container(
-            height: height,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  medalColor.withOpacity(0.85),
-                  medalColor.withOpacity(0.32),
-                ],
-              ),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(14)),
-              border: Border.all(color: Colors.white.withOpacity(0.28)),
-              boxShadow: [
-                BoxShadow(
-                  color: medalColor.withOpacity(0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                rank == 1 ? '🥇' : (rank == 2 ? '🥈' : '🥉'),
-                style: const TextStyle(fontSize: 24),
-              ),
+              color: palette.textSecondary,
+              fontSize: 11,
+              height: 1.25,
             ),
           ),
         ],
@@ -1046,7 +1105,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
               style: TextStyle(
                 color: palette.textPrimary,
                 fontWeight: FontWeight.bold,
-                fontSize: 15,
+                fontSize: FirdawsType.body,
               ),
             ),
             const SizedBox(height: 12),
@@ -1060,7 +1119,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: palette.textPrimary,
-                  fontSize: 13.5,
+                  fontSize: FirdawsType.label,
                   height: 1.5,
                 ),
               ),
@@ -1069,8 +1128,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
         ),
         actions: [
           Firdaws3DButton(
-            baseColor:
-                won ? const Color(0xFF10B981) : const Color(0xFF38BDF8),
+            baseColor: won ? const Color(0xFF10B981) : const Color(0xFF38BDF8),
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
             onPressed: () => Navigator.pop(ctx),
             child: const Text(
@@ -1096,278 +1154,288 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
         _p2NameCtrl.text.trim().isEmpty ? 'اللاعب ٢' : _p2NameCtrl.text.trim();
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 30),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 30),
       children: [
-        Firdaws4KCardShell(
-          backdrop: Background500Catalog.forFamilySection(23),
-          isDark: palette.isDark,
-          borderColor: accent.withOpacity(0.5),
-          borderRadius: 20,
-          padding: const EdgeInsets.all(14),
-          imageOpacity: 0.38,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'مبارزة التسبيح الثنائية (لاعب ١ ضد لاعب ٢ على نفس الجهاز) ⚔️📿',
-                style: TextStyle(
-                  color: palette.textPrimary,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 14.5,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'اضبط اسم منافسك (أخوك، صاحبك، أو أحد والديك) ثم تسابقا لمدة ٢٠ ثانية من يسبّح أكثر! الفائز ينال عبارة من الـ ٤٠٠ فوز والخاسر ينال عبارة تحفيزية من الـ ٤٠٠ خسارة.',
-                style: TextStyle(
-                  color: firdawsCrispSecondaryText(palette),
-                  fontSize: 11.5,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _p2NameCtrl,
-                enabled: !_duelRunning,
-                style: TextStyle(color: palette.textPrimary, fontSize: 13),
-                decoration: InputDecoration(
-                  labelText: 'اسم اللاعب ٢ (أفراد العائلة / الصديق)',
-                  labelStyle: TextStyle(color: palette.textSecondary),
-                  prefixIcon: Icon(Icons.person_rounded, color: accent),
-                  filled: true,
-                  fillColor: firdaws3DElevatedSurfaceColor(palette),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  Firdaws3DPill(
-                    label: _duelRunning
-                        ? '⏱️ متبقي: $_duelSecondsLeft ث'
-                        : 'جاهز للانطلاق',
-                    accentColor: _duelRunning ? const Color(0xFF10B981) : accent,
-                    palette: palette,
-                  ),
-                  Firdaws3DButton(
-                    baseColor:
-                        _duelRunning ? Colors.grey : const Color(0xFF10B981),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
-                    onPressed: _duelRunning ? null : _startTasbihDuel,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.play_arrow_rounded,
-                            color: Colors.white, size: 18),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            _duelRunning
-                                ? 'الجولة شغالة 🔥'
-                                : 'بدء سباق ٢٠ ثانية',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12.5,
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 980),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                CalmCard(
+                  color: palette.cardColor,
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.touch_app_outlined,
+                              color: accent, size: 27),
+                          const SizedBox(width: 11),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'سباق التسبيح على جهاز واحد',
+                                  softWrap: true,
+                                  style: TextStyle(
+                                    color: palette.textPrimary,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 20,
+                                    height: 1.25,
+                                  ),
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  'سمّ اللاعب الثاني، ثم اضغط كل لاعب على مساحته خلال جولة مدتها ٢٠ ثانية.',
+                                  softWrap: true,
+                                  style: TextStyle(
+                                    color: palette.textSecondary,
+                                    fontSize: FirdawsType.caption,
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ],
                             ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      TextField(
+                        controller: _p2NameCtrl,
+                        enabled: !_duelRunning,
+                        style: TextStyle(color: palette.textPrimary),
+                        decoration: InputDecoration(
+                          labelText: 'اسم اللاعب الثاني',
+                          hintText: 'مثال: أحد أفراد العائلة أو الأصدقاء',
+                          labelStyle: TextStyle(color: palette.textSecondary),
+                          prefixIcon:
+                              Icon(Icons.person_outline_rounded, color: accent),
+                          filled: true,
+                          fillColor: palette.elevatedCardColor,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: palette.dividerColor),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: palette.dividerColor),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Wrap(
+                        spacing: 14,
+                        runSpacing: 12,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        alignment: WrapAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: CircularProgressIndicator(
+                                  value: _duelRunning
+                                      ? (_duelSecondsLeft / 20).clamp(0.0, 1.0)
+                                      : 0,
+                                  strokeWidth: 3,
+                                  backgroundColor: palette.dividerColor,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    _duelRunning
+                                        ? const Color(0xFF176B5B)
+                                        : accent,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 9),
+                              Text(
+                                _duelRunning
+                                    ? 'متبقي $_duelSecondsLeft ثانية'
+                                    : 'الجولة جاهزة · ٢٠ ثانية',
+                                style: TextStyle(
+                                  color: palette.textPrimary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: _duelRunning ? null : _startTasbihDuel,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFF176B5B),
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size.fromHeight(52),
+                          ),
+                          icon: Icon(_duelRunning
+                              ? Icons.hourglass_top_rounded
+                              : Icons.play_arrow_rounded),
+                          label: Text(
+                            _duelRunning ? 'الجولة جارية' : 'ابدأ السباق',
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                ParadiseSection(
+                  title: 'مساحتا اللعب',
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: _buildDualPad(
+                          playerTitle: 'اللاعب الأول · $p1',
+                          portraitId: 'you',
+                          portraitName: p1,
+                          count: _p1DuelCount,
+                          color: const Color(0xFF176B5B),
+                          palette: palette,
+                          onTap: _duelRunning
+                              ? () {
+                                  HapticFeedback.lightImpact();
+                                  setState(() => _p1DuelCount++);
+                                }
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _buildDualPad(
+                          playerTitle: 'اللاعب الثاني · $p2',
+                          portraitId: 'p2',
+                          portraitName: p2,
+                          count: _p2DuelCount,
+                          color: const Color(0xFF2877A3),
+                          palette: palette,
+                          onTap: _duelRunning
+                              ? () {
+                                  HapticFeedback.lightImpact();
+                                  setState(() => _p2DuelCount++);
+                                }
+                              : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_lastDualOutcome != null) ...[
+                  const SizedBox(height: 14),
+                  CalmCard(
+                    color: palette.cardColor,
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'نتيجة الجولة',
+                          style: TextStyle(
+                            color: palette.textSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'الفائز: ${_lastDualOutcome!.winnerName}',
+                          softWrap: true,
+                          style: const TextStyle(
+                            color: Color(0xFF176B5B),
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _lastDualOutcome!.winnerPhrase,
+                          softWrap: true,
+                          style: TextStyle(
+                            color: palette.textPrimary,
+                            height: 1.5,
+                          ),
+                        ),
+                        const Divider(height: 24),
+                        Text(
+                          'تشجيع ${_lastDualOutcome!.loserName}',
+                          style: const TextStyle(
+                            color: Color(0xFF2877A3),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          _lastDualOutcome!.loserPhrase,
+                          softWrap: true,
+                          style: TextStyle(
+                            color: palette.textSecondary,
+                            height: 1.5,
                           ),
                         ),
                       ],
                     ),
                   ),
                 ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildDualPad(
-                playerTitle: 'اللاعب ١: $p1',
-                portraitId: 'you',
-                portraitName: p1,
-                count: _p1DuelCount,
-                color: const Color(0xFF10B981),
-                palette: palette,
-                onTap: _duelRunning
-                    ? () {
-                        HapticFeedback.lightImpact();
-                        setState(() => _p1DuelCount++);
-                      }
-                    : null,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildDualPad(
-                playerTitle: 'اللاعب ٢: $p2',
-                portraitId: 'p2',
-                portraitName: p2,
-                count: _p2DuelCount,
-                color: const Color(0xFF38BDF8),
-                palette: palette,
-                onTap: _duelRunning
-                    ? () {
-                        HapticFeedback.lightImpact();
-                        setState(() => _p2DuelCount++);
-                      }
-                    : null,
-              ),
-            ),
-          ],
-        ),
-        if (_lastDualOutcome != null) ...[
-          const SizedBox(height: 14),
-          Firdaws3DCard(
-            palette: palette,
-            glowColor: const Color(0xFF10B981),
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '🏆 الفائز: ${_lastDualOutcome!.winnerName}',
-                  style: const TextStyle(
-                    color: Color(0xFF10B981),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 14,
+                const SizedBox(height: 22),
+                ParadiseSection(
+                  title: 'تحديات أخرى للاعبين',
+                  child: Text(
+                    'تابعوا المنافسة على الجهاز نفسه في المسابقة أو صالة الألعاب.',
+                    softWrap: true,
+                    style: TextStyle(
+                      color: palette.textSecondary,
+                      height: 1.45,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  _lastDualOutcome!.winnerPhrase,
-                  style: TextStyle(
-                    color: palette.textPrimary,
-                    fontSize: 12.5,
-                    height: 1.45,
+                const SizedBox(height: 10),
+                FilledButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const MillionaireQuizScreen(
+                          initialMode: MillionairePlayMode.dualPlayerLocal,
+                        ),
+                      ),
+                    );
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF176B5B),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(50),
                   ),
+                  icon: const Icon(Icons.quiz_outlined),
+                  label: const Text('من سيربح المليون · لاعبان'),
                 ),
-                const Divider(height: 18),
-                Text(
-                  '⚡ تحفيز العودة لـ ${_lastDualOutcome!.loserName}:',
-                  style: const TextStyle(
-                    color: Color(0xFF38BDF8),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 13.5,
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ArenaHubScreen(
+                          initialPlayMode: ArenaPlayMode.dualPlayerLocal,
+                        ),
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: accent,
+                    minimumSize: const Size.fromHeight(50),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _lastDualOutcome!.loserPhrase,
-                  style: TextStyle(
-                    color: firdawsCrispSecondaryText(palette),
-                    fontSize: 12,
-                    height: 1.45,
-                  ),
+                  icon: const Icon(Icons.sports_esports_outlined),
+                  label: const Text('صالة الألعاب · لاعبان'),
                 ),
               ],
             ),
-          ),
-        ],
-        const SizedBox(height: 14),
-        Firdaws3DCard(
-          palette: palette,
-          glowColor: const Color(0xFF8B5CF6),
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'مشاركة ٢ في نفس الألعاب والمسابقات 👥🎮',
-                style: TextStyle(
-                  color: palette.textPrimary,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 13.5,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'تحدَّ صديقك أو أحد أفراد عائلتك الآن على نفس الجهاز في مسابقة المليون أو أي لعبة من الـ ٣٠ لعبة تفاعلية:',
-                style: TextStyle(
-                  color: firdawsCrispSecondaryText(palette),
-                  fontSize: 11.2,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Firdaws3DButton(
-                baseColor: const Color(0xFF0EA5E9),
-                padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 14),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const MillionaireQuizScreen(
-                        initialMode: MillionairePlayMode.dualPlayerLocal,
-                      ),
-                    ),
-                  );
-                },
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('💎', style: TextStyle(fontSize: 15)),
-                    SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        'من سيربح المليون — مشاركة ٢ لاعبين',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12.5,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Firdaws3DButton(
-                baseColor: const Color(0xFF8B5CF6),
-                padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 14),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const ArenaHubScreen(
-                        initialPlayMode: ArenaPlayMode.dualPlayerLocal,
-                      ),
-                    ),
-                  );
-                },
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('🕹️', style: TextStyle(fontSize: 15)),
-                    SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        'صالة الـ ٣٠ لعبة — مشاركة ٢ لاعبين',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12.5,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ),
         ),
       ],
@@ -1383,49 +1451,85 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
     required ThemePalette palette,
     required VoidCallback? onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Firdaws3DCard(
-        palette: palette,
-        glowColor: color,
-        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 10),
-        child: Column(
-          children: [
-            FirdawsPortraitAvatar(
-              entityId: portraitId,
-              displayName: portraitName,
-              size: 46,
-              ringColor: color,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              playerTitle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: palette.textPrimary,
-                fontWeight: FontWeight.bold,
-                fontSize: 12.5,
+    final radius = BorderRadius.circular(24);
+    return Semantics(
+      button: true,
+      enabled: onTap != null,
+      label: '$playerTitle، $count تسبيحة',
+      hint: onTap == null
+          ? 'ابدأ الجولة لتفعيل مساحة العدّ'
+          : 'اضغط لتسجيل تسبيحة',
+      child: Material(
+        color: palette.cardColor,
+        borderRadius: radius,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: radius,
+          child: Ink(
+            decoration: BoxDecoration(
+              borderRadius: radius,
+              border: Border.all(
+                color: color.withOpacity(onTap == null ? .35 : .78),
+                width: 1.5,
               ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              '$count',
-              style: TextStyle(
-                color: color,
-                fontSize: 38,
-                fontWeight: FontWeight.w900,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 214),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 17),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    FirdawsPortraitAvatar(
+                      entityId: portraitId,
+                      displayName: portraitName,
+                      size: 46,
+                      ringColor: color,
+                      isHighlighted: onTap != null,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      playerTitle,
+                      softWrap: true,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: FirdawsType.caption,
+                        height: 1.3,
+                      ),
+                    ),
+                    const SizedBox(height: 13),
+                    Text(
+                      '$count',
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 38,
+                        height: 1.1,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      onTap != null
+                          ? 'اضغط لتسجيل تسبيحة'
+                          : 'بانتظار بدء الجولة',
+                      softWrap: true,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: palette.textSecondary,
+                        fontSize: 11,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 8),
-            Firdaws3DPill(
-              label:
-                  onTap != null ? 'اضغط سُبْحَانَ اللَّه! 👆' : 'سُبْحَانَ اللَّه',
-              accentColor: color,
-              palette: palette,
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -1442,145 +1546,194 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
         : ChallengePhrasesCatalog.losePhrases;
     final rivalName = challenge.selectedRival.name;
     final userName = userProv.displayName;
-    final q = _phraseSearch.trim();
-
+    final query = _phraseSearch.trim();
     final indexed = <MapEntry<int, String>>[];
-    for (int i = 0; i < source.length; i++) {
+    for (var i = 0; i < source.length; i++) {
       final formatted = ChallengePhrasesCatalog.formatPhrase(
         source[i],
         name: userName,
         rival: rivalName,
       );
-      if (q.isEmpty || formatted.contains(q) || '${i + 1}' == q) {
+      if (query.isEmpty || formatted.contains(query) || '${i + 1}' == query) {
         indexed.add(MapEntry(i + 1, formatted));
       }
     }
 
     final tabColor =
-        _showWinPhrases ? const Color(0xFF10B981) : const Color(0xFF38BDF8);
+        _showWinPhrases ? const Color(0xFF18805F) : const Color(0xFF2877A3);
 
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(14, 10, 14, 6),
-          child: Row(
-            children: [
-              Expanded(
-                child: Firdaws3DButton(
-                  baseColor: _showWinPhrases
-                      ? const Color(0xFF10B981)
-                      : firdaws3DElevatedSurfaceColor(palette),
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  onPressed: () => setState(() => _showWinPhrases = true),
-                  child: Text(
-                    '🏆 400 عبارة فوز',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color:
-                          _showWinPhrases ? Colors.white : palette.textPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 980),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ParadiseSection(
+                    title: 'عبارات التشجيع',
+                    child: Text(
+                      'استعرضوا رسائل الفوز والتحفيز، وابحثوا بالاسم أو برقم العبارة.',
+                      softWrap: true,
+                      style: TextStyle(
+                        color: palette.textSecondary,
+                        height: 1.45,
+                      ),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Firdaws3DButton(
-                  baseColor: !_showWinPhrases
-                      ? const Color(0xFF38BDF8)
-                      : firdaws3DElevatedSurfaceColor(palette),
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  onPressed: () => setState(() => _showWinPhrases = false),
-                  child: Text(
-                    '⚡ 400 عبارة تحفيز الخسارة',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color:
-                          !_showWinPhrases ? Colors.white : palette.textPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                  const SizedBox(height: 10),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        ParadiseChip(
+                          label: 'عبارات الفوز · ٤٠٠',
+                          icon: Icons.emoji_events_outlined,
+                          selected: _showWinPhrases,
+                          onTap: () => setState(() => _showWinPhrases = true),
+                        ),
+                        const SizedBox(width: 8),
+                        ParadiseChip(
+                          label: 'عبارات التحفيز · ٤٠٠',
+                          icon: Icons.trending_up_rounded,
+                          selected: !_showWinPhrases,
+                          onTap: () => setState(() => _showWinPhrases = false),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-          child: TextField(
-            style: TextStyle(color: palette.textPrimary, fontSize: 13),
-            onChanged: (v) => setState(() => _phraseSearch = v),
-            decoration: InputDecoration(
-              hintText: 'ابحث داخل الـ 800 عبارة باسمك أو برقم العبارة...',
-              hintStyle: TextStyle(color: palette.textMuted, fontSize: 12),
-              prefixIcon: Icon(Icons.search_rounded, color: tabColor),
-              filled: true,
-              fillColor: firdaws3DElevatedSurfaceColor(palette),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide.none,
+                  const SizedBox(height: 9),
+                  TextField(
+                    style: TextStyle(
+                      color: palette.textPrimary,
+                      fontSize: FirdawsType.label,
+                    ),
+                    onChanged: (value) => setState(() => _phraseSearch = value),
+                    decoration: InputDecoration(
+                      hintText: 'ابحث بالاسم أو رقم العبارة',
+                      hintStyle: TextStyle(
+                        color: palette.textMuted,
+                        fontSize: FirdawsType.caption,
+                      ),
+                      prefixIcon: Icon(Icons.search_rounded, color: tabColor),
+                      filled: true,
+                      fillColor: palette.cardColor,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: palette.dividerColor),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: palette.dividerColor),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    'عرض ${indexed.length} من ${source.length} عبارة',
+                    style: TextStyle(
+                      color: palette.textSecondary,
+                      fontSize: FirdawsType.caption,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
         ),
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(14, 6, 14, 24),
-            itemCount: indexed.length,
-            itemBuilder: (_, idx) {
-              final entry = indexed[idx];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Firdaws3DCard(
-                  palette: palette,
-                  glowColor: tabColor,
-                  padding: const EdgeInsets.all(12),
-                  borderRadius: 16,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Firdaws3DPill(
-                        label: '#${entry.key}',
-                        accentColor: tabColor,
-                        palette: palette,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          entry.value,
-                          style: TextStyle(
-                            color: palette.textPrimary,
-                            fontSize: 12.5,
-                            height: 1.45,
-                            fontWeight: FontWeight.w600,
+          child: indexed.isEmpty
+              ? const Center(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(16),
+                    child: CalmEmptyState(
+                      icon: Icons.search_off_rounded,
+                      title: 'لم نعثر على عبارة مطابقة',
+                      subtitle:
+                          'جرّب كلمة أقصر أو ابحث برقم ضمن مجموعة العبارات المختارة.',
+                    ),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(14, 5, 14, 24),
+                  itemCount: indexed.length,
+                  itemBuilder: (_, index) {
+                    final entry = indexed[index];
+                    return Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 980),
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 9),
+                          child: CalmCard(
+                            color: palette.cardColor,
+                            padding: const EdgeInsets.all(15),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 11,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: tabColor.withOpacity(.10),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        'رقم ${entry.key}',
+                                        style: TextStyle(
+                                          color: tabColor,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: FirdawsType.caption,
+                                        ),
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    TextButton.icon(
+                                      onPressed: () {
+                                        Clipboard.setData(
+                                            ClipboardData(text: entry.value));
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            backgroundColor: palette.cardColor,
+                                            content: Text(
+                                              'نُسخت العبارة رقم ${entry.key}.',
+                                              style: TextStyle(
+                                                  color: palette.textPrimary),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.copy_outlined,
+                                          size: 18),
+                                      label: const Text('نسخ'),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  entry.value,
+                                  softWrap: true,
+                                  style: TextStyle(
+                                    color: palette.textPrimary,
+                                    fontSize: FirdawsType.label,
+                                    height: 1.55,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                      IconButton(
-                        tooltip: 'نسخ ومشاركة',
-                        icon: Icon(Icons.copy_rounded,
-                            size: 18, color: palette.textMuted),
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: entry.value));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: firdaws3DSurfaceColor(palette),
-                              content: Text(
-                                'تم نسخ العبارة #${entry.key} لمشاركتها 📋✨',
-                                style: TextStyle(color: palette.textPrimary),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
         ),
       ],
     );
@@ -1592,23 +1745,10 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
     ThemePalette palette,
     Color accent,
   ) {
-    final isSel = _memberGroupFilter == value;
-    return Padding(
-      padding: const EdgeInsets.only(left: 7),
-      child: ChoiceChip(
-        label: Text(
-          label,
-          style: TextStyle(
-            color: isSel ? palette.onAccentColor : palette.textPrimary,
-            fontSize: 11,
-            fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-          ),
-        ),
-        selected: isSel,
-        selectedColor: accent,
-        backgroundColor: firdaws3DElevatedSurfaceColor(palette),
-        onSelected: (_) => setState(() => _memberGroupFilter = value),
-      ),
+    return ParadiseChip(
+      label: label,
+      selected: _memberGroupFilter == value,
+      onTap: () => setState(() => _memberGroupFilter = value),
     );
   }
 
@@ -1683,7 +1823,11 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                     ),
                     child: ListView(
                       controller: sc,
-                      padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
+                      padding: const EdgeInsets.fromLTRB(
+                          FirdawsSpace.pageGutter,
+                          12,
+                          FirdawsSpace.pageGutter,
+                          28),
                       children: [
                         Center(
                           child: Container(
@@ -1720,14 +1864,14 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                                     style: TextStyle(
                                       color: accent,
                                       fontWeight: FontWeight.w900,
-                                      fontSize: 15,
+                                      fontSize: FirdawsType.body,
                                     ),
                                   ),
                                   Text(
                                     'تحكم كامل في الاسم، الشارة أو الصورة، العمر، الصفات، والأهداف',
                                     style: TextStyle(
                                       color: palette.textSecondary,
-                                      fontSize: 11,
+                                      fontSize: FirdawsType.caption,
                                     ),
                                   ),
                                 ],
@@ -1761,7 +1905,8 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                               label: const Text(
                                 'رفع صورة من المعرض 📸',
                                 style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 11.5),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: FirdawsType.caption),
                               ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF10B981),
@@ -1780,17 +1925,18 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                                 label: const Text(
                                   'استخدام صورة من المكتبة',
                                   style: TextStyle(
-                                      color: Colors.orangeAccent, fontSize: 11),
+                                      color: Colors.orangeAccent,
+                                      fontSize: FirdawsType.caption),
                                 ),
                               ),
                           ],
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: FirdawsSpace.md),
                         Text(
                           'أو اختر من ٥٠ صورة شخصية حقيقية 👥:',
                           style: TextStyle(
                             color: palette.textSecondary,
-                            fontSize: 11.5,
+                            fontSize: FirdawsType.caption,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -1854,12 +2000,13 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                             ),
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: FirdawsSpace.md),
                         TextField(
                           controller: relCtrl,
                           style: TextStyle(color: palette.textPrimary),
                           decoration: InputDecoration(
-                            labelText: 'صلة القرابة أو الوصف (مثل: العائلة • الأخ)',
+                            labelText:
+                                'صلة القرابة أو الوصف (مثل: العائلة • الأخ)',
                             labelStyle: TextStyle(color: palette.textSecondary),
                             filled: true,
                             fillColor: firdaws3DElevatedSurfaceColor(palette),
@@ -1869,7 +2016,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                             ),
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: FirdawsSpace.md),
                         Wrap(
                           spacing: 6,
                           runSpacing: 6,
@@ -1897,7 +2044,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                             ),
                           ],
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: FirdawsSpace.md),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -1906,7 +2053,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                               style: TextStyle(
                                 color: palette.textPrimary,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 13,
+                                fontSize: FirdawsType.label,
                               ),
                             ),
                             Firdaws3DPill(
@@ -1930,7 +2077,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                           style: TextStyle(
                             color: palette.textPrimary,
                             fontWeight: FontWeight.bold,
-                            fontSize: 12.5,
+                            fontSize: FirdawsType.label,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -1949,7 +2096,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                                   color: isSel
                                       ? palette.onAccentColor
                                       : palette.textPrimary,
-                                  fontSize: 11,
+                                  fontSize: FirdawsType.caption,
                                   fontWeight: isSel
                                       ? FontWeight.bold
                                       : FontWeight.normal,
@@ -1978,11 +2125,14 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                               child: TextField(
                                 controller: customTraitCtrl,
                                 style: TextStyle(
-                                    color: palette.textPrimary, fontSize: 12.5),
+                                    color: palette.textPrimary,
+                                    fontSize: FirdawsType.label),
                                 decoration: InputDecoration(
-                                  hintText: 'أضف صفة جديدة (مثلاً: ملازم الضحى)...',
+                                  hintText:
+                                      'أضف صفة جديدة (مثلاً: ملازم الضحى)...',
                                   hintStyle: TextStyle(
-                                      color: palette.textMuted, fontSize: 11.5),
+                                      color: palette.textMuted,
+                                      fontSize: FirdawsType.caption),
                                   isDense: true,
                                   filled: true,
                                   fillColor:
@@ -2024,7 +2174,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                           style: TextStyle(
                             color: palette.textPrimary,
                             fontWeight: FontWeight.bold,
-                            fontSize: 12.5,
+                            fontSize: FirdawsType.label,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -2041,7 +2191,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                             );
                           }).toList(),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: FirdawsSpace.md),
                         Row(
                           children: [
                             Expanded(
@@ -2050,8 +2200,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                                 palette: palette,
                                 onMinus: () => setModal(() => tasbihVal =
                                     (tasbihVal - 33).clamp(0, 999999)),
-                                onPlus: () =>
-                                    setModal(() => tasbihVal += 33),
+                                onPlus: () => setModal(() => tasbihVal += 33),
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -2066,12 +2215,13 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                             ),
                           ],
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: FirdawsSpace.md),
                         TextField(
                           controller: bioCtrl,
                           maxLines: 2,
                           style: TextStyle(
-                              color: palette.textPrimary, fontSize: 12.5),
+                              color: palette.textPrimary,
+                              fontSize: FirdawsType.label),
                           decoration: InputDecoration(
                             labelText: 'ملاحظة أو دعوة تحفيزية عن هذا الفرد',
                             labelStyle: TextStyle(color: palette.textSecondary),
@@ -2083,7 +2233,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: FirdawsSpace.lg),
                         Row(
                           children: [
                             if (isEdit && challenge.members.length > 1)
@@ -2091,7 +2241,8 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                                 padding: const EdgeInsets.only(left: 8),
                                 child: OutlinedButton.icon(
                                   onPressed: () async {
-                                    await challenge.removeChallenger(existing.id);
+                                    await challenge
+                                        .removeChallenger(existing.id);
                                     if (sheetCtx.mounted) {
                                       Navigator.pop(sheetCtx);
                                     }
@@ -2120,13 +2271,15 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                                       existing.copyWith(
                                         name: cleanName,
                                         group: group,
-                                        relationLabel: relCtrl.text.trim().isEmpty
-                                            ? existing.relationLabel
-                                            : relCtrl.text.trim(),
+                                        relationLabel:
+                                            relCtrl.text.trim().isEmpty
+                                                ? existing.relationLabel
+                                                : relCtrl.text.trim(),
                                         age: age,
                                         traits: finalTraits,
                                         customPhotoBase64: customPhotoB64,
-                                        clearCustomPhoto: customPhotoB64 == null,
+                                        clearCustomPhoto:
+                                            customPhotoB64 == null,
                                         networkPhotoUrl: networkUrl,
                                         dailyTasbihGoal: dailyGoal,
                                         tasbihCount: tasbihVal,
@@ -2161,7 +2314,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 13.5,
+                                    fontSize: FirdawsType.label,
                                   ),
                                 ),
                               ),
@@ -2207,7 +2360,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: palette.textPrimary,
-                fontSize: 11,
+                fontSize: FirdawsType.caption,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -2233,7 +2386,8 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
         backgroundColor: firdaws3DSurfaceColor(palette),
         title: Text(
           'تسمية المجموعة المخصّصة 🌟',
-          style: TextStyle(color: palette.textPrimary, fontSize: 16),
+          style:
+              TextStyle(color: palette.textPrimary, fontSize: FirdawsType.body),
         ),
         content: TextField(
           controller: ctrl,
@@ -2319,7 +2473,11 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                     ),
                     child: ListView(
                       controller: sc,
-                      padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
+                      padding: const EdgeInsets.fromLTRB(
+                          FirdawsSpace.pageGutter,
+                          12,
+                          FirdawsSpace.pageGutter,
+                          28),
                       children: [
                         Center(
                           child: Container(
@@ -2343,7 +2501,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                                 style: TextStyle(
                                   color: palette.textPrimary,
                                   fontWeight: FontWeight.w900,
-                                  fontSize: 16,
+                                  fontSize: FirdawsType.body,
                                 ),
                               ),
                             ),
@@ -2358,14 +2516,15 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                             height: 1.4,
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: FirdawsSpace.md),
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
                             color: const Color(0xFF10B981).withOpacity(0.12),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                                color: const Color(0xFF10B981).withOpacity(0.4)),
+                                color:
+                                    const Color(0xFF10B981).withOpacity(0.4)),
                           ),
                           child: Text(
                             statusMsg,
@@ -2407,9 +2566,11 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                                             });
                                           }
                                         },
-                                  icon: const Icon(Icons.radar_rounded, size: 18),
-                                  label: Text(
-                                      scanning ? 'جاري البحث...' : 'بحث أجهزة قريبة'),
+                                  icon:
+                                      const Icon(Icons.radar_rounded, size: 18),
+                                  label: Text(scanning
+                                      ? 'جاري البحث...'
+                                      : 'بحث أجهزة قريبة'),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF10B981),
                                     foregroundColor: Colors.white,
@@ -2438,7 +2599,8 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                                       final peer = await bt
                                           .startHostExchange(localProfile);
                                       if (peer != null) {
-                                        await challenge.upsertBluetoothPeerProfile(
+                                        await challenge
+                                            .upsertBluetoothPeerProfile(
                                           peer,
                                           targetGroup:
                                               ChallengerGroup.customGroup,
@@ -2459,14 +2621,15 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                                   icon: Icon(hosting
                                       ? Icons.stop_circle_outlined
                                       : Icons.wifi_tethering_rounded),
-                                  label: Text(
-                                      hosting ? 'إيقاف الاستقبال' : 'استقبال تحدٍّ 📡'),
+                                  label: Text(hosting
+                                      ? 'إيقاف الاستقبال'
+                                      : 'استقبال تحدٍّ 📡'),
                                 ),
                               ),
                             ],
                           ),
                           if (devices.isNotEmpty) ...[
-                            const SizedBox(height: 10),
+                            const SizedBox(height: FirdawsSpace.md),
                             ...devices.map((dev) => Card(
                                   color: firdaws3DElevatedSurfaceColor(palette),
                                   margin: const EdgeInsets.only(bottom: 6),
@@ -2480,14 +2643,14 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                                       style: TextStyle(
                                         color: palette.textPrimary,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 13,
+                                        fontSize: FirdawsType.label,
                                       ),
                                     ),
                                     subtitle: Text(
                                       '${dev.address} • ${dev.isPaired ? "مقترن" : "جديد"}',
                                       style: TextStyle(
                                         color: palette.textSecondary,
-                                        fontSize: 11,
+                                        fontSize: FirdawsType.caption,
                                       ),
                                     ),
                                     trailing: ElevatedButton(
@@ -2495,7 +2658,8 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                                         setModal(() => statusMsg =
                                             'جاري تبادل البيانات مع ${dev.name}...');
                                         try {
-                                          final peer = await bt.connectAndExchange(
+                                          final peer =
+                                              await bt.connectAndExchange(
                                             address: dev.address,
                                             localProfile: localProfile,
                                           );
@@ -2520,7 +2684,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                                 )),
                           ],
                         ],
-                        const SizedBox(height: 14),
+                        const SizedBox(height: FirdawsSpace.lg),
                         Divider(color: palette.dividerColor),
                         const SizedBox(height: 8),
                         Text(
@@ -2528,7 +2692,7 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                           style: TextStyle(
                             color: accent,
                             fontWeight: FontWeight.bold,
-                            fontSize: 12.5,
+                            fontSize: FirdawsType.label,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -2555,11 +2719,13 @@ class _FamilyChallengeScreenState extends State<FamilyChallengeScreen>
                               child: TextField(
                                 controller: codeImportCtrl,
                                 style: TextStyle(
-                                    color: palette.textPrimary, fontSize: 11.5),
+                                    color: palette.textPrimary,
+                                    fontSize: FirdawsType.caption),
                                 decoration: InputDecoration(
                                   hintText: 'الصق كود صديقك (FIRDAWS:...) هنا',
                                   hintStyle: TextStyle(
-                                      color: palette.textMuted, fontSize: 11),
+                                      color: palette.textMuted,
+                                      fontSize: FirdawsType.caption),
                                   isDense: true,
                                   filled: true,
                                   fillColor:

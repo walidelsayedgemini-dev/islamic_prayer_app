@@ -120,7 +120,7 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
                   Expanded(
                     child: Text(
                       player.errorMessage!,
-                      style: TextStyle(color: palette.textPrimary, fontSize: 10.5),
+                      style: TextStyle(color: palette.textPrimary, fontSize: FirdawsType.caption),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -133,7 +133,7 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
                         "إعادة",
                         style: TextStyle(
                           color: accent,
-                          fontSize: 11,
+                          fontSize: FirdawsType.caption,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -175,7 +175,7 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
                         player.currentTitle,
                         style: TextStyle(
                           color: palette.textPrimary,
-                          fontSize: 14,
+                          fontSize: FirdawsType.label,
                           fontWeight: FontWeight.bold,
                         ),
                         maxLines: 1,
@@ -186,7 +186,7 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
                         player.currentSubTitle,
                         style: TextStyle(
                           color: palette.textSecondary,
-                          fontSize: 11,
+                          fontSize: FirdawsType.caption,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -202,7 +202,7 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
                           color: player.isOfflineSource
                               ? (palette.isDark ? const Color(0xFF34D399) : const Color(0xFF047857))
                               : accent,
-                          fontSize: 9.5,
+                          fontSize: FirdawsType.micro,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -253,7 +253,7 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
                 player.formatDuration(player.position),
                 style: TextStyle(
                   color: palette.textSecondary,
-                  fontSize: 11,
+                  fontSize: FirdawsType.caption,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -275,7 +275,7 @@ class _PersistentAudioPlayerBarState extends State<PersistentAudioPlayerBar>
               ),
               Text(
                 player.formatDuration(player.duration),
-                style: TextStyle(color: palette.textMuted, fontSize: 11),
+                style: TextStyle(color: palette.textMuted, fontSize: FirdawsType.caption),
               ),
             ],
           ),

@@ -108,7 +108,7 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
           ),
 
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+            padding: const EdgeInsets.fromLTRB(FirdawsSpace.pageGutter, 16, FirdawsSpace.pageGutter, 18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -127,7 +127,7 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(skin.badgeEmoji,
-                                style: const TextStyle(fontSize: 15)),
+                                style: const TextStyle(fontSize: FirdawsType.body)),
                             const SizedBox(width: 5),
                             Flexible(
                               child: Text(
@@ -139,7 +139,7 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
                                       ? Colors.white
                                       : palette.textPrimary,
                                   fontWeight: FontWeight.w800,
-                                  fontSize: 13.5,
+                                  fontSize: FirdawsType.label,
                                 ),
                               ),
                             ),
@@ -150,7 +150,7 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
                               style: TextStyle(
                                 color: palette.accentColor,
                                 fontWeight: FontWeight.w700,
-                                fontSize: 11,
+                                fontSize: FirdawsType.caption,
                               ),
                             ),
                           ],
@@ -178,7 +178,7 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
                           maxLines: 1,
                           style: TextStyle(
                             color: isDark ? Colors.white : palette.textPrimary,
-                            fontSize: 11,
+                            fontSize: FirdawsType.caption,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -244,7 +244,7 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
                         duration: const Duration(milliseconds: 350),
                         child: Container(
                           key: ValueKey<String>(hoor.activeBubbleText),
-                          padding: const EdgeInsets.all(13),
+                          padding: const EdgeInsets.all(FirdawsSpace.lg),
                           decoration: BoxDecoration(
                             color: bubbleFill,
                             borderRadius: const BorderRadius.only(
@@ -435,7 +435,7 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
                           'إظهار ${hoor.companionName} للمساعدة بكل الشاشات',
                           style: TextStyle(
                             color: isDark ? Colors.white : palette.textPrimary,
-                            fontSize: 12,
+                            fontSize: FirdawsType.caption,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -452,7 +452,7 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
                               size: 16),
                           label: Text(
                             'مشهد ${settings.selectedJannatiSceneryIndex + 1}/١٠٠',
-                            style: const TextStyle(fontSize: 11.5),
+                            style: const TextStyle(fontSize: FirdawsType.caption),
                           ),
                         ),
                     ],
@@ -483,7 +483,7 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
             label,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 12,
+              fontSize: FirdawsType.caption,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -521,7 +521,7 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: isDark ? Colors.white : palette.textPrimary,
-                fontSize: 11.2,
+                fontSize: FirdawsType.caption,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -580,18 +580,18 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    padding: const EdgeInsets.fromLTRB(FirdawsSpace.pageGutter, 12, FirdawsSpace.pageGutter, 8),
                     child: Text(
                       title,
                       style: TextStyle(
                         color: palette.textPrimary,
                         fontWeight: FontWeight.w800,
-                        fontSize: 16,
+                        fontSize: FirdawsType.body,
                       ),
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: FirdawsSpace.pageGutter),
                     child: TextField(
                       onChanged: (v) => setModalState(() => query = v),
                       decoration: InputDecoration(
@@ -624,7 +624,7 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
                                 color: selected
                                     ? Colors.black
                                     : palette.textPrimary,
-                                fontSize: 11,
+                                fontSize: FirdawsType.caption,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
@@ -635,7 +635,7 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
                               color: palette.textPrimary,
                               fontWeight:
                                   selected ? FontWeight.w800 : FontWeight.w600,
-                              fontSize: 13.5,
+                              fontSize: FirdawsType.label,
                             ),
                           ),
                           trailing: selected
@@ -679,7 +679,7 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
             return SizedBox(
               height: MediaQuery.of(ctx).size.height * 0.82,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(18, 14, 18, 28),
+                padding: const EdgeInsets.fromLTRB(FirdawsSpace.pageGutter, 14, FirdawsSpace.pageGutter, 28),
                 children: [
                   Center(
                     child: Container(
@@ -698,7 +698,7 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
                     style: TextStyle(
                       color: palette.textPrimary,
                       fontWeight: FontWeight.w800,
-                      fontSize: 17,
+                      fontSize: FirdawsType.section,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -745,7 +745,7 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
                       }
                     },
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: FirdawsSpace.lg),
                   // النوع: حور (أنثى) / ولد (ذكر)
                   Row(
                     children: [
@@ -768,12 +768,12 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: FirdawsSpace.lg),
                   const Text(
                     'اختر شكل الأنمي الكيوت المفضّل (٢٤ شكلاً متجدداً 🌸):',
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
-                      fontSize: 13.5,
+                      fontSize: FirdawsType.label,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -832,7 +832,7 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
                                     color: isSel
                                         ? palette.accentColor
                                         : palette.textSecondary,
-                                    fontSize: 9,
+                                    fontSize: FirdawsType.micro,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -843,7 +843,7 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
                       },
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: FirdawsSpace.lg),
                   _detailColorSelector(
                     label: 'لون البشرة',
                     colors: HoorCatalog.skinTones,
@@ -905,7 +905,7 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
                     onTap: (i) =>
                         liveHoor.updateAppearance(app.copyWith(auraStyle: i)),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: FirdawsSpace.lg),
                   ElevatedButton(
                     onPressed: () {
                       final next = nameController.text.trim();
@@ -938,7 +938,7 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
         children: [
           Text(label,
               style:
-                  const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  const TextStyle(fontWeight: FontWeight.w700, fontSize: FirdawsType.label)),
           const SizedBox(height: 6),
           Wrap(
             spacing: 8,
@@ -980,14 +980,14 @@ class _HoorCompanionWidgetState extends State<HoorCompanionWidget>
         children: [
           Text(label,
               style:
-                  const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  const TextStyle(fontWeight: FontWeight.w700, fontSize: FirdawsType.label)),
           const SizedBox(height: 6),
           Wrap(
             spacing: 6,
             runSpacing: 6,
             children: List.generate(options.length, (i) {
               return ChoiceChip(
-                label: Text(options[i], style: const TextStyle(fontSize: 11.5)),
+                label: Text(options[i], style: const TextStyle(fontSize: FirdawsType.caption)),
                 selected: i == selected,
                 onSelected: (_) => onTap(i),
               );
@@ -1028,7 +1028,7 @@ Future<void> openHoorVentingSheet(
               height: MediaQuery.of(ctx).size.height * 0.78,
               child: Column(
                 children: [
-                  const SizedBox(height: 10),
+                  const SizedBox(height: FirdawsSpace.md),
                   Container(
                     width: 44,
                     height: 4,
@@ -1047,7 +1047,7 @@ Future<void> openHoorVentingSheet(
                           style: TextStyle(
                             color: palette.textPrimary,
                             fontWeight: FontWeight.w800,
-                            fontSize: 16,
+                            fontSize: FirdawsType.body,
                           ),
                         ),
                         const Spacer(),
@@ -1063,14 +1063,14 @@ Future<void> openHoorVentingSheet(
                   SizedBox(
                     height: 36,
                     child: ListView.separated(
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      padding: const EdgeInsets.symmetric(horizontal: FirdawsSpace.pageGutter),
                       scrollDirection: Axis.horizontal,
                       itemCount: quickPrompts.length,
                       separatorBuilder: (_, __) => const SizedBox(width: 6),
                       itemBuilder: (_, idx) {
                         return ActionChip(
                           label: Text(quickPrompts[idx],
-                              style: const TextStyle(fontSize: 11.5)),
+                              style: const TextStyle(fontSize: FirdawsType.caption)),
                           onPressed: () => hoor.sendVentMessage(
                             text: quickPrompts[idx],
                             userName: user.displayName,
@@ -1121,7 +1121,7 @@ Future<void> openHoorVentingSheet(
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 6, 12, 14),
+                    padding: const EdgeInsets.fromLTRB(FirdawsSpace.pageGutter, 6, FirdawsSpace.pageGutter, 14),
                     child: Row(
                       children: [
                         Expanded(

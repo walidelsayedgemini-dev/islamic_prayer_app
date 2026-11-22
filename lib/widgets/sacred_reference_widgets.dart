@@ -69,7 +69,7 @@ class SacredNavigator {
             border: Border(top: BorderSide(color: accent, width: 1.8)),
           ),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
+            padding: const EdgeInsets.fromLTRB(FirdawsSpace.pageGutter, 12, FirdawsSpace.pageGutter, 28),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -83,7 +83,7 @@ class SacredNavigator {
                     ),
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: FirdawsSpace.lg),
                 Row(
                   children: [
                     Text(resolved.emoji, style: const TextStyle(fontSize: 26)),
@@ -96,7 +96,7 @@ class SacredNavigator {
                             titleOverride ?? resolved.title,
                             style: TextStyle(
                               color: palette.textPrimary,
-                              fontSize: 16,
+                              fontSize: FirdawsType.body,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -105,7 +105,7 @@ class SacredNavigator {
                             '📜 ${resolved.sourceReference}',
                             style: TextStyle(
                               color: accent,
-                              fontSize: 12,
+                              fontSize: FirdawsType.caption,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -118,10 +118,10 @@ class SacredNavigator {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: FirdawsSpace.md),
                 Text(
                   'عن ${resolved.narrator}:',
-                  style: TextStyle(color: palette.textSecondary, fontSize: 12),
+                  style: TextStyle(color: palette.textSecondary, fontSize: FirdawsType.caption),
                 ),
                 const SizedBox(height: 8),
                 Firdaws4KCardShell(
@@ -130,9 +130,9 @@ class SacredNavigator {
                   ),
                   isDark: palette.isDark,
                   borderColor: accent.withOpacity(0.48),
-                  borderRadius: 18,
+                  borderRadius: FirdawsRadius.card,
                   borderWidth: 1.1,
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(FirdawsSpace.lg),
                   imageOpacity: 0.36,
                   child: SelectableText(
                     verbatimText != null && verbatimText.trim().isNotEmpty
@@ -140,7 +140,7 @@ class SacredNavigator {
                         : resolved.arabicText,
                     style: TextStyle(
                       color: palette.textPrimary,
-                      fontSize: 15,
+                      fontSize: FirdawsType.body,
                       height: 1.75,
                       fontWeight: FontWeight.bold,
                     ),
@@ -151,7 +151,7 @@ class SacredNavigator {
                   '📖 الشرح والتفسير الميسر:',
                   style: TextStyle(
                     color: accent,
-                    fontSize: 13,
+                    fontSize: FirdawsType.label,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -160,29 +160,29 @@ class SacredNavigator {
                   resolved.sharhAndTafsir,
                   style: TextStyle(
                     color: palette.textPrimary,
-                    fontSize: 13.5,
+                    fontSize: FirdawsType.label,
                     height: 1.65,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: FirdawsSpace.md),
                 Firdaws4KCardShell(
                   backdrop: Background500Catalog.forExtraSection(118),
                   isDark: palette.isDark,
                   borderColor: palette.dividerColor,
-                  borderRadius: 14,
+                  borderRadius: FirdawsRadius.control,
                   borderWidth: 1.0,
                   padding: const EdgeInsets.all(12),
                   imageOpacity: 0.30,
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('🌟 ', style: TextStyle(fontSize: 16)),
+                      const Text('🌟 ', style: TextStyle(fontSize: FirdawsType.body)),
                       Expanded(
                         child: Text(
                           resolved.practicalBenefit,
                           style: TextStyle(
                             color: palette.textSecondary,
-                            fontSize: 12.5,
+                            fontSize: FirdawsType.label,
                             height: 1.5,
                           ),
                         ),
@@ -190,7 +190,7 @@ class SacredNavigator {
                     ],
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: FirdawsSpace.lg),
                 Row(
                   children: [
                     if (resolved.linkedSurah != null)
@@ -215,7 +215,7 @@ class SacredNavigator {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 11.5,
+                              fontSize: FirdawsType.caption,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -247,7 +247,7 @@ class SacredNavigator {
                           'موسوعة البخاري 📜',
                           style: TextStyle(
                             color: accent,
-                            fontSize: 11.5,
+                            fontSize: FirdawsType.caption,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -310,7 +310,7 @@ class QuranRefBadge extends StatelessWidget {
         backdrop: Background500Catalog.forExtraSection(surahNumber),
         isDark: palette.isDark,
         borderColor: accent.withOpacity(0.55),
-        borderRadius: 14,
+        borderRadius: FirdawsRadius.control,
         borderWidth: 1.0,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         imageOpacity: 0.28,
@@ -331,7 +331,7 @@ class QuranRefBadge extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: accent,
-                  fontSize: 11,
+                  fontSize: FirdawsType.caption,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -384,21 +384,21 @@ class HadithRefBadge extends StatelessWidget {
         ),
         isDark: palette.isDark,
         borderColor: accent.withOpacity(0.5),
-        borderRadius: 14,
+        borderRadius: FirdawsRadius.control,
         borderWidth: 1.0,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         imageOpacity: 0.26,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('📜', style: TextStyle(fontSize: 13)),
+            const Text('📜', style: TextStyle(fontSize: FirdawsType.label)),
             const SizedBox(width: 5),
             Flexible(
               child: Text(
                 customLabel ?? 'الشرح والتوثيق • صحيح البخاري',
                 style: TextStyle(
                   color: palette.isDark ? Colors.white : palette.textPrimary,
-                  fontSize: 11,
+                  fontSize: FirdawsType.caption,
                   fontWeight: FontWeight.bold,
                 ),
                 overflow: TextOverflow.ellipsis,

@@ -140,7 +140,7 @@ class _Wallpaper70PickerSheetState extends State<Wallpaper70PickerSheet> {
             ),
             child: Column(
               children: [
-                const SizedBox(height: 10),
+                const SizedBox(height: FirdawsSpace.md),
                 Center(
                   child: Container(
                     width: 48,
@@ -152,7 +152,7 @@ class _Wallpaper70PickerSheetState extends State<Wallpaper70PickerSheet> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  padding: const EdgeInsets.fromLTRB(FirdawsSpace.pageGutter, 12, FirdawsSpace.pageGutter, 8),
                   child: Row(
                     children: [
                       Container(
@@ -177,7 +177,7 @@ class _Wallpaper70PickerSheetState extends State<Wallpaper70PickerSheet> {
                               style: TextStyle(
                                 color: accent,
                                 fontWeight: FontWeight.w900,
-                                fontSize: 14.5,
+                                fontSize: FirdawsType.body,
                               ),
                             ),
                             Text(
@@ -186,7 +186,7 @@ class _Wallpaper70PickerSheetState extends State<Wallpaper70PickerSheet> {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: firdawsCrispSecondaryText(palette),
-                                fontSize: 11,
+                                fontSize: FirdawsType.caption,
                               ),
                             ),
                           ],
@@ -209,7 +209,7 @@ class _Wallpaper70PickerSheetState extends State<Wallpaper70PickerSheet> {
                           style: TextStyle(
                             color: accent,
                             fontWeight: FontWeight.bold,
-                            fontSize: 12,
+                            fontSize: FirdawsType.caption,
                           ),
                         ),
                       ),
@@ -223,7 +223,7 @@ class _Wallpaper70PickerSheetState extends State<Wallpaper70PickerSheet> {
 
                 // اختيار نطاق التعيين (التطبيق / جنتي / كلاهما)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: FirdawsSpace.pageGutter),
                   child: Row(
                     children: [
                       _targetChip(
@@ -257,15 +257,15 @@ class _Wallpaper70PickerSheetState extends State<Wallpaper70PickerSheet> {
 
                 // شريط البحث
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: FirdawsSpace.pageGutter),
                   child: TextField(
                     controller: _searchCtrl,
                     onChanged: (v) => setState(() => _query = v),
-                    style: TextStyle(color: palette.textPrimary, fontSize: 13),
+                    style: TextStyle(color: palette.textPrimary, fontSize: FirdawsType.label),
                     decoration: InputDecoration(
                       hintText: 'ابحث في ٧٠ صورة (الكعبة، النبوي، الحمراء، سمرقند...)',
                       hintStyle:
-                          TextStyle(color: palette.textMuted, fontSize: 11.5),
+                          TextStyle(color: palette.textMuted, fontSize: FirdawsType.caption),
                       prefixIcon:
                           Icon(Icons.search_rounded, color: accent, size: 19),
                       suffixIcon: _query.isNotEmpty
@@ -305,7 +305,7 @@ class _Wallpaper70PickerSheetState extends State<Wallpaper70PickerSheet> {
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: FirdawsSpace.pageGutter),
                     itemCount: Wallpaper70Catalog.categories.length,
                     itemBuilder: (_, idx) {
                       final cat = Wallpaper70Catalog.categories[idx];
@@ -320,7 +320,7 @@ class _Wallpaper70PickerSheetState extends State<Wallpaper70PickerSheet> {
                                   ? palette.onAccentColor
                                   : palette.textPrimary,
                               fontWeight: FontWeight.bold,
-                              fontSize: 11,
+                              fontSize: FirdawsType.caption,
                             ),
                           ),
                           selected: isSel,
@@ -342,7 +342,7 @@ class _Wallpaper70PickerSheetState extends State<Wallpaper70PickerSheet> {
                 Expanded(
                   child: GridView.builder(
                     controller: scrollController,
-                    padding: const EdgeInsets.fromLTRB(14, 4, 14, 24),
+                    padding: const EdgeInsets.fromLTRB(FirdawsSpace.pageGutter, 4, FirdawsSpace.pageGutter, 24),
                     physics: const BouncingScrollPhysics(),
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
@@ -422,7 +422,7 @@ class _Wallpaper70PickerSheetState extends State<Wallpaper70PickerSheet> {
                                       '#$numBadge • 4K',
                                       style: const TextStyle(
                                         color: Colors.white,
-                                        fontSize: 9.5,
+                                        fontSize: FirdawsType.micro,
                                         fontWeight: FontWeight.w800,
                                       ),
                                     ),
@@ -455,7 +455,7 @@ class _Wallpaper70PickerSheetState extends State<Wallpaper70PickerSheet> {
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.w900,
-                                          fontSize: 12,
+                                          fontSize: FirdawsType.caption,
                                         ),
                                       ),
                                       const SizedBox(height: 2),
@@ -465,7 +465,7 @@ class _Wallpaper70PickerSheetState extends State<Wallpaper70PickerSheet> {
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
                                           color: Colors.white.withOpacity(0.82),
-                                          fontSize: 9.5,
+                                          fontSize: FirdawsType.micro,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),

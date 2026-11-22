@@ -1,8 +1,9 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models/islamic_stories_data.dart';
+import '../models/story_artwork.dart';
 
-/// مسرح حركي متعدد الطبقات يجمع الصورة ٤K للبيئة المعنية مع مؤثرات بصرية وزخرفية مرسومة (بدون تصوير ذوات أرواح)
+/// لوحة بيئية رمزية مع مؤثرات مرسومة، دون تصوير أنبياء أو أشخاص.
 class StorySceneStage extends StatefulWidget {
   final IslamicStory story;
   final double height;
@@ -22,6 +23,7 @@ class StorySceneStage extends StatefulWidget {
 class _StorySceneStageState extends State<StorySceneStage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
+  bool _motionEnabled = false;
 
   @override
   void initState() {
@@ -29,7 +31,22 @@ class _StorySceneStageState extends State<StorySceneStage>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 12),
-    )..repeat();
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final shouldAnimate =
+        !MediaQuery.of(context).disableAnimations && TickerMode.of(context);
+    if (shouldAnimate == _motionEnabled) return;
+
+    _motionEnabled = shouldAnimate;
+    if (_motionEnabled) {
+      _controller.repeat();
+    } else {
+      _controller.stop(canceled: false);
+    }
   }
 
   @override
@@ -49,11 +66,13 @@ class _StorySceneStageState extends State<StorySceneStage>
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // الخلفية الواقعية 4K المدمجة بالمشهد
+            // لوحة بيئية رمزية من سجل رسوم القصص
             AnimatedBuilder(
+              key: const ValueKey('story-scene-image-motion'),
               animation: _controller,
               builder: (context, child) {
-                final scale = 1.03 + 0.04 * math.sin(_controller.value * math.pi * 2);
+                final scale =
+                    1.03 + 0.04 * math.sin(_controller.value * math.pi * 2);
                 final dx = math.sin(_controller.value * math.pi * 2) * 5;
                 return Transform.translate(
                   offset: Offset(dx, 0),
@@ -63,8 +82,8 @@ class _StorySceneStageState extends State<StorySceneStage>
                   ),
                 );
               },
-              child: Image.asset(
-                widget.story.assetImagePath,
+              child: Image(
+                image: StoryArtwork.imageProvider(widget.story, width: 1400),
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => Container(
                   decoration: BoxDecoration(
@@ -96,6 +115,7 @@ class _StorySceneStageState extends State<StorySceneStage>
 
             // طبقة الأنيميشن الزخرفي والتنويري الحية حسب موضوع القصة
             AnimatedBuilder(
+              key: const ValueKey('story-scene-atmosphere-motion'),
               animation: _controller,
               builder: (_, __) {
                 return CustomPaint(
@@ -113,7 +133,8 @@ class _StorySceneStageState extends State<StorySceneStage>
               top: 12,
               right: 12,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.55),
                   borderRadius: BorderRadius.circular(14),
@@ -122,7 +143,8 @@ class _StorySceneStageState extends State<StorySceneStage>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(widget.story.emoji, style: const TextStyle(fontSize: 15)),
+                    Text(widget.story.emoji,
+                        style: const TextStyle(fontSize: 15)),
                     const SizedBox(width: 5),
                     Text(
                       widget.story.category.shortLabel,
@@ -162,7 +184,9 @@ class _StorySceneStageState extends State<StorySceneStage>
                       color: accent.withOpacity(0.95),
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      shadows: const [Shadow(color: Colors.black87, blurRadius: 6)],
+                      shadows: const [
+                        Shadow(color: Colors.black87, blurRadius: 6)
+                      ],
                     ),
                   ),
                 ],
@@ -193,13 +217,17 @@ class _StorySceneAtmosphericPainter extends CustomPainter {
 
     // 1. نجوم وذرات نور سابحة مشتركة بجميع المشاهد
     for (int i = 0; i < 24; i++) {
-      final px = ((rng.nextDouble() + t * (0.05 + (i % 3) * 0.03)) % 1.0) * size.width;
-      final py = ((rng.nextDouble() * 0.8) + math.sin(phase + i) * 0.03) * size.height;
+      final px =
+          ((rng.nextDouble() + t * (0.05 + (i % 3) * 0.03)) % 1.0) * size.width;
+      final py =
+          ((rng.nextDouble() * 0.8) + math.sin(phase + i) * 0.03) * size.height;
       final twinkle = 0.25 + 0.65 * (0.5 + 0.5 * math.sin(phase * 2 + i));
       canvas.drawCircle(
         Offset(px, py),
         1.5 + (i % 3) * 1.1,
-        Paint()..color = (i.isEven ? Colors.white : accent).withOpacity(twinkle * 0.72),
+        Paint()
+          ..color =
+              (i.isEven ? Colors.white : accent).withOpacity(twinkle * 0.72),
       );
     }
 
@@ -223,10 +251,13 @@ class _StorySceneAtmosphericPainter extends CustomPainter {
               ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
           );
         }
-        final moonC = Offset(size.width * 0.16, size.height * 0.24 + math.sin(phase) * 4);
-        final outer = Path()..addOval(Rect.fromCircle(center: moonC, radius: 18));
+        final moonC =
+            Offset(size.width * 0.16, size.height * 0.24 + math.sin(phase) * 4);
+        final outer = Path()
+          ..addOval(Rect.fromCircle(center: moonC, radius: 18));
         final inner = Path()
-          ..addOval(Rect.fromCircle(center: Offset(moonC.dx + 7, moonC.dy - 3), radius: 15));
+          ..addOval(Rect.fromCircle(
+              center: Offset(moonC.dx + 7, moonC.dy - 3), radius: 15));
         canvas.drawPath(
           Path.combine(PathOperation.difference, outer, inner),
           Paint()..color = const Color(0xFFFEF08A).withOpacity(0.85),
@@ -241,7 +272,8 @@ class _StorySceneAtmosphericPainter extends CustomPainter {
           final wavePath = Path();
           final baseY = size.height * (0.64 + w * 0.09);
           for (double x = 0; x <= size.width; x += 10) {
-            final y = baseY + math.sin((x / 38.0) + phase + w * 1.4) * (5.0 + w * 2);
+            final y =
+                baseY + math.sin((x / 38.0) + phase + w * 1.4) * (5.0 + w * 2);
             if (x == 0) {
               wavePath.moveTo(x, y);
             } else {
@@ -251,7 +283,8 @@ class _StorySceneAtmosphericPainter extends CustomPainter {
           canvas.drawPath(
             wavePath,
             Paint()
-              ..color = (w.isEven ? Colors.white : accent).withOpacity(0.38 - w * 0.08)
+              ..color = (w.isEven ? Colors.white : accent)
+                  .withOpacity(0.38 - w * 0.08)
               ..style = PaintingStyle.stroke
               ..strokeWidth = 2.4,
           );

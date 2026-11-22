@@ -19,12 +19,15 @@ class IslamicQaExplorerWidget extends StatefulWidget {
     super.key,
     required this.palette,
     this.initialCategory,
-    this.headerTitle = 'مَوْسُوعَةُ الفَرْدَوْسِ • ٥٠٠٠ سُؤَالٍ وَجَوَابٍ مُنَظَّمَةٍ',
-    this.headerSubtitle = 'مقسمة على ١٠ أقسام رئيسية و٥٠ قسماً فرعياً حتى تجد ضالتك بسهولة ويسر',
+    this.headerTitle =
+        'مَوْسُوعَةُ الفَرْدَوْسِ • ٥٠٠٠ سُؤَالٍ وَجَوَابٍ مُنَظَّمَةٍ',
+    this.headerSubtitle =
+        'مقسمة على ١٠ أقسام رئيسية و٥٠ قسماً فرعياً حتى تجد ضالتك بسهولة ويسر',
   });
 
   @override
-  State<IslamicQaExplorerWidget> createState() => _IslamicQaExplorerWidgetState();
+  State<IslamicQaExplorerWidget> createState() =>
+      _IslamicQaExplorerWidgetState();
 }
 
 class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
@@ -75,23 +78,30 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
     if (searchResult != null) {
       visibleItems = searchResult.matches.map((m) => m.item).toList();
       if (_selectedCategory != null) {
-        visibleItems = visibleItems.where((q) => q.category == _selectedCategory).toList();
+        visibleItems =
+            visibleItems.where((q) => q.category == _selectedCategory).toList();
       }
       if (_selectedSection != null) {
-        visibleItems = visibleItems.where((q) => q.sectionTitle == _selectedSection).toList();
+        visibleItems = visibleItems
+            .where((q) => q.sectionTitle == _selectedSection)
+            .toList();
       }
       if (_onlyBookmarked) {
-        visibleItems = visibleItems.where((q) => bookmarks.contains(q.id)).toList();
+        visibleItems =
+            visibleItems.where((q) => bookmarks.contains(q.id)).toList();
       }
     } else {
       visibleItems = _selectedCategory == null
           ? IslamicQaCatalog.allQuestions
-          : IslamicQaCatalog.byCategoryAndSection(_selectedCategory!, _selectedSection);
+          : IslamicQaCatalog.byCategoryAndSection(
+              _selectedCategory!, _selectedSection);
       if (_onlyBookmarked) {
-        visibleItems = visibleItems.where((q) => bookmarks.contains(q.id)).toList();
+        visibleItems =
+            visibleItems.where((q) => bookmarks.contains(q.id)).toList();
       }
     }
-    final List<IslamicQaItem> pagedItems = visibleItems.take(_visibleLimit).toList();
+    final List<IslamicQaItem> pagedItems =
+        visibleItems.take(_visibleLimit).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -100,8 +110,8 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
         Firdaws4KCardShell(
           backdrop: Background500Catalog.forHelpMeBanner(5),
           isDark: palette.isDark,
-          padding: const EdgeInsets.all(14),
-          borderRadius: 20,
+          padding: const EdgeInsets.all(FirdawsSpace.lg),
+          borderRadius: FirdawsRadius.card,
           borderColor: accent.withOpacity(0.55),
           imageOpacity: 0.54,
           child: Column(
@@ -116,7 +126,8 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                       shape: BoxShape.circle,
                       border: Border.all(color: accent),
                     ),
-                    child: Icon(Icons.question_answer_rounded, color: accent, size: 20),
+                    child: Icon(Icons.question_answer_rounded,
+                        color: accent, size: 20),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -128,31 +139,38 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                           style: TextStyle(
                             color: accent,
                             fontWeight: FontWeight.bold,
-                            fontSize: 13.5,
+                            fontSize: FirdawsType.label,
                           ),
                         ),
                         Text(
                           widget.headerSubtitle,
-                          style: TextStyle(color: palette.textSecondary, fontSize: 11),
+                          style: TextStyle(
+                              color: palette.textSecondary,
+                              fontSize: FirdawsType.caption),
                         ),
                       ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: FirdawsSpace.md),
               TextField(
                 controller: _searchController,
-                style: TextStyle(color: palette.textPrimary, fontSize: 13.5),
+                style: TextStyle(
+                    color: palette.textPrimary, fontSize: FirdawsType.label),
                 textInputAction: TextInputAction.search,
                 onChanged: (val) => setState(() => _query = val),
                 decoration: InputDecoration(
-                  hintText: 'اكتب سؤالك هنا (مثلاً: كيف أبني قصراً؟ أو حكم سجود السهو؟)...',
-                  hintStyle: TextStyle(color: palette.textMuted, fontSize: 12),
-                  prefixIcon: Icon(Icons.search_rounded, color: accent, size: 20),
+                  hintText:
+                      'اكتب سؤالك هنا (مثلاً: كيف أبني قصراً؟ أو حكم سجود السهو؟)...',
+                  hintStyle: TextStyle(
+                      color: palette.textMuted, fontSize: FirdawsType.caption),
+                  prefixIcon:
+                      Icon(Icons.search_rounded, color: accent, size: 20),
                   suffixIcon: _query.isNotEmpty
                       ? IconButton(
-                          icon: Icon(Icons.clear_rounded, color: palette.textMuted, size: 18),
+                          icon: Icon(Icons.clear_rounded,
+                              color: palette.textMuted, size: 18),
                           onPressed: () {
                             _searchController.clear();
                             setState(() => _query = '');
@@ -161,7 +179,8 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                       : null,
                   filled: true,
                   fillColor: palette.elevatedCardColor,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(color: palette.dividerColor),
@@ -192,7 +211,7 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                           prompt,
                           style: TextStyle(
                             color: palette.textPrimary,
-                            fontSize: 10.5,
+                            fontSize: FirdawsType.caption,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -212,7 +231,7 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
           ),
         ),
 
-        const SizedBox(height: 10),
+        const SizedBox(height: FirdawsSpace.md),
 
         // 2. شريط التصنيفات العشرة + المفضلة
         SizedBox(
@@ -231,7 +250,7 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                           ? palette.onAccentColor
                           : palette.textPrimary,
                       fontWeight: FontWeight.bold,
-                      fontSize: 11.5,
+                      fontSize: FirdawsType.caption,
                     ),
                   ),
                   selected: _selectedCategory == null && !_onlyBookmarked,
@@ -257,9 +276,11 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                   label: Text(
                     'محفوظاتي (${bookmarks.length})',
                     style: TextStyle(
-                      color: _onlyBookmarked ? palette.onAccentColor : palette.textPrimary,
+                      color: _onlyBookmarked
+                          ? palette.onAccentColor
+                          : palette.textPrimary,
                       fontWeight: FontWeight.bold,
-                      fontSize: 11.5,
+                      fontSize: FirdawsType.caption,
                     ),
                   ),
                   selected: _onlyBookmarked,
@@ -285,13 +306,14 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                       style: TextStyle(
                         color: isSel ? Colors.white : palette.textPrimary,
                         fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-                        fontSize: 11.5,
+                        fontSize: FirdawsType.caption,
                       ),
                     ),
                     selected: isSel,
                     selectedColor: catCol,
                     backgroundColor: palette.cardColor,
-                    side: BorderSide(color: isSel ? catCol : palette.dividerColor),
+                    side: BorderSide(
+                        color: isSel ? catCol : palette.dividerColor),
                     onSelected: (_) => setState(() {
                       _selectedCategory = isSel ? null : cat;
                       _selectedSection = null;
@@ -318,7 +340,7 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                   child: ChoiceChip(
                     label: Text(
                       'كل فروع ${_selectedCategory!.arabicTitle}',
-                      style: const TextStyle(fontSize: 11),
+                      style: const TextStyle(fontSize: FirdawsType.caption),
                     ),
                     selected: _selectedSection == null,
                     selectedColor: _selectedCategory!.color.withOpacity(0.85),
@@ -328,7 +350,8 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                     }),
                   ),
                 ),
-                ...IslamicQaCatalog.sectionsForCategory(_selectedCategory!).map((sec) {
+                ...IslamicQaCatalog.sectionsForCategory(_selectedCategory!)
+                    .map((sec) {
                   final sel = _selectedSection == sec;
                   return Padding(
                     padding: const EdgeInsets.only(left: 6),
@@ -336,12 +359,13 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                       label: Text(
                         sec,
                         style: TextStyle(
-                          fontSize: 11,
-                          color: sel ? Colors.white : palette.textPrimary,
+                          fontSize: FirdawsType.caption,
+                          color:
+                              sel ? palette.onAccentColor : palette.textPrimary,
                         ),
                       ),
                       selected: sel,
-                      selectedColor: _selectedCategory!.color,
+                      selectedColor: palette.accentColor,
                       onSelected: (_) => setState(() {
                         _selectedSection = sel ? null : sec;
                         _visibleLimit = 40;
@@ -354,20 +378,15 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
           ),
         ],
 
-        const SizedBox(height: 10),
+        const SizedBox(height: FirdawsSpace.md),
 
         // 3. بطاقة الإجابة المباشرة الفورية عند البحث
         if (searchResult != null) ...[
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(FirdawsSpace.lg),
             margin: const EdgeInsets.only(bottom: 10),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  accent.withOpacity(palette.isDark ? 0.24 : 0.16),
-                  palette.cardColor,
-                ],
-              ),
+              color: palette.elevatedCardColor,
               borderRadius: BorderRadius.circular(18),
               border: Border.all(color: accent, width: 1.5),
             ),
@@ -392,7 +411,7 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                         style: TextStyle(
                           color: accent,
                           fontWeight: FontWeight.bold,
-                          fontSize: 12.5,
+                          fontSize: FirdawsType.label,
                         ),
                       ),
                     ),
@@ -403,7 +422,7 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                   searchResult.smartSummary,
                   style: TextStyle(
                     color: palette.textPrimary,
-                    fontSize: 12.5,
+                    fontSize: FirdawsType.label,
                     height: 1.45,
                   ),
                 ),
@@ -426,7 +445,7 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                   style: TextStyle(
                     color: palette.textSecondary,
                     fontWeight: FontWeight.bold,
-                    fontSize: 11.5,
+                    fontSize: FirdawsType.caption,
                   ),
                 ),
               ),
@@ -439,7 +458,7 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                     style: TextStyle(
                       color: accent,
                       fontWeight: FontWeight.bold,
-                      fontSize: 11.5,
+                      fontSize: FirdawsType.caption,
                     ),
                   ),
                 ),
@@ -466,7 +485,10 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
                       ? 'لم تحفظ أي سؤال في المفضلة بعد — اضغط أيقونة الحفظ على أي سؤال لإضافته.'
                       : 'لم نجد تطابقاً حرفياً في القسم المحدد. جرّب «الكل (٥٠٠٠)» أو استخدم كلمات أبسط (مثل: صلاة، زكاة، جنة، توبة).',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: palette.textSecondary, fontSize: 12.5, height: 1.4),
+                  style: TextStyle(
+                      color: palette.textSecondary,
+                      fontSize: FirdawsType.label,
+                      height: 1.4),
                 ),
               ],
             ),
@@ -478,223 +500,245 @@ class _IslamicQaExplorerWidgetState extends State<IslamicQaExplorerWidget> {
             itemCount: pagedItems.length,
             itemBuilder: (_, idx) {
               final item = pagedItems[idx];
-              final isExpanded = _expandedIds.contains(item.id) || (idx == 0 && hasQuery);
+              final isExpanded =
+                  _expandedIds.contains(item.id) || (idx == 0 && hasQuery);
               final isSaved = bookmarks.contains(item.id);
               final catCol = item.category.color;
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: Firdaws4KCardShell(
-                  backdrop: Background500Catalog.forHelpMeCategory(35 + (idx % 15)),
+                  backdrop:
+                      Background500Catalog.forHelpMeCategory(35 + (idx % 15)),
                   isDark: palette.isDark,
                   padding: EdgeInsets.zero,
-                  borderRadius: 18,
+                  borderRadius: FirdawsRadius.card,
                   borderColor: Colors.transparent,
                   borderWidth: 0,
                   imageOpacity: 0.44,
                   child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    InkWell(
-                      borderRadius: BorderRadius.circular(18),
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        setState(() {
-                          if (_expandedIds.contains(item.id)) {
-                            _expandedIds.remove(item.id);
-                          } else {
-                            _expandedIds.add(item.id);
-                          }
-                        });
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: catCol.withOpacity(0.16),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                '${item.number}',
-                                style: TextStyle(
-                                  color: catCol,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11.5,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      InkWell(
+                        borderRadius: BorderRadius.circular(18),
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(() {
+                            if (_expandedIds.contains(item.id)) {
+                              _expandedIds.remove(item.id);
+                            } else {
+                              _expandedIds.add(item.id);
+                            }
+                          });
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(FirdawsSpace.lg),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: catCol.withOpacity(0.16),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '${item.number}',
+                                  style: TextStyle(
+                                    color: catCol,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: FirdawsType.caption,
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item.question,
-                                    style: TextStyle(
-                                      color: palette.textPrimary,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13.5,
-                                      height: 1.4,
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.question,
+                                      style: TextStyle(
+                                        color: palette.textPrimary,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: FirdawsType.label,
+                                        height: 1.4,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${item.category.arabicTitle} • ${item.sectionTitle}',
-                                    style: TextStyle(
-                                      color: catCol,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 10.5,
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${item.category.arabicTitle} • ${item.sectionTitle}',
+                                      style: TextStyle(
+                                        color: catCol,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: FirdawsType.caption,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                            IconButton(
-                              constraints: const BoxConstraints(),
-                              padding: const EdgeInsets.all(4),
-                              icon: Icon(
-                                isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-                                color: isSaved ? accent : palette.textMuted,
-                                size: 20,
+                              IconButton(
+                                constraints: const BoxConstraints(),
+                                padding: const EdgeInsets.all(4),
+                                icon: Icon(
+                                  isSaved
+                                      ? Icons.bookmark_rounded
+                                      : Icons.bookmark_border_rounded,
+                                  color: isSaved ? accent : palette.textMuted,
+                                  size: 20,
+                                ),
+                                onPressed: () =>
+                                    jannatiProv.toggleQaBookmark(item.id),
                               ),
-                              onPressed: () => jannatiProv.toggleQaBookmark(item.id),
-                            ),
-                            Icon(
-                              isExpanded
-                                  ? Icons.keyboard_arrow_up_rounded
-                                  : Icons.keyboard_arrow_down_rounded,
-                              color: palette.textSecondary,
-                            ),
-                          ],
+                              Icon(
+                                isExpanded
+                                    ? Icons.keyboard_arrow_up_rounded
+                                    : Icons.keyboard_arrow_down_rounded,
+                                color: palette.textSecondary,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    if (isExpanded)
-                      Container(
-                        padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Divider(color: palette.dividerColor),
-                            const SizedBox(height: 6),
-                            Text(
-                              item.answer,
-                              style: TextStyle(
-                                color: palette.textPrimary,
-                                fontSize: 13,
-                                height: 1.55,
+                      if (isExpanded)
+                        Container(
+                          padding: const EdgeInsets.fromLTRB(
+                              FirdawsSpace.pageGutter,
+                              0,
+                              FirdawsSpace.pageGutter,
+                              14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Divider(color: palette.dividerColor),
+                              const SizedBox(height: 6),
+                              Text(
+                                item.answer,
+                                style: TextStyle(
+                                  color: palette.textPrimary,
+                                  fontSize: FirdawsType.label,
+                                  height: 1.55,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 10),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: catCol.withOpacity(palette.isDark ? 0.14 : 0.09),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: catCol.withOpacity(0.35)),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Icon(Icons.menu_book_rounded, color: catCol, size: 16),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          '📜 الدليل والمرجع: ${item.evidence}',
-                                          style: TextStyle(
-                                            color: palette.textPrimary,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 11.5,
-                                            height: 1.4,
+                              const SizedBox(height: FirdawsSpace.md),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: catCol.withOpacity(
+                                      palette.isDark ? 0.14 : 0.09),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                      color: catCol.withOpacity(0.35)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Icon(Icons.menu_book_rounded,
+                                            color: catCol, size: 16),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            '📜 الدليل والمرجع: ${item.evidence}',
+                                            style: TextStyle(
+                                              color: palette.textPrimary,
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: FirdawsType.caption,
+                                              height: 1.4,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    SacredEvidenceFooter(
+                                      evidenceText:
+                                          '${item.evidence}\n${item.answer}',
+                                      titleForHadith: item.question,
+                                      trackInJannati: true,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Wrap(
+                                      spacing: 6,
+                                      runSpacing: 4,
+                                      children: item.tags
+                                          .take(4)
+                                          .map(
+                                            (t) => Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    palette.elevatedCardColor,
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                '#$t',
+                                                style: TextStyle(
+                                                  color: palette.textMuted,
+                                                  fontSize: FirdawsType.micro,
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
+                                    ),
                                   ),
-                                  const SizedBox(height: 6),
-                                  SacredEvidenceFooter(
-                                    evidenceText: '${item.evidence}\n${item.answer}',
-                                    titleForHadith: item.question,
-                                    trackInJannati: true,
+                                  TextButton.icon(
+                                    onPressed: () {
+                                      Clipboard.setData(
+                                        ClipboardData(
+                                          text:
+                                              'س: ${item.question}\nج: ${item.answer}\nالدليل: ${item.evidence}\n— من تطبيق الفردوس',
+                                        ),
+                                      );
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                              'تم نسخ السؤال والإجابة بنجاح 📋'),
+                                          behavior: SnackBarBehavior.floating,
+                                          duration: Duration(seconds: 2),
+                                        ),
+                                      );
+                                    },
+                                    icon: Icon(Icons.copy_rounded,
+                                        color: accent, size: 16),
+                                    label: Text(
+                                      'نسخ',
+                                      style: TextStyle(
+                                        color: accent,
+                                        fontSize: FirdawsType.caption,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Wrap(
-                                    spacing: 6,
-                                    runSpacing: 4,
-                                    children: item.tags
-                                        .take(4)
-                                        .map(
-                                          (t) => Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 2,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: palette.elevatedCardColor,
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Text(
-                                              '#$t',
-                                              style: TextStyle(
-                                                color: palette.textMuted,
-                                                fontSize: 10,
-                                              ),
-                                            ),
-                                          ),
-                                        )
-                                        .toList(),
-                                  ),
-                                ),
-                                TextButton.icon(
-                                  onPressed: () {
-                                    Clipboard.setData(
-                                      ClipboardData(
-                                        text:
-                                            'س: ${item.question}\nج: ${item.answer}\nالدليل: ${item.evidence}\n— من تطبيق الفردوس',
-                                      ),
-                                    );
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('تم نسخ السؤال والإجابة بنجاح 📋'),
-                                        behavior: SnackBarBehavior.floating,
-                                        duration: Duration(seconds: 2),
-                                      ),
-                                    );
-                                  },
-                                  icon: Icon(Icons.copy_rounded, color: accent, size: 16),
-                                  label: Text(
-                                    'نسخ',
-                                    style: TextStyle(
-                                      color: accent,
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            );
+              );
             },
           ),
           if (pagedItems.length < visibleItems.length)
