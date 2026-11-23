@@ -6,6 +6,7 @@ import '../models/font_catalog.dart';
 import '../models/prayer_model.dart';
 import '../services/arena_sfx_service.dart';
 import '../services/firdaws_native_service.dart';
+import '../services/location_clock.dart';
 import '../services/location_service.dart';
 import '../services/notification_service.dart';
 import '../theme/islamic_theme.dart';
@@ -91,6 +92,25 @@ class SettingsProvider extends ChangeNotifier {
   double get latitude => _latitude;
   double get longitude => _longitude;
   String get cityName => _cityName;
+
+  /// IANA zone of the selected/detected location. Null means the device zone.
+  String? get timeZoneId => _timeZoneId;
+  String? _timeZoneId;
+
+  void _setTimeZone(String? id) {
+    LocationClock.setZoneId(id);
+    _timeZoneId = LocationClock.zoneId;
+    if (_timeZoneId == null) {
+      _prefs?.remove('tz_id');
+    } else {
+      _prefs?.setString('tz_id', _timeZoneId!);
+    }
+  }
+
+  String? _presetZoneFor(double lat, double lng) {
+    final city = LocationService.findNearestPresetCity(lat, lng);
+    return city == null ? null : LocationClock.zoneIdForPresetName(city.name);
+  }
   String get locationSourceLabel => _locationSourceLabel;
   bool get hasConfirmedLocation => _hasConfirmedLocation;
   bool get isDetectingLocation => _isDetectingLocation;
@@ -208,6 +228,8 @@ class SettingsProvider extends ChangeNotifier {
     final savedLongitude = _prefs!.getDouble('lng');
     _latitude = savedLatitude ?? 24.7136;
     _longitude = savedLongitude ?? 46.6753;
+    _timeZoneId = _prefs!.getString('tz_id');
+    LocationClock.setZoneId(_timeZoneId);
     final savedCity = _prefs!.getString('city_name');
     final hasSavedLocation = savedLatitude != null &&
         savedLongitude != null &&
@@ -434,6 +456,8 @@ class SettingsProvider extends ChangeNotifier {
         _latitude = result.latitude!;
         _longitude = result.longitude!;
         _cityName = result.displayName;
+        _setTimeZone(result.timeZoneId ??
+            _presetZoneFor(result.latitude!, result.longitude!));
         _isAutoLocation = true;
         _locationSourceLabel = result.sourceLabel;
         _hasConfirmedLocation = true;
@@ -624,6 +648,8 @@ class SettingsProvider extends ChangeNotifier {
     _latitude = lat;
     _longitude = lng;
     _cityName = name;
+    _setTimeZone(LocationClock.zoneIdForPresetName(name) ??
+        _presetZoneFor(lat, lng));
     _isAutoLocation = false;
     _locationSourceLabel = 'اختيار يدوي من قائمة المدن';
     _hasConfirmedLocation = true;
