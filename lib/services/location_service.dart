@@ -275,10 +275,23 @@ class LocationService {
         if (ok && lat != null && lng != null) {
           var city = (data['city'] ?? '').toString().trim();
           var country = (data['country'] ?? '').toString().trim();
-          if (city.isEmpty || country.isEmpty) {
+          // ipwho.is often ignores lang=ar and returns English names, so
+          // fall back to the Arabic reverse geocoder when a name is not Arabic.
+          if (city.isEmpty ||
+              country.isEmpty ||
+              !isArabicText(city) ||
+              !isArabicText(country)) {
             final geo = await reverseGeocodeArabic(lat, lng);
-            city = city.isEmpty ? (geo?.city ?? '') : city;
-            country = country.isEmpty ? (geo?.country ?? '') : country;
+            if (geo != null) {
+              if (city.isEmpty || !isArabicText(city)) city = geo.city;
+              if (country.isEmpty || !isArabicText(country)) {
+                country = geo.country;
+              }
+            } else {
+              final near = findNearestPresetCity(lat, lng);
+              if (!isArabicText(city)) city = near?.cityOnly ?? '';
+              if (!isArabicText(country)) country = near?.countryOnly ?? '';
+            }
           }
           final nearest = findNearestPresetCity(lat, lng);
           if (city.isEmpty) city = nearest?.cityOnly ?? 'موقعك المكتشف';
@@ -348,6 +361,10 @@ class LocationService {
 
     return null;
   }
+
+  /// True when [text] has no Latin letters (so it is safe to show in the Arabic UI).
+  static bool isArabicText(String text) =>
+      !RegExp(r'[A-Za-z]').hasMatch(text);
 
   /// تحويل الإحداثيات إلى المدينة والبلد باللغة العربية عبر BigDataCloud
   static Future<({String city, String country, String display})?>
