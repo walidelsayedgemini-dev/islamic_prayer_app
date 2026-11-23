@@ -11,7 +11,9 @@ files = sorted(p.relative_to(root).as_posix() for p in root.rglob('*')
                and not p.relative_to(root).as_posix().startswith(
                    ('assets/assets/images/', 'assets/assets/audio/')))
 digest = hashlib.sha256()
-for name in files:
+for name in sorted(p.relative_to(root).as_posix() for p in root.rglob('*')
+                   if p.is_file() and p.name not in {
+                       'offline-worker.js', 'flutter_service_worker.js', '.nojekyll'}):
     digest.update(name.encode())
     digest.update((root / name).read_bytes())
 version = digest.hexdigest()[:16]
