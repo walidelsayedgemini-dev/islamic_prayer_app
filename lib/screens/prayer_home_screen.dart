@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:adhan/adhan.dart';
+import '../services/location_clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart' hide TextDirection;
@@ -61,7 +62,8 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
         '${twoDigits(duration.inSeconds.remainder(60))}';
   }
 
-  String _formatTime(DateTime time) => DateFormat('hh:mm a').format(time);
+  String _formatTime(DateTime time) =>
+      DateFormat('hh:mm a').format(LocationClock.toZone(time));
 
   Prayer? _resolvePrayerEnum(String rawKey) {
     switch (rawKey.trim().toLowerCase()) {
@@ -302,12 +304,12 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
   ) async {
     final format = DateFormat('hh:mm a');
     final text = 'مواقيت الصلاة اليوم في ${settings.cityName}\n'
-        'الفجر: ${format.format(prayerData.prayerTimes.fajr)}\n'
-        'الشروق: ${format.format(prayerData.prayerTimes.sunrise)}\n'
-        'الظهر: ${format.format(prayerData.prayerTimes.dhuhr)}\n'
-        'العصر: ${format.format(prayerData.prayerTimes.asr)}\n'
-        'المغرب: ${format.format(prayerData.prayerTimes.maghrib)}\n'
-        'العشاء: ${format.format(prayerData.prayerTimes.isha)}\n'
+        'الفجر: ${format.format(LocationClock.toZone(prayerData.prayerTimes.fajr))}\n'
+        'الشروق: ${format.format(LocationClock.toZone(prayerData.prayerTimes.sunrise))}\n'
+        'الظهر: ${format.format(LocationClock.toZone(prayerData.prayerTimes.dhuhr))}\n'
+        'العصر: ${format.format(LocationClock.toZone(prayerData.prayerTimes.asr))}\n'
+        'المغرب: ${format.format(LocationClock.toZone(prayerData.prayerTimes.maghrib))}\n'
+        'العشاء: ${format.format(LocationClock.toZone(prayerData.prayerTimes.isha))}\n'
         'الصلاة القادمة: ${_prayerName(upcomingPrayer)} (${format.format(nextTime)})\n'
         'المتبقي: ${_formatDuration(remaining.isNegative ? Duration.zero : remaining)}';
     await Clipboard.setData(ClipboardData(text: text));

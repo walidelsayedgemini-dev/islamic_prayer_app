@@ -1,5 +1,7 @@
 import 'package:adhan/adhan.dart';
 
+import '../services/location_clock.dart';
+
 class AdvancedPrayerTimes {
   final PrayerTimes prayerTimes;
   final DateTime qiyamStart;
@@ -23,7 +25,7 @@ class AdvancedPrayerTimes {
     Map<String, int>? offsets,
   }) {
     return AdvancedPrayerTimes.calculateForDate(
-      date: DateTime.now(),
+      date: LocationClock.now(),
       latitude: latitude,
       longitude: longitude,
       method: method,

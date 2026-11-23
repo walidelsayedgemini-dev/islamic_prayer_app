@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:adhan/adhan.dart';
 import '../models/backgrounds_500_catalog.dart';
+import '../services/location_clock.dart';
 import '../theme/islamic_theme.dart';
 import 'firdaws_3d_ui.dart';
 import 'firdaws_resilient_image.dart';
@@ -157,6 +158,7 @@ class _IslamicPrayerCardViewState extends State<IslamicPrayerCardView>
   }
 
   String _formatTime(DateTime time) {
+    time = LocationClock.toZone(time);
     final hour =
         time.hour > 12 ? time.hour - 12 : (time.hour == 0 ? 12 : time.hour);
     final minute = time.minute.toString().padLeft(2, '0');

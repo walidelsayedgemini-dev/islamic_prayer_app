@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:adhan/adhan.dart';
+import '../services/location_clock.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:provider/provider.dart';
 import '../models/prayer_identity_model.dart';
@@ -537,7 +538,8 @@ class _Prayer22DetailsSheetState extends State<Prayer22DetailsSheet> {
   Widget _buildTimingStatusBanner(ThemePalette palette) {
     final accent = palette.accentColor;
     final formattedTime = widget.prayerTime != null
-        ? DateFormat('hh:mm a').format(widget.prayerTime!)
+        ? DateFormat('hh:mm a')
+            .format(LocationClock.toZone(widget.prayerTime!))
         : null;
     final Color statusColor = widget.isCurrent
         ? (palette.isDark ? const Color(0xFF34D399) : const Color(0xFF047857))
