@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import '../services/location_clock.dart';
 import 'package:provider/provider.dart';
 import '../models/hijri_calendar_model.dart';
 import '../models/prayer_info.dart';
@@ -360,7 +361,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              DateFormat.jm('ar').format(time),
+              DateFormat.jm('ar').format(LocationClock.toZone(time)),
               style: Theme.of(sheetContext).textTheme.titleMedium,
             ),
             if (info != null) ...[
@@ -1112,7 +1113,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              DateFormat.jm('ar').format(slot.time),
+                              DateFormat.jm('ar').format(LocationClock.toZone(slot.time)),
                               style: Theme.of(context).textTheme.titleSmall
                                   ?.copyWith(
                                 color: scheme.primary,
