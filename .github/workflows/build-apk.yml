@@ -47,6 +47,12 @@ jobs:
       - name: Run Flutter tests
         run: flutter test
 
+      - name: Build and validate offline web shell
+        run: |
+          flutter build web --release --base-href /islamic_prayer_app/
+          python3 tool/build_offline.py
+          test -s build/web/offline-worker.js
+
       - name: Build Android Release APK
         run: flutter build apk --release
 
