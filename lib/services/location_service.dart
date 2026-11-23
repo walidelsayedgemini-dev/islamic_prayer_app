@@ -30,6 +30,9 @@ class DetectedLocationResult {
   final String sourceLabel; // GPS / IP / Cached
   final String? errorMessage;
 
+  /// IANA zone id of the detected location (e.g. America/New_York), if known.
+  final String? timeZoneId;
+
   const DetectedLocationResult({
     required this.succeeded,
     this.latitude,
@@ -39,6 +42,7 @@ class DetectedLocationResult {
     required this.displayName,
     required this.sourceLabel,
     this.errorMessage,
+    this.timeZoneId,
   });
 }
 
@@ -288,6 +292,10 @@ class LocationService {
             countryArabic: country,
             displayName: display,
             sourceLabel: 'الشبكة (تلقائي)',
+            timeZoneId: (data['timezone'] is Map
+                    ? (data['timezone'] as Map)['id']
+                    : null)
+                ?.toString(),
           );
         }
       }
@@ -315,6 +323,7 @@ class LocationService {
               countryArabic: geo.country,
               displayName: geo.display,
               sourceLabel: 'الشبكة (احتياطي)',
+              timeZoneId: data['timezone']?.toString(),
             );
           }
           final nearest = findNearestPresetCity(lat, lng);
@@ -329,6 +338,7 @@ class LocationService {
             countryArabic: country,
             displayName: country.isNotEmpty ? '$city، $country' : city,
             sourceLabel: 'الشبكة',
+            timeZoneId: data['timezone']?.toString(),
           );
         }
       }
