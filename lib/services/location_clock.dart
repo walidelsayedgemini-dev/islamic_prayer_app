@@ -1,4 +1,5 @@
 import 'package:adhan/adhan.dart';
+import 'package:intl/intl.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -92,6 +93,10 @@ class LocationClock {
     if (zone == null) return time;
     return tz.TZDateTime.from(time, zone);
   }
+
+  /// Wall-clock time at the location in Arabic, e.g. "١١:٤٤ ص" (ص / م).
+  static String formatTime(DateTime time) =>
+      DateFormat('hh:mm a', 'ar').format(toZone(time));
 
   /// Calendar date "today" at the location, for prayer calculation.
   static DateComponents todayComponents() => DateComponents.from(now());
