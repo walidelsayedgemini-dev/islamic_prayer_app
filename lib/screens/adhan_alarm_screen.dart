@@ -13,6 +13,7 @@ import '../services/firdaws_native_service.dart';
 class AdhanAlarmScreen extends StatefulWidget {
   final String voiceId;
   final String prayerName;
+  final int volumePercent;
   final bool useNativeService;
   final String skinId;
   final ValueChanged<String>? onSkinSelected;
@@ -21,6 +22,7 @@ class AdhanAlarmScreen extends StatefulWidget {
     super.key,
     required this.voiceId,
     required this.prayerName,
+    this.volumePercent = 100,
     this.useNativeService = true,
     this.skinId = 'fajr_sapphire_garden',
     this.onSkinSelected,
@@ -112,6 +114,7 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen> {
         final started = await native.startAdhanAlarm(
           voiceId: _voice.id,
           prayerName: widget.prayerName,
+          volumePercent: widget.volumePercent,
         );
         if (!started) throw StateError('تعذر بدء خدمة الأذان الأصلية');
       } else {
@@ -119,7 +122,7 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen> {
         final player = AudioPlayer();
         _fallbackPlayer = player;
         await player.setReleaseMode(ReleaseMode.stop);
-        await player.setVolume(1.0);
+        await player.setVolume(widget.volumePercent.clamp(0, 100) / 100.0);
         _playerCompleteSubscription =
             player.onPlayerComplete.listen((_) => _markAudioCompleted());
         await player.play(AssetSource(_voice.assetPath));

@@ -21,6 +21,8 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
+import android.os.VibrationEffect
+import android.os.Vibrator
 import androidx.core.app.NotificationCompat
 
 class AdhanPlaybackService : Service() {
@@ -31,6 +33,8 @@ class AdhanPlaybackService : Service() {
         const val EXTRA_VOICE_ID = "voice_id"
         const val EXTRA_PRAYER_NAME = "prayer_name"
         const val EXTRA_FORCE_RESTART = "forceRestart"
+        const val EXTRA_MODE = "alert_mode"
+        const val EXTRA_VOLUME_PERCENT = "volume_percent"
         const val CHANNEL_ID = "firdaws_adhan_v4_service"
         const val NOTIF_ID = 9001
 
@@ -49,6 +53,10 @@ class AdhanPlaybackService : Service() {
 
         @Volatile
         var activePrayerName: String = "صلاة الفرض"
+            private set
+
+        @Volatile
+        var activeVolumePercent: Int = 100
             private set
 
         var onStateChangedListener: ((Boolean, String, String) -> Unit)? = null
@@ -79,6 +87,8 @@ class AdhanPlaybackService : Service() {
     private var temporaryAlarmVolume: Int? = null
     private var volumeObserver: ContentObserver? = null
     private var volumeReceiver: BroadcastReceiver? = null
+    private var vibrationStopRunnable: Runnable? = null
+    private var activeVibrator: Vibrator? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -92,13 +102,34 @@ class AdhanPlaybackService : Service() {
                 val voiceId = intent?.getStringExtra(EXTRA_VOICE_ID) ?: "madinah"
                 val prayerName = intent?.getStringExtra(EXTRA_PRAYER_NAME) ?: "موعد الصلاة"
                 val forceRestart = intent?.getBooleanExtra(EXTRA_FORCE_RESTART, false) == true
-                startAdhanPlayback(voiceId, prayerName, forceRestart)
+                val mode = intent?.getStringExtra(EXTRA_MODE) ?: "adhan"
+                val volumePercent = intent?.getIntExtra(EXTRA_VOLUME_PERCENT, 100) ?: 100
+                if (mode == "vibrationOnly") {
+                    startVibrationOnly(
+                        voiceId,
+                        prayerName,
+                        forceRestart,
+                        volumePercent.coerceIn(0, 100),
+                    )
+                } else {
+                    startAdhanPlayback(
+                        voiceId,
+                        prayerName,
+                        forceRestart,
+                        volumePercent.coerceIn(0, 100),
+                    )
+                }
             }
         }
         return START_NOT_STICKY
     }
 
-    private fun startAdhanPlayback(voiceId: String, prayerName: String, forceRestart: Boolean) {
+    private fun startAdhanPlayback(
+        voiceId: String,
+        prayerName: String,
+        forceRestart: Boolean,
+        volumePercent: Int,
+    ) {
         // الطلبات المتكررة لا تعيد بدء المقطع؛ التجربة اليدوية وحدها يمكنها فرض إعادة التشغيل.
         if (isRinging && !forceRestart) return
 
@@ -108,6 +139,7 @@ class AdhanPlaybackService : Service() {
 
         activeVoiceId = voiceId
         activePrayerName = prayerName
+        activeVolumePercent = volumePercent.coerceIn(0, 100)
         isRinging = true
 
         createNotificationChannel()
@@ -178,7 +210,8 @@ class AdhanPlaybackService : Service() {
                         .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                         .build()
                 )
-                currentPlayer.setVolume(1.0f, 1.0f)
+                val playerVolume = volumePercent.coerceIn(0, 100) / 100f
+                currentPlayer.setVolume(playerVolume, playerVolume)
                 currentPlayer.isLooping = false
                 currentPlayer.setOnCompletionListener { completedPlayer ->
                     if (mediaPlayer !== completedPlayer || !isRinging) return@setOnCompletionListener
@@ -213,6 +246,66 @@ class AdhanPlaybackService : Service() {
         }
 
         onStateChangedListener?.invoke(true, voiceId, prayerName)
+    }
+
+    private fun startVibrationOnly(
+        voiceId: String,
+        prayerName: String,
+        forceRestart: Boolean,
+        volumePercent: Int,
+    ) {
+        if (isRinging && !forceRestart) return
+        stopMediaAndObserversOnly()
+        releaseWakeLock()
+        restoreTemporaryAlarmVolume()
+        activeVoiceId = voiceId
+        activePrayerName = prayerName
+        activeVolumePercent = volumePercent.coerceIn(0, 100)
+        isRinging = true
+        createNotificationChannel()
+        val notification = buildAdhanNotification(voiceId, prayerName, vibrationOnly = true)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(
+                NOTIF_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK,
+            )
+        } else {
+            startForeground(NOTIF_ID, notification)
+        }
+
+        activeVibrator = getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+        try {
+            val pattern = longArrayOf(0, 500, 300, 500, 300, 900)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                activeVibrator?.vibrate(VibrationEffect.createWaveform(pattern, -1))
+            } else {
+                @Suppress("DEPRECATION")
+                activeVibrator?.vibrate(pattern, -1)
+            }
+        } catch (_: Exception) {}
+
+        onStateChangedListener?.invoke(true, voiceId, prayerName)
+        val stopRunnable = Runnable {
+            if (isRinging && activePrayerName == prayerName) {
+                isRinging = false
+                stopMediaAndObserversOnly()
+                releaseWakeLock()
+                restoreTemporaryAlarmVolume()
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        stopForeground(STOP_FOREGROUND_DETACH)
+                    } else {
+                        @Suppress("DEPRECATION")
+                        stopForeground(false)
+                    }
+                } catch (_: Exception) {}
+                onStateChangedListener?.invoke(false, activeVoiceId, activePrayerName)
+                stopSelf()
+            }
+        }
+        vibrationStopRunnable = stopRunnable
+        Handler(Looper.getMainLooper()).postDelayed(stopRunnable, 3_000L)
     }
 
     private fun registerVolumeUpStopListeners() {
@@ -274,12 +367,17 @@ class AdhanPlaybackService : Service() {
         }
     }
 
-    private fun buildAdhanNotification(voiceId: String, prayerName: String): Notification {
+    private fun buildAdhanNotification(
+        voiceId: String,
+        prayerName: String,
+        vibrationOnly: Boolean = false,
+    ): Notification {
         val fullScreenIntent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("open_adhan_alarm", true)
+            putExtra("open_adhan_alarm", !vibrationOnly)
             putExtra("voice_id", voiceId)
             putExtra("prayer_name", prayerName)
+            putExtra("volume_percent", activeVolumePercent)
         }
         val fullScreenPending = PendingIntent.getActivity(
             this,
@@ -300,12 +398,20 @@ class AdhanPlaybackService : Service() {
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("🕌 حان الآن موعد $prayerName")
-            .setContentText("حيّ على الصلاة — لإيقاف الأذان ارفع الصوت من الجنب (+) أو اسحب الإشعار واضغط إلغاء")
+            .setContentTitle(
+                if (vibrationOnly) "تنبيه صلاة: $prayerName" else "🕌 حان الآن موعد $prayerName",
+            )
+            .setContentText(
+                if (vibrationOnly) "تنبيه بالاهتزاز فقط" else "حيّ على الصلاة — لإيقاف الأذان ارفع الصوت من الجنب (+) أو اسحب الإشعار واضغط إلغاء",
+            )
             .setStyle(
                 NotificationCompat.BigTextStyle().bigText(
-                    "حيّ على الصلاة.. حيّ على الفلاح 🕌✨\n" +
-                        "صوت الأذان مرة واحدة؛ أوقف الخدمة برفع الصوت من الجنب (+) أو بالسحب والضغط على «إلغاء»."
+                    if (vibrationOnly) {
+                        "تنبيه صلاة بالاهتزاز فقط — يمكنك فتح التطبيق لمراجعة الإعدادات."
+                    } else {
+                        "حيّ على الصلاة.. حيّ على الفلاح 🕌✨\n" +
+                            "صوت الأذان مرة واحدة؛ أوقف الخدمة برفع الصوت من الجنب (+) أو بالسحب والضغط على «إلغاء»."
+                    }
                 )
             )
             .setPriority(NotificationCompat.PRIORITY_MAX)
@@ -316,7 +422,7 @@ class AdhanPlaybackService : Service() {
             .setSilent(true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(fullScreenPending)
-            .setFullScreenIntent(fullScreenPending, true)
+            .setFullScreenIntent(fullScreenPending, !vibrationOnly)
             .setDeleteIntent(stopPending)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "إلغاء الأذان 🛑", stopPending)
             .build()
@@ -343,6 +449,15 @@ class AdhanPlaybackService : Service() {
     }
 
     private fun stopMediaAndObserversOnly() {
+        vibrationStopRunnable?.let {
+            Handler(Looper.getMainLooper()).removeCallbacks(it)
+        }
+        vibrationStopRunnable = null
+        try {
+            activeVibrator?.cancel()
+        } catch (_: Exception) {}
+        activeVibrator = null
+
         volumeObserver?.let {
             try {
                 contentResolver.unregisterContentObserver(it)

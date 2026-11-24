@@ -2,7 +2,7 @@ name: islamic_prayer_app
 description: "تطبيق الفردوس: مواقيت الصلاة، القبلة الذكية، السبحة والتحديات، التقويم الهجري، والقرآن والأذكار."
 publish_to: 'none'
 
-version: 1.0.3+4
+version: 1.0.4+5
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

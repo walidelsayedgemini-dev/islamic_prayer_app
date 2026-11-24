@@ -12,11 +12,14 @@ object AdhanAlarmScheduler {
     private const val PREFS_NAME = "firdaws_adhan_scheduler_prefs"
     private const val KEY_ALARMS_JSON = "saved_prayer_alarms_json"
     private const val MAX_ALARMS = 15
+    private const val TEST_ALARM_REQUEST_CODE = 15001
 
     private data class ScheduledAlarm(
         val triggerAtMillis: Long,
         val voiceId: String,
         val prayerName: String,
+        val mode: String,
+        val volumePercent: Int,
         val inputOrder: Int
     )
 
@@ -27,6 +30,9 @@ object AdhanAlarmScheduler {
                 triggerAtMillis = triggerMillis,
                 voiceId = alarm["voiceId"] as? String ?: "madinah",
                 prayerName = alarm["prayerName"] as? String ?: "صلاة الفرض",
+                mode = alarm["mode"] as? String ?: "adhan",
+                volumePercent = ((alarm["volumePercent"] as? Number)?.toInt() ?: 100)
+                    .coerceIn(0, 100),
                 inputOrder = index
             )
         }
@@ -37,6 +43,85 @@ object AdhanAlarmScheduler {
             .apply()
 
         rescheduleFromStorage(context)
+    }
+
+    fun scheduleTestAlarm(
+        context: Context,
+        voiceId: String,
+        prayerName: String,
+        mode: String,
+        volumePercent: Int,
+    ): Boolean {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val triggerMillis = System.currentTimeMillis() + 60_000L
+        val receiverIntent = Intent(context, AdhanAlarmReceiver::class.java).apply {
+            putExtra(AdhanPlaybackService.EXTRA_VOICE_ID, voiceId)
+            putExtra(AdhanPlaybackService.EXTRA_PRAYER_NAME, prayerName)
+            putExtra(AdhanPlaybackService.EXTRA_MODE, mode)
+            putExtra(
+                AdhanPlaybackService.EXTRA_VOLUME_PERCENT,
+                volumePercent.coerceIn(0, 100),
+            )
+        }
+        val receiverPendingIntent = PendingIntent.getBroadcast(
+            context,
+            TEST_ALARM_REQUEST_CODE,
+            receiverIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val showIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("open_adhan_alarm", true)
+            putExtra("voice_id", voiceId)
+            putExtra("prayer_name", prayerName)
+            putExtra("volume_percent", volumePercent.coerceIn(0, 100))
+        }
+        val showPendingIntent = PendingIntent.getActivity(
+            context,
+            TEST_ALARM_REQUEST_CODE + 1,
+            showIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        return try {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+                alarmManager.canScheduleExactAlarms()
+            ) {
+                alarmManager.setAlarmClock(
+                    AlarmManager.AlarmClockInfo(triggerMillis, showPendingIntent),
+                    receiverPendingIntent,
+                )
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerMillis,
+                    receiverPendingIntent,
+                )
+            } else {
+                alarmManager.set(AlarmManager.RTC_WAKEUP, triggerMillis, receiverPendingIntent)
+            }
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    fun cancelTestAlarm(context: Context): Boolean {
+        return try {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val intent = Intent(context, AdhanAlarmReceiver::class.java)
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                TEST_ALARM_REQUEST_CODE,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+            alarmManager.cancel(pendingIntent)
+            pendingIntent.cancel()
+            true
+        } catch (_: Exception) {
+            false
+        }
     }
 
     fun rescheduleFromStorage(context: Context): Int {
@@ -69,6 +154,8 @@ object AdhanAlarmScheduler {
             val receiverIntent = Intent(context, AdhanAlarmReceiver::class.java).apply {
                 putExtra(AdhanPlaybackService.EXTRA_VOICE_ID, voiceId)
                 putExtra(AdhanPlaybackService.EXTRA_PRAYER_NAME, prayerName)
+                putExtra(AdhanPlaybackService.EXTRA_MODE, alarm.mode)
+                putExtra(AdhanPlaybackService.EXTRA_VOLUME_PERCENT, alarm.volumePercent)
             }
             val reqCode = 101 + scheduledCount
             val pi = PendingIntent.getBroadcast(
@@ -80,9 +167,10 @@ object AdhanAlarmScheduler {
 
             val showIntent = Intent(context, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                putExtra("open_adhan_alarm", true)
+                putExtra("open_adhan_alarm", alarm.mode != "vibrationOnly")
                 putExtra("voice_id", voiceId)
                 putExtra("prayer_name", prayerName)
+                putExtra("volume_percent", alarm.volumePercent)
             }
             val showPending = PendingIntent.getActivity(
                 context,
@@ -160,6 +248,8 @@ object AdhanAlarmScheduler {
                         triggerAtMillis = triggerMillis,
                         voiceId = obj.optString("voiceId", "madinah"),
                         prayerName = obj.optString("prayerName", "صلاة الفرض"),
+                        mode = obj.optString("mode", "adhan"),
+                        volumePercent = obj.optInt("volumePercent", 100).coerceIn(0, 100),
                         inputOrder = index
                     )
                 }
@@ -175,6 +265,8 @@ object AdhanAlarmScheduler {
                 put("triggerAtMillis", alarm.triggerAtMillis)
                 put("voiceId", alarm.voiceId)
                 put("prayerName", alarm.prayerName)
+                put("mode", alarm.mode)
+                put("volumePercent", alarm.volumePercent)
             })
         }
     }

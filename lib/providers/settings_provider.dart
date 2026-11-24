@@ -1,9 +1,13 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:adhan/adhan.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/backgrounds_500_catalog.dart';
 import '../models/adhan_skin_catalog.dart';
 import '../models/font_catalog.dart';
+import '../models/prayer_alarm_preference.dart';
 import '../models/prayer_model.dart';
 import '../services/arena_sfx_service.dart';
 import '../services/firdaws_native_service.dart';
@@ -51,7 +55,11 @@ class SettingsProvider extends ChangeNotifier {
   String _lastLocationStatus = 'لم يتم الفحص بعد';
   String? _lastLocationError;
   bool _playPreAdhanReminder = true;
+  int _preAdhanReminderMinutes = 15;
   bool _autoMuteDuringPrayer = false;
+  bool _isInitialized = false;
+  bool _firstRunSetupCompleted = false;
+  bool? _lastPublishedNightMode;
 
   // 200 تأثير تفاعلي للمس وحركة المؤشر والماوس
   bool _touchEffectsEnabled = false;
@@ -70,6 +78,18 @@ class SettingsProvider extends ChangeNotifier {
     'asr': 0,
     'maghrib': 0,
     'isha': 0,
+  };
+  final Map<String, Map<String, int>> _offsetProfiles = {};
+  Map<String, PrayerAlarmPreference> _prayerAlarmPreferences = {
+    for (final key in _prayerOffsetKeys) key: const PrayerAlarmPreference(),
+  };
+
+  static const Set<String> _prayerOffsetKeys = {
+    'fajr',
+    'dhuhr',
+    'asr',
+    'maghrib',
+    'isha',
   };
 
   CalculationMethod get calculationMethod => _calculationMethod;
@@ -121,8 +141,16 @@ class SettingsProvider extends ChangeNotifier {
   String get lastLocationStatus => _lastLocationStatus;
   String? get lastLocationError => _lastLocationError;
   bool get playPreAdhanReminder => _playPreAdhanReminder;
+  int get preAdhanReminderMinutes => _preAdhanReminderMinutes;
   bool get autoMuteDuringPrayer => _autoMuteDuringPrayer;
-  Map<String, int> get offsets => _offsets;
+  Map<String, int> get offsets => Map.unmodifiable(_offsets);
+  Map<String, PrayerAlarmPreference> get prayerAlarmPreferences =>
+      Map.unmodifiable(_prayerAlarmPreferences);
+  PrayerAlarmPreference prayerAlarmPreference(String key) =>
+      _prayerAlarmPreferences[key] ?? const PrayerAlarmPreference();
+  bool get isInitialized => _isInitialized;
+  bool get shouldShowFirstRunSetup =>
+      _isInitialized && !_firstRunSetupCompleted;
 
   bool get touchEffectsEnabled => _touchEffectsEnabled;
   int get touchEffectNumber => _touchEffectNumber;
@@ -139,6 +167,10 @@ class SettingsProvider extends ChangeNotifier {
   bool get isNightEffective {
     if (_brightnessMode == 'night') return true;
     if (_brightnessMode == 'day') return false;
+    if (_brightnessMode == 'system') {
+      return WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+          Brightness.dark;
+    }
 
     try {
       final todayPrayers = AdvancedPrayerTimes.calculate(
@@ -170,6 +202,13 @@ class SettingsProvider extends ChangeNotifier {
 
   void _loadPreferences() {
     if (_prefs == null) return;
+
+    final hadExistingPreferences = _prefs!.getKeys().isNotEmpty;
+    _firstRunSetupCompleted =
+        _prefs!.getBool('first_run_setup_v1') ?? hadExistingPreferences;
+    if (_firstRunSetupCompleted) {
+      _prefs!.setBool('first_run_setup_v1', true);
+    }
 
     final methodIndex = _prefs!.getInt('calc_method');
     if (methodIndex != null && methodIndex < CalculationMethod.values.length) {
@@ -222,7 +261,8 @@ class SettingsProvider extends ChangeNotifier {
     final savedBrightness = _prefs!.getString('brightness_mode') ?? 'day';
     if (savedBrightness == 'day' ||
         savedBrightness == 'night' ||
-        savedBrightness == 'auto') {
+        savedBrightness == 'auto' ||
+        savedBrightness == 'system') {
       _brightnessMode = savedBrightness;
     }
 
@@ -264,6 +304,8 @@ class SettingsProvider extends ChangeNotifier {
     }
 
     _playPreAdhanReminder = _prefs!.getBool('pre_adhan_reminder') ?? true;
+    _preAdhanReminderMinutes =
+        (_prefs!.getInt('pre_adhan_reminder_minutes') ?? 15).clamp(5, 60);
     _autoMuteDuringPrayer = _prefs!.getBool('auto_mute') ?? false;
 
     _touchEffectsEnabled = _prefs!.getBool('touch_fx_enabled') ?? false;
@@ -285,13 +327,86 @@ class SettingsProvider extends ChangeNotifier {
       'maghrib': _prefs!.getInt('offset_maghrib') ?? 0,
       'isha': _prefs!.getInt('offset_isha') ?? 0,
     };
+    _loadOffsetProfiles();
+    final currentProfile = _offsetProfileKey(_latitude, _longitude);
+    if (_offsetProfiles.containsKey(currentProfile)) {
+      _offsets = Map<String, int>.from(_offsetProfiles[currentProfile]!);
+    } else {
+      // Preserve legacy global corrections as the profile for the saved location.
+      _persistCurrentOffsetProfile();
+    }
+    _loadPrayerAlarmPreferences();
+    _isInitialized = true;
+    _lastPublishedNightMode = isNightEffective;
     notifyListeners();
     _syncSalawatReminders();
 
-    // كشف الموقع الحقيقي واسم البلد والمدينة في الخلفية فوراً دون تعليق واجهة البداية
-    if (_isAutoLocation) {
+    // Do not request location permission before the first-run setup explains it.
+    if (_isAutoLocation && _firstRunSetupCompleted) {
       Future.microtask(() => refreshCurrentLocation(silent: true));
     }
+  }
+
+  void _loadOffsetProfiles() {
+    _offsetProfiles.clear();
+    final raw = _prefs?.getString('prayer_offset_profiles_v1');
+    if (raw == null) return;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return;
+      for (final entry in decoded.entries) {
+        if (entry.value is! Map) continue;
+        final profile = <String, int>{};
+        for (final key in _prayerOffsetKeys) {
+          final value = (entry.value as Map)[key];
+          profile[key] = value is num ? value.round().clamp(-15, 15) : 0;
+        }
+        _offsetProfiles[entry.key.toString()] = profile;
+      }
+    } catch (_) {
+      _offsetProfiles.clear();
+    }
+  }
+
+  void _loadPrayerAlarmPreferences() {
+    final raw = _prefs?.getString('prayer_alarm_preferences_v1');
+    if (raw == null) return;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return;
+      _prayerAlarmPreferences = {
+        for (final key in _prayerOffsetKeys)
+          key: PrayerAlarmPreference.fromJson(decoded[key]),
+      };
+    } catch (_) {
+      _prayerAlarmPreferences = {
+        for (final key in _prayerOffsetKeys) key: const PrayerAlarmPreference(),
+      };
+    }
+  }
+
+  String _offsetProfileKey(double latitude, double longitude) =>
+      '${latitude.toStringAsFixed(3)},${longitude.toStringAsFixed(3)}';
+
+  void _persistCurrentOffsetProfile() {
+    final key = _offsetProfileKey(_latitude, _longitude);
+    _offsetProfiles[key] = Map<String, int>.from(_offsets);
+    while (_offsetProfiles.length > 50) {
+      final oldest = _offsetProfiles.keys.first;
+      if (oldest == key && _offsetProfiles.length > 1) {
+        _offsetProfiles.remove(_offsetProfiles.keys.elementAt(1));
+      } else {
+        _offsetProfiles.remove(oldest);
+      }
+    }
+    _prefs?.setString('prayer_offset_profiles_v1', jsonEncode(_offsetProfiles));
+  }
+
+  void _activateOffsetProfile(double latitude, double longitude) {
+    _offsets = Map<String, int>.from(
+      _offsetProfiles[_offsetProfileKey(latitude, longitude)] ??
+          <String, int>{for (final key in _prayerOffsetKeys) key: 0},
+    );
   }
 
   void setJannatiSceneryIndex(int index) {
@@ -460,8 +575,11 @@ class SettingsProvider extends ChangeNotifier {
       if (result.succeeded &&
           result.latitude != null &&
           result.longitude != null) {
+        _persistCurrentOffsetProfile();
         _latitude = result.latitude!;
         _longitude = result.longitude!;
+        _activateOffsetProfile(_latitude, _longitude);
+        _persistCurrentOffsetProfile();
         _cityName = result.displayName;
         _setTimeZone(result.timeZoneId ??
             _presetZoneFor(result.latitude!, result.longitude!));
@@ -611,10 +729,25 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   void setBrightnessMode(String mode) {
-    if (mode != 'night' && mode != 'day' && mode != 'auto') return;
+    if (mode != 'night' &&
+        mode != 'day' &&
+        mode != 'auto' &&
+        mode != 'system') {
+      return;
+    }
     _brightnessMode = mode;
     _prefs?.setString('brightness_mode', mode);
+    _lastPublishedNightMode = isNightEffective;
     notifyListeners();
+  }
+
+  void refreshDerivedBrightness() {
+    if (_brightnessMode != 'auto' && _brightnessMode != 'system') return;
+    final night = isNightEffective;
+    if (_lastPublishedNightMode != night) {
+      _lastPublishedNightMode = night;
+      notifyListeners();
+    }
   }
 
   void toggleDayNight() {
@@ -641,6 +774,33 @@ class SettingsProvider extends ChangeNotifier {
     _rescheduleNotifications();
   }
 
+  void setPreAdhanReminderMinutes(int minutes) {
+    _preAdhanReminderMinutes = minutes.clamp(5, 60);
+    _prefs?.setInt('pre_adhan_reminder_minutes', _preAdhanReminderMinutes);
+    notifyListeners();
+    _rescheduleNotifications();
+  }
+
+  void setPrayerAlarmPreference(
+    String prayerKey,
+    PrayerAlarmPreference preference,
+  ) {
+    if (!_prayerOffsetKeys.contains(prayerKey)) return;
+    _prayerAlarmPreferences = {
+      ..._prayerAlarmPreferences,
+      prayerKey: PrayerAlarmPreference.fromJson(preference.toJson()),
+    };
+    _prefs?.setString(
+      'prayer_alarm_preferences_v1',
+      jsonEncode({
+        for (final entry in _prayerAlarmPreferences.entries)
+          entry.key: entry.value.toJson(),
+      }),
+    );
+    notifyListeners();
+    _rescheduleNotifications();
+  }
+
   void setAutoMute(bool enabled) {
     _autoMuteDuringPrayer = enabled;
     _prefs?.setBool('auto_mute', enabled);
@@ -648,8 +808,10 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   void updateOffset(String prayer, int minutes) {
-    _offsets[prayer] = minutes;
-    _prefs?.setInt('offset_$prayer', minutes);
+    if (!_prayerOffsetKeys.contains(prayer)) return;
+    _offsets[prayer] = minutes.clamp(-15, 15);
+    _prefs?.setInt('offset_$prayer', _offsets[prayer]!);
+    _persistCurrentOffsetProfile();
     notifyListeners();
     _rescheduleNotifications();
   }
@@ -658,8 +820,11 @@ class SettingsProvider extends ChangeNotifier {
     // Manual selection always wins over an older GPS/IP request still in flight.
     _locationRequestGeneration++;
     _isDetectingLocation = false;
+    _persistCurrentOffsetProfile();
     _latitude = lat;
     _longitude = lng;
+    _activateOffsetProfile(lat, lng);
+    _persistCurrentOffsetProfile();
     _cityName = name;
     _setTimeZone(
         LocationClock.zoneIdForPresetName(name) ?? _presetZoneFor(lat, lng));
@@ -676,6 +841,17 @@ class SettingsProvider extends ChangeNotifier {
     _prefs?.setBool('location_confirmed', true);
     notifyListeners();
     _rescheduleNotifications();
+  }
+
+  Future<void> completeFirstRunSetup() async {
+    if (_firstRunSetupCompleted) return;
+    _firstRunSetupCompleted = true;
+    if (!_hasConfirmedLocation) {
+      // Do not request location automatically after the user skips setup.
+      setAutomaticLocationEnabled(false);
+    }
+    await _prefs?.setBool('first_run_setup_v1', true);
+    notifyListeners();
   }
 
   void syncAllNotifications() {
@@ -696,11 +872,72 @@ class SettingsProvider extends ChangeNotifier {
       prayers: prayers,
       voiceResource: _adhanVoice,
       preAdhanReminder: _playPreAdhanReminder,
+      preAdhanReminderMinutes: _preAdhanReminderMinutes,
+      alarmPreferences: _prayerAlarmPreferences,
       latitude: _latitude,
       longitude: _longitude,
       method: _calculationMethod,
       madhab: _madhab,
       offsets: _offsets,
+    );
+
+    final now = DateTime.now();
+    final todayAtLocation = LocationClock.now();
+    final widgetPrayers = <Map<String, dynamic>>[];
+    for (var dayOffset = 0; dayOffset < 30; dayOffset++) {
+      final dayTimes = dayOffset == 0
+          ? prayers.prayerTimes
+          : AdvancedPrayerTimes.calculateForDate(
+              date: todayAtLocation.add(Duration(days: dayOffset)),
+              latitude: _latitude,
+              longitude: _longitude,
+              method: _calculationMethod,
+              madhab: _madhab,
+              offsets: _offsets,
+            ).prayerTimes;
+      final dailyEntries = <({String name, DateTime time})>[
+        (name: 'صلاة الفجر', time: dayTimes.fajr),
+        (name: 'صلاة الظهر', time: dayTimes.dhuhr),
+        (name: 'صلاة العصر', time: dayTimes.asr),
+        (name: 'صلاة المغرب', time: dayTimes.maghrib),
+        (name: 'صلاة العشاء', time: dayTimes.isha),
+      ];
+      for (final entry in dailyEntries) {
+        if (!entry.time.isAfter(now)) continue;
+        widgetPrayers.add({
+          'prayerName': entry.name,
+          'prayerTimeMillis': entry.time.millisecondsSinceEpoch,
+          'timeLabel': LocationClock.formatTime(entry.time),
+        });
+      }
+    }
+    widgetPrayers.sort(
+      (a, b) => (a['prayerTimeMillis'] as int)
+          .compareTo(b['prayerTimeMillis'] as int),
+    );
+
+    final candidates = <({String name, DateTime time})>[
+      (name: 'الفجر', time: prayers.prayerTimes.fajr),
+      (name: 'الظهر', time: prayers.prayerTimes.dhuhr),
+      (name: 'العصر', time: prayers.prayerTimes.asr),
+      (name: 'المغرب', time: prayers.prayerTimes.maghrib),
+      (name: 'العشاء', time: prayers.prayerTimes.isha),
+    ];
+    final upcoming = candidates.where((entry) => entry.time.isAfter(now));
+    final nextPrayer = upcoming.isNotEmpty
+        ? upcoming.first
+        : (name: 'الفجر', time: prayers.tomorrowFajr);
+    final widgetNext = widgetPrayers.isEmpty ? null : widgetPrayers.first;
+    unawaited(
+      FirdawsNativeService().updatePrayerWidget(
+        cityName: _cityName,
+        prayerName: widgetNext?['prayerName'] as String? ?? nextPrayer.name,
+        prayerTimeMillis: widgetNext?['prayerTimeMillis'] as int? ??
+            nextPrayer.time.millisecondsSinceEpoch,
+        prayerTimeLabel: widgetNext?['timeLabel'] as String? ??
+            LocationClock.formatTime(nextPrayer.time),
+        prayers: widgetPrayers,
+      ),
     );
   }
 }

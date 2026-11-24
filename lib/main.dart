@@ -13,9 +13,11 @@ import 'providers/jannati_provider.dart';
 import 'providers/family_challenge_provider.dart';
 import 'providers/hasanat_provider.dart';
 import 'models/events_missions_catalog.dart';
+import 'models/prayer_alarm_preference.dart';
 import 'models/prayer_model.dart';
 import 'screens/adhan_alarm_screen.dart';
 import 'screens/main_navigation_screen.dart';
+import 'screens/prayer_setup_screen.dart';
 import 'services/firdaws_native_service.dart';
 import 'services/notification_service.dart';
 import 'theme/comfort_theme.dart';
@@ -158,12 +160,23 @@ class _IslamicPrayerAppState extends State<IslamicPrayerApp>
     } catch (_) {}
   }
 
+  @override
+  void didChangePlatformBrightness() {
+    super.didChangePlatformBrightness();
+    if (!mounted) return;
+    try {
+      Provider.of<SettingsProvider>(context, listen: false)
+          .refreshDerivedBrightness();
+    } catch (_) {}
+  }
+
   void _checkForegroundPrayerArrival() {
     if (!mounted) return;
     final lifecycle = WidgetsBinding.instance.lifecycleState;
     if (lifecycle != null && lifecycle != AppLifecycleState.resumed) return;
     try {
       final settings = Provider.of<SettingsProvider>(context, listen: false);
+      settings.refreshDerivedBrightness();
       final now = DateTime.now();
       final prayerData = AdvancedPrayerTimes.calculate(
         latitude: settings.latitude,
@@ -183,6 +196,8 @@ class _IslamicPrayerAppState extends State<IslamicPrayerApp>
 
       for (final item in checks) {
         final t = item.$3;
+        final alarmPreference = settings.prayerAlarmPreference(item.$1);
+        if (alarmPreference.mode != PrayerAlarmMode.adhan) continue;
         final diffSec = now.difference(t).inSeconds;
         if (!now.isBefore(t) && diffSec >= 0 && diffSec <= 50) {
           final uniqueKey =
@@ -193,7 +208,11 @@ class _IslamicPrayerAppState extends State<IslamicPrayerApp>
               _triggeredAdhanKeys.remove(_triggeredAdhanKeys.first);
             }
             if (!_adhanOpen) {
-              _openAdhanScreenIfNeeded(settings.adhanVoice, item.$2);
+              _openAdhanScreenIfNeeded(
+                alarmPreference.voiceId ?? settings.adhanVoice,
+                item.$2,
+                alarmPreference.volumePercent,
+              );
             }
             // إعادة جدولة صلوات الغد الخمس فوراً عند دخول وقت الصلاة
             settings.syncAllNotifications();
@@ -247,6 +266,7 @@ class _IslamicPrayerAppState extends State<IslamicPrayerApp>
         _openAdhanScreenIfNeeded(
           launchExtras['voiceId']?.toString() ?? 'madinah',
           launchExtras['prayerName']?.toString() ?? 'موعد الصلاة',
+          (launchExtras['volumePercent'] as num?)?.toInt() ?? 100,
         );
         return;
       }
@@ -256,6 +276,7 @@ class _IslamicPrayerAppState extends State<IslamicPrayerApp>
         _openAdhanScreenIfNeeded(
           ringing['voiceId']?.toString() ?? 'madinah',
           ringing['prayerName']?.toString() ?? 'موعد الصلاة',
+          (ringing['volumePercent'] as num?)?.toInt() ?? 100,
         );
       }
     } catch (e) {
@@ -263,7 +284,11 @@ class _IslamicPrayerAppState extends State<IslamicPrayerApp>
     }
   }
 
-  void _openAdhanScreenIfNeeded(String voiceId, String prayerName) {
+  void _openAdhanScreenIfNeeded(
+    String voiceId,
+    String prayerName,
+    int volumePercent,
+  ) {
     if (!mounted || _adhanOpen) return;
     final settings = context.read<SettingsProvider>();
     final nav = firdawsNavigatorKey.currentState;
@@ -275,6 +300,7 @@ class _IslamicPrayerAppState extends State<IslamicPrayerApp>
         builder: (_) => AdhanAlarmScreen(
           voiceId: voiceId,
           prayerName: prayerName,
+          volumePercent: volumePercent,
           useNativeService: FirdawsNativeService().isAndroid,
           skinId: settings.adhanSkinId,
           onSkinSelected: settings.setAdhanSkin,
@@ -342,9 +368,21 @@ class _IslamicPrayerAppState extends State<IslamicPrayerApp>
               child: child ?? const SizedBox.shrink(),
             );
           },
-          home: InAppReminderHost(
-            onNavigate: (index) => FirdawsNavBridge.jumpTo(index),
-            child: const MainNavigationScreen(),
+          home: Consumer<SettingsProvider>(
+            builder: (context, firstRunSettings, _) {
+              if (!firstRunSettings.isInitialized) {
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              }
+              if (firstRunSettings.shouldShowFirstRunSetup) {
+                return const PrayerSetupScreen();
+              }
+              return InAppReminderHost(
+                onNavigate: (index) => FirdawsNavBridge.jumpTo(index),
+                child: const MainNavigationScreen(),
+              );
+            },
           ),
         );
       },

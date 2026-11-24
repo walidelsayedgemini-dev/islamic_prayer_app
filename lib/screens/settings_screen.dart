@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 
 import '../models/adhan_skin_catalog.dart';
 import '../models/font_catalog.dart';
+import '../models/prayer_alarm_preference.dart';
+import '../models/prayer_model.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/reminder_preferences_provider.dart';
@@ -13,6 +15,7 @@ import '../widgets/reminder_settings_section.dart';
 import '../services/firdaws_native_service.dart';
 import '../services/notification_capabilities.dart';
 import '../services/notification_service.dart';
+import '../services/prayer_reliability_labels.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/audio_download_manager_sheet.dart';
 import '../widgets/calm_ui.dart';
@@ -39,6 +42,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   Map<String, dynamic> _adhanDiag = const {};
   bool _isLoadingDiagnostics = true;
+  bool _testAlarmScheduled = false;
   String? _diagnosticsError;
 
   NotificationPlatformCapabilities get _notificationCapabilities =>
@@ -46,6 +50,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       NotificationPlatformCapabilities.forTarget(
         isWeb: kIsWeb,
         targetPlatform: defaultTargetPlatform,
+      );
+
+  String _arabicDigits(int value) => value.toString().replaceAllMapped(
+        RegExp(r'\d'),
+        (match) => '٠١٢٣٤٥٦٧٨٩'[int.parse(match.group(0)!)],
       );
 
   @override
@@ -102,6 +111,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
         });
       }
     }
+  }
+
+  Future<void> _scheduleTestAdhan(SettingsProvider settings) async {
+    final now = DateTime.now();
+    final times = AdvancedPrayerTimes.calculate(
+      latitude: settings.latitude,
+      longitude: settings.longitude,
+      method: settings.calculationMethod,
+      madhab: settings.madhab,
+      offsets: settings.offsets,
+    ).prayerTimes;
+    final upcoming = <DateTime>[
+      times.fajr,
+      times.dhuhr,
+      times.asr,
+      times.maghrib,
+      times.isha,
+    ].where((time) => time.isAfter(now));
+    if (upcoming
+        .any((time) => time.difference(now) < const Duration(minutes: 5))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'قرب موعد الصلاة؛ أرجّل الاختبار حتى لا يتداخل مع الأذان الحقيقي.'),
+        ),
+      );
+      return;
+    }
+    final scheduled = await FirdawsNativeService().scheduleTestAdhan(
+      voiceId: settings.adhanVoice,
+      prayerName: 'اختبار الأذان',
+      mode: PrayerAlarmMode.adhan.name,
+      volumePercent: 100,
+    );
+    if (!mounted) return;
+    setState(() => _testAlarmScheduled = scheduled);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          scheduled
+              ? 'تمت جدولة اختبار أذان بعد دقيقة. قد يتأخر إذا منع الجهاز المنبه الدقيق.'
+              : 'تعذر جدولة الاختبار؛ راجع صلاحية المنبه الدقيق وحالة التنبيهات.',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _cancelTestAdhan() async {
+    final cancelled = await FirdawsNativeService().cancelTestAdhan();
+    if (!mounted) return;
+    setState(() => _testAlarmScheduled = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+            cancelled ? 'تم إلغاء اختبار الأذان.' : 'تعذر إلغاء الاختبار.'),
+      ),
+    );
   }
 
   Future<void> _refreshLocation(SettingsProvider settings) async {
@@ -272,6 +338,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       (value: 'day', label: 'نهاري', icon: Icons.wb_sunny_outlined),
       (value: 'night', label: 'ليلي', icon: Icons.nights_stay_outlined),
       (value: 'auto', label: 'تلقائي', icon: Icons.brightness_auto_rounded),
+      (value: 'system', label: 'حسب الجهاز', icon: Icons.settings_brightness),
     ];
 
     return Column(
@@ -349,6 +416,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onTap: () => settings.setBrightnessMode(option.value),
                     );
                   }).toList(),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    '«تلقائي» يتبدل وفق مواقيت الصلاة، و«حسب الجهاز» يتبع الوضع الداكن في إعدادات هاتفك.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 14),
                 const CalmDivider(),
@@ -566,40 +642,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               context: context,
               title: 'طريقة الحساب',
               value: settings.calculationMethod,
-              items: const [
-                DropdownMenuItem(
-                  value: CalculationMethod.umm_al_qura,
-                  child: Text('أم القرى'),
-                ),
-                DropdownMenuItem(
-                  value: CalculationMethod.egyptian,
-                  child: Text('الهيئة المصرية العامة للمساحة'),
-                ),
-                DropdownMenuItem(
-                  value: CalculationMethod.muslim_world_league,
-                  child: Text('رابطة العالم الإسلامي'),
-                ),
-                DropdownMenuItem(
-                  value: CalculationMethod.karachi,
-                  child: Text('جامعة العلوم بكراتشي'),
-                ),
-                DropdownMenuItem(
-                  value: CalculationMethod.dubai,
-                  child: Text('دائرة الشؤون الإسلامية بدبي'),
-                ),
-                DropdownMenuItem(
-                  value: CalculationMethod.qatar,
-                  child: Text('وزارة الأوقاف بقطر'),
-                ),
-                DropdownMenuItem(
-                  value: CalculationMethod.kuwait,
-                  child: Text('وزارة الأوقاف بالكويت'),
-                ),
-                DropdownMenuItem(
-                  value: CalculationMethod.north_america,
-                  child: Text('أمريكا الشمالية (ISNA)'),
-                ),
-              ],
+              items: CalculationMethod.values
+                  .map(
+                    (method) => DropdownMenuItem<CalculationMethod>(
+                      value: method,
+                      child: Text(PrayerReliabilityLabels.method(method)),
+                    ),
+                  )
+                  .toList(growable: false),
               onChanged: (value) {
                 if (value != null) settings.setCalculationMethod(value);
               },
@@ -623,18 +673,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (value != null) settings.setMadhab(value);
               },
             ),
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(4, 8, 4, 2),
+              child: Text(
+                'طريقة الحساب تحدد زوايا الفجر والعشاء حسب الجهة المختارة؛ أما ${PrayerReliabilityLabels.madhab(settings.madhab)} فيؤثر على وقت العصر فقط. راجع جدول مسجدك المحلي عند الحاجة.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  height: 1.5,
+                ),
+              ),
+            ),
             const SizedBox(height: 10),
             ExpansionTile(
               tilePadding: EdgeInsets.zero,
               childrenPadding: EdgeInsets.zero,
               leading: const CalmIconBadge(Icons.tune_rounded, size: 40),
               title: const Text('ضبط يدوي للمواقيت'),
-              subtitle: const Text('تعديل كل صلاة بالدقائق'),
+              subtitle: const Text('تصحيح لكل موقع محفوظ على هذا الجهاز'),
               children: [
                 Padding(
                   padding: const EdgeInsets.only(top: 4, bottom: 8),
                   child: Text(
-                    'يمكن تقديم الوقت أو تأخيره حتى ١٥ دقيقة.',
+                    'يمكن تقديم الوقت أو تأخيره حتى ١٥ دقيقة. يُحفظ التصحيح لهذا الموقع ولا ينتقل تلقائيًا إلى مدينة أخرى؛ هذه معايرة شخصية وليست فتوى أو جدولًا رسميًا.',
                     style: theme.textTheme.bodySmall,
                   ),
                 ),
@@ -648,6 +708,157 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildPrayerAlarmControls(
+    BuildContext context,
+    SettingsProvider settings,
+  ) {
+    const prayers = <({String key, String name})>[
+      (key: 'fajr', name: 'الفجر'),
+      (key: 'dhuhr', name: 'الظهر'),
+      (key: 'asr', name: 'العصر'),
+      (key: 'maghrib', name: 'المغرب'),
+      (key: 'isha', name: 'العشاء'),
+    ];
+    const voiceItems = <DropdownMenuItem<String>>[
+      DropdownMenuItem(value: 'madinah', child: Text('أذان المدينة المنورة')),
+      DropdownMenuItem(value: 'makkah', child: Text('أذان مكة المكرمة')),
+      DropdownMenuItem(value: 'aqsa', child: Text('أذان المسجد الأقصى')),
+      DropdownMenuItem(value: 'cairo', child: Text('أذان مساجد القاهرة')),
+      DropdownMenuItem(value: 'afasy', child: Text('مشاري العفاسي')),
+    ];
+    const modeItems = <DropdownMenuItem<PrayerAlarmMode>>[
+      DropdownMenuItem(
+        value: PrayerAlarmMode.adhan,
+        child: Text('أذان صوتي'),
+      ),
+      DropdownMenuItem(
+        value: PrayerAlarmMode.vibrationOnly,
+        child: Text('اهتزاز فقط'),
+      ),
+      DropdownMenuItem(
+        value: PrayerAlarmMode.off,
+        child: Text('إيقاف أذان هذه الصلاة'),
+      ),
+    ];
+
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      childrenPadding: const EdgeInsets.only(bottom: 8),
+      leading: const CalmIconBadge(Icons.tune_rounded, size: 40),
+      title: const Text('تخصيص كل صلاة'),
+      subtitle: const Text('صوت مستقل أو اهتزاز فقط أو إيقاف'),
+      children: [
+        for (final prayer in prayers) ...[
+          Builder(
+            builder: (context) {
+              final preference = settings.prayerAlarmPreference(prayer.key);
+              final usesGlobalVoice = preference.voiceId == null;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding:
+                        const EdgeInsetsDirectional.only(top: 8, bottom: 6),
+                    child: Text(
+                      'صلاة ${prayer.name}',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                  ),
+                  _buildDropdownField<PrayerAlarmMode>(
+                    context: context,
+                    title: 'طريقة التنبيه',
+                    value: preference.mode,
+                    items: modeItems,
+                    onChanged: (mode) {
+                      if (mode != null) {
+                        settings.setPrayerAlarmPreference(
+                          prayer.key,
+                          preference.copyWith(mode: mode),
+                        );
+                      }
+                    },
+                  ),
+                  if (preference.mode == PrayerAlarmMode.adhan) ...[
+                    SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('استخدام صوت الأذان العام'),
+                      subtitle: Text(
+                        usesGlobalVoice
+                            ? 'الحالي: ${settings.adhanVoice}'
+                            : 'أوقفه لاختيار مؤذن لهذه الصلاة',
+                      ),
+                      value: usesGlobalVoice,
+                      onChanged: (useGlobal) {
+                        settings.setPrayerAlarmPreference(
+                          prayer.key,
+                          preference.copyWith(
+                            voiceId: settings.adhanVoice,
+                            clearVoiceId: useGlobal,
+                          ),
+                        );
+                      },
+                    ),
+                    if (!usesGlobalVoice)
+                      _buildDropdownField<String>(
+                        context: context,
+                        title: 'صوت صلاة ${prayer.name}',
+                        value: preference.voiceId!,
+                        items: voiceItems,
+                        onChanged: (voice) {
+                          if (voice != null) {
+                            settings.setPrayerAlarmPreference(
+                              prayer.key,
+                              preference.copyWith(voiceId: voice),
+                            );
+                          }
+                        },
+                      ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        const Expanded(child: Text('مستوى صوت الأذان')),
+                        Text('${preference.volumePercent}%'),
+                      ],
+                    ),
+                    Slider(
+                      value: preference.volumePercent.toDouble(),
+                      min: 0,
+                      max: 100,
+                      divisions: 20,
+                      label: '${preference.volumePercent}%',
+                      onChanged: (value) => settings.setPrayerAlarmPreference(
+                        prayer.key,
+                        preference.copyWith(volumePercent: value.round()),
+                      ),
+                    ),
+                  ] else if (preference.mode ==
+                      PrayerAlarmMode.vibrationOnly) ...[
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        'يهتز الهاتف بنبضات قصيرة، دون تشغيل ملف صوتي. يعمل هذا الخيار على Android؛ قد تختلف استجابة الأجهزة الأخرى.',
+                      ),
+                    ),
+                  ] else ...[
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        'لن يصدر الأذان لهذه الصلاة. تذكير ما قبل الصلاة يظل خاضعًا لمفتاحه العام أعلاه.',
+                      ),
+                    ),
+                  ],
+                  const CalmDivider(),
+                ],
+              );
+            },
+          ),
+        ],
+      ],
     );
   }
 
@@ -723,7 +934,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'اضغط لاستكشاف الخلفيات ومعاينتها',
+                                '15 خلفية مضمّنة وتعمل دون إنترنت · اضغط للاستكشاف',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: scheme.onSurfaceVariant,
                                 ),
@@ -782,6 +993,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
               icon: const Icon(Icons.volume_up_outlined),
               label: const Text('تشغيل معاينة صوت الأذان'),
             ),
+            if (FirdawsNativeService().isAndroid) ...[
+              OutlinedButton.icon(
+                onPressed: _testAlarmScheduled
+                    ? null
+                    : () => _scheduleTestAdhan(settings),
+                icon: const Icon(Icons.alarm_add_rounded),
+                label: const Text('اختبار منبه بعد دقيقة'),
+              ),
+              if (_testAlarmScheduled)
+                TextButton.icon(
+                  onPressed: _cancelTestAdhan,
+                  icon: const Icon(Icons.alarm_off_rounded),
+                  label: const Text('إلغاء اختبار المنبه'),
+                ),
+              Text(
+                'يستخدم صوت الأذان العام مرة واحدة؛ لا تختبره قرب وقت الصلاة.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+            const CalmDivider(),
+            _buildPrayerAlarmControls(context, settings),
             const SizedBox(height: 8),
             Text(
               capabilities.userNotice,
@@ -797,7 +1031,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: const Text('تذكير قبل الأذان'),
               subtitle: Text(
                 capabilities.supportsLocalNotifications
-                    ? 'قبل دخول الوقت بـ ١٥ دقيقة'
+                    ? 'قبل دخول الوقت بـ ${_arabicDigits(settings.preAdhanReminderMinutes)} دقيقة'
                     : 'غير متاح في نسخة الويب؛ لا يعمل حتى مع بقاء الصفحة مفتوحة',
               ),
               value: settings.playPreAdhanReminder,
@@ -805,6 +1039,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ? settings.setPreAdhanReminder
                   : null,
             ),
+            if (settings.playPreAdhanReminder &&
+                capabilities.supportsLocalNotifications) ...[
+              Row(
+                children: [
+                  const Expanded(child: Text('مدة التذكير قبل الصلاة')),
+                  Text(
+                      '${_arabicDigits(settings.preAdhanReminderMinutes)} دقيقة'),
+                ],
+              ),
+              Slider(
+                value: settings.preAdhanReminderMinutes.toDouble(),
+                min: 5,
+                max: 60,
+                divisions: 11,
+                label:
+                    '${_arabicDigits(settings.preAdhanReminderMinutes)} دقيقة',
+                onChanged: (value) =>
+                    settings.setPreAdhanReminderMinutes(value.round()),
+              ),
+            ],
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
               title: const Text('الصامت التلقائي أثناء الصلاة'),
@@ -891,6 +1145,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         'إشعارات النظام',
                         _adhanDiag['notificationsEnabled'] == true,
                       ),
+                      if (_adhanDiag['canDrawOverlays'] is bool)
+                        _diagPill(
+                          'الظهور فوق التطبيقات',
+                          _adhanDiag['canDrawOverlays'] == true,
+                        ),
                       if (_adhanDiag['canScheduleExactAlarms'] is bool)
                         _diagPill(
                           'المنبه الدقيق',
@@ -908,6 +1167,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     spacing: 8,
                     runSpacing: 4,
                     children: [
+                      if (_adhanDiag['notificationsEnabled'] == false)
+                        OutlinedButton(
+                          onPressed: () async {
+                            await NotificationService()
+                                .requestReminderPermissions();
+                            settings.syncAllNotifications();
+                            await Future<void>.delayed(
+                              const Duration(milliseconds: 600),
+                            );
+                            await _loadDiagnostics();
+                          },
+                          child: const Text('طلب صلاحية الإشعارات والمنبه'),
+                        ),
                       if (capabilities.supportsExactAlarms &&
                           _adhanDiag['canScheduleExactAlarms'] == false)
                         OutlinedButton(
@@ -1032,6 +1304,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ),
+            if (FirdawsNativeService().isAndroid) ...[
+              const CalmDivider(),
+              CalmActionTile(
+                icon: Icons.widgets_outlined,
+                title: 'ويدجت مواقيت الصلاة',
+                subtitle: 'إظهار الصلاة القادمة على الشاشة الرئيسية',
+                onTap: () => showDialog<void>(
+                  context: context,
+                  builder: (dialogContext) => AlertDialog(
+                    title: const Text('إضافة ويدجت الفردوس'),
+                    content: const Text(
+                      'اضغط مطولًا على مساحة فارغة في الشاشة الرئيسية، ثم اختر «الأدوات» واسحب «الفردوس — مواقيت الصلاة». تتحدث بياناتها عند تغيير المدينة أو طريقة الحساب، ويمكن الضغط عليها لفتح التطبيق.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        child: const Text('حسنًا'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),

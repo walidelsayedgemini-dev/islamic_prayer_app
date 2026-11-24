@@ -14,7 +14,8 @@ class FirdawsNativeService {
 
   bool _initialized = false;
 
-  void Function(String voiceId, String prayerName)? onOpenAdhanScreen;
+  void Function(String voiceId, String prayerName, int volumePercent)?
+      onOpenAdhanScreen;
   void Function(bool isRinging, String voiceId, String prayerName)?
       onAdhanStateChanged;
   VoidCallback? onVolumeUpPressed;
@@ -33,7 +34,8 @@ class FirdawsNativeService {
           final args = (call.arguments as Map?) ?? const {};
           final voiceId = args['voiceId']?.toString() ?? 'madinah';
           final prayerName = args['prayerName']?.toString() ?? 'موعد الصلاة';
-          onOpenAdhanScreen?.call(voiceId, prayerName);
+          final volumePercent = (args['volumePercent'] as num?)?.toInt() ?? 100;
+          onOpenAdhanScreen?.call(voiceId, prayerName, volumePercent);
           break;
         case 'onAdhanStateChanged':
           final args = (call.arguments as Map?) ?? const {};
@@ -55,6 +57,7 @@ class FirdawsNativeService {
   Future<bool> startAdhanAlarm({
     required String voiceId,
     required String prayerName,
+    int volumePercent = 100,
     bool forceRestart = false,
   }) async {
     if (!isAndroid) return false;
@@ -62,6 +65,7 @@ class FirdawsNativeService {
       await _channel.invokeMethod('startAdhanAlarm', {
         'voiceId': voiceId,
         'prayerName': prayerName,
+        'volumePercent': volumePercent.clamp(0, 100),
         'forceRestart': forceRestart,
       });
       return true;
@@ -103,6 +107,58 @@ class FirdawsNativeService {
       await _channel.invokeMethod('schedulePrayerAlarms', {'alarms': alarms});
     } catch (e) {
       debugPrint('Native schedulePrayerAlarms error: $e');
+    }
+  }
+
+  Future<void> updatePrayerWidget({
+    required String cityName,
+    required String prayerName,
+    required int prayerTimeMillis,
+    required String prayerTimeLabel,
+    required List<Map<String, dynamic>> prayers,
+  }) async {
+    if (!isAndroid) return;
+    try {
+      await _channel.invokeMethod('updatePrayerWidget', {
+        'cityName': cityName,
+        'prayerName': prayerName,
+        'prayerTimeMillis': prayerTimeMillis,
+        'prayerTimeLabel': prayerTimeLabel,
+        'prayers': prayers,
+      });
+    } catch (error) {
+      debugPrint('Native updatePrayerWidget error: $error');
+    }
+  }
+
+  Future<bool> scheduleTestAdhan({
+    required String voiceId,
+    required String prayerName,
+    required String mode,
+    required int volumePercent,
+  }) async {
+    if (!isAndroid) return false;
+    try {
+      return await _channel.invokeMethod<bool>('scheduleTestAdhan', {
+            'voiceId': voiceId,
+            'prayerName': prayerName,
+            'mode': mode,
+            'volumePercent': volumePercent,
+          }) ??
+          false;
+    } catch (error) {
+      debugPrint('Native scheduleTestAdhan error: $error');
+      return false;
+    }
+  }
+
+  Future<bool> cancelTestAdhan() async {
+    if (!isAndroid) return false;
+    try {
+      return await _channel.invokeMethod<bool>('cancelTestAdhan') ?? false;
+    } catch (error) {
+      debugPrint('Native cancelTestAdhan error: $error');
+      return false;
     }
   }
 
