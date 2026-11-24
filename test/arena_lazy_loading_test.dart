@@ -122,4 +122,57 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('arena hub starts with four games and expands on request',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(wrapQuietApp(const ArenaHubScreen()));
+    await tester.pump(const Duration(milliseconds: 250));
+
+    final scrollable = find
+        .descendant(
+          of: find.byKey(const ValueKey('arena-hub-scroll-view')),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    final showMore = find.text('عرض بقية المختارات (2)');
+    await tester.scrollUntilVisible(
+      showMore,
+      450,
+      scrollable: scrollable,
+    );
+    await tester.ensureVisible(showMore);
+    await tester.pumpAndSettle();
+    expect(find.text('4 من 6 تجارب مختارة'), findsOneWidget);
+    final showMoreButton =
+        find.byKey(const ValueKey('arena-games-expansion-toggle'));
+    expect(showMoreButton, findsOneWidget);
+    expect(tester.widget<TextButton>(showMoreButton).onPressed, isNotNull);
+    await tester.ensureVisible(showMoreButton);
+    await tester.pumpAndSettle();
+    await tester.tap(showMoreButton);
+    await tester.pumpAndSettle();
+
+    tester.state<ScrollableState>(scrollable).position.jumpTo(0);
+    await tester.pumpAndSettle();
+    final expandedCount = find.text('6 من 6 تجارب مختارة');
+    await tester.scrollUntilVisible(
+      expandedCount,
+      450,
+      scrollable: scrollable,
+    );
+    expect(expandedCount, findsOneWidget);
+    final hideRemaining = find.text('إخفاء بقية المختارات');
+    await tester.scrollUntilVisible(
+      hideRemaining,
+      450,
+      scrollable: scrollable,
+    );
+    expect(hideRemaining, findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
 }

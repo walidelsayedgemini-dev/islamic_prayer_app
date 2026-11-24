@@ -447,18 +447,38 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
           ),
           if (onDetails != null) ...[
             const SizedBox(height: 8),
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: TextButton.icon(
-                onPressed: onDetails,
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(44, 44),
-                  padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 14, 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 2,
+              children: [
+                TextButton.icon(
+                  onPressed: onDetails,
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(44, 44),
+                    padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 14, 8),
+                  ),
+                  icon: const Icon(Icons.info_outline_rounded),
+                  label: const Text('تفاصيل الصلاة'),
                 ),
-                icon: const Icon(Icons.info_outline_rounded),
-                label: const Text('تفاصيل الصلاة'),
-              ),
+                TextButton.icon(
+                  onPressed: () {
+                    final today = LocationClock.now();
+                    FirdawsNavBridge.jumpTo(
+                      1,
+                      journeyTab: 0,
+                      journeyDate: DateTime(today.year, today.month, today.day),
+                    );
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(44, 44),
+                    padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 14, 8),
+                  ),
+                  icon: const Icon(Icons.fact_check_outlined),
+                  label: const Text('سجل الصلاة'),
+                ),
+              ],
             ),
           ],
         ],

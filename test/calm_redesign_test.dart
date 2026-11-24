@@ -145,6 +145,33 @@ void main() {
     await tester.pump();
   });
 
+  testWidgets('More search filters destinations and recovers from no results',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      wrapQuietApp(FirdawsMorePage(onNavigate: (_) {})),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+
+    final search = find.byType(TextField).first;
+    await tester.enterText(search, 'التقويم');
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('التقويم'), findsNWidgets(2));
+    expect(find.text('القبلة'), findsNothing);
+
+    await tester.enterText(search, 'وجهة غير موجودة');
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('لا توجد وجهات أو أنشطة مطابقة'), findsOneWidget);
+    await tester.tap(find.text('مسح البحث').last);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('القبلة'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
+
   testWidgets('Adhan gallery highlights the current skin and silent preview',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
@@ -209,6 +236,27 @@ void main() {
           widget.selected),
       findsOneWidget,
     );
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
+
+  testWidgets('Dashboard opens the prayer log from the next-prayer card',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(wrapQuietApp(const MainNavigationScreen()));
+    await tester.pump(const Duration(milliseconds: 200));
+
+    final logAction = find.text('سجل الصلاة').first;
+    await tester.ensureVisible(logAction);
+    await tester.tap(logAction);
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.byType(FirdawsJourneyScreen), findsOneWidget);
+    final journeyView =
+        tester.widget<TabBarView>(find.byType(TabBarView).first);
+    expect(journeyView.controller!.index, 0);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();

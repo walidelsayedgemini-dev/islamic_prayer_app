@@ -31,10 +31,12 @@ class ArenaHubScreen extends StatefulWidget {
 }
 
 class _ArenaHubScreenState extends State<ArenaHubScreen> {
+  static const _initialVisibleGameCount = 4;
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = '';
   String _selectedCategory = 'الكل';
   ArenaEngineType? _selectedEngine;
+  bool _showAllGames = false;
   late ArenaPlayMode _preferredMode;
   late final List<ArenaEngineType> _featuredEngineTypes = ArenaGamesCatalog
       .featuredGames
@@ -87,6 +89,12 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
     }).toList();
   }
 
+  List<ArenaFeaturedGame> get _visibleGames {
+    final games = _filteredGames;
+    if (_hasActiveFilters || _showAllGames) return games;
+    return games.take(_initialVisibleGameCount).toList(growable: false);
+  }
+
   void _openGame(ArenaGameDefinition game) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -127,13 +135,15 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
       _searchCtrl.clear();
       _selectedCategory = 'الكل';
       _selectedEngine = null;
+      _showAllGames = true;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final games = _filteredGames;
+    final filteredGames = _filteredGames;
+    final games = _visibleGames;
     final categories = [
       'الكل',
       ...ArenaGamesCatalog.featuredGames.map((game) => game.category).toSet(),
@@ -157,6 +167,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
         ),
       ],
       child: CustomScrollView(
+        key: const ValueKey('arena-hub-scroll-view'),
         slivers: [
           SliverToBoxAdapter(
             child: ParadiseHero(
@@ -230,6 +241,28 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   _ResultCount(count: games.length),
+                  if (!_hasActiveFilters &&
+                      ArenaGamesCatalog.featuredGames.length >
+                          _initialVisibleGameCount)
+                    TextButton.icon(
+                      key: const ValueKey('arena-games-expansion-toggle'),
+                      onPressed: () =>
+                          setState(() => _showAllGames = !_showAllGames),
+                      icon: Icon(
+                        _showAllGames
+                            ? Icons.expand_less_rounded
+                            : Icons.expand_more_rounded,
+                        size: 19,
+                      ),
+                      label: Text(
+                        _showAllGames
+                            ? 'إخفاء بقية المختارات'
+                            : 'عرض بقية المختارات (${filteredGames.length - games.length})',
+                      ),
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(44, 44),
+                      ),
+                    ),
                   if (_hasActiveFilters)
                     TextButton.icon(
                       onPressed: _clearFilters,

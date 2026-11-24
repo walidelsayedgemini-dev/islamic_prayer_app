@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:islamic_prayer_app/models/prayer_alarm_preference.dart';
 import 'package:islamic_prayer_app/providers/settings_provider.dart';
+import 'package:islamic_prayer_app/services/prayer_reliability_labels.dart';
 import 'package:islamic_prayer_app/screens/prayer_setup_screen.dart';
 
 void main() {
@@ -113,6 +114,49 @@ void main() {
     settings.refreshDerivedBrightness();
     settings.setBrightnessMode('unknown');
     expect(settings.brightnessMode, 'auto');
+    settings.dispose();
+  });
+
+  testWidgets('first-run method selection updates the prayer settings',
+      (WidgetTester tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 640));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final settings = SettingsProvider();
+    await settings.init();
+    await tester.pumpWidget(
+      ChangeNotifierProvider<SettingsProvider>.value(
+        value: settings,
+        child: const MaterialApp(home: PrayerSetupScreen()),
+      ),
+    );
+    await tester.pump();
+
+    final selector = find.byType(DropdownButtonFormField<CalculationMethod>);
+    expect(selector, findsOneWidget);
+    final selectedMethod = CalculationMethod.values.firstWhere(
+      (method) => method != settings.calculationMethod,
+    );
+    await tester.ensureVisible(selector);
+    final dropdown = find.descendant(
+      of: selector,
+      matching: find.byType(DropdownButton<CalculationMethod>),
+    );
+    expect(dropdown, findsOneWidget);
+    final methodButton =
+        tester.widget<DropdownButton<CalculationMethod>>(dropdown);
+    expect(methodButton.isExpanded, isTrue);
+    expect(methodButton.items, isNotNull);
+    expect(methodButton.items!.any((item) => item.value == selectedMethod),
+        isTrue);
+    methodButton.onChanged?.call(selectedMethod);
+    await tester.pump();
+
+    expect(settings.calculationMethod, selectedMethod);
+    expect(find.text(PrayerReliabilityLabels.method(selectedMethod)),
+        findsOneWidget);
+    expect(settings.shouldShowFirstRunSetup, isTrue);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
     settings.dispose();
   });
 

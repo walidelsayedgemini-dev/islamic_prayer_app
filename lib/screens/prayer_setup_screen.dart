@@ -1,8 +1,13 @@
+import 'package:adhan/adhan.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/prayer_alarm_preference.dart';
+import '../models/prayer_model.dart';
 import '../providers/settings_provider.dart';
+import '../services/firdaws_native_service.dart';
+import '../services/prayer_reliability_labels.dart';
 import '../services/notification_capabilities.dart';
 import '../services/notification_service.dart';
 import '../widgets/calm_ui.dart';
@@ -18,6 +23,8 @@ class PrayerSetupScreen extends StatefulWidget {
 
 class _PrayerSetupScreenState extends State<PrayerSetupScreen> {
   bool _requestingNotifications = false;
+  bool _testAlarmScheduled = false;
+  bool _schedulingTestAlarm = false;
 
   Future<void> _chooseCity(SettingsProvider settings) async {
     final city = await ManualCityPicker.show(
@@ -38,6 +45,84 @@ class _PrayerSetupScreenState extends State<PrayerSetupScreen> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _scheduleTestAdhan(SettingsProvider settings) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('اختبار تنبيه الأذان'),
+        content: const Text(
+          'سيتم جدولة تنبيه تجريبي بعد دقيقة للتأكد من عمل الإشعارات والأذان. لن يبدأ الصوت الآن، ولن يُجدول الاختبار إلا بعد موافقتك الصريحة. يمكنك إلغاؤه من هنا قبل موعده.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('ليس الآن'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('جدولة الاختبار'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final now = DateTime.now();
+    final times = AdvancedPrayerTimes.calculate(
+      latitude: settings.latitude,
+      longitude: settings.longitude,
+      method: settings.calculationMethod,
+      madhab: settings.madhab,
+      offsets: settings.offsets,
+    ).prayerTimes;
+    final upcoming = [
+      times.fajr,
+      times.dhuhr,
+      times.asr,
+      times.maghrib,
+      times.isha
+    ].where((time) => time.isAfter(now));
+    if (upcoming
+        .any((time) => time.difference(now) < const Duration(minutes: 5))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text(
+                'قرب موعد الصلاة؛ أرجّل الاختبار حتى لا يتداخل مع الأذان الحقيقي.')),
+      );
+      return;
+    }
+
+    setState(() => _schedulingTestAlarm = true);
+    final scheduled = await FirdawsNativeService().scheduleTestAdhan(
+      voiceId: settings.adhanVoice,
+      prayerName: 'اختبار الأذان',
+      mode: PrayerAlarmMode.adhan.name,
+      volumePercent: 100,
+    );
+    if (!mounted) return;
+    setState(() {
+      _schedulingTestAlarm = false;
+      _testAlarmScheduled = scheduled;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text(scheduled
+              ? 'تمت جدولة اختبار الأذان بعد دقيقة. قد يتأخر إذا منع الجهاز المنبه الدقيق.'
+              : 'تعذر جدولة الاختبار؛ راجع صلاحية المنبه الدقيق وحالة التنبيهات.')),
+    );
+  }
+
+  Future<void> _cancelTestAdhan() async {
+    final cancelled = await FirdawsNativeService().cancelTestAdhan();
+    if (!mounted) return;
+    setState(() => _testAlarmScheduled = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text(
+              cancelled ? 'تم إلغاء اختبار الأذان.' : 'تعذر إلغاء الاختبار.')),
+    );
   }
 
   Future<void> _requestNotifications(SettingsProvider settings) async {
@@ -135,6 +220,32 @@ class _PrayerSetupScreenState extends State<PrayerSetupScreen> {
                             icon: const Icon(Icons.location_city_rounded),
                             label: const Text('اختيار مدينة يدويًا'),
                           ),
+                          const Divider(height: 24),
+                          Text('طريقة الحساب',
+                              style: theme.textTheme.titleSmall
+                                  ?.copyWith(fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 4),
+                          DropdownButtonFormField<CalculationMethod>(
+                            value: settings.calculationMethod,
+                            isExpanded: true,
+                            decoration: const InputDecoration(
+                              helperText:
+                                  'اختر الطريقة الأقرب لجدول مسجدك؛ يمكنك تغييرها لاحقًا من الإعدادات.',
+                            ),
+                            items: CalculationMethod.values
+                                .map((method) => DropdownMenuItem(
+                                      value: method,
+                                      child: Text(
+                                          PrayerReliabilityLabels.method(
+                                              method)),
+                                    ))
+                                .toList(growable: false),
+                            onChanged: (value) {
+                              if (value != null) {
+                                settings.setCalculationMethod(value);
+                              }
+                            },
+                          ),
                         ],
                       ),
                     ),
@@ -179,6 +290,53 @@ class _PrayerSetupScreenState extends State<PrayerSetupScreen> {
                               height: 1.45,
                             ),
                           ),
+                          if (FirdawsNativeService().isAndroid) ...[
+                            const Divider(height: 24),
+                            Text('اختبار الأذان على هذا الجهاز',
+                                style: theme.textTheme.titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.w700)),
+                            const SizedBox(height: 6),
+                            Text(
+                              'اختبار اختياري للتأكد من وصول التنبيه وتشغيل الأذان لاحقًا. لا يبدأ الصوت تلقائيًا الآن؛ سيُجدول فقط بعد موافقتك.',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                  color: scheme.onSurfaceVariant, height: 1.45),
+                            ),
+                            const SizedBox(height: 10),
+                            if (_testAlarmScheduled)
+                              Text(
+                                  'الحالة: يوجد اختبار مجدول بعد دقيقة تقريبًا.',
+                                  style: theme.textTheme.bodyMedium
+                                      ?.copyWith(color: scheme.primary)),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: FilledButton.tonalIcon(
+                                    onPressed: _schedulingTestAlarm
+                                        ? null
+                                        : () => _scheduleTestAdhan(settings),
+                                    icon: _schedulingTestAlarm
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                                strokeWidth: 2))
+                                        : const Icon(
+                                            Icons.notification_add_outlined),
+                                    label: Text(_testAlarmScheduled
+                                        ? 'إعادة جدولة الاختبار'
+                                        : 'جدولة اختبار بعد دقيقة'),
+                                  ),
+                                ),
+                                if (_testAlarmScheduled) ...[
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                      tooltip: 'إلغاء الاختبار',
+                                      onPressed: _cancelTestAdhan,
+                                      icon: const Icon(Icons.cancel_outlined)),
+                                ],
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),
