@@ -219,13 +219,13 @@ class FirdawsBottomNavigation extends StatelessWidget {
           padding: const EdgeInsetsDirectional.fromSTEB(8, 5, 8, 6),
           decoration: BoxDecoration(
             border: Border(
-              top: BorderSide(color: const Color(0xFFB99C64).withOpacity(.42)),
+              top: BorderSide(color: scheme.outlineVariant.withOpacity(.72)),
             ),
             boxShadow: [
               BoxShadow(
-                color: scheme.primary.withOpacity(.055),
-                blurRadius: 16,
-                offset: const Offset(0, -5),
+                color: scheme.primary.withOpacity(.035),
+                blurRadius: 12,
+                offset: const Offset(0, -3),
               ),
             ],
           ),
@@ -292,8 +292,7 @@ class _BottomDestinationButton extends StatelessWidget {
                         selected ? scheme.primaryContainer : Colors.transparent,
                     borderRadius: BorderRadius.circular(15),
                     border: selected
-                        ? Border.all(
-                            color: const Color(0xFFB99C64).withOpacity(.38))
+                        ? Border.all(color: scheme.primary.withOpacity(.22))
                         : null,
                   ),
                   child: Icon(destination.icon, size: 21, color: foreground),
@@ -467,9 +466,8 @@ class _SidebarDestinationTile extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),
           side: BorderSide(
-            color: selected
-                ? const Color(0xFFB99C64).withOpacity(.55)
-                : Colors.transparent,
+            color:
+                selected ? scheme.primary.withOpacity(.24) : Colors.transparent,
           ),
         ),
         child: InkWell(

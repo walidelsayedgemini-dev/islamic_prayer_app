@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:islamic_prayer_app/models/adhan_skin_catalog.dart';
 import 'package:islamic_prayer_app/providers/audio_player_provider.dart';
 import 'package:islamic_prayer_app/providers/comfort_provider.dart';
 import 'package:islamic_prayer_app/providers/family_challenge_provider.dart';
@@ -14,6 +15,7 @@ import 'package:islamic_prayer_app/providers/hoor_companion_provider.dart';
 import 'package:islamic_prayer_app/providers/jannati_provider.dart';
 import 'package:islamic_prayer_app/providers/settings_provider.dart';
 import 'package:islamic_prayer_app/screens/calendar_screen.dart';
+import 'package:islamic_prayer_app/screens/adhan_skin_gallery_screen.dart';
 import 'package:islamic_prayer_app/screens/firdaws_journey_screen.dart';
 import 'package:islamic_prayer_app/screens/help_me_screen.dart';
 import 'package:islamic_prayer_app/screens/jannati_screen.dart';
@@ -126,6 +128,40 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     });
   }
+
+  testWidgets('Today dashboard prioritizes the next prayer and schedule',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(wrapQuietApp(const PrayerHomeScreen()));
+    await tester.pump(const Duration(milliseconds: 240));
+
+    expect(find.text('الصلاة القادمة'), findsOneWidget);
+    expect(find.text('مواقيت الصلاة اليوم'), findsOneWidget);
+    expect(find.text('مسارات أخرى لليوم'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
+
+  testWidgets('Adhan gallery highlights the current skin and silent preview',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(wrapQuietApp(
+      const AdhanSkinGalleryScreen(selectedSkinId: AdhanSkinCatalog.defaultId),
+    ));
+    await tester.pump(const Duration(milliseconds: 120));
+
+    expect(find.text('الخلفية الحالية'), findsOneWidget);
+    expect(find.text('المعاينات صامتة ولا تشغّل صوت الأذان.'), findsOneWidget);
+    expect(find.byType(GridView), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
 
   testWidgets(
       'Stable phone navigation loads pages only on demand and preserves bridge requests',

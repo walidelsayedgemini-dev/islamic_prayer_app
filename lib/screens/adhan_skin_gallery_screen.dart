@@ -20,8 +20,8 @@ class _AdhanSkinGalleryScreenState extends State<AdhanSkinGalleryScreen> {
       context: context,
       builder: (dialogContext) {
         final isSelected = skin.id == widget.selectedSkinId;
-        final imageHeight = (MediaQuery.sizeOf(dialogContext).height * 0.38)
-            .clamp(190.0, 340.0)
+        final imageHeight = (MediaQuery.sizeOf(dialogContext).height * 0.46)
+            .clamp(220.0, 420.0)
             .toDouble();
         final scheme = Theme.of(dialogContext).colorScheme;
 
@@ -118,12 +118,12 @@ class _AdhanSkinGalleryScreenState extends State<AdhanSkinGalleryScreen> {
                           ? Icons.check_circle_outline_rounded
                           : Icons.wallpaper_rounded),
                       label: Text(isSelected
-                          ? 'الخلفية المحددة'
+                          ? 'الخلفية الحالية'
                           : 'اختيار هذه الخلفية'),
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(50),
                         backgroundColor: skin.accentColor,
-                        foregroundColor: Colors.white,
+                        foregroundColor: _onAccent(skin.accentColor),
                       ),
                     ),
                   ],
@@ -220,7 +220,7 @@ class _AdhanSkinGalleryScreenState extends State<AdhanSkinGalleryScreen> {
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: scheme.outlineVariant.withOpacity(.65)),
+        border: Border.all(color: scheme.outlineVariant.withOpacity(.7)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -252,8 +252,8 @@ class _AdhanSkinGalleryScreenState extends State<AdhanSkinGalleryScreen> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: SizedBox(
-                    width: 72,
-                    height: 96,
+                    width: 90,
+                    height: 122,
                     child: _skinImage(currentSkin),
                   ),
                 ),
@@ -323,7 +323,7 @@ class _AdhanSkinGalleryScreenState extends State<AdhanSkinGalleryScreen> {
   }) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final radius = BorderRadius.circular(18);
+    final radius = BorderRadius.circular(20);
 
     return Container(
       decoration: BoxDecoration(
@@ -331,7 +331,7 @@ class _AdhanSkinGalleryScreenState extends State<AdhanSkinGalleryScreen> {
         borderRadius: radius,
         border: Border.all(
           color: selected ? skin.accentColor : scheme.outlineVariant,
-          width: selected ? 2 : 1,
+          width: selected ? 1.6 : 1,
         ),
       ),
       child: ClipRRect(
@@ -380,10 +380,10 @@ class _AdhanSkinGalleryScreenState extends State<AdhanSkinGalleryScreen> {
                               color: skin.accentColor,
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: const Text(
+                            child: Text(
                               'محددة',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: _onAccent(skin.accentColor),
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -429,6 +429,11 @@ class _AdhanSkinGalleryScreenState extends State<AdhanSkinGalleryScreen> {
       ),
     );
   }
+
+  Color _onAccent(Color color) =>
+      ThemeData.estimateBrightnessForColor(color) == Brightness.dark
+          ? Colors.white
+          : const Color(0xFF1E3027);
 
   Widget _skinImage(AdhanSkin skin) {
     final assetKey = skin.imageAsset.startsWith('/')

@@ -385,15 +385,15 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
       remaining.isNegative ? Duration.zero : remaining,
     );
     return ParadiseHero(
-      title: 'موعدك القادم مع الصلاة',
+      title: 'الصلاة القادمة',
       subtitle: '${_prayerName(prayer)} · ${_formatTime(time)}',
-      minHeight: 324,
+      minHeight: 276,
       footer: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
             width: double.infinity,
-            padding: const EdgeInsetsDirectional.fromSTEB(16, 13, 16, 13),
+            padding: const EdgeInsetsDirectional.fromSTEB(14, 11, 14, 11),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(.13),
               borderRadius: BorderRadius.circular(19),
@@ -476,7 +476,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     ];
 
     return ParadiseSection(
-      title: 'تتابع مواقيت اليوم',
+      title: 'مواقيت الصلاة اليوم',
       child: CalmCard(
         padding: const EdgeInsetsDirectional.fromSTEB(12, 16, 12, 15),
         child: Column(
@@ -579,132 +579,97 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     final status = isCurrent
         ? 'الآن'
         : isUpcoming
-            ? 'الصلاة القادمة'
+            ? 'التالية'
             : isPast
                 ? 'سبق موعدها'
                 : null;
+    final radius = BorderRadius.circular(FirdawsRadius.control);
 
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SizedBox(
-            width: 34,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                if (!isLast)
-                  PositionedDirectional(
-                    start: 16,
-                    top: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 2,
-                      color: scheme.outlineVariant.withOpacity(.85),
-                    ),
-                  ),
-                Container(
-                  width: 15,
-                  height: 15,
-                  decoration: BoxDecoration(
-                    color: highlighted ? scheme.primary : scheme.surface,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color:
-                          highlighted ? scheme.primary : scheme.outlineVariant,
-                      width: 2.5,
-                    ),
-                    boxShadow: highlighted
-                        ? [
-                            BoxShadow(
-                              color: scheme.primary.withOpacity(.18),
-                              blurRadius: 9,
-                              spreadRadius: 2,
-                            ),
-                          ]
-                        : const [],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: onTap,
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  margin: const EdgeInsets.symmetric(vertical: 3),
-                  padding: const EdgeInsetsDirectional.fromSTEB(13, 12, 11, 12),
-                  decoration: BoxDecoration(
-                    color: highlighted
-                        ? Color.lerp(
-                            scheme.primaryContainer, scheme.surface, .4)
-                        : scheme.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
+    return Column(
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: radius,
+            child: AnimatedContainer(
+              duration: MediaQuery.of(context).disableAnimations
+                  ? Duration.zero
+                  : const Duration(milliseconds: 180),
+              constraints: const BoxConstraints(minHeight: 56),
+              padding: const EdgeInsetsDirectional.fromSTEB(12, 8, 12, 8),
+              decoration: BoxDecoration(
+                color: highlighted
+                    ? scheme.primary.withOpacity(.065)
+                    : Colors.transparent,
+                borderRadius: radius,
+                border: highlighted
+                    ? Border.all(color: scheme.primary.withOpacity(.16))
+                    : null,
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 3,
+                    height: 34,
+                    decoration: BoxDecoration(
                       color: highlighted
-                          ? scheme.primary.withOpacity(.25)
-                          : scheme.outlineVariant.withOpacity(.52),
+                          ? scheme.primary
+                          : scheme.outlineVariant.withOpacity(.75),
+                      borderRadius: BorderRadius.circular(4),
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              name,
-                              softWrap: true,
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: highlighted
-                                    ? FontWeight.w700
-                                    : FontWeight.w600,
-                              ),
-                            ),
-                            if (status != null) ...[
-                              const SizedBox(height: 3),
-                              Text(
-                                status,
-                                softWrap: true,
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: scheme.primary,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        width: 91,
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: AlignmentDirectional.centerEnd,
-                          child: Text(
-                            _formatTime(time),
-                            textDirection: TextDirection.ltr,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              color: highlighted ? scheme.primary : null,
-                              fontWeight: highlighted
-                                  ? FontWeight.w700
-                                  : FontWeight.w600,
-                            ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          name,
+                          softWrap: true,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight:
+                                highlighted ? FontWeight.w700 : FontWeight.w600,
                           ),
                         ),
-                      ),
-                    ],
+                        if (status != null) ...[
+                          const SizedBox(height: 1),
+                          Text(
+                            status,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: scheme.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Text(
+                    _formatTime(time),
+                    textDirection: TextDirection.ltr,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: highlighted ? scheme.primary : null,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-        ],
-      ),
+        ),
+        if (!isLast)
+          Padding(
+            padding: const EdgeInsetsDirectional.only(start: 28),
+            child: Divider(
+              height: 1,
+              thickness: 1,
+              color: scheme.outlineVariant.withOpacity(.58),
+            ),
+          ),
+      ],
     );
   }
 
@@ -845,48 +810,53 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
       child: Material(
         color: scheme.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(25),
-          side: BorderSide(color: const Color(0xFFB99C64).withOpacity(.42)),
+          borderRadius: BorderRadius.circular(FirdawsRadius.card),
+          side: BorderSide(color: scheme.outlineVariant.withOpacity(.72)),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: shortcut.onTap,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 147),
+            constraints: const BoxConstraints(minHeight: 104),
             child: Padding(
-              padding: const EdgeInsets.all(15),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 12, 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Row(
-                    children: [
-                      CalmIconBadge(shortcut.icon, size: 43),
-                      const Spacer(),
-                      Icon(
-                        Icons.north_west_rounded,
-                        color: scheme.primary.withOpacity(.75),
-                        size: 19,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 13),
-                  Text(
-                    shortcut.title,
-                    softWrap: true,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      height: 1.3,
+                  CalmIconBadge(shortcut.icon, size: 42),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          shortcut.title,
+                          softWrap: true,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            height: 1.3,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          shortcut.subtitle,
+                          softWrap: true,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 3),
-                  Text(
-                    shortcut.subtitle,
-                    softWrap: true,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                      height: 1.4,
-                    ),
+                  const SizedBox(width: 5),
+                  Icon(
+                    Icons.chevron_left_rounded,
+                    color: scheme.onSurfaceVariant,
+                    size: 19,
                   ),
                 ],
               ),

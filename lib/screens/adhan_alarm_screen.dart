@@ -43,7 +43,6 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen> {
       IslamicAudioLibrary.getAdhanVoiceById(widget.voiceId);
   late String _skinId;
 
-  bool _swipedReady = false;
   bool _isClosing = false;
   bool _isAudioStarting = true;
   bool _audioStartFailed = false;
@@ -198,6 +197,7 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen> {
   @override
   Widget build(BuildContext context) {
     final skin = AdhanSkinCatalog.byId(_skinId);
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
     final skinAsset = skin.imageAsset.startsWith('/')
         ? skin.imageAsset.substring(1)
         : skin.imageAsset;
@@ -225,7 +225,9 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen> {
             children: [
               Positioned.fill(
                 child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 950),
+                  duration: reduceMotion
+                      ? Duration.zero
+                      : const Duration(milliseconds: 620),
                   switchInCurve: Curves.easeOutCubic,
                   switchOutCurve: Curves.easeInCubic,
                   child: Image.asset(
@@ -260,6 +262,7 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen> {
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final compact = constraints.maxWidth < 560;
+                    final shortScreen = constraints.maxHeight < 740;
                     return SingleChildScrollView(
                       padding: EdgeInsets.fromLTRB(
                         compact ? 18 : 30,
@@ -274,15 +277,21 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               _buildTopBar(),
-                              SizedBox(height: compact ? 38 : 56),
+                              SizedBox(
+                                height: compact ? (shortScreen ? 14 : 24) : 48,
+                              ),
                               _buildPrayerHeading(compact),
-                              SizedBox(height: compact ? 30 : 42),
+                              SizedBox(
+                                height: compact ? (shortScreen ? 14 : 24) : 32,
+                              ),
                               _buildAdhanPhrasePanel(compact),
-                              const SizedBox(height: 22),
+                              const SizedBox(height: 16),
                               _buildDuaAfterAdhan(),
-                              SizedBox(height: compact ? 28 : 38),
+                              SizedBox(
+                                height: compact ? (shortScreen ? 18 : 26) : 32,
+                              ),
                               _buildStopControls(compact),
-                              const SizedBox(height: 18),
+                              const SizedBox(height: 14),
                               _buildFooterNote(),
                             ],
                           ),
@@ -406,29 +415,35 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen> {
             : _audioCompleted
                 ? Icons.check_circle_outline_rounded
                 : Icons.graphic_eq_rounded;
-    return Semantics(
-      liveRegion: true,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(.30),
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: Colors.white.withOpacity(.22)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 18, color: _warmGold),
-            const SizedBox(width: 9),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
+    return AnimatedSwitcher(
+      duration: MediaQuery.of(context).disableAnimations
+          ? Duration.zero
+          : const Duration(milliseconds: 240),
+      child: Semantics(
+        key: ValueKey<String>(label),
+        liveRegion: true,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(.30),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: Colors.white.withOpacity(.22)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 18, color: _warmGold),
+              const SizedBox(width: 9),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -437,18 +452,18 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen> {
   Widget _buildAdhanPhrasePanel(bool compact) {
     final phrase = _phrases[_phraseIndex];
     return Container(
-      constraints: const BoxConstraints(minHeight: 230),
+      constraints: const BoxConstraints(minHeight: 194),
       padding: EdgeInsets.symmetric(
-        horizontal: compact ? 20 : 38,
-        vertical: compact ? 26 : 34,
+        horizontal: compact ? 18 : 34,
+        vertical: compact ? 22 : 30,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xD80B2022),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: _warmGold.withOpacity(.42), width: 1.1),
+        color: const Color(0xB40B2022),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: _warmGold.withOpacity(.32)),
         boxShadow: const [
           BoxShadow(
-              color: Colors.black38, blurRadius: 30, offset: Offset(0, 15)),
+              color: Colors.black26, blurRadius: 24, offset: Offset(0, 11)),
         ],
       ),
       child: Column(
@@ -461,7 +476,9 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen> {
           ),
           const SizedBox(height: 20),
           AnimatedSwitcher(
-            duration: const Duration(milliseconds: 720),
+            duration: MediaQuery.of(context).disableAnimations
+                ? Duration.zero
+                : const Duration(milliseconds: 560),
             switchInCurve: Curves.easeOutCubic,
             switchOutCurve: Curves.easeInCubic,
             transitionBuilder: (child, animation) => FadeTransition(
@@ -510,13 +527,15 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen> {
 
   Widget _buildPhraseProgress() {
     final count = _phrases.length;
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List<Widget>.generate(count, (index) {
         final active = index == _phraseIndex;
         final passed = index < _phraseIndex;
         return AnimatedContainer(
-          duration: const Duration(milliseconds: 350),
+          duration:
+              reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
           width: active ? 22 : 6,
           height: 6,
           margin: const EdgeInsets.symmetric(horizontal: 3),
@@ -532,22 +551,24 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen> {
   Widget _buildDuaAfterAdhan() {
     if (!_audioCompleted) return const SizedBox.shrink();
     return AnimatedSize(
-      duration: const Duration(milliseconds: 650),
+      duration: MediaQuery.of(context).disableAnimations
+          ? Duration.zero
+          : const Duration(milliseconds: 420),
       curve: Curves.easeOutCubic,
       child: Container(
         key: const ValueKey<String>('dua-after-adhan'),
         padding: const EdgeInsetsDirectional.fromSTEB(20, 20, 20, 22),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(.94),
+          color: const Color(0xD80B2022),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: _warmGold.withOpacity(.8)),
+          border: Border.all(color: _warmGold.withOpacity(.32)),
         ),
         child: const Column(
           children: [
             Text(
               'الدعاء بعد الأذان',
               style: TextStyle(
-                color: Color(0xFF173C39),
+                color: _warmGold,
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
               ),
@@ -557,7 +578,7 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen> {
               'اللهم رب هذه الدعوة التامة، والصلاة القائمة، آتِ محمدًا الوسيلة والفضيلة، وابعثه مقامًا محمودًا الذي وعدته.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Color(0xFF233A39),
+                color: Colors.white,
                 fontSize: 17,
                 height: 1.9,
                 fontWeight: FontWeight.w600,
@@ -600,88 +621,42 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen> {
   }
 
   Widget _buildStopControls(bool compact) {
-    if (!_swipedReady) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Dismissible(
-            key: const ValueKey<String>('adhan_swipe_unlock'),
-            direction: DismissDirection.horizontal,
-            confirmDismiss: (_) async {
-              if (!mounted) return false;
-              setState(() => _swipedReady = true);
-              return false;
-            },
-            background: _swipeBackground(Alignment.centerLeft),
-            secondaryBackground: _swipeBackground(Alignment.centerRight),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(.32),
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: Colors.white.withOpacity(.22)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.swipe_rounded, color: _warmGold, size: 27),
-                  const SizedBox(width: 13),
-                  const Expanded(
-                    child: Text(
-                      'اسحب هنا لإظهار زر إيقاف الأذان',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                  Icon(Icons.swap_horiz_rounded,
-                      color: Colors.white.withOpacity(.8)),
-                ],
-              ),
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FilledButton.icon(
+          onPressed: _confirmAccessibleStop,
+          icon: Icon(
+            _audioCompleted ? Icons.close_rounded : Icons.stop_circle_outlined,
           ),
-          const SizedBox(height: 6),
-          TextButton.icon(
-            onPressed: _confirmAccessibleStop,
-            icon: Icon(
-              _audioCompleted
-                  ? Icons.close_rounded
-                  : Icons.stop_circle_outlined,
+          label: Text(_audioCompleted ? 'إغلاق شاشة الأذان' : 'إيقاف الأذان'),
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF6B292C),
+            foregroundColor: Colors.white,
+            minimumSize: Size.fromHeight(compact ? 54 : 60),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: BorderSide(color: _warmGold.withOpacity(.34)),
             ),
-            label: Text(_audioCompleted ? 'إغلاق شاشة الأذان' : 'إيقاف الأذان'),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.white,
-              minimumSize: const Size.fromHeight(48),
-            ),
+            textStyle:
+                const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
-        ],
-      );
-    }
-
-    return FilledButton.icon(
-      onPressed: () => _stopAndClose(reason: 'تم إيقاف الأذان'),
-      icon: const Icon(Icons.stop_circle_outlined),
-      label: const Text('إلغاء وإيقاف الأذان'),
-      style: FilledButton.styleFrom(
-        backgroundColor: const Color(0xFF6B292C),
-        foregroundColor: Colors.white,
-        minimumSize: Size.fromHeight(compact ? 56 : 62),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-      ),
+        ),
+        const SizedBox(height: 7),
+        Text(
+          _audioCompleted
+              ? 'يمكنك إغلاق الشاشة بعد قراءة الدعاء.'
+              : 'يمكنك إيقاف الصوت في أي وقت؛ لن يُعاد تشغيله تلقائيًا.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white.withOpacity(.78),
+            fontSize: 12,
+            height: 1.4,
+          ),
+        ),
+      ],
     );
   }
-
-  Widget _swipeBackground(Alignment alignment) => Container(
-        alignment: alignment,
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        decoration: BoxDecoration(
-          color: const Color(0xFF294E47),
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: const Icon(Icons.lock_open_rounded, color: Colors.white),
-      );
 
   Widget _buildFooterNote() {
     final message = _audioStartFailed

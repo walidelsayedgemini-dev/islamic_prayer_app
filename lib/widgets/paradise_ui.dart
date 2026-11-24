@@ -30,22 +30,17 @@ class ParadiseHero extends StatelessWidget {
         (theme.brightness == Brightness.dark
             ? 'assets/images/garden/garden_night_starlight.jpg'
             : 'assets/images/garden/garden_day_paradise.jpg');
-    final shape = BorderRadius.only(
-      topLeft: Radius.circular(compact ? 42 : 72),
-      topRight: const Radius.circular(26),
-      bottomRight: Radius.circular(compact ? 26 : 38),
-      bottomLeft: Radius.circular(compact ? 26 : 38),
-    );
+    final shape = BorderRadius.circular(FirdawsRadius.sheet);
     return Container(
       constraints: BoxConstraints(minHeight: minHeight < 0 ? 0 : minHeight),
       decoration: BoxDecoration(
         borderRadius: shape,
-        border: Border.all(color: const Color(0xFFD8C28C).withOpacity(.74)),
+        border: Border.all(color: const Color(0xFFD8C28C).withOpacity(.46)),
         boxShadow: [
           BoxShadow(
-            color: theme.colorScheme.primary.withOpacity(.18),
-            blurRadius: 30,
-            offset: const Offset(0, 12),
+            color: theme.colorScheme.primary.withOpacity(.12),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -74,26 +69,15 @@ class ParadiseHero extends StatelessWidget {
             ),
           ),
           PositionedDirectional(
-            end: -48,
-            top: -88,
+            end: -44,
+            top: -78,
             child: IgnorePointer(
               child: Container(
-                width: 204,
-                height: 204,
+                width: 176,
+                height: 176,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withOpacity(.15)),
-                ),
-                child: Center(
-                  child: Container(
-                    width: 160,
-                    height: 160,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                          color: const Color(0xFFD8C28C).withOpacity(.28)),
-                    ),
-                  ),
+                  border: Border.all(color: Colors.white.withOpacity(.11)),
                 ),
               ),
             ),
@@ -239,7 +223,7 @@ class ParadiseChip extends StatelessWidget {
         side: BorderSide(
           color: selected
               ? const Color(0xFFD8C28C).withOpacity(.76)
-              : const Color(0xFFB99C64).withOpacity(.48),
+              : scheme.outlineVariant.withOpacity(.78),
         ),
       ),
       child: InkWell(
@@ -299,7 +283,7 @@ class ParadiseMetric extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.surface,
         borderRadius: BorderRadius.circular(21),
-        border: Border.all(color: const Color(0xFFB99C64).withOpacity(.38)),
+        border: Border.all(color: scheme.outlineVariant.withOpacity(.78)),
         boxShadow: [
           BoxShadow(
             color: scheme.primary.withOpacity(.07),
@@ -320,7 +304,7 @@ class ParadiseMetric extends StatelessWidget {
                 color: scheme.primaryContainer,
                 borderRadius: BorderRadius.circular(14),
                 border:
-                    Border.all(color: const Color(0xFFB99C64).withOpacity(.3)),
+                    Border.all(color: scheme.outlineVariant.withOpacity(.7)),
               ),
               child: Icon(icon, color: scheme.onPrimaryContainer, size: 20),
             ),

@@ -579,13 +579,13 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: scheme.surface,
-          borderRadius: BorderRadius.circular(25),
-          border: Border.all(color: const Color(0xFFB99C64).withOpacity(.42)),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: scheme.outlineVariant.withOpacity(.78)),
           boxShadow: [
             BoxShadow(
-              color: scheme.primary.withOpacity(.045),
-              blurRadius: 18,
-              offset: const Offset(0, 6),
+              color: scheme.primary.withOpacity(.025),
+              blurRadius: 13,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -703,7 +703,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
 
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final radius = BorderRadius.circular(25);
+    final radius = BorderRadius.circular(20);
     return Material(
       color: scheme.surface,
       borderRadius: radius,
@@ -713,7 +713,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: radius,
-            border: Border.all(color: const Color(0xFFB99C64).withOpacity(.4)),
+            border: Border.all(color: scheme.outlineVariant.withOpacity(.76)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -815,7 +815,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final coverAsset = Arena4KStageAssets.backdropForGame(game);
-    final radius = BorderRadius.circular(25);
+    final radius = BorderRadius.circular(20);
     return Material(
       color: scheme.surface,
       borderRadius: radius,
@@ -825,12 +825,12 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: radius,
-            border: Border.all(color: const Color(0xFFB99C64).withOpacity(.4)),
+            border: Border.all(color: scheme.outlineVariant.withOpacity(.76)),
             boxShadow: [
               BoxShadow(
-                color: scheme.primary.withOpacity(.05),
-                blurRadius: 18,
-                offset: const Offset(0, 7),
+                color: scheme.primary.withOpacity(.03),
+                blurRadius: 13,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -1053,7 +1053,7 @@ class _QuickPortalCard extends StatelessWidget {
     final scheme = theme.colorScheme;
     return Material(
       color: scheme.surface,
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: link.onTap,
@@ -1061,8 +1061,8 @@ class _QuickPortalCard extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 104),
           padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: const Color(0xFFB99C64).withOpacity(.4)),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: scheme.outlineVariant.withOpacity(.76)),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -1074,7 +1074,7 @@ class _QuickPortalCard extends StatelessWidget {
                   color: scheme.primaryContainer,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: const Color(0xFFB99C64).withOpacity(.28),
+                    color: scheme.outlineVariant.withOpacity(.7),
                   ),
                 ),
                 child: Icon(link.icon, color: scheme.onPrimaryContainer),
@@ -1163,7 +1163,7 @@ class _ModeCard extends StatelessWidget {
       selected: selected,
       child: Material(
         color: selected ? scheme.primaryContainer : scheme.surface,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(20),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
@@ -1171,10 +1171,10 @@ class _ModeCard extends StatelessWidget {
             constraints: const BoxConstraints(minHeight: 112),
             padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: selected
-                    ? const Color(0xFFB99C64)
+                    ? scheme.primary.withOpacity(.46)
                     : outline.withOpacity(.8),
                 width: selected ? 1.5 : 1,
               ),
@@ -1298,7 +1298,7 @@ class _ResultCount extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.primaryContainer,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: const Color(0xFFB99C64).withOpacity(.36)),
+        border: Border.all(color: scheme.outlineVariant.withOpacity(.72)),
       ),
       child: Text(
         '$count من ${ArenaGamesCatalog.featuredGames.length} تجارب مختارة',
