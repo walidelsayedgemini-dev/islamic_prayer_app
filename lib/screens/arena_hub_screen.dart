@@ -36,6 +36,12 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
   String _selectedCategory = 'الكل';
   ArenaEngineType? _selectedEngine;
   late ArenaPlayMode _preferredMode;
+  late final List<ArenaEngineType> _featuredEngineTypes = ArenaGamesCatalog
+      .featuredGames
+      .map((destination) => destination.definition?.engineType)
+      .whereType<ArenaEngineType>()
+      .toSet()
+      .toList(growable: false);
 
   @override
   void initState() {
@@ -61,21 +67,23 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
       .replaceAll('٨', '8')
       .replaceAll('٩', '9');
 
-  List<ArenaGameDefinition> get _filteredGames {
+  List<ArenaFeaturedGame> get _filteredGames {
     final q = _normalizeDigits(_searchQuery.trim());
-    return ArenaGamesCatalog.allGames.where((game) {
-      if (_selectedCategory != 'الكل' && game.category != _selectedCategory) {
+    return ArenaGamesCatalog.featuredGames.where((destination) {
+      final game = destination.definition;
+      if (_selectedCategory != 'الكل' &&
+          destination.category != _selectedCategory) {
         return false;
       }
-      if (_selectedEngine != null && game.engineType != _selectedEngine) {
+      if (_selectedEngine != null && game?.engineType != _selectedEngine) {
         return false;
       }
       if (q.isEmpty) return true;
-      return game.title.contains(q) ||
-          game.story.contains(q) ||
-          game.category.contains(q) ||
-          game.villain.name.contains(q) ||
-          '${game.number}' == q;
+      return destination.title.contains(q) ||
+          destination.story.contains(q) ||
+          destination.category.contains(q) ||
+          (game != null &&
+              (game.villain.name.contains(q) || '${game.number}' == q));
     }).toList();
   }
 
@@ -92,9 +100,19 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
   }
 
   void _openRandomGame() {
-    final games =
-        _filteredGames.isEmpty ? ArenaGamesCatalog.allGames : _filteredGames;
-    _openGame(games[math.Random().nextInt(games.length)]);
+    final games = _filteredGames.isEmpty
+        ? ArenaGamesCatalog.featuredGames
+        : _filteredGames;
+    _openFeaturedGame(games[math.Random().nextInt(games.length)]);
+  }
+
+  void _openFeaturedGame(ArenaFeaturedGame destination) {
+    final game = destination.definition;
+    if (game != null) {
+      _openGame(game);
+    } else {
+      _openScreen(const MillionaireQuizScreen());
+    }
   }
 
   void _openScreen(Widget screen) {
@@ -116,7 +134,10 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final games = _filteredGames;
-    final categories = ['الكل', ...ArenaGamesCatalog.categories];
+    final categories = [
+      'الكل',
+      ...ArenaGamesCatalog.featuredGames.map((game) => game.category).toSet(),
+    ];
     HasanatProvider? hasanat;
     try {
       hasanat = Provider.of<HasanatProvider>(context);
@@ -126,7 +147,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
 
     return CalmPage(
       title: 'صالة التحدّي',
-      subtitle: 'ثلاثون لعبة، ومساحة تختار فيها كيف تبدأ.',
+      subtitle: 'ست تجارب مختارة، ومساحة تختار فيها كيف تبدأ.',
       scroll: false,
       actions: [
         IconButton(
@@ -141,9 +162,9 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
             child: ParadiseHero(
               title: 'اختر بوابتك إلى التحدّي',
               subtitle:
-                  'تصفّح عوالم الألعاب، حدّد طريقتك، ثم ادخل الجولة من اختيارك.',
+                  'تصفّح الألعاب المختارة، حدّد طريقتك، ثم ابدأ التجربة التي تناسبك.',
               imageAsset: Arena4KStageAssets.backdropForGame(
-                ArenaGamesCatalog.allGames.first,
+                ArenaGamesCatalog.byId('game_06'),
               ),
               minHeight: 260,
               footer: Wrap(
@@ -167,11 +188,12 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
                   ),
                   _HeroFact(
                     icon: Icons.sports_esports_outlined,
-                    label: '${ArenaGamesCatalog.totalCount} لعبة',
+                    label:
+                        '${ArenaGamesCatalog.featuredGames.length} ألعاب مختارة',
                   ),
                   _HeroFact(
                     icon: Icons.view_module_outlined,
-                    label: '${ArenaEngineType.values.length} محركات',
+                    label: '${_featuredEngineTypes.length} محركات مختارة',
                   ),
                 ],
               ),
@@ -195,7 +217,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
           SliverToBoxAdapter(
             child: ParadiseSection(
-              title: 'كل الألعاب',
+              title: 'الألعاب المختارة',
               action: TextButton.icon(
                 onPressed: _openRandomGame,
                 icon: const Icon(Icons.shuffle_rounded, size: 19),
@@ -212,7 +234,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
                     TextButton.icon(
                       onPressed: _clearFilters,
                       icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
-                      label: const Text('إظهار الألعاب الثلاثين'),
+                      label: const Text('إظهار التجارب الست المختارة'),
                       style: TextButton.styleFrom(
                         minimumSize: const Size(44, 44),
                       ),
@@ -244,7 +266,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
     );
   }
 
-  Widget _buildGameRowsSliver(List<ArenaGameDefinition> games) {
+  Widget _buildGameRowsSliver(List<ArenaFeaturedGame> games) {
     return SliverLayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.crossAxisExtent;
@@ -272,7 +294,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
                       if (column > 0) const SizedBox(width: gap),
                       Expanded(
                         child: column < rowGames.length
-                            ? _buildGameCard(context, rowGames[column])
+                            ? _buildFeaturedGameCard(context, rowGames[column])
                             : const SizedBox.shrink(),
                       ),
                     ],
@@ -306,16 +328,16 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
             SizedBox(
               width: tileWidth,
               child: ParadiseMetric(
-                value: '${ArenaGamesCatalog.totalCount}',
-                label: 'لعبة في الصالة',
+                value: '${ArenaGamesCatalog.featuredGames.length}',
+                label: 'تجارب مختارة في الصالة',
                 icon: Icons.sports_esports_outlined,
               ),
             ),
             SizedBox(
               width: tileWidth,
               child: ParadiseMetric(
-                value: '${ArenaEngineType.values.length}',
-                label: 'أنماط لعب مختلفة',
+                value: '${_featuredEngineTypes.length}',
+                label: 'محركات في الألعاب المختارة',
                 icon: Icons.hub_outlined,
               ),
             ),
@@ -575,7 +597,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
               onChanged: (value) => setState(() => _searchQuery = value),
               textInputAction: TextInputAction.search,
               decoration: InputDecoration(
-                hintText: 'اسم اللعبة أو قصتها أو الزعيم أو رقمها',
+                hintText: 'اسم التجربة أو قصتها أو الفئة أو رقم اللعبة',
                 prefixIcon: const Icon(Icons.search_rounded),
                 suffixIcon: _searchQuery.isEmpty
                     ? null
@@ -605,7 +627,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
             const SizedBox(height: 18),
             _FilterShelf(
               title: 'الفئة',
-              description: 'استكشف حسب نوع التجربة.',
+              description: 'استكشف الألعاب المختارة حسب نوع التجربة.',
               children: [
                 for (final category in categories)
                   ParadiseChip(
@@ -619,7 +641,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
             const SizedBox(height: 16),
             _FilterShelf(
               title: 'محرك اللعب',
-              description: 'كل الألعاب تبقى متاحة عبر المرشحات.',
+              description: 'تصفّح محركات الألعاب المختارة.',
               children: [
                 ParadiseChip(
                   label: 'كل المحركات',
@@ -627,7 +649,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
                   selected: _selectedEngine == null,
                   onTap: () => setState(() => _selectedEngine = null),
                 ),
-                for (final engine in ArenaEngineType.values)
+                for (final engine in _featuredEngineTypes)
                   ParadiseChip(
                     label: engine.arabicLabel,
                     icon: engine.icon,
@@ -665,9 +687,126 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
           FilledButton.icon(
             onPressed: _clearFilters,
             icon: const Icon(Icons.restart_alt_rounded),
-            label: const Text('عرض الألعاب الثلاثين'),
+            label: const Text('عرض التجارب الست المختارة'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFeaturedGameCard(
+    BuildContext context,
+    ArenaFeaturedGame destination,
+  ) {
+    final game = destination.definition;
+    if (game != null) return _buildGameCard(context, game);
+
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final radius = BorderRadius.circular(25);
+    return Material(
+      color: scheme.surface,
+      borderRadius: radius,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _openFeaturedGame(destination),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: radius,
+            border: Border.all(color: const Color(0xFFB99C64).withOpacity(.4)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AspectRatio(
+                aspectRatio: 1.82,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: AlignmentDirectional.topStart,
+                          end: AlignmentDirectional.bottomEnd,
+                          colors: [
+                            Color(0xFF713F12),
+                            Color(0xFFB7791F),
+                            Color(0xFF18382D),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Center(
+                      child: Icon(
+                        Icons.quiz_outlined,
+                        size: 62,
+                        color: Colors.white.withOpacity(.9),
+                      ),
+                    ),
+                    const PositionedDirectional(
+                      top: 11,
+                      start: 11,
+                      child: _GameTag(
+                        label: 'المليونير الإسلامي',
+                        foreground: Color(0xFF17382D),
+                        background: Color(0xFFF6EACD),
+                        icon: Icons.workspace_premium_outlined,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 15, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _GameTag(
+                      label: destination.category,
+                      foreground: scheme.onPrimaryContainer,
+                      background: scheme.primaryContainer,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      destination.title,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        height: 1.25,
+                        color: scheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Text(
+                      destination.story,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: () => _openFeaturedGame(destination),
+                        icon: const Icon(Icons.play_arrow_rounded),
+                        label: const Text('ابدأ مسابقة المليونير'),
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(44, 48),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1162,7 +1301,7 @@ class _ResultCount extends StatelessWidget {
         border: Border.all(color: const Color(0xFFB99C64).withOpacity(.36)),
       ),
       child: Text(
-        '$count من ${ArenaGamesCatalog.totalCount} لعبة',
+        '$count من ${ArenaGamesCatalog.featuredGames.length} تجارب مختارة',
         softWrap: true,
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
               color: scheme.onPrimaryContainer,

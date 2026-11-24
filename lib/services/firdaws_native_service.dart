@@ -4,7 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FirdawsNativeService {
-  static final FirdawsNativeService _instance = FirdawsNativeService._internal();
+  static final FirdawsNativeService _instance =
+      FirdawsNativeService._internal();
   factory FirdawsNativeService() => _instance;
   FirdawsNativeService._internal();
 
@@ -17,6 +18,7 @@ class FirdawsNativeService {
   void Function(bool isRinging, String voiceId, String prayerName)?
       onAdhanStateChanged;
   VoidCallback? onVolumeUpPressed;
+  VoidCallback? onAdhanPlaybackCompleted;
   VoidCallback? onShowInAppSalawatPreview;
 
   bool get isAndroid =>
@@ -40,6 +42,9 @@ class FirdawsNativeService {
           final prayerName = args['prayerName']?.toString() ?? 'موعد الصلاة';
           onAdhanStateChanged?.call(isRinging, voiceId, prayerName);
           break;
+        case 'onAdhanPlaybackCompleted':
+          onAdhanPlaybackCompleted?.call();
+          break;
         case 'onVolumeUpPressed':
           onVolumeUpPressed?.call();
           break;
@@ -50,12 +55,14 @@ class FirdawsNativeService {
   Future<bool> startAdhanAlarm({
     required String voiceId,
     required String prayerName,
+    bool forceRestart = false,
   }) async {
     if (!isAndroid) return false;
     try {
       await _channel.invokeMethod('startAdhanAlarm', {
         'voiceId': voiceId,
         'prayerName': prayerName,
+        'forceRestart': forceRestart,
       });
       return true;
     } catch (e) {
@@ -80,7 +87,8 @@ class FirdawsNativeService {
       return const {'isRinging': false, 'voiceId': 'madinah', 'prayerName': ''};
     }
     try {
-      final res = await _channel.invokeMapMethod<String, dynamic>('isAdhanRinging');
+      final res =
+          await _channel.invokeMapMethod<String, dynamic>('isAdhanRinging');
       return res ?? const {'isRinging': false};
     } catch (_) {
       return const {'isRinging': false};
@@ -109,8 +117,8 @@ class FirdawsNativeService {
       };
     }
     try {
-      final res =
-          await _channel.invokeMapMethod<String, dynamic>('getAdhanDiagnostics');
+      final res = await _channel
+          .invokeMapMethod<String, dynamic>('getAdhanDiagnostics');
       return res ?? const {};
     } catch (_) {
       return const {};

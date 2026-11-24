@@ -30,8 +30,14 @@ class AdhanPlaybackService : Service() {
         const val ACTION_STOP_ADHAN = "com.islamic.app.ACTION_STOP_ADHAN"
         const val EXTRA_VOICE_ID = "voice_id"
         const val EXTRA_PRAYER_NAME = "prayer_name"
-        const val CHANNEL_ID = "firdaws_adhan_alarm_channel"
+        const val EXTRA_FORCE_RESTART = "forceRestart"
+        const val CHANNEL_ID = "firdaws_adhan_v4_service"
         const val NOTIF_ID = 9001
+
+        private const val LEGACY_CHANNEL_ID = "firdaws_adhan_alarm_channel"
+        private const val LEGACY_ADHAN_SOUND_CHANNEL_PREFIX = "firdaws_adhan_ch_"
+        private const val LEGACY_FALLBACK_CHANNEL_PREFIX = "firdaws_adhan_fallback_"
+        private const val LEGACY_PRE_ADHAN_CHANNEL_ID = "pre_adhan_voice_v2"
 
         @Volatile
         var isRinging: Boolean = false
@@ -46,6 +52,22 @@ class AdhanPlaybackService : Service() {
             private set
 
         var onStateChangedListener: ((Boolean, String, String) -> Unit)? = null
+        var onPlaybackCompletedListener: ((String, String) -> Unit)? = null
+
+        // حذف قنوات الأذان القديمة فقط، مع إبقاء قنوات التطبيق الأخرى كما هي.
+        fun cleanupLegacyAdhanChannels(notificationManager: NotificationManager) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+            try {
+                notificationManager.notificationChannels
+                    .filter {
+                        it.id == LEGACY_CHANNEL_ID ||
+                            it.id == LEGACY_PRE_ADHAN_CHANNEL_ID ||
+                            it.id.startsWith(LEGACY_ADHAN_SOUND_CHANNEL_PREFIX) ||
+                            it.id.startsWith(LEGACY_FALLBACK_CHANNEL_PREFIX)
+                    }
+                    .forEach { notificationManager.deleteNotificationChannel(it.id) }
+            } catch (_: Exception) {}
+        }
     }
 
     private var mediaPlayer: MediaPlayer? = null
@@ -67,21 +89,26 @@ class AdhanPlaybackService : Service() {
             ACTION_START_ADHAN, null -> {
                 val voiceId = intent?.getStringExtra(EXTRA_VOICE_ID) ?: "madinah"
                 val prayerName = intent?.getStringExtra(EXTRA_PRAYER_NAME) ?: "موعد الصلاة"
-                startAdhanPlayback(voiceId, prayerName)
+                val forceRestart = intent?.getBooleanExtra(EXTRA_FORCE_RESTART, false) == true
+                startAdhanPlayback(voiceId, prayerName, forceRestart)
             }
         }
         return START_STICKY
     }
 
-    private fun startAdhanPlayback(voiceId: String, prayerName: String) {
+    private fun startAdhanPlayback(voiceId: String, prayerName: String, forceRestart: Boolean) {
+        // الطلبات المتكررة لا تعيد بدء المقطع؛ التجربة اليدوية وحدها يمكنها فرض إعادة التشغيل.
+        if (isRinging && !forceRestart) return
+
         stopMediaAndObserversOnly()
+        releaseWakeLock()
 
         activeVoiceId = voiceId
         activePrayerName = prayerName
         isRinging = true
 
         createNotificationChannel()
-        val notification = buildInsistentNotification(voiceId, prayerName)
+        val notification = buildAdhanNotification(voiceId, prayerName)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(
@@ -93,7 +120,7 @@ class AdhanPlaybackService : Service() {
             startForeground(NOTIF_ID, notification)
         }
 
-        // إيقاظ الشاشة مؤقتاً
+        // إبقاء المعالج مستيقظاً أثناء المقطع فقط؛ ينتهي القفل تلقائياً بعد المهلة القصوى.
         try {
             val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
             wakeLock = pm.newWakeLock(
@@ -104,13 +131,12 @@ class AdhanPlaybackService : Service() {
             }
         } catch (_: Exception) {}
 
-        // إعداد مراقب زر رفع الصوت (حتّى لو كان الهاتف مقفلاً أو داخل أي تطبيق)
+        // مراقبة زر رفع الصوت لإيقاف الأذان حتى عند قفل الهاتف.
         audioManager = getSystemService(Context.AUDIO_SERVICE) as? AudioManager
         audioManager?.let { am ->
             val maxAlarm = am.getStreamMaxVolume(AudioManager.STREAM_ALARM)
             val curAlarm = am.getStreamVolume(AudioManager.STREAM_ALARM)
-            // إذا كان مستوى صوت المنبه في أقصى درجة (100%)، نخفضه درجة واحدة غير محسوسة
-            // حتى يضمن الضغط على زر رفع الصوت من الجنب زيادة حقيقية تلتقطها الخدمة وتوقف الأذان فوراً
+            // خفض درجة عند الحد الأقصى كي تُلتقط ضغطة رفع الصوت فعلياً.
             if (curAlarm >= maxAlarm && maxAlarm > 2) {
                 try {
                     am.setStreamVolume(AudioManager.STREAM_ALARM, maxAlarm - 1, 0)
@@ -126,7 +152,8 @@ class AdhanPlaybackService : Service() {
 
         registerVolumeUpStopListeners()
 
-        // تشغيل ملف الأذان المختار من res/raw بتكرار متواصل (Looping)
+        // تشغيل ملف الأذان مرة واحدة؛ نهاية الصوت لا توقف الخدمة ولا تغيّر حالة الرنين.
+        var player: MediaPlayer? = null
         try {
             val resName = "adhan_$voiceId"
             var resId = resources.getIdentifier(resName, "raw", packageName)
@@ -134,22 +161,37 @@ class AdhanPlaybackService : Service() {
                 resId = resources.getIdentifier("adhan_madinah", "raw", packageName)
             }
             if (resId != 0) {
-                val player = MediaPlayer()
+                val currentPlayer = MediaPlayer()
+                player = currentPlayer
                 val uri = Uri.parse("android.resource://$packageName/$resId")
-                player.setDataSource(applicationContext, uri)
-                player.setAudioAttributes(
+                currentPlayer.setDataSource(applicationContext, uri)
+                currentPlayer.setAudioAttributes(
                     AudioAttributes.Builder()
                         .setUsage(AudioAttributes.USAGE_ALARM)
                         .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                         .build()
                 )
-                player.setVolume(1.0f, 1.0f)
-                player.isLooping = true
-                player.prepare()
-                player.start()
-                mediaPlayer = player
+                currentPlayer.setVolume(1.0f, 1.0f)
+                currentPlayer.isLooping = false
+                currentPlayer.setOnCompletionListener { completedPlayer ->
+                    if (mediaPlayer !== completedPlayer || !isRinging) return@setOnCompletionListener
+                    mediaPlayer = null
+                    try {
+                        completedPlayer.release()
+                    } catch (_: Exception) {}
+                    releaseWakeLock()
+                    onPlaybackCompletedListener?.invoke(activeVoiceId, activePrayerName)
+                }
+                currentPlayer.prepare()
+                mediaPlayer = currentPlayer
+                currentPlayer.start()
             }
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+            try {
+                player?.release()
+            } catch (_: Exception) {}
+            if (mediaPlayer === player) mediaPlayer = null
+        }
 
         onStateChangedListener?.invoke(true, voiceId, prayerName)
     }
@@ -213,7 +255,7 @@ class AdhanPlaybackService : Service() {
         }
     }
 
-    private fun buildInsistentNotification(voiceId: String, prayerName: String): Notification {
+    private fun buildAdhanNotification(voiceId: String, prayerName: String): Notification {
         val fullScreenIntent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("open_adhan_alarm", true)
@@ -237,46 +279,46 @@ class AdhanPlaybackService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notif = NotificationCompat.Builder(this, CHANNEL_ID)
+        return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle("🕌 حان الآن موعد $prayerName")
             .setContentText("حيّ على الصلاة — لإيقاف الأذان ارفع الصوت من الجنب (+) أو اسحب الإشعار واضغط إلغاء")
             .setStyle(
                 NotificationCompat.BigTextStyle().bigText(
                     "حيّ على الصلاة.. حيّ على الفلاح 🕌✨\n" +
-                        "صوت الأذان سيبقى متواصلاً حتى ترفع الصوت من الجنب (+) أو تسحب وتضغط «إلغاء»."
+                        "صوت الأذان مرة واحدة؛ أوقف الخدمة برفع الصوت من الجنب (+) أو بالسحب والضغط على «إلغاء»."
                 )
             )
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setOngoing(true)
+            .setOngoing(false)
             .setAutoCancel(false)
+            .setOnlyAlertOnce(true)
+            .setSilent(true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(fullScreenPending)
             .setFullScreenIntent(fullScreenPending, true)
+            .setDeleteIntent(stopPending)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "إلغاء الأذان 🛑", stopPending)
             .build()
-
-        notif.flags = notif.flags or Notification.FLAG_INSISTENT or Notification.FLAG_NO_CLEAR
-        return notif
     }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val existing = nm.getNotificationChannel(CHANNEL_ID)
-            if (existing == null) {
-                val ch = NotificationChannel(
+            cleanupLegacyAdhanChannels(nm)
+            if (nm.getNotificationChannel(CHANNEL_ID) == null) {
+                val channel = NotificationChannel(
                     CHANNEL_ID,
-                    "منبه الأذان المتواصل",
+                    "منبه الأذان (الإصدار 4)",
                     NotificationManager.IMPORTANCE_HIGH
                 ).apply {
-                    description = "تنبيه الأذان بصوت المؤذن المختار حتى الإلغاء أو رفع الصوت"
-                    setSound(null, null) // الصوت يدار عبر MediaPlayer للاستمرارية والـ loop
-                    enableVibration(true)
+                    description = "إشعار خدمة الأذان؛ الصوت يصدر من مشغل الوسائط فقط"
+                    setSound(null, null)
+                    enableVibration(false)
                     lockscreenVisibility = Notification.VISIBILITY_PUBLIC
                 }
-                nm.createNotificationChannel(ch)
+                nm.createNotificationChannel(channel)
             }
         }
     }
@@ -307,13 +349,17 @@ class AdhanPlaybackService : Service() {
         mediaPlayer = null
     }
 
-    fun stopAdhanPlayback() {
-        isRinging = false
-        stopMediaAndObserversOnly()
+    private fun releaseWakeLock() {
         try {
             wakeLock?.let { if (it.isHeld) it.release() }
         } catch (_: Exception) {}
         wakeLock = null
+    }
+
+    fun stopAdhanPlayback() {
+        isRinging = false
+        stopMediaAndObserversOnly()
+        releaseWakeLock()
 
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -329,10 +375,8 @@ class AdhanPlaybackService : Service() {
 
     override fun onDestroy() {
         stopMediaAndObserversOnly()
+        releaseWakeLock()
         isRinging = false
-        try {
-            wakeLock?.let { if (it.isHeld) it.release() }
-        } catch (_: Exception) {}
         super.onDestroy()
     }
 }

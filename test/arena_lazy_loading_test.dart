@@ -27,6 +27,9 @@ void main() {
 
       await tester.pumpWidget(wrapQuietApp(const ArenaHubScreen()));
       await tester.pump(const Duration(milliseconds: 250));
+      final firstGame = ArenaGamesCatalog.featuredGames
+          .firstWhere((destination) => destination.definition != null)
+          .definition!;
 
       Finder sceneImages() => find.byWidgetPredicate(
             (widget) =>
@@ -51,27 +54,18 @@ void main() {
       await tester.pump(const Duration(milliseconds: 250));
 
       await tester.scrollUntilVisible(
-        find.text('اللعبة 1'),
+        find.text('اللعبة ${firstGame.number}'),
         520,
         scrollable: scrollable,
       );
-      expect(find.text('اللعبة 1'), findsOneWidget);
+      expect(find.text('اللعبة ${firstGame.number}'), findsOneWidget);
       expect(sceneImages(), findsWidgets);
       expect(
         sceneImages().evaluate().length,
-        lessThan(ArenaGamesCatalog.totalCount),
+        lessThan(ArenaGamesCatalog.featuredGames.length),
       );
       expect(find.text('اللعبة 30'), findsNothing,
-          reason: 'the far-end card remains unbuilt near the first card');
-
-      await tester.scrollUntilVisible(
-        find.text('اللعبة 30'),
-        520,
-        scrollable: scrollable,
-      );
-      expect(find.text('اللعبة 30'), findsOneWidget);
-      expect(sceneImages(), findsWidgets,
-          reason: 'scrolling to the far end should build that card scene');
+          reason: 'legacy games remain routable but are not shown in the hub');
 
       final search = find.byType(TextField);
       await tester.scrollUntilVisible(
@@ -80,19 +74,22 @@ void main() {
         scrollable: scrollable,
       );
 
-      final game = ArenaGamesCatalog.allGames.first;
+      final game = firstGame;
       final query = game.title;
       await tester.enterText(search, query);
       await tester.pump(const Duration(milliseconds: 250));
-      final expectedCount = ArenaGamesCatalog.allGames.where((candidate) {
+      final expectedCount = ArenaGamesCatalog.featuredGames.where((candidate) {
+        final definition = candidate.definition;
         return candidate.title.contains(query) ||
             candidate.story.contains(query) ||
             candidate.category.contains(query) ||
-            candidate.villain.name.contains(query) ||
-            '${candidate.number}' == query;
+            (definition != null &&
+                (definition.villain.name.contains(query) ||
+                    '${definition.number}' == query));
       }).length;
-      final resultCount =
-          find.text('$expectedCount من ${ArenaGamesCatalog.totalCount} لعبة');
+      final resultCount = find.text(
+        '$expectedCount من ${ArenaGamesCatalog.featuredGames.length} تجارب مختارة',
+      );
       await tester.scrollUntilVisible(
         resultCount,
         520,
@@ -103,7 +100,7 @@ void main() {
         findsOneWidget,
         reason: 'search results should still be reflected in the result count',
       );
-      expect(find.text('إظهار الألعاب الثلاثين'), findsOneWidget,
+      expect(find.text('إظهار التجارب الست المختارة'), findsOneWidget,
           reason: 'the clear-filter action remains available');
 
       final startGames = find.text('ابدأ هذه اللعبة');

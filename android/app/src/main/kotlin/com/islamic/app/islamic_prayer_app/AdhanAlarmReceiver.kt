@@ -17,7 +17,7 @@ class AdhanAlarmReceiver : BroadcastReceiver() {
         val voiceId = intent.getStringExtra(AdhanPlaybackService.EXTRA_VOICE_ID) ?: "madinah"
         val prayerName = intent.getStringExtra(AdhanPlaybackService.EXTRA_PRAYER_NAME) ?: "صلاة الفرض"
 
-        // قفل إيقاظ قصير لإتاحة تشغيل الخدمة دون رجوع الجهاز للنوم
+        // قفل إيقاظ قصير لإتاحة تشغيل الخدمة دون رجوع الجهاز للنوم.
         try {
             val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
             val wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Firdaws::AdhanReceiverWL")
@@ -37,7 +37,7 @@ class AdhanAlarmReceiver : BroadcastReceiver() {
                 context.startService(serviceIntent)
             }
         } catch (_: Exception) {
-            // بديل إشعار طارئ بالصوت في حال منع النظام تشغيل Foreground Service من الخلفية
+            // بديل صامت على مستوى الخدمة؛ لهذا الإشعار قناة مستقلة ذات صوت مرة واحدة.
             postFallbackSoundNotification(context, voiceId, prayerName)
         }
     }
@@ -45,14 +45,19 @@ class AdhanAlarmReceiver : BroadcastReceiver() {
     private fun postFallbackSoundNotification(context: Context, voiceId: String, prayerName: String) {
         try {
             val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val chId = "firdaws_adhan_fallback_$voiceId"
+            AdhanPlaybackService.cleanupLegacyAdhanChannels(nm)
+            val chId = "firdaws_adhan_v4_fallback_$voiceId"
             val resId = context.resources.getIdentifier("adhan_$voiceId", "raw", context.packageName)
-            val soundUri = if (resId != 0) Uri.parse("android.resource://${context.packageName}/$resId") else null
+            val soundUri = if (resId != 0) {
+                Uri.parse("android.resource://${context.packageName}/$resId")
+            } else {
+                null
+            }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && nm.getNotificationChannel(chId) == null) {
-                val ch = NotificationChannel(
+                val channel = NotificationChannel(
                     chId,
-                    "تنبيه الأذان المباشر ($voiceId)",
+                    "تنبيه الأذان الاحتياطي ($voiceId)",
                     NotificationManager.IMPORTANCE_HIGH
                 ).apply {
                     if (soundUri != null) {
@@ -66,7 +71,7 @@ class AdhanAlarmReceiver : BroadcastReceiver() {
                     }
                     enableVibration(true)
                 }
-                nm.createNotificationChannel(ch)
+                nm.createNotificationChannel(channel)
             }
 
             val fullIntent = Intent(context, MainActivity::class.java).apply {
@@ -82,7 +87,7 @@ class AdhanAlarmReceiver : BroadcastReceiver() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
-            val notif = NotificationCompat.Builder(context, chId)
+            val notification = NotificationCompat.Builder(context, chId)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("🕌 حان الآن موعد $prayerName")
                 .setContentText("حيّ على الصلاة.. حيّ على الفلاح (اضغط لفتح شاشة الأذان)")
@@ -91,12 +96,16 @@ class AdhanAlarmReceiver : BroadcastReceiver() {
                 .setFullScreenIntent(pi, true)
                 .setContentIntent(pi)
                 .setAutoCancel(true)
+                .setOnlyAlertOnce(true)
                 .apply {
-                    if (soundUri != null) setSound(soundUri)
+                    // قبل Android O لا توجد قنوات، لذلك يُضبط صوت البديل على الإشعار نفسه.
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O && soundUri != null) {
+                        setSound(soundUri)
+                    }
                 }
                 .build()
 
-            nm.notify(9105, notif)
+            nm.notify(9105, notification)
         } catch (_: Exception) {}
     }
 }

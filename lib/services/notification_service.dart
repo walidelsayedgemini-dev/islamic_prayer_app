@@ -49,6 +49,17 @@ class NotificationService {
   bool _isInitialized = false;
   bool _tzConfigured = false;
   static const String salawatNotificationPayload = 'firdaws:salawat';
+  static const int prayerNotificationIdStart = 1;
+  static const int prayerNotificationIdCapacity = 10;
+  static const int preAdhanNotificationIdOffset = 100;
+
+  /// Android uses AlarmManager and the native playback service for adhan audio.
+  static bool shouldScheduleFlutterAdhanFallback({
+    required bool isWeb,
+    required TargetPlatform platform,
+  }) =>
+      !isWeb && platform != TargetPlatform.android;
+
   void Function(int pageIndex)? _navigationHandler;
   int? _pendingNavigationPage;
 
@@ -200,8 +211,15 @@ class NotificationService {
         try {
           // Do not erase unrelated reminders (including this feature's IDs).
           for (final id in <int>[
-            ...List<int>.generate(10, (i) => i + 1),
-            ...List<int>.generate(10, (i) => i + 101)
+            ...List<int>.generate(
+              prayerNotificationIdCapacity,
+              (i) => i + prayerNotificationIdStart,
+            ),
+            ...List<int>.generate(
+              prayerNotificationIdCapacity,
+              (i) =>
+                  i + prayerNotificationIdStart + preAdhanNotificationIdOffset,
+            ),
           ]) {
             await flutterLocalNotificationsPlugin.cancel(id);
           }
@@ -222,18 +240,23 @@ class NotificationService {
           'prayerName': prayerName,
         });
 
-        await _scheduleSingleAdhanNotificationFallback(
-          id: id,
-          title: prayerName,
-          scheduledTime: prayerTime,
-          rawSoundName: resolvedVoice.rawResourceName,
-        );
+        if (shouldScheduleFlutterAdhanFallback(
+          isWeb: kIsWeb,
+          platform: defaultTargetPlatform,
+        )) {
+          await _scheduleSingleAdhanNotificationFallback(
+            id: id,
+            title: prayerName,
+            scheduledTime: prayerTime,
+            rawSoundName: resolvedVoice.rawResourceName,
+          );
+        }
 
         if (preAdhanReminder) {
           final reminderTime = prayerTime.subtract(const Duration(minutes: 15));
           if (reminderTime.isAfter(now)) {
             await _schedulePreAdhanReminder(
-              id: id + 100,
+              id: id + preAdhanNotificationIdOffset,
               prayerName: prayerName,
               scheduledTime: reminderTime,
             );
@@ -294,7 +317,13 @@ class NotificationService {
     required DateTime scheduledTime,
     required String rawSoundName,
   }) async {
-    if (kIsWeb) return;
+    if (!shouldScheduleFlutterAdhanFallback(
+      isWeb: kIsWeb,
+      platform: defaultTargetPlatform,
+    )) {
+      return;
+    }
+    final channelId = 'adhan_v4_$rawSoundName';
     try {
       await flutterLocalNotificationsPlugin.zonedSchedule(
         id,
@@ -303,7 +332,7 @@ class NotificationService {
         tz.TZDateTime.from(scheduledTime, tz.local),
         NotificationDetails(
           android: AndroidNotificationDetails(
-            'firdaws_adhan_ch_$rawSoundName',
+            channelId,
             'تنبيهات الأذان ($rawSoundName)',
             channelDescription:
                 'بث الأذان بصوت المؤذن المختار في الوقت المحدد بدقة',
@@ -311,6 +340,7 @@ class NotificationService {
             priority: Priority.max,
             sound: RawResourceAndroidNotificationSound(rawSoundName),
             playSound: true,
+            onlyAlertOnce: true,
             fullScreenIntent: true,
             ongoing: true,
             autoCancel: false,
@@ -334,7 +364,7 @@ class NotificationService {
           tz.TZDateTime.from(scheduledTime, tz.local),
           NotificationDetails(
             android: AndroidNotificationDetails(
-              'firdaws_adhan_ch_$rawSoundName',
+              channelId,
               'تنبيهات الأذان ($rawSoundName)',
               channelDescription:
                   'بث الأذان بصوت المؤذن المختار في الوقت المحدد بدقة',
@@ -342,6 +372,7 @@ class NotificationService {
               priority: Priority.max,
               sound: RawResourceAndroidNotificationSound(rawSoundName),
               playSound: true,
+              onlyAlertOnce: true,
               fullScreenIntent: true,
             ),
             iOS: DarwinNotificationDetails(
@@ -373,7 +404,7 @@ class NotificationService {
         tz.TZDateTime.from(scheduledTime, tz.local),
         const NotificationDetails(
           android: AndroidNotificationDetails(
-            'pre_adhan_voice_v2',
+            'pre_adhan_v4',
             'تنبيه صوتي قبل الصلاة (اقتربت الصلاة)',
             channelDescription:
                 'تنبيه صوتي مسموع قبل الأذان بـ ١٥ دقيقة للاستعداد للصلاة',
@@ -382,6 +413,7 @@ class NotificationService {
             sound: RawResourceAndroidNotificationSound('pre_adhan_alert'),
             playSound: true,
             enableVibration: true,
+            onlyAlertOnce: true,
           ),
           iOS: DarwinNotificationDetails(
             sound: 'pre_adhan_alert.wav',

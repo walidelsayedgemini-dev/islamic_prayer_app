@@ -218,7 +218,10 @@ void main() {
       await tester
           .pumpWidget(wrapQuietApp(const ArenaHubScreen(), scale: 1.15));
       await tester.pump(const Duration(milliseconds: 240));
-      expect(find.text('${ArenaGamesCatalog.totalCount} لعبة'), findsOneWidget);
+      expect(
+        find.text('${ArenaGamesCatalog.featuredGames.length} ألعاب مختارة'),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump();

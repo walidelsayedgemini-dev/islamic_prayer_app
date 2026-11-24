@@ -41,6 +41,11 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        try {
+            val notifications =
+                getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            notifications?.let(AdhanPlaybackService::cleanupLegacyAdhanChannels)
+        } catch (_: Exception) {}
         methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
 
         val btChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, btChannelName)
@@ -61,15 +66,28 @@ class MainActivity : FlutterActivity() {
             }
         }
 
+        AdhanPlaybackService.onPlaybackCompletedListener = { voiceId, prayerName ->
+            runOnUiThread {
+                try {
+                    methodChannel?.invokeMethod(
+                        "onAdhanPlaybackCompleted",
+                        mapOf("voiceId" to voiceId, "prayerName" to prayerName)
+                    )
+                } catch (_: Exception) {}
+            }
+        }
+
         methodChannel?.setMethodCallHandler { call, result ->
             when (call.method) {
                 "startAdhanAlarm" -> {
                     val voiceId = call.argument<String>("voiceId") ?: "madinah"
                     val prayerName = call.argument<String>("prayerName") ?: "صلاة الفرض"
+                    val forceRestart = call.argument<Boolean>("forceRestart") ?: false
                     val intent = Intent(this, AdhanPlaybackService::class.java).apply {
                         action = AdhanPlaybackService.ACTION_START_ADHAN
                         putExtra(AdhanPlaybackService.EXTRA_VOICE_ID, voiceId)
                         putExtra(AdhanPlaybackService.EXTRA_PRAYER_NAME, prayerName)
+                        putExtra(AdhanPlaybackService.EXTRA_FORCE_RESTART, forceRestart)
                     }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         startForegroundService(intent)
@@ -317,6 +335,9 @@ class MainActivity : FlutterActivity() {
     override fun onDestroy() {
         btBridge?.dispose()
         btBridge = null
+        AdhanPlaybackService.onStateChangedListener = null
+        AdhanPlaybackService.onPlaybackCompletedListener = null
+        methodChannel = null
         super.onDestroy()
     }
 }

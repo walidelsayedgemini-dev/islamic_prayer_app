@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:adhan/adhan.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/backgrounds_500_catalog.dart';
+import '../models/adhan_skin_catalog.dart';
 import '../models/font_catalog.dart';
 import '../models/prayer_model.dart';
 import '../services/arena_sfx_service.dart';
@@ -39,6 +40,7 @@ class SettingsProvider extends ChangeNotifier {
   int _ambientShapePresetIndex = 0; // 0..499 (500 شكل طبيعي هادئ قابل للتخصيص)
   bool _gameSfxEnabled = true;
   String _adhanVoice = 'madinah';
+  String _adhanSkinId = AdhanSkinCatalog.defaultId;
   bool _isAutoLocation = true;
   double _latitude = 24.7136; // افتراضي مؤقت حتى يكتشف الجهاز بلدك ومدينتك
   double _longitude = 46.6753;
@@ -88,6 +90,7 @@ class SettingsProvider extends ChangeNotifier {
   int get ambientShapePresetIndex => _ambientShapePresetIndex;
   bool get gameSfxEnabled => _gameSfxEnabled;
   String get adhanVoice => _adhanVoice;
+  String get adhanSkinId => _adhanSkinId;
   bool get isAutoLocation => _isAutoLocation;
   double get latitude => _latitude;
   double get longitude => _longitude;
@@ -111,6 +114,7 @@ class SettingsProvider extends ChangeNotifier {
     final city = LocationService.findNearestPresetCity(lat, lng);
     return city == null ? null : LocationClock.zoneIdForPresetName(city.name);
   }
+
   String get locationSourceLabel => _locationSourceLabel;
   bool get hasConfirmedLocation => _hasConfirmedLocation;
   bool get isDetectingLocation => _isDetectingLocation;
@@ -223,6 +227,9 @@ class SettingsProvider extends ChangeNotifier {
     }
 
     _adhanVoice = _prefs!.getString('adhan_voice') ?? 'madinah';
+    _adhanSkinId = AdhanSkinCatalog.byId(
+      _prefs!.getString('adhan_skin_id') ?? AdhanSkinCatalog.defaultId,
+    ).id;
     _isAutoLocation = _prefs!.getBool('auto_loc') ?? true;
     final savedLatitude = _prefs!.getDouble('lat');
     final savedLongitude = _prefs!.getDouble('lng');
@@ -614,6 +621,12 @@ class SettingsProvider extends ChangeNotifier {
     setBrightnessMode(isNightEffective ? 'day' : 'night');
   }
 
+  void setAdhanSkin(String id) {
+    _adhanSkinId = AdhanSkinCatalog.byId(id).id;
+    _prefs?.setString('adhan_skin_id', _adhanSkinId);
+    notifyListeners();
+  }
+
   void setAdhanVoice(String voice) {
     _adhanVoice = voice;
     _prefs?.setString('adhan_voice', voice);
@@ -648,8 +661,8 @@ class SettingsProvider extends ChangeNotifier {
     _latitude = lat;
     _longitude = lng;
     _cityName = name;
-    _setTimeZone(LocationClock.zoneIdForPresetName(name) ??
-        _presetZoneFor(lat, lng));
+    _setTimeZone(
+        LocationClock.zoneIdForPresetName(name) ?? _presetZoneFor(lat, lng));
     _isAutoLocation = false;
     _locationSourceLabel = 'اختيار يدوي من قائمة المدن';
     _hasConfirmedLocation = true;

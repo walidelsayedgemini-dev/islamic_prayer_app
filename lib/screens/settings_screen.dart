@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:provider/provider.dart';
 
+import '../models/adhan_skin_catalog.dart';
 import '../models/font_catalog.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
@@ -21,6 +22,7 @@ import '../widgets/paradise_ui.dart';
 import '../widgets/unified_theme_hub.dart';
 import '../widgets/user_profile_editor_sheet.dart';
 import 'adhan_alarm_screen.dart';
+import 'adhan_skin_gallery_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen(
@@ -132,6 +134,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     if (!mounted || city == null) return;
     settings.setManualLocation(city.latitude, city.longitude, city.name);
+  }
+
+  Future<void> _showAdhanSkinGallery(SettingsProvider settings) async {
+    final skinId = await Navigator.of(context).push<String>(
+      MaterialPageRoute<String>(
+        builder: (_) => AdhanSkinGalleryScreen(
+          selectedSkinId: settings.adhanSkinId,
+        ),
+      ),
+    );
+    if (!mounted || skinId == null) return;
+    settings.setAdhanSkin(skinId);
   }
 
   void _showFontPicker(SettingsProvider settings) {
@@ -644,6 +658,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final capabilities = _notificationCapabilities;
+    final adhanSkin = AdhanSkinCatalog.byId(settings.adhanSkinId);
     return ParadiseSection(
       title: 'الأذان والتنبيهات',
       child: CalmCard(
@@ -651,6 +666,82 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Container(
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: scheme.outlineVariant),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(18),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(18),
+                  onTap: () => _showAdhanSkinGallery(settings),
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: SizedBox(
+                            width: 72,
+                            height: 96,
+                            child: Image.asset(
+                              adhanSkin.imageAsset.startsWith('/')
+                                  ? adhanSkin.imageAsset.substring(1)
+                                  : adhanSkin.imageAsset,
+                              fit: BoxFit.cover,
+                              cacheWidth: 320,
+                              errorBuilder: (_, __, ___) => ColoredBox(
+                                color: scheme.surfaceContainerHighest,
+                                child: Icon(
+                                  Icons.landscape_rounded,
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'خلفية منبه الأذان',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                adhanSkin.name,
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'اضغط لاستكشاف الخلفيات ومعاينتها',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_left_rounded,
+                          color: adhanSkin.accentColor,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
             _buildDropdownField<String>(
               context: context,
               title: 'صوت الأذان',
@@ -682,6 +773,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       prayerName: 'الفجر (معاينة)',
                       voiceId: settings.adhanVoice,
                       useNativeService: FirdawsNativeService().isAndroid,
+                      skinId: settings.adhanSkinId,
+                      onSkinSelected: settings.setAdhanSkin,
                     ),
                   ),
                 );

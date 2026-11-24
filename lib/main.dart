@@ -265,6 +265,7 @@ class _IslamicPrayerAppState extends State<IslamicPrayerApp>
 
   void _openAdhanScreenIfNeeded(String voiceId, String prayerName) {
     if (!mounted || _adhanOpen) return;
+    final settings = context.read<SettingsProvider>();
     final nav = firdawsNavigatorKey.currentState;
     if (nav == null) return;
     _adhanOpen = true;
@@ -275,6 +276,8 @@ class _IslamicPrayerAppState extends State<IslamicPrayerApp>
           voiceId: voiceId,
           prayerName: prayerName,
           useNativeService: FirdawsNativeService().isAndroid,
+          skinId: settings.adhanSkinId,
+          onSkinSelected: settings.setAdhanSkin,
         ),
       ),
     )
