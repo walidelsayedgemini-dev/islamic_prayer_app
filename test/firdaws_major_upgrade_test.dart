@@ -793,17 +793,15 @@ void main() {
     expect(FontCatalog.allFonts.first.family, 'Cairo');
     expect(SettingsProvider().selectedFont, 'Cairo');
 
-    // The 56-entry backdrop registry intentionally mixes local and managed-storage assets.
+    // Every one of the 56 backdrops must be bundled so it renders offline.
     final backdrops = Arena4KStageAssets.allBackdrops;
     expect(backdrops.length, 56);
     expect(backdrops.toSet().length, 56);
-    expect(
-      backdrops.every((path) =>
-          path.startsWith('assets/') || path.startsWith('/manus-storage/')),
-      isTrue,
-    );
-    expect(backdrops.any((path) => path.startsWith('assets/')), isTrue);
-    expect(backdrops.any((path) => path.startsWith('/manus-storage/')), isTrue);
+    expect(backdrops.every((path) => path.startsWith('assets/')), isTrue);
+    for (final path in backdrops) {
+      final bytes = await rootBundle.load(path);
+      expect(bytes.lengthInBytes, greaterThan(1000), reason: path);
+    }
     for (final g in ArenaGamesCatalog.allGames) {
       final resolved = Arena4KStageAssets.backdropForGame(g, worldIndex: 0);
       expect(resolved, isNotEmpty);

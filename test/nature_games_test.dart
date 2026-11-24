@@ -49,7 +49,6 @@ void main() {
       () {
     final specs = FirdawsParadiseRegistry.all;
     final localScenes = <String>{};
-    final managedScenes = <String>{};
     final allScenes = <String>{};
     final dayAccents = <Color>{};
     final nightAccents = <Color>{};
@@ -60,19 +59,12 @@ void main() {
       final asset = spec.imageAsset;
       expect(allScenes.add(asset), isTrue,
           reason: 'Each theme must retain its own scenery source: $asset');
-      if (asset.startsWith('assets/')) {
-        expect(asset, startsWith('assets/images/'));
-        expect(File(asset).existsSync(), isTrue);
-        localScenes.add(asset);
-      } else {
-        expect(
-          RegExp(r'^/manus-storage/async-images/[^/]+/image-[1-5]\.webp$')
-              .hasMatch(asset),
-          isTrue,
-          reason: 'Managed scene must retain its exact relative path: $asset',
-        );
-        managedScenes.add(asset);
-      }
+      // Relative managed-storage URLs cannot load on a phone, so every theme
+      // must ship its own bundled scenery.
+      expect(asset, startsWith('assets/images/'),
+          reason: 'Theme ${spec.key} must use a bundled asset: $asset');
+      expect(File(asset).existsSync(), isTrue, reason: asset);
+      localScenes.add(asset);
       for (final night in [false, true]) {
         final palette = IslamicTheme.resolvePalette(spec.key, isNight: night);
         expect(contrast(palette.textPrimary, palette.cardColor),
@@ -88,8 +80,7 @@ void main() {
         (night ? nightAccents : dayAccents).add(palette.accentColor);
       }
     }
-    expect(localScenes, hasLength(23));
-    expect(managedScenes, hasLength(33));
+    expect(localScenes, hasLength(56));
     expect(allScenes, hasLength(56));
     expect(dayAccents, hasLength(56));
     expect(nightAccents, hasLength(56));
@@ -162,13 +153,21 @@ void main() {
     final targetImage = find.byWidgetPredicate(
       (widget) {
         if (widget is! Image) return false;
-        final image = widget.image;
-        if (image is NetworkImage) return image.url == targetTheme.imageAsset;
-        if (image is ResizeImage) {
-          final source = image.imageProvider;
-          return source is NetworkImage && source.url == targetTheme.imageAsset;
+        bool matches(ImageProvider provider) {
+          if (provider is NetworkImage) {
+            return provider.url == targetTheme.imageAsset;
+          }
+          if (provider is AssetImage) {
+            return provider.assetName == targetTheme.imageAsset;
+          }
+          if (provider is ExactAssetImage) {
+            return provider.assetName == targetTheme.imageAsset;
+          }
+          if (provider is ResizeImage) return matches(provider.imageProvider);
+          return false;
         }
-        return false;
+
+        return matches(widget.image);
       },
     );
     expect(find.text('إضاءة الواجهة'), findsOneWidget);

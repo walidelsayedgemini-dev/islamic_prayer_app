@@ -422,8 +422,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
           builder: (context, constraints) {
             final horizontalPadding = constraints.maxWidth < 420 ? 16.0 : 28.0;
             return SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(horizontalPadding, 18,
-                  horizontalPadding, 40),
+              padding: EdgeInsets.fromLTRB(
+                  horizontalPadding, 18, horizontalPadding, 40),
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 1160),
@@ -431,7 +431,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       ParadiseHero(
-                        title: _showConverter ? 'محوّل التاريخ' : 'التقويم الهجري',
+                        title:
+                            _showConverter ? 'محوّل التاريخ' : 'التقويم الهجري',
                         subtitle: _showConverter
                             ? 'اعرض التاريخ الهجري المقابل لأي يوم ميلادي تختاره.'
                             : 'تنقّل بين الأشهر، واختر يومًا لمراجعة تفاصيله ومواقيته.',
@@ -619,7 +620,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
           const SizedBox(height: 8),
           Row(
             children: List.generate(7, (index) {
-              const shortDays = ['أحد', 'إثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت'];
+              const shortDays = [
+                'أحد',
+                'اثنين',
+                'ثلاثاء',
+                'أربعاء',
+                'خميس',
+                'جمعة',
+                'سبت',
+              ];
               const fullDays = [
                 'الأحد',
                 'الاثنين',
@@ -635,14 +644,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   child: Center(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 7),
-                      child: Text(
-                        shortDays[index],
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                              fontWeight: FontWeight.w700,
-                            ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          shortDays[index],
+                          maxLines: 1,
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: index == 5
+                                        ? scheme.primary
+                                        : scheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                        ),
                       ),
                     ),
                   ),
@@ -877,7 +891,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      DateFormat('EEEE، d MMMM yyyy', 'ar').format(_selectedDate),
+                      DateFormat('EEEE، d MMMM yyyy', 'ar')
+                          .format(_selectedDate),
                       softWrap: true,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: scheme.onSurfaceVariant,
@@ -1082,7 +1097,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   ? 2
                   : 1;
           const gap = 12.0;
-          final tileWidth = (constraints.maxWidth - gap * (columns - 1)) / columns;
+          final tileWidth =
+              (constraints.maxWidth - gap * (columns - 1)) / columns;
           return Wrap(
             spacing: gap,
             runSpacing: gap,
@@ -1108,17 +1124,22 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             Text(
                               slot.title,
                               softWrap: true,
-                              style: Theme.of(context).textTheme.bodyMedium
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
                                   ?.copyWith(fontWeight: FontWeight.w700),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              DateFormat.jm('ar').format(LocationClock.toZone(slot.time)),
-                              style: Theme.of(context).textTheme.titleSmall
+                              DateFormat.jm('ar')
+                                  .format(LocationClock.toZone(slot.time)),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall
                                   ?.copyWith(
-                                color: scheme.primary,
-                                fontWeight: FontWeight.w800,
-                              ),
+                                    color: scheme.primary,
+                                    fontWeight: FontWeight.w800,
+                                  ),
                             ),
                           ],
                         ),
@@ -1326,14 +1347,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 if (daysLeft >= 0) ...[
                   const SizedBox(height: 10),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 11, vertical: 7),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
                     decoration: BoxDecoration(
                       color: scheme.primaryContainer,
                       borderRadius: BorderRadius.circular(30),
                     ),
                     child: Text(
-                      daysLeft == 0 ? 'موعد المناسبة اليوم' : 'باقي $daysLeft يوماً',
+                      daysLeft == 0
+                          ? 'موعد المناسبة اليوم'
+                          : 'باقي $daysLeft يوماً',
                       softWrap: true,
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
                             color: scheme.onPrimaryContainer,
@@ -1413,7 +1436,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            DateFormat('EEEE، d MMMM yyyy', 'ar').format(_converterGregorianDate),
+            DateFormat('EEEE، d MMMM yyyy', 'ar')
+                .format(_converterGregorianDate),
             softWrap: true,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   height: 1.4,

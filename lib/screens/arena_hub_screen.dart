@@ -157,7 +157,6 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
 
     return CalmPage(
       title: 'صالة التحدّي',
-      subtitle: 'ست تجارب مختارة، ومساحة تختار فيها كيف تبدأ.',
       scroll: false,
       actions: [
         IconButton(
@@ -1097,10 +1096,10 @@ class _QuickPortalCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: scheme.outlineVariant.withOpacity(.76)),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 200;
+              final badge = Container(
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
@@ -1111,25 +1110,50 @@ class _QuickPortalCard extends StatelessWidget {
                   ),
                 ),
                 child: Icon(link.icon, color: scheme.onPrimaryContainer),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  link.label,
-                  softWrap: true,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    height: 1.35,
-                  ),
+              );
+              final label = Text(
+                link.label,
+                softWrap: true,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  height: 1.35,
                 ),
-              ),
-              const SizedBox(width: 5),
-              Icon(
-                Icons.arrow_back_ios_new_rounded,
-                size: 16,
+              );
+              final arrow = Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 15,
                 color: scheme.primary,
-              ),
-            ],
+              );
+              if (compact) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        badge,
+                        const Spacer(),
+                        arrow,
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    label,
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  badge,
+                  const SizedBox(width: 12),
+                  Expanded(child: label),
+                  const SizedBox(width: 5),
+                  arrow,
+                ],
+              );
+            },
           ),
         ),
       ),

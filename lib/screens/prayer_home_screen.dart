@@ -804,8 +804,8 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
       ),
       _HomeShortcut(
         icon: Icons.sports_esports_outlined,
-        title: 'الألعاب والرحلات',
-        subtitle: 'استكشف ٣٠ لعبة',
+        title: 'صالة الألعاب',
+        subtitle: 'تجارب مختارة بعناية',
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const ArenaHubScreen()),
         ),
@@ -824,6 +824,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
           const spacing = 12.0;
           final itemWidth =
               (constraints.maxWidth - spacing * (columns - 1)) / columns;
+          final compact = columns > 1 && itemWidth < 230;
           return Wrap(
             spacing: spacing,
             runSpacing: spacing,
@@ -831,7 +832,11 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
               for (final shortcut in shortcuts)
                 SizedBox(
                   width: itemWidth,
-                  child: _buildShortcutPortal(theme, shortcut),
+                  child: _buildShortcutPortal(
+                    theme,
+                    shortcut,
+                    compact: compact,
+                  ),
                 ),
             ],
           );
@@ -840,8 +845,32 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     );
   }
 
-  Widget _buildShortcutPortal(ThemeData theme, _HomeShortcut shortcut) {
+  Widget _buildShortcutPortal(
+    ThemeData theme,
+    _HomeShortcut shortcut, {
+    bool compact = false,
+  }) {
     final scheme = theme.colorScheme;
+    final titleText = Text(
+      shortcut.title,
+      softWrap: true,
+      maxLines: compact ? 1 : null,
+      overflow: compact ? TextOverflow.ellipsis : null,
+      style: theme.textTheme.titleSmall?.copyWith(
+        fontWeight: FontWeight.w700,
+        height: 1.3,
+      ),
+    );
+    final subtitleText = Text(
+      shortcut.subtitle,
+      softWrap: true,
+      maxLines: compact ? 1 : 2,
+      overflow: TextOverflow.ellipsis,
+      style: theme.textTheme.bodySmall?.copyWith(
+        color: scheme.onSurfaceVariant,
+        height: 1.35,
+      ),
+    );
     return Semantics(
       button: true,
       label: '${shortcut.title}، ${shortcut.subtitle}',
@@ -855,49 +884,55 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
         child: InkWell(
           onTap: shortcut.onTap,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 104),
+            constraints: BoxConstraints(minHeight: compact ? 116 : 104),
             child: Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 12, 12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  CalmIconBadge(shortcut.icon, size: 42),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
+              padding: const EdgeInsetsDirectional.fromSTEB(14, 14, 14, 13),
+              child: compact
+                  ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          shortcut.title,
-                          softWrap: true,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            height: 1.3,
+                        Row(
+                          children: [
+                            CalmIconBadge(shortcut.icon, size: 40),
+                            const Spacer(),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              color: scheme.primary.withOpacity(.72),
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        titleText,
+                        const SizedBox(height: 2),
+                        subtitleText,
+                      ],
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        CalmIconBadge(shortcut.icon, size: 42),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              titleText,
+                              const SizedBox(height: 3),
+                              subtitleText,
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 3),
-                        Text(
-                          shortcut.subtitle,
-                          softWrap: true,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                            height: 1.35,
-                          ),
+                        const SizedBox(width: 5),
+                        Icon(
+                          Icons.chevron_left_rounded,
+                          color: scheme.onSurfaceVariant,
+                          size: 19,
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: 5),
-                  Icon(
-                    Icons.chevron_left_rounded,
-                    color: scheme.onSurfaceVariant,
-                    size: 19,
-                  ),
-                ],
-              ),
             ),
           ),
         ),
@@ -1117,11 +1152,49 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '$dateLabel  ·  $hijriLabel',
+                  dateLabel,
                   softWrap: true,
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                     height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Semantics(
+                  label: 'التاريخ الهجري: $hijriLabel',
+                  excludeSemantics: true,
+                  child: Container(
+                    padding: const EdgeInsetsDirectional.fromSTEB(9, 4, 11, 4),
+                    decoration: BoxDecoration(
+                      color:
+                          theme.colorScheme.primaryContainer.withOpacity(.62),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: theme.colorScheme.primary.withOpacity(.18),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.nightlight_round,
+                          size: 14,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            _toArabicIndicDigits(hijriLabel),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.onPrimaryContainer,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -1131,6 +1204,14 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
           ...actions,
         ],
       ),
+    );
+  }
+
+  static String _toArabicIndicDigits(String value) {
+    const digits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    return value.replaceAllMapped(
+      RegExp(r'[0-9]'),
+      (match) => digits[int.parse(match.group(0)!)],
     );
   }
 

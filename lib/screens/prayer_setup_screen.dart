@@ -160,7 +160,9 @@ class _PrayerSetupScreenState extends State<PrayerSetupScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 20),
-                  const CalmIconBadge(Icons.mosque_rounded, size: 64),
+                  const Center(
+                    child: CalmIconBadge(Icons.mosque_rounded, size: 64),
+                  ),
                   const SizedBox(height: 18),
                   Text(
                     'لنهيّئ الفردوس ليومك',
@@ -177,6 +179,24 @@ class _PrayerSetupScreenState extends State<PrayerSetupScreen> {
                       color: scheme.onSurfaceVariant,
                       height: 1.6,
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _SetupStepChip(
+                        number: '١',
+                        label: 'الموقع والمواقيت',
+                        icon: Icons.place_outlined,
+                      ),
+                      _SetupStepChip(
+                        number: '٢',
+                        label: 'التنبيهات',
+                        icon: Icons.notifications_none_rounded,
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 24),
                   ParadiseSection(
@@ -229,6 +249,7 @@ class _PrayerSetupScreenState extends State<PrayerSetupScreen> {
                             value: settings.calculationMethod,
                             isExpanded: true,
                             decoration: const InputDecoration(
+                              helperMaxLines: 3,
                               helperText:
                                   'اختر الطريقة الأقرب لجدول مسجدك؛ يمكنك تغييرها لاحقًا من الإعدادات.',
                             ),
@@ -357,6 +378,61 @@ class _PrayerSetupScreenState extends State<PrayerSetupScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SetupStepChip extends StatelessWidget {
+  final String number;
+  final String label;
+  final IconData icon;
+
+  const _SetupStepChip({
+    required this.number,
+    required this.label,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Container(
+      padding: const EdgeInsetsDirectional.fromSTEB(6, 6, 14, 6),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: scheme.outlineVariant.withOpacity(.8)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(
+            radius: 13,
+            backgroundColor: scheme.primaryContainer,
+            child: Text(
+              number,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: scheme.onPrimaryContainer,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Icon(icon, size: 17, color: scheme.primary),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
