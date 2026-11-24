@@ -191,6 +191,13 @@ void main() {
     FirdawsNavBridge.jumpTo(1,
         journeyTab: 3, journeyDate: DateTime(2026, 1, 3));
     await tester.pump(const Duration(milliseconds: 400));
+    final moreDestination = tester.widget<Semantics>(find.byWidgetPredicate(
+      (widget) =>
+          widget is Semantics &&
+          widget.properties.label == 'المزيد' &&
+          widget.properties.selected == true,
+    ));
+    expect(moreDestination.properties.selected, isTrue);
     expect(find.byType(FirdawsJourneyScreen), findsOneWidget);
     final journeyView =
         tester.widget<TabBarView>(find.byType(TabBarView).first);

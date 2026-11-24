@@ -399,35 +399,46 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
               borderRadius: BorderRadius.circular(19),
               border: Border.all(color: Colors.white.withOpacity(.28)),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(
-                  Icons.hourglass_bottom_rounded,
-                  color: Color(0xFFE8D6A7),
-                  size: 23,
-                ),
-                const SizedBox(width: 11),
-                Expanded(
-                  child: Text(
-                    'الوقت المتبقي',
-                    softWrap: true,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.hourglass_bottom_rounded,
+                      color: Color(0xFFE8D6A7),
+                      size: 23,
                     ),
-                  ),
+                    const SizedBox(width: 11),
+                    Expanded(
+                      child: Text(
+                        'الوقت المتبقي',
+                        softWrap: true,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    countdown,
-                    textDirection: TextDirection.ltr,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
-                      fontSize: 27,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.1,
+                const SizedBox(height: 3),
+                Semantics(
+                  label: 'الوقت المتبقي لصلاة ${_prayerName(prayer)}',
+                  value: countdown,
+                  child: ExcludeSemantics(
+                    child: Text(
+                      countdown,
+                      softWrap: true,
+                      textAlign: TextAlign.center,
+                      textDirection: TextDirection.ltr,
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        color: Colors.white,
+                        fontSize: 34,
+                        height: 1.12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.1,
+                      ),
                     ),
                   ),
                 ),
@@ -599,12 +610,19 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
               constraints: const BoxConstraints(minHeight: 56),
               padding: const EdgeInsetsDirectional.fromSTEB(12, 8, 12, 8),
               decoration: BoxDecoration(
-                color: highlighted
-                    ? scheme.primary.withOpacity(.065)
-                    : Colors.transparent,
+                color: isUpcoming
+                    ? scheme.primary.withOpacity(.105)
+                    : isCurrent
+                        ? scheme.primary.withOpacity(.065)
+                        : Colors.transparent,
                 borderRadius: radius,
                 border: highlighted
-                    ? Border.all(color: scheme.primary.withOpacity(.16))
+                    ? Border.all(
+                        color: scheme.primary.withOpacity(
+                          isUpcoming ? .34 : .16,
+                        ),
+                        width: isUpcoming ? 1.4 : 1,
+                      )
                     : null,
               ),
               child: Row(

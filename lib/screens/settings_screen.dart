@@ -274,12 +274,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       subtitle: 'اختر مظهرك، واضبط الموقع والتنبيهات بما يلائم يومك.',
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final wide = constraints.maxWidth >= 850;
+          final textScale = MediaQuery.textScalerOf(context).scale(1);
+          final wide = constraints.maxWidth >= 850 && textScale <= 1.2;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildThemeStudio(context, settings, currentFont),
-              const SizedBox(height: 28),
+              _buildSectionDivider(context),
               if (wide)
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -294,12 +295,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 26),
                 _buildPrayerSection(context, settings),
               ],
-              const SizedBox(height: 26),
+              _buildSectionDivider(context),
               _buildNotificationSection(context, settings),
-              const SizedBox(height: 26),
+              _buildSectionDivider(context),
               if (context.watch<ReminderPreferencesProvider?>() != null) ...[
                 ReminderSettingsSection(onNavigate: widget.onNavigate),
-                const SizedBox(height: 26),
+                _buildSectionDivider(context),
               ],
               if (wide)
                 Row(
@@ -315,11 +316,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 26),
                 _buildAdvancedSection(context, settings),
               ],
-              const SizedBox(height: 26),
+              _buildSectionDivider(context),
               const ComfortSettingsSection(),
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildSectionDivider(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return ExcludeSemantics(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: Divider(
+                height: 1,
+                color: scheme.outlineVariant.withOpacity(.72),
+              ),
+            ),
+            Container(
+              width: 7,
+              height: 7,
+              margin: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: const BoxDecoration(
+                color: Color(0xFFB99C64),
+                shape: BoxShape.circle,
+              ),
+            ),
+            Expanded(
+              child: Divider(
+                height: 1,
+                color: scheme.outlineVariant.withOpacity(.72),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -554,35 +589,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: settings.lastLocationStatus,
               onTap: () => _showCityPicker(settings),
             ),
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 8),
-              child: Text(
-                'المصدر: ${settings.locationSourceLabel} · '
-                '${settings.hasConfirmedLocation ? 'موقع محفوظ أو محدد' : 'الموقع الحالي غير مؤكد'}',
-                softWrap: true,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  height: 1.45,
-                ),
-              ),
-            ),
+            _buildLocationStatus(context, settings),
             if (settings.lastLocationError != null) ...[
               const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: scheme.errorContainer.withOpacity(.45),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Text(
-                  settings.lastLocationError!,
-                  softWrap: true,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: scheme.error,
-                    height: 1.4,
-                  ),
-                ),
-              ),
+              _buildLocationError(context, settings),
             ],
             const SizedBox(height: 8),
             SwitchListTile.adaptive(
@@ -623,6 +633,137 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildLocationStatus(
+    BuildContext context,
+    SettingsProvider settings,
+  ) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final confirmed = settings.hasConfirmedLocation;
+    final accent = confirmed ? scheme.primary : scheme.tertiary;
+    final background =
+        confirmed ? scheme.primaryContainer : scheme.tertiaryContainer;
+
+    return Container(
+      margin: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: background.withOpacity(.42),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: accent.withOpacity(.28)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            confirmed
+                ? Icons.verified_outlined
+                : Icons.location_searching_rounded,
+            color: accent,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  confirmed ? 'الموقع مؤكّد' : 'الموقع غير مؤكّد',
+                  softWrap: true,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: accent,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'المصدر: ${settings.locationSourceLabel}',
+                  softWrap: true,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    height: 1.45,
+                  ),
+                ),
+                if (!confirmed) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'حدّث الموقع أو اختر مدينة يدوياً لضبط المواقيت على موقعك.',
+                    softWrap: true,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      height: 1.45,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLocationError(
+    BuildContext context,
+    SettingsProvider settings,
+  ) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.errorContainer,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.error.withOpacity(.32)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.error_outline_rounded, color: scheme.error, size: 20),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'تعذر تحديث الموقع',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onErrorContainer,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      settings.lastLocationError!,
+                      softWrap: true,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onErrorContainer,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              onPressed: settings.isDetectingLocation
+                  ? null
+                  : () => _refreshLocation(settings),
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('إعادة المحاولة'),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1080,7 +1221,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     : _adhanDiag['supported'] == false
                         ? 'الفحص غير مدعوم على ${capabilities.platformLabel}'
                         : _adhanDiag.isEmpty
-                            ? 'يمكنك إعادة فحص إعدادات الجهاز'
+                            ? _diagnosticsError != null
+                                ? 'تعذّر الفحص · اضغط لإعادة المحاولة'
+                                : 'لم تُفحص الحالة بعد'
                             : '${_adhanDiag['scheduledCount'] ?? 0} إشعارات مجدولة',
               ),
               children: [
@@ -1112,31 +1255,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   )
                 else if (_adhanDiag.isEmpty)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (_diagnosticsError != null) ...[
-                        Text(
-                          _diagnosticsError!,
-                          softWrap: true,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: scheme.error,
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                      ],
-                      Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: TextButton.icon(
-                          onPressed: _loadDiagnostics,
-                          icon: const Icon(Icons.refresh_rounded),
-                          label: const Text('فحص حالة التنبيهات'),
-                        ),
-                      ),
-                    ],
-                  )
+                  _buildDiagnosticUnavailable(context)
                 else ...[
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(bottom: 12),
+                    child: Text(
+                      'توضح العلامات حالة صلاحيات الجهاز. إذا ظهرت حالة تحتاج إجراءً، استخدم الزر المناسب أدناه ثم أعد فحصها.',
+                      softWrap: true,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -1144,21 +1275,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _diagPill(
                         'إشعارات النظام',
                         _adhanDiag['notificationsEnabled'] == true,
+                        enabledLabel: 'مسموح بها',
+                        disabledLabel: 'تحتاج إذناً',
                       ),
                       if (_adhanDiag['canDrawOverlays'] is bool)
                         _diagPill(
                           'الظهور فوق التطبيقات',
                           _adhanDiag['canDrawOverlays'] == true,
+                          enabledLabel: 'مسموح',
+                          disabledLabel: 'يحتاج إذناً',
                         ),
                       if (_adhanDiag['canScheduleExactAlarms'] is bool)
                         _diagPill(
                           'المنبه الدقيق',
                           _adhanDiag['canScheduleExactAlarms'] == true,
+                          enabledLabel: 'مسموح',
+                          disabledLabel: 'يحتاج إذناً',
                         ),
                       if (_adhanDiag['ignoringBatteryOptimizations'] is bool)
                         _diagPill(
                           'استثناء البطارية',
                           _adhanDiag['ignoringBatteryOptimizations'] == true,
+                          enabledLabel: 'مفعّل',
+                          disabledLabel: 'غير مفعّل',
                         ),
                     ],
                   ),
@@ -1225,6 +1364,72 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDiagnosticUnavailable(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final hasError = _diagnosticsError != null;
+    final accent = hasError ? scheme.error : scheme.primary;
+    final foreground = hasError ? scheme.onErrorContainer : scheme.onSurface;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: hasError ? scheme.errorContainer : scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: hasError ? accent.withOpacity(.3) : scheme.outlineVariant,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                hasError ? Icons.error_outline_rounded : Icons.info_outline,
+                color: accent,
+                size: 20,
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      hasError ? 'تعذّر فحص الحالة' : 'لم يكتمل الفحص',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: foreground,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      _diagnosticsError ??
+                          'أعد الفحص للتأكد من صلاحيات الجهاز وجدولة التنبيهات.',
+                      softWrap: true,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: foreground,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: OutlinedButton.icon(
+              onPressed: _loadDiagnostics,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('إعادة الفحص'),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1368,60 +1573,95 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ) {
     final scheme = Theme.of(context).colorScheme;
     final offset = settings.offsets[key] ?? 0;
+    final offsetLabel =
+        '${offset > 0 ? '+' : ''}${_arabicDigits(offset)} دقيقة';
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SizedBox(
-            width: 52,
-            child:
-                Text(prayerName, style: Theme.of(context).textTheme.bodyMedium),
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              Text(
+                prayerName,
+                softWrap: true,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              Text(
+                offsetLabel,
+                textAlign: TextAlign.end,
+                softWrap: true,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: scheme.primary,
+                    ),
+              ),
+            ],
           ),
-          Expanded(
-            child: Slider(
-              value: offset.toDouble().clamp(-15, 15),
-              min: -15,
-              max: 15,
-              divisions: 30,
-              onChanged: (value) => settings.updateOffset(key, value.round()),
-            ),
-          ),
-          SizedBox(
-            width: 52,
-            child: Text(
-              '${offset > 0 ? '+' : ''}$offset د',
-              textAlign: TextAlign.end,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: scheme.primary,
-                  ),
-            ),
+          Slider(
+            value: offset.toDouble().clamp(-15, 15),
+            min: -15,
+            max: 15,
+            divisions: 30,
+            label: offsetLabel,
+            semanticFormatterCallback: (value) {
+              final minutes = value.round();
+              final adjustment = minutes > 0
+                  ? 'تقديم ${_arabicDigits(minutes)} دقائق'
+                  : minutes < 0
+                      ? 'تأخير ${_arabicDigits(minutes.abs())} دقائق'
+                      : 'دون تعديل';
+              return 'موعد صلاة $prayerName: $adjustment';
+            },
+            onChanged: (value) => settings.updateOffset(key, value.round()),
           ),
         ],
       ),
     );
   }
 
-  Widget _diagPill(String label, bool enabled) {
+  Widget _diagPill(
+    String label,
+    bool enabled, {
+    String enabledLabel = 'مفعّل',
+    String disabledLabel = 'يحتاج تفعيل',
+  }) {
     final scheme = Theme.of(context).colorScheme;
     final color = enabled ? scheme.primary : scheme.error;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.28)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            enabled ? Icons.check_circle_outline_rounded : Icons.info_outline,
-            size: 16,
-            color: color,
+    final status = enabled ? enabledLabel : disabledLabel;
+    return Semantics(
+      label: '$label: $status',
+      child: ExcludeSemantics(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.10),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withOpacity(0.28)),
           ),
-          const SizedBox(width: 6),
-          Text(label, style: Theme.of(context).textTheme.labelMedium),
-        ],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                enabled
+                    ? Icons.check_circle_outline_rounded
+                    : Icons.error_outline_rounded,
+                size: 16,
+                color: color,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  '$label · $status',
+                  softWrap: true,
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
