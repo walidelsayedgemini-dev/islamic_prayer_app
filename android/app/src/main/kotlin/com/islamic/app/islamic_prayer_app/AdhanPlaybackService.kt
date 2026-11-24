@@ -75,6 +75,8 @@ class AdhanPlaybackService : Service() {
     private var audioManager: AudioManager? = null
     private var lastAlarmVolume: Int = -1
     private var lastMusicVolume: Int = -1
+    private var originalAlarmVolume: Int? = null
+    private var temporaryAlarmVolume: Int? = null
     private var volumeObserver: ContentObserver? = null
     private var volumeReceiver: BroadcastReceiver? = null
 
@@ -93,7 +95,7 @@ class AdhanPlaybackService : Service() {
                 startAdhanPlayback(voiceId, prayerName, forceRestart)
             }
         }
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     private fun startAdhanPlayback(voiceId: String, prayerName: String, forceRestart: Boolean) {
@@ -102,6 +104,7 @@ class AdhanPlaybackService : Service() {
 
         stopMediaAndObserversOnly()
         releaseWakeLock()
+        restoreTemporaryAlarmVolume()
 
         activeVoiceId = voiceId
         activePrayerName = prayerName
@@ -136,14 +139,18 @@ class AdhanPlaybackService : Service() {
         audioManager?.let { am ->
             val maxAlarm = am.getStreamMaxVolume(AudioManager.STREAM_ALARM)
             val curAlarm = am.getStreamVolume(AudioManager.STREAM_ALARM)
-            // خفض درجة عند الحد الأقصى كي تُلتقط ضغطة رفع الصوت فعلياً.
+            originalAlarmVolume = curAlarm
+            temporaryAlarmVolume = null
+            // يغيّر المستوى مؤقتًا فقط حتى تعمل وسيلة الإيقاف بزر الصوت، ثم يعيده عند النهاية.
             if (curAlarm >= maxAlarm && maxAlarm > 2) {
                 try {
                     am.setStreamVolume(AudioManager.STREAM_ALARM, maxAlarm - 1, 0)
+                    temporaryAlarmVolume = am.getStreamVolume(AudioManager.STREAM_ALARM)
                 } catch (_: Exception) {}
             } else if (curAlarm == 0 && maxAlarm > 2) {
                 try {
                     am.setStreamVolume(AudioManager.STREAM_ALARM, (maxAlarm * 3) / 4, 0)
+                    temporaryAlarmVolume = am.getStreamVolume(AudioManager.STREAM_ALARM)
                 } catch (_: Exception) {}
             }
             lastAlarmVolume = am.getStreamVolume(AudioManager.STREAM_ALARM)
@@ -179,18 +186,30 @@ class AdhanPlaybackService : Service() {
                     try {
                         completedPlayer.release()
                     } catch (_: Exception) {}
+                    isRinging = false
+                    stopMediaAndObserversOnly()
                     releaseWakeLock()
-                    onPlaybackCompletedListener?.invoke(activeVoiceId, activePrayerName)
+                    restoreTemporaryAlarmVolume()
+                    removeForegroundNotification()
+                    try {
+                        onPlaybackCompletedListener?.invoke(activeVoiceId, activePrayerName)
+                    } catch (_: Exception) {}
+                    stopSelf()
                 }
                 currentPlayer.prepare()
                 mediaPlayer = currentPlayer
                 currentPlayer.start()
+            } else {
+                stopAdhanPlayback()
+                return
             }
         } catch (_: Exception) {
             try {
                 player?.release()
             } catch (_: Exception) {}
             if (mediaPlayer === player) mediaPlayer = null
+            stopAdhanPlayback()
+            return
         }
 
         onStateChangedListener?.invoke(true, voiceId, prayerName)
@@ -356,11 +375,22 @@ class AdhanPlaybackService : Service() {
         wakeLock = null
     }
 
-    fun stopAdhanPlayback() {
-        isRinging = false
-        stopMediaAndObserversOnly()
-        releaseWakeLock()
+    private fun restoreTemporaryAlarmVolume() {
+        val original = originalAlarmVolume
+        val temporary = temporaryAlarmVolume
+        val manager = audioManager
+        if (original != null && temporary != null && manager != null) {
+            try {
+                if (manager.getStreamVolume(AudioManager.STREAM_ALARM) == temporary) {
+                    manager.setStreamVolume(AudioManager.STREAM_ALARM, original, 0)
+                }
+            } catch (_: Exception) {}
+        }
+        originalAlarmVolume = null
+        temporaryAlarmVolume = null
+    }
 
+    private fun removeForegroundNotification() {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 stopForeground(STOP_FOREGROUND_REMOVE)
@@ -369,6 +399,14 @@ class AdhanPlaybackService : Service() {
                 stopForeground(true)
             }
         } catch (_: Exception) {}
+    }
+
+    fun stopAdhanPlayback() {
+        isRinging = false
+        stopMediaAndObserversOnly()
+        releaseWakeLock()
+        restoreTemporaryAlarmVolume()
+        removeForegroundNotification()
         onStateChangedListener?.invoke(false, activeVoiceId, activePrayerName)
         stopSelf()
     }
@@ -376,6 +414,7 @@ class AdhanPlaybackService : Service() {
     override fun onDestroy() {
         stopMediaAndObserversOnly()
         releaseWakeLock()
+        restoreTemporaryAlarmVolume()
         isRinging = false
         super.onDestroy()
     }

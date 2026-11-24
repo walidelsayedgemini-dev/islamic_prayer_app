@@ -569,44 +569,93 @@ class _AdhanAlarmScreenState extends State<AdhanAlarmScreen> {
     );
   }
 
+  Future<void> _confirmAccessibleStop() async {
+    if (_isClosing || !mounted) return;
+    final shouldStop = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(_audioCompleted ? 'إغلاق شاشة الأذان؟' : 'إيقاف الأذان؟'),
+        content: Text(
+          _audioCompleted
+              ? 'انتهى المقطع. هل تريد إغلاق شاشة الأذان؟'
+              : 'سيتم إيقاف صوت الأذان وإغلاق الشاشة.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('متابعة'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(_audioCompleted ? 'إغلاق الشاشة' : 'إيقاف الأذان'),
+          ),
+        ],
+      ),
+    );
+    if (shouldStop == true && mounted) {
+      await _stopAndClose(
+        reason: _audioCompleted ? 'تم إغلاق شاشة الأذان' : 'تم إيقاف الأذان',
+      );
+    }
+  }
+
   Widget _buildStopControls(bool compact) {
     if (!_swipedReady) {
-      return Dismissible(
-        key: const ValueKey<String>('adhan_swipe_unlock'),
-        direction: DismissDirection.horizontal,
-        confirmDismiss: (_) async {
-          if (!mounted) return false;
-          setState(() => _swipedReady = true);
-          return false;
-        },
-        background: _swipeBackground(Alignment.centerLeft),
-        secondaryBackground: _swipeBackground(Alignment.centerRight),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(.32),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: Colors.white.withOpacity(.22)),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.swipe_rounded, color: _warmGold, size: 27),
-              const SizedBox(width: 13),
-              const Expanded(
-                child: Text(
-                  'اسحب هنا لإظهار زر إيقاف الأذان',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    height: 1.4,
-                  ),
-                ),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Dismissible(
+            key: const ValueKey<String>('adhan_swipe_unlock'),
+            direction: DismissDirection.horizontal,
+            confirmDismiss: (_) async {
+              if (!mounted) return false;
+              setState(() => _swipedReady = true);
+              return false;
+            },
+            background: _swipeBackground(Alignment.centerLeft),
+            secondaryBackground: _swipeBackground(Alignment.centerRight),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(.32),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: Colors.white.withOpacity(.22)),
               ),
-              Icon(Icons.swap_horiz_rounded,
-                  color: Colors.white.withOpacity(.8)),
-            ],
+              child: Row(
+                children: [
+                  const Icon(Icons.swipe_rounded, color: _warmGold, size: 27),
+                  const SizedBox(width: 13),
+                  const Expanded(
+                    child: Text(
+                      'اسحب هنا لإظهار زر إيقاف الأذان',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.swap_horiz_rounded,
+                      color: Colors.white.withOpacity(.8)),
+                ],
+              ),
+            ),
           ),
-        ),
+          const SizedBox(height: 6),
+          TextButton.icon(
+            onPressed: _confirmAccessibleStop,
+            icon: Icon(
+              _audioCompleted
+                  ? Icons.close_rounded
+                  : Icons.stop_circle_outlined,
+            ),
+            label: Text(_audioCompleted ? 'إغلاق شاشة الأذان' : 'إيقاف الأذان'),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white,
+              minimumSize: const Size.fromHeight(48),
+            ),
+          ),
+        ],
       );
     }
 

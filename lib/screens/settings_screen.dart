@@ -780,7 +780,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 );
               },
               icon: const Icon(Icons.volume_up_outlined),
-              label: const Text('معاينة منبه الأذان'),
+              label: const Text('تشغيل معاينة صوت الأذان'),
             ),
             const SizedBox(height: 8),
             Text(

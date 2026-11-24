@@ -302,6 +302,9 @@ void main() {
     ]) {
       await tester.pumpWidget(_wrapApp(screen));
       await tester.pump(const Duration(milliseconds: 220));
+      if (screen is AdhanAlarmScreen) {
+        expect(find.text('إيقاف الأذان'), findsOneWidget);
+      }
       final err = tester.takeException();
       expect(err, isNull, reason: 'Screen ${screen.runtimeType} failed: $err');
     }

@@ -62,8 +62,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
         '${twoDigits(duration.inSeconds.remainder(60))}';
   }
 
-  String _formatTime(DateTime time) =>
-      LocationClock.formatTime(time);
+  String _formatTime(DateTime time) => LocationClock.formatTime(time);
 
   Prayer? _resolvePrayerEnum(String rawKey) {
     switch (rawKey.trim().toLowerCase()) {
@@ -1213,7 +1212,8 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
         },
         itemBuilder: (context) => [
           _menuItem('location', Icons.my_location_rounded, 'تحديث الموقع'),
-          _menuItem('settings', Icons.settings_outlined, 'إعدادات الموقع'),
+          _menuItem(
+              'settings', Icons.settings_outlined, 'إعدادات الأذان والموقع'),
           _menuItem(
             'brightness',
             isNight ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
