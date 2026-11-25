@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/firdaws_user_provider.dart';
+import '../services/activity_stats_store.dart';
 import '../widgets/calm_ui.dart';
 
 /// إحصائيات سجل الصلاة: آخر 7 أيام وآخر 30 يومًا.
@@ -93,6 +94,52 @@ class PrayerStatsScreen extends StatelessWidget {
                     ),
                 ],
               ),
+            ),
+            const SizedBox(height: 22),
+            const CalmSectionTitle('الشهر كاملًا'),
+            const SizedBox(height: 10),
+            CalmCard(
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final d in days.reversed)
+                    _MonthCell(
+                      day: d.day,
+                      count: user.recordForDate(d).completedObligatoryCount,
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 22),
+            const CalmSectionTitle('التسبيح'),
+            const SizedBox(height: 10),
+            FutureBuilder<Map<String, int>>(
+              future: TasbihDailyStore.load(),
+              builder: (context, snapshot) {
+                final data = snapshot.data ?? const <String, int>{};
+                return Row(
+                  children: [
+                    Expanded(
+                      child: CalmStat(
+                          value: '${TasbihDailyStore.sumLastDays(data, 1)}',
+                          label: 'تسبيح اليوم'),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: CalmStat(
+                          value: '${TasbihDailyStore.sumLastDays(data, 7)}',
+                          label: 'آخر 7 أيام'),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: CalmStat(
+                          value: '${TasbihDailyStore.sumLastDays(data, 30)}',
+                          label: 'آخر 30 يومًا'),
+                    ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 22),
             const CalmSectionTitle('كل صلاة خلال 30 يومًا'),
@@ -199,6 +246,34 @@ class _PrayerRow extends StatelessWidget {
           const SizedBox(width: 10),
           SizedBox(width: 48, child: Text('$done/$total')),
         ],
+      ),
+    );
+  }
+}
+
+class _MonthCell extends StatelessWidget {
+  final int day;
+  final int count;
+  const _MonthCell({required this.day, required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final opacity = count == 0 ? .08 : .2 + (count / 5) * .8;
+    return Tooltip(
+      message: 'يوم $day: $count/5',
+      child: Container(
+        width: 38,
+        height: 38,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: scheme.primary.withOpacity(opacity),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text('$day',
+            style: TextStyle(
+                fontSize: 12,
+                color: count >= 3 ? scheme.onPrimary : scheme.onSurface)),
       ),
     );
   }

@@ -9,6 +9,18 @@ import '../widgets/calm_ui.dart';
 /// تصدير واستعادة كل بيانات التطبيق المحفوظة محليًا كنص JSON.
 class BackupService {
   static const int version = 1;
+  static const String lastBackupKey = 'last_backup_at';
+  static const int reminderDays = 7;
+
+  static Future<DateTime?> lastBackupAt() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(lastBackupKey);
+    return raw == null ? null : DateTime.tryParse(raw);
+  }
+
+  static bool isDue(DateTime? last, {DateTime? now}) =>
+      last == null ||
+      (now ?? DateTime.now()).difference(last).inDays >= reminderDays;
 
   static Future<String> exportAll() async {
     final prefs = await SharedPreferences.getInstance();
@@ -27,6 +39,8 @@ class BackupService {
         data[key] = {'t': 'l', 'v': value.map((e) => e.toString()).toList()};
       }
     }
+    await prefs.setString(lastBackupKey, DateTime.now().toIso8601String());
+    data[lastBackupKey] = {'t': 's', 'v': DateTime.now().toIso8601String()};
     return jsonEncode({
       'app': 'firdaws',
       'version': version,
@@ -92,6 +106,23 @@ class BackupScreen extends StatefulWidget {
 class _BackupScreenState extends State<BackupScreen> {
   final TextEditingController _controller = TextEditingController();
   bool _busy = false;
+  DateTime? _lastBackup;
+  bool _loadedBackupInfo = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInfo();
+  }
+
+  Future<void> _loadInfo() async {
+    final last = await BackupService.lastBackupAt();
+    if (!mounted) return;
+    setState(() {
+      _lastBackup = last;
+      _loadedBackupInfo = true;
+    });
+  }
 
   @override
   void dispose() {
@@ -112,6 +143,7 @@ class _BackupScreenState extends State<BackupScreen> {
       await Clipboard.setData(ClipboardData(text: json));
       _controller.text = json;
       _snack('تم نسخ النسخة الاحتياطية. الصقها في ملاحظة أو رسالة تحتفظ بها.');
+      await _loadInfo();
     } catch (_) {
       _snack('تعذّر إنشاء النسخة الاحتياطية.');
     } finally {
@@ -184,6 +216,27 @@ class _BackupScreenState extends State<BackupScreen> {
               ),
             ),
             const SizedBox(height: 14),
+            if (_loadedBackupInfo)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: CalmCard(
+                  child: Row(children: [
+                    Icon(
+                        BackupService.isDue(_lastBackup)
+                            ? Icons.warning_amber_rounded
+                            : Icons.check_circle_outline_rounded,
+                        color: theme.colorScheme.primary),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(_lastBackup == null
+                          ? 'لم تأخذ نسخة احتياطية بعد. يُفضّل أخذ نسخة الآن.'
+                          : BackupService.isDue(_lastBackup)
+                              ? 'مرّ أكثر من أسبوع على آخر نسخة (${_lastBackup!.year}-${_lastBackup!.month}-${_lastBackup!.day}). خذ نسخة جديدة.'
+                              : 'آخر نسخة احتياطية: ${_lastBackup!.year}-${_lastBackup!.month}-${_lastBackup!.day}'),
+                    ),
+                  ]),
+                ),
+              ),
             FilledButton.icon(
               onPressed: _busy ? null : _export,
               icon: const Icon(Icons.copy_all_rounded),

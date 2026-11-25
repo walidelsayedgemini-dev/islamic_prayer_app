@@ -8,6 +8,7 @@ import '../models/quran_model.dart';
 import '../providers/audio_player_provider.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
+import '../services/activity_stats_store.dart';
 import '../services/quran_bookmarks_store.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/audio_download_manager_sheet.dart';
@@ -47,6 +48,8 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   int? _lastReadSurah;
   int? _lastReadAyah;
   List<QuranBookmark> _bookmarks = [];
+  int _wirdGoal = 2;
+  Set<int> _wirdPagesToday = {};
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _readerScrollController = ScrollController();
 
@@ -55,6 +58,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
     super.initState();
     _loadPreferences();
     _loadBookmarks();
+    _loadWird();
     _loadQuranData();
   }
 
@@ -79,6 +83,106 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
         _lastReadAyah = prefs.getInt('quran_last_ayah');
       });
     } catch (_) {}
+  }
+
+  Future<void> _loadWird() async {
+    final goal = await QuranWirdStore.loadGoal();
+    final pages = await QuranWirdStore.loadToday();
+    if (!mounted) return;
+    setState(() {
+      _wirdGoal = goal;
+      _wirdPagesToday = pages;
+    });
+  }
+
+  Future<void> _markWirdPage(int page) async {
+    final pages = await QuranWirdStore.markPage(page);
+    if (!mounted) return;
+    setState(() => _wirdPagesToday = pages);
+  }
+
+  Future<void> _chooseWirdGoal() async {
+    final choice = await showModalBottomSheet<int>(
+      context: context,
+      builder: (context) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text('اختر وردك اليومي (عدد الصفحات)',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+              for (final g in QuranWirdStore.goalChoices)
+                ListTile(
+                  title: Text(
+                      '$g صفحة يوميًا — ختمة في ${QuranWirdStore.daysToFinish(g)} يومًا'),
+                  trailing: g == _wirdGoal
+                      ? const Icon(Icons.check_rounded)
+                      : null,
+                  onTap: () => Navigator.of(context).pop(g),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (choice == null) return;
+    await QuranWirdStore.saveGoal(choice);
+    if (!mounted) return;
+    setState(() => _wirdGoal = choice);
+  }
+
+  Widget _buildWirdCard(Color accent, ThemePalette palette) {
+    final done = _wirdPagesToday.length;
+    final progress = (done / _wirdGoal).clamp(0.0, 1.0);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: _readingSurface(
+        palette: palette,
+        borderColor: accent.withOpacity(.4),
+        onTap: _chooseWirdGoal,
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 14, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Icon(Icons.flag_rounded, color: accent),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  done >= _wirdGoal
+                      ? 'أتممت وردك اليوم، تقبّل الله منك'
+                      : 'وردي اليوم: ${toArabicIndicDigits(done)} من ${toArabicIndicDigits(_wirdGoal)} صفحة',
+                  style: TextStyle(
+                      color: palette.textPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15),
+                ),
+              ),
+              Icon(Icons.tune_rounded, color: palette.textSecondary, size: 20),
+            ]),
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 10,
+                backgroundColor: accent.withOpacity(.14),
+                color: accent,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'بهذا الورد تختم المصحف في ${toArabicIndicDigits(QuranWirdStore.daysToFinish(_wirdGoal))} يومًا. اضغط لتغيير الهدف، ويُحتسب كل ما تحفظ موضعه.',
+              style: TextStyle(color: palette.textSecondary, fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _loadBookmarks() async {
@@ -742,6 +846,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                     ],
                   ),
                 ),
+                _buildWirdCard(accent, palette),
                 Align(
                   alignment: AlignmentDirectional.centerStart,
                   child: TextButton.icon(
@@ -1378,6 +1483,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                 TextButton.icon(
                   onPressed: () async {
                     await _saveReadingBookmark(surah.number, firstAyahNum);
+                    await _markWirdPage(pageNum);
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       backgroundColor: palette.cardColor,

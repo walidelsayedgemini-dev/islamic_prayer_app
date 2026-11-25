@@ -1,10 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:islamic_prayer_app/screens/backup_screen.dart';
+import 'package:islamic_prayer_app/services/activity_stats_store.dart';
 import 'package:islamic_prayer_app/services/quran_bookmarks_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  activityTests();
 
   test('toggle adds a bookmark then removes it', () {
     final b = QuranBookmark(
@@ -42,7 +44,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final restored = await BackupService.importAll(json);
     final prefs = await SharedPreferences.getInstance();
-    expect(restored, 5);
+    expect(restored, 6); // 5 قيم + تاريخ آخر نسخة
     expect(prefs.getBool('a'), true);
     expect(prefs.getInt('b'), 7);
     expect(prefs.getDouble('c'), 1.5);
@@ -53,5 +55,38 @@ void main() {
   test('importing invalid text throws FormatException', () async {
     expect(() => BackupService.importAll('{"hello":1}'),
         throwsA(isA<FormatException>()));
+  });
+}
+
+void activityTests() {
+  test('tasbih daily store counts per day and sums ranges', () async {
+    SharedPreferences.setMockInitialValues({});
+    final now = DateTime(2026, 11, 25);
+    await TasbihDailyStore.increment(now: now);
+    await TasbihDailyStore.increment(now: now);
+    await TasbihDailyStore.increment(now: DateTime(2026, 11, 22));
+    final data = await TasbihDailyStore.load();
+    expect(TasbihDailyStore.sumLastDays(data, 1, now: now), 2);
+    expect(TasbihDailyStore.sumLastDays(data, 7, now: now), 3);
+  });
+
+  test('wird store tracks distinct pages per day and resets next day',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final day = DateTime(2026, 11, 25);
+    await QuranWirdStore.markPage(5, now: day);
+    final pages = await QuranWirdStore.markPage(5, now: day);
+    expect(pages.length, 1);
+    await QuranWirdStore.markPage(6, now: day);
+    expect((await QuranWirdStore.loadToday(now: day)).length, 2);
+    expect(await QuranWirdStore.loadToday(now: DateTime(2026, 11, 26)), isEmpty);
+    expect(QuranWirdStore.daysToFinish(2), 302);
+  });
+
+  test('backup reminder is due after a week', () {
+    final now = DateTime(2026, 11, 25);
+    expect(BackupService.isDue(null, now: now), true);
+    expect(BackupService.isDue(DateTime(2026, 11, 20), now: now), false);
+    expect(BackupService.isDue(DateTime(2026, 11, 10), now: now), true);
   });
 }
