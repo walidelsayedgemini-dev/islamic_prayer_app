@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/audio_download_manager_sheet.dart';
@@ -387,13 +388,20 @@ class _AzkarReaderSheetState extends State<_AzkarReaderSheet> {
                             : Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  for (final item in visibleAdhkar)
+                                  for (final item in visibleAdhkar) ...[
                                     QuranAzkarSheet._buildDhikrCard(
                                       item.title,
                                       item.text,
                                       item.virtue,
                                       palette,
                                     ),
+                                    _DhikrCounter(
+                                      storageKey: item.title,
+                                      accent: palette.accentColor,
+                                      textColor: palette.textPrimary,
+                                    ),
+                                    const SizedBox(height: 10),
+                                  ],
                                 ],
                               ),
                       ),
@@ -439,3 +447,79 @@ const List<_SelectedDhikr> _selectedAdhkar = [
     'كان حقاً على الله تعالى أن يرضيه يوم القيامة (حديث حسن).',
   ),
 ];
+
+/// عدّاد يومي لكل ذكر: يُحفظ العدد ويُصفَّر تلقائيًا مع بداية كل يوم.
+class _DhikrCounter extends StatefulWidget {
+  final String storageKey;
+  final Color accent;
+  final Color textColor;
+  const _DhikrCounter({
+    required this.storageKey,
+    required this.accent,
+    required this.textColor,
+  });
+
+  @override
+  State<_DhikrCounter> createState() => _DhikrCounterState();
+}
+
+class _DhikrCounterState extends State<_DhikrCounter> {
+  int _count = 0;
+
+  String get _todayKey {
+    final n = DateTime.now();
+    return '${n.year}-${n.month}-${n.day}';
+  }
+
+  String get _prefsKey => 'azkar_counter_${widget.storageKey.hashCode}';
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString(_prefsKey);
+      if (saved != null && saved.startsWith('$_todayKey|')) {
+        final value = int.tryParse(saved.split('|').last) ?? 0;
+        if (mounted) setState(() => _count = value);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _set(int value) async {
+    setState(() => _count = value);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_prefsKey, '$_todayKey|$value');
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: FilledButton.icon(
+            onPressed: () => _set(_count + 1),
+            icon: const Icon(Icons.touch_app_rounded),
+            label: Text('عدّ  •  $_count'),
+            style: FilledButton.styleFrom(
+              backgroundColor: widget.accent,
+              minimumSize: const Size(44, 48),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        IconButton(
+          tooltip: 'تصفير العدّاد',
+          onPressed: _count == 0 ? null : () => _set(0),
+          icon: Icon(Icons.restart_alt_rounded, color: widget.textColor),
+        ),
+      ],
+    );
+  }
+}

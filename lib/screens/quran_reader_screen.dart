@@ -8,6 +8,7 @@ import '../models/quran_model.dart';
 import '../providers/audio_player_provider.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
+import '../services/quran_bookmarks_store.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/audio_download_manager_sheet.dart';
 import '../widgets/firdaws_brand_logo.dart';
@@ -45,6 +46,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
 
   int? _lastReadSurah;
   int? _lastReadAyah;
+  List<QuranBookmark> _bookmarks = [];
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _readerScrollController = ScrollController();
 
@@ -52,6 +54,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   void initState() {
     super.initState();
     _loadPreferences();
+    _loadBookmarks();
     _loadQuranData();
   }
 
@@ -76,6 +79,113 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
         _lastReadAyah = prefs.getInt('quran_last_ayah');
       });
     } catch (_) {}
+  }
+
+  Future<void> _loadBookmarks() async {
+    final loaded = await QuranBookmarksStore.load();
+    if (!mounted) return;
+    setState(() => _bookmarks = loaded);
+  }
+
+  Future<void> _toggleBookmark(QuranSurah surah, QuranAyah ayah) async {
+    final bookmark = QuranBookmark(
+      surahNumber: surah.number,
+      ayahNumber: ayah.number,
+      surahName: surah.cleanName,
+      savedAt: DateTime.now(),
+    );
+    final existed = _bookmarks.any((b) => b.id == bookmark.id);
+    final updated = QuranBookmarksStore.toggle(_bookmarks, bookmark);
+    setState(() => _bookmarks = updated);
+    await QuranBookmarksStore.save(updated);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(existed
+          ? 'أُزيلت العلامة المرجعية'
+          : 'أُضيفت علامة مرجعية: سورة ${surah.cleanName} • الآية ${ayah.number}'),
+      duration: const Duration(seconds: 2),
+    ));
+  }
+
+  void _showBookmarksSheet(List<QuranSurah> allSurahs) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          final theme = Theme.of(context);
+          return Directionality(
+            textDirection: TextDirection.rtl,
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height * .7,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 18, 12, 8),
+                    child: Row(children: [
+                      Expanded(
+                        child: Text('علاماتي المرجعية',
+                            style: theme.textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold)),
+                      ),
+                      IconButton(
+                        tooltip: 'إغلاق',
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                      ),
+                    ]),
+                  ),
+                  Expanded(
+                    child: _bookmarks.isEmpty
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(24),
+                              child: Text(
+                                'لا توجد علامات بعد. اضغط على أيقونة النجمة بجانب أي آية لحفظها هنا.',
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: _bookmarks.length,
+                            itemBuilder: (context, index) {
+                              final b = _bookmarks[index];
+                              return ListTile(
+                                leading: const Icon(Icons.star_rounded),
+                                title: Text(
+                                    'سورة ${b.surahName} • الآية ${toArabicIndicDigits(b.ayahNumber)}'),
+                                onTap: () {
+                                  final idx = (b.surahNumber - 1)
+                                      .clamp(0, allSurahs.length - 1);
+                                  Navigator.of(sheetContext).pop();
+                                  _openSurah(allSurahs[idx],
+                                      highlightAyah: b.ayahNumber);
+                                },
+                                trailing: IconButton(
+                                  tooltip: 'حذف العلامة',
+                                  icon: const Icon(Icons.delete_outline_rounded),
+                                  onPressed: () async {
+                                    final updated = _bookmarks
+                                        .where((x) => x.id != b.id)
+                                        .toList();
+                                    setState(() => _bookmarks = updated);
+                                    setSheetState(() {});
+                                    await QuranBookmarksStore.save(updated);
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Future<void> _saveReadingBookmark(int surahNumber, int ayahNumber) async {
@@ -630,6 +740,18 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                         ),
                       ),
                     ],
+                  ),
+                ),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton.icon(
+                    onPressed: () => _showBookmarksSheet(allSurahs),
+                    icon: Icon(Icons.star_rounded, color: accent),
+                    label: Text(
+                        'علاماتي المرجعية (${toArabicIndicDigits(_bookmarks.length)})',
+                        style: TextStyle(color: accent)),
+                    style:
+                        TextButton.styleFrom(minimumSize: const Size(44, 44)),
                   ),
                 ),
                 _readingSurface(
@@ -1352,6 +1474,24 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                       const BoxConstraints(minWidth: 44, minHeight: 44),
                   icon: Icon(Icons.menu_book_outlined, color: accent),
                   onPressed: () => _showAyahTafsirModal(surah, ayah),
+                ),
+                IconButton(
+                  tooltip: _bookmarks.any(
+                          (b) => b.id == '${surah.number}:${ayah.number}')
+                      ? 'إزالة العلامة المرجعية'
+                      : 'إضافة علامة مرجعية',
+                  constraints:
+                      const BoxConstraints(minWidth: 44, minHeight: 44),
+                  icon: Icon(
+                      _bookmarks.any(
+                              (b) => b.id == '${surah.number}:${ayah.number}')
+                          ? Icons.star_rounded
+                          : Icons.star_border_rounded,
+                      color: _bookmarks.any(
+                              (b) => b.id == '${surah.number}:${ayah.number}')
+                          ? accent
+                          : palette.textSecondary),
+                  onPressed: () => _toggleBookmark(surah, ayah),
                 ),
                 IconButton(
                   tooltip: 'حفظ موضع القراءة عند هذه الآية',
