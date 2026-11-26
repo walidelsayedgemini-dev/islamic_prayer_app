@@ -15,6 +15,7 @@ import '../providers/firdaws_user_provider.dart';
 import '../providers/hasanat_provider.dart';
 import '../providers/hoor_companion_provider.dart';
 import '../providers/jannati_provider.dart';
+import '../services/activity_stats_store.dart';
 import '../widgets/calm_ui.dart';
 import '../widgets/interactive_tasbih_beads.dart';
 import '../widgets/paradise_ui.dart';
@@ -187,6 +188,7 @@ class _TasbihScreenState extends State<TasbihScreen> {
       if (mounted) setState(() => _interactionFeedback = null);
     });
 
+    unawaited(TasbihDailyStore.increment());
     final user = Provider.of<FirdawsUserProvider>(context, listen: false);
     unawaited(user.recordDhikrByText(activeDhikrText));
 

@@ -17,6 +17,8 @@ import 'family_challenge_screen.dart';
 import 'events_missions_screen.dart';
 import 'arena_hub_screen.dart';
 import 'hasanat_store_screen.dart';
+import 'prayer_stats_screen.dart';
+import 'backup_screen.dart';
 import '../providers/hoor_companion_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/islamic_theme.dart';
@@ -871,6 +873,18 @@ class FirdawsMorePage extends StatelessWidget {
                     title: 'مقتنيات الإنجاز',
                     subtitle: 'المقتنيات والسجل السابق.',
                     onTap: () => open(const HasanatStoreScreen()),
+                  ),
+                  _ActivityDoorData(
+                    icon: Icons.bar_chart_rounded,
+                    title: 'إحصائيات الصلاة',
+                    subtitle: 'التزامك خلال الأسبوع والشهر.',
+                    onTap: () => open(const PrayerStatsScreen()),
+                  ),
+                  _ActivityDoorData(
+                    icon: Icons.backup_outlined,
+                    title: 'النسخ الاحتياطي',
+                    subtitle: 'صدّر بياناتك أو استعدها.',
+                    onTap: () => open(const BackupScreen()),
                   ),
                   _ActivityDoorData(
                     icon: Icons.person_outline_rounded,
