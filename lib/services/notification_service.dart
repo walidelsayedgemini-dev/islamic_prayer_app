@@ -3,6 +3,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import '../models/islamic_audio_data.dart';
+import '../models/prayer_alarm_preference.dart';
 import '../models/prayer_model.dart';
 import 'firdaws_native_service.dart';
 
@@ -49,6 +50,17 @@ class NotificationService {
   bool _isInitialized = false;
   bool _tzConfigured = false;
   static const String salawatNotificationPayload = 'firdaws:salawat';
+  static const int prayerNotificationIdStart = 1;
+  static const int prayerNotificationIdCapacity = 10;
+  static const int preAdhanNotificationIdOffset = 100;
+
+  /// Android uses AlarmManager and the native playback service for adhan audio.
+  static bool shouldScheduleFlutterAdhanFallback({
+    required bool isWeb,
+    required TargetPlatform platform,
+  }) =>
+      !isWeb && platform != TargetPlatform.android;
+
   void Function(int pageIndex)? _navigationHandler;
   int? _pendingNavigationPage;
 
@@ -145,9 +157,9 @@ class NotificationService {
 
       const DarwinInitializationSettings initializationSettingsDarwin =
           DarwinInitializationSettings(
-        requestAlertPermission: true,
-        requestBadgePermission: true,
-        requestSoundPermission: true,
+        requestAlertPermission: false,
+        requestBadgePermission: false,
+        requestSoundPermission: false,
       );
 
       const InitializationSettings initializationSettings =
@@ -169,18 +181,41 @@ class NotificationService {
         handleNotificationResponse(launchResponse);
       }
 
-      final androidPlugin =
-          flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
-      if (androidPlugin != null) {
-        await androidPlugin.requestNotificationsPermission();
-        await androidPlugin.requestExactAlarmsPermission();
-      }
-
       _isInitialized = true;
     } catch (e) {
       debugPrint('Error initializing NotificationService: $e');
     }
+  }
+
+  /// Request notification-related permissions only after a user action.
+  Future<bool> requestReminderPermissions() async {
+    if (kIsWeb) return false;
+    await initialize();
+    try {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final android = flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>();
+        final notificationGranted =
+            await android?.requestNotificationsPermission() ?? false;
+        await android?.requestExactAlarmsPermission();
+        return notificationGranted;
+      }
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final ios = flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<
+                IOSFlutterLocalNotificationsPlugin>();
+        return await ios?.requestPermissions(
+              alert: true,
+              badge: true,
+              sound: true,
+            ) ??
+            false;
+      }
+    } catch (error) {
+      debugPrint('Reminder permission request failed: $error');
+    }
+    return false;
   }
 
   /// جدولة صلوات اليوم والغد بالكامل مع منبه الأذان المتواصل بصوت المؤذن المختار
@@ -188,6 +223,8 @@ class NotificationService {
     required AdvancedPrayerTimes prayers,
     required String voiceResource,
     bool preAdhanReminder = true,
+    int preAdhanReminderMinutes = 15,
+    Map<String, PrayerAlarmPreference>? alarmPreferences,
     double? latitude,
     double? longitude,
     dynamic method,
@@ -200,57 +237,90 @@ class NotificationService {
         try {
           // Do not erase unrelated reminders (including this feature's IDs).
           for (final id in <int>[
-            ...List<int>.generate(10, (i) => i + 1),
-            ...List<int>.generate(10, (i) => i + 101)
+            ...List<int>.generate(
+              prayerNotificationIdCapacity,
+              (i) => i + prayerNotificationIdStart,
+            ),
+            ...List<int>.generate(
+              prayerNotificationIdCapacity,
+              (i) =>
+                  i + prayerNotificationIdStart + preAdhanNotificationIdOffset,
+            ),
           ]) {
             await flutterLocalNotificationsPlugin.cancel(id);
           }
         } catch (_) {}
       }
 
-      final resolvedVoice =
-          IslamicAudioLibrary.getAdhanVoiceById(voiceResource);
       final now = DateTime.now();
       final nativeAlarms = <Map<String, dynamic>>[];
 
-      Future<void> addPrayerAlarm(
-          int id, String prayerName, DateTime prayerTime) async {
+      Future<void> addPrayerAlarm(int id, String prayerKey, String prayerName,
+          DateTime prayerTime) async {
         if (!prayerTime.isAfter(now)) return;
-        nativeAlarms.add({
-          'triggerAtMillis': prayerTime.millisecondsSinceEpoch,
-          'voiceId': resolvedVoice.id,
-          'prayerName': prayerName,
-        });
-
-        await _scheduleSingleAdhanNotificationFallback(
-          id: id,
-          title: prayerName,
-          scheduledTime: prayerTime,
-          rawSoundName: resolvedVoice.rawResourceName,
-        );
 
         if (preAdhanReminder) {
-          final reminderTime = prayerTime.subtract(const Duration(minutes: 15));
+          final reminderTime = prayerTime.subtract(
+            Duration(minutes: preAdhanReminderMinutes.clamp(5, 60)),
+          );
           if (reminderTime.isAfter(now)) {
             await _schedulePreAdhanReminder(
-              id: id + 100,
+              id: id + preAdhanNotificationIdOffset,
               prayerName: prayerName,
               scheduledTime: reminderTime,
+              minutesBefore: preAdhanReminderMinutes.clamp(5, 60),
             );
           }
         }
+
+        final preference =
+            alarmPreferences?[prayerKey] ?? const PrayerAlarmPreference();
+        if (!preference.isEnabled) return;
+        final voice = IslamicAudioLibrary.getAdhanVoiceById(
+          preference.voiceId ?? voiceResource,
+        );
+        final vibrationOnly = preference.mode == PrayerAlarmMode.vibrationOnly;
+        nativeAlarms.add({
+          'triggerAtMillis': prayerTime.millisecondsSinceEpoch,
+          'voiceId': voice.id,
+          'prayerName': prayerName,
+          'mode': preference.mode.name,
+          'volumePercent': preference.volumePercent.clamp(0, 100),
+        });
+
+        if (shouldScheduleFlutterAdhanFallback(
+          isWeb: kIsWeb,
+          platform: defaultTargetPlatform,
+        )) {
+          await _scheduleSingleAdhanNotificationFallback(
+            id: id,
+            title: prayerName,
+            scheduledTime: prayerTime,
+            rawSoundName: voice.rawResourceName,
+            vibrationOnly: vibrationOnly,
+          );
+        }
       }
 
-      final todayTimes = <int, ({String name, DateTime time})>{
-        1: (name: 'صلاة الفجر', time: prayers.prayerTimes.fajr),
-        2: (name: 'صلاة الظهر', time: prayers.prayerTimes.dhuhr),
-        3: (name: 'صلاة العصر', time: prayers.prayerTimes.asr),
-        4: (name: 'صلاة المغرب', time: prayers.prayerTimes.maghrib),
-        5: (name: 'صلاة العشاء', time: prayers.prayerTimes.isha),
+      final todayTimes = <int, ({String key, String name, DateTime time})>{
+        1: (key: 'fajr', name: 'صلاة الفجر', time: prayers.prayerTimes.fajr),
+        2: (key: 'dhuhr', name: 'صلاة الظهر', time: prayers.prayerTimes.dhuhr),
+        3: (key: 'asr', name: 'صلاة العصر', time: prayers.prayerTimes.asr),
+        4: (
+          key: 'maghrib',
+          name: 'صلاة المغرب',
+          time: prayers.prayerTimes.maghrib
+        ),
+        5: (key: 'isha', name: 'صلاة العشاء', time: prayers.prayerTimes.isha),
       };
 
       for (final entry in todayTimes.entries) {
-        await addPrayerAlarm(entry.key, entry.value.name, entry.value.time);
+        await addPrayerAlarm(
+          entry.key,
+          entry.value.key,
+          entry.value.name,
+          entry.value.time,
+        );
       }
 
       // جدولة صلوات الغد الخمس كاملة لضمان استمرار الأذان حتى لو لم يفتح المستخدم التطبيق غداً
@@ -266,19 +336,44 @@ class NotificationService {
           madhab: madhab,
           offsets: offsets,
         );
-        final tmrTimes = <int, ({String name, DateTime time})>{
-          6: (name: 'صلاة الفجر', time: tomorrowPrayers.prayerTimes.fajr),
-          7: (name: 'صلاة الظهر', time: tomorrowPrayers.prayerTimes.dhuhr),
-          8: (name: 'صلاة العصر', time: tomorrowPrayers.prayerTimes.asr),
-          9: (name: 'صلاة المغرب', time: tomorrowPrayers.prayerTimes.maghrib),
-          10: (name: 'صلاة العشاء', time: tomorrowPrayers.prayerTimes.isha),
+        final tmrTimes = <int, ({String key, String name, DateTime time})>{
+          6: (
+            key: 'fajr',
+            name: 'صلاة الفجر',
+            time: tomorrowPrayers.prayerTimes.fajr
+          ),
+          7: (
+            key: 'dhuhr',
+            name: 'صلاة الظهر',
+            time: tomorrowPrayers.prayerTimes.dhuhr
+          ),
+          8: (
+            key: 'asr',
+            name: 'صلاة العصر',
+            time: tomorrowPrayers.prayerTimes.asr
+          ),
+          9: (
+            key: 'maghrib',
+            name: 'صلاة المغرب',
+            time: tomorrowPrayers.prayerTimes.maghrib
+          ),
+          10: (
+            key: 'isha',
+            name: 'صلاة العشاء',
+            time: tomorrowPrayers.prayerTimes.isha
+          ),
         };
         for (final entry in tmrTimes.entries) {
-          await addPrayerAlarm(entry.key, entry.value.name, entry.value.time);
+          await addPrayerAlarm(
+            entry.key,
+            entry.value.key,
+            entry.value.name,
+            entry.value.time,
+          );
         }
       } else if (!prayers.prayerTimes.fajr.isAfter(now) &&
           prayers.tomorrowFajr.isAfter(now)) {
-        await addPrayerAlarm(6, 'صلاة الفجر', prayers.tomorrowFajr);
+        await addPrayerAlarm(6, 'fajr', 'صلاة الفجر', prayers.tomorrowFajr);
       }
 
       // جدولة المنبه الحقيقي المتواصل على مستوى النظام (AdhanAlarmScheduler -> AlarmClock)
@@ -293,8 +388,16 @@ class NotificationService {
     required String title,
     required DateTime scheduledTime,
     required String rawSoundName,
+    required bool vibrationOnly,
   }) async {
-    if (kIsWeb) return;
+    if (!shouldScheduleFlutterAdhanFallback(
+      isWeb: kIsWeb,
+      platform: defaultTargetPlatform,
+    )) {
+      return;
+    }
+    final channelId =
+        vibrationOnly ? 'adhan_v4_vibration_only' : 'adhan_v4_$rawSoundName';
     try {
       await flutterLocalNotificationsPlugin.zonedSchedule(
         id,
@@ -303,22 +406,26 @@ class NotificationService {
         tz.TZDateTime.from(scheduledTime, tz.local),
         NotificationDetails(
           android: AndroidNotificationDetails(
-            'firdaws_adhan_ch_$rawSoundName',
+            channelId,
             'تنبيهات الأذان ($rawSoundName)',
             channelDescription:
                 'بث الأذان بصوت المؤذن المختار في الوقت المحدد بدقة',
             importance: Importance.max,
             priority: Priority.max,
-            sound: RawResourceAndroidNotificationSound(rawSoundName),
-            playSound: true,
+            sound: vibrationOnly
+                ? null
+                : RawResourceAndroidNotificationSound(rawSoundName),
+            playSound: !vibrationOnly,
+            enableVibration: vibrationOnly,
+            onlyAlertOnce: true,
             fullScreenIntent: true,
             ongoing: true,
             autoCancel: false,
             category: AndroidNotificationCategory.alarm,
           ),
           iOS: DarwinNotificationDetails(
-            sound: '$rawSoundName.mp3',
-            presentSound: true,
+            sound: vibrationOnly ? null : '$rawSoundName.mp3',
+            presentSound: !vibrationOnly,
           ),
         ),
         androidScheduleMode: AndroidScheduleMode.alarmClock,
@@ -334,19 +441,23 @@ class NotificationService {
           tz.TZDateTime.from(scheduledTime, tz.local),
           NotificationDetails(
             android: AndroidNotificationDetails(
-              'firdaws_adhan_ch_$rawSoundName',
+              channelId,
               'تنبيهات الأذان ($rawSoundName)',
               channelDescription:
                   'بث الأذان بصوت المؤذن المختار في الوقت المحدد بدقة',
               importance: Importance.max,
               priority: Priority.max,
-              sound: RawResourceAndroidNotificationSound(rawSoundName),
-              playSound: true,
+              sound: vibrationOnly
+                  ? null
+                  : RawResourceAndroidNotificationSound(rawSoundName),
+              playSound: !vibrationOnly,
+              enableVibration: vibrationOnly,
+              onlyAlertOnce: true,
               fullScreenIntent: true,
             ),
             iOS: DarwinNotificationDetails(
-              sound: '$rawSoundName.mp3',
-              presentSound: true,
+              sound: vibrationOnly ? null : '$rawSoundName.mp3',
+              presentSound: !vibrationOnly,
             ),
           ),
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
@@ -363,25 +474,27 @@ class NotificationService {
     required int id,
     required String prayerName,
     required DateTime scheduledTime,
+    required int minutesBefore,
   }) async {
     if (kIsWeb) return;
     try {
       await flutterLocalNotificationsPlugin.zonedSchedule(
         id,
         '⏰ اقتربت $prayerName — استعد الآن',
-        'اقتربت الصلاة! بقي ١٥ دقيقة على الأذان، حيّ على الوضوء والاستعداد 🌿',
+        'اقتربت الصلاة! بقي $minutesBefore دقيقة على الأذان، حيّ على الوضوء والاستعداد 🌿',
         tz.TZDateTime.from(scheduledTime, tz.local),
         const NotificationDetails(
           android: AndroidNotificationDetails(
-            'pre_adhan_voice_v2',
+            'pre_adhan_v4',
             'تنبيه صوتي قبل الصلاة (اقتربت الصلاة)',
             channelDescription:
-                'تنبيه صوتي مسموع قبل الأذان بـ ١٥ دقيقة للاستعداد للصلاة',
+                'تنبيه صوتي قبل الأذان بالمدة التي اختارها المستخدم',
             importance: Importance.max,
             priority: Priority.high,
             sound: RawResourceAndroidNotificationSound('pre_adhan_alert'),
             playSound: true,
             enableVibration: true,
+            onlyAlertOnce: true,
           ),
           iOS: DarwinNotificationDetails(
             sound: 'pre_adhan_alert.wav',

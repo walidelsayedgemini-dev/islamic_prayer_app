@@ -12,31 +12,121 @@ object AdhanAlarmScheduler {
     private const val PREFS_NAME = "firdaws_adhan_scheduler_prefs"
     private const val KEY_ALARMS_JSON = "saved_prayer_alarms_json"
     private const val MAX_ALARMS = 15
+    private const val TEST_ALARM_REQUEST_CODE = 15001
+
+    private data class ScheduledAlarm(
+        val triggerAtMillis: Long,
+        val voiceId: String,
+        val prayerName: String,
+        val mode: String,
+        val volumePercent: Int,
+        val inputOrder: Int
+    )
 
     fun saveAndSchedule(context: Context, alarms: List<Map<String, Any>>) {
-        val arr = JSONArray()
-        for (a in alarms.take(MAX_ALARMS)) {
-            val triggerMillis = (a["triggerAtMillis"] as? Number)?.toLong() ?: continue
-            val voiceId = a["voiceId"] as? String ?: "madinah"
-            val prayerName = a["prayerName"] as? String ?: "صلاة الفرض"
-            val obj = JSONObject().apply {
-                put("triggerAtMillis", triggerMillis)
-                put("voiceId", voiceId)
-                put("prayerName", prayerName)
-            }
-            arr.put(obj)
+        val parsed = alarms.mapIndexedNotNull { index, alarm ->
+            val triggerMillis = (alarm["triggerAtMillis"] as? Number)?.toLong() ?: return@mapIndexedNotNull null
+            ScheduledAlarm(
+                triggerAtMillis = triggerMillis,
+                voiceId = alarm["voiceId"] as? String ?: "madinah",
+                prayerName = alarm["prayerName"] as? String ?: "صلاة الفرض",
+                mode = alarm["mode"] as? String ?: "adhan",
+                volumePercent = ((alarm["volumePercent"] as? Number)?.toInt() ?: 100)
+                    .coerceIn(0, 100),
+                inputOrder = index
+            )
         }
+        val normalized = normalizeAlarms(parsed)
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
-            .putString(KEY_ALARMS_JSON, arr.toString())
+            .putString(KEY_ALARMS_JSON, encodeAlarms(normalized).toString())
             .apply()
 
         rescheduleFromStorage(context)
     }
 
+    fun scheduleTestAlarm(
+        context: Context,
+        voiceId: String,
+        prayerName: String,
+        mode: String,
+        volumePercent: Int,
+    ): Boolean {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val triggerMillis = System.currentTimeMillis() + 60_000L
+        val receiverIntent = Intent(context, AdhanAlarmReceiver::class.java).apply {
+            putExtra(AdhanPlaybackService.EXTRA_VOICE_ID, voiceId)
+            putExtra(AdhanPlaybackService.EXTRA_PRAYER_NAME, prayerName)
+            putExtra(AdhanPlaybackService.EXTRA_MODE, mode)
+            putExtra(
+                AdhanPlaybackService.EXTRA_VOLUME_PERCENT,
+                volumePercent.coerceIn(0, 100),
+            )
+        }
+        val receiverPendingIntent = PendingIntent.getBroadcast(
+            context,
+            TEST_ALARM_REQUEST_CODE,
+            receiverIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val showIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("open_adhan_alarm", true)
+            putExtra("voice_id", voiceId)
+            putExtra("prayer_name", prayerName)
+            putExtra("volume_percent", volumePercent.coerceIn(0, 100))
+        }
+        val showPendingIntent = PendingIntent.getActivity(
+            context,
+            TEST_ALARM_REQUEST_CODE + 1,
+            showIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        return try {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+                alarmManager.canScheduleExactAlarms()
+            ) {
+                alarmManager.setAlarmClock(
+                    AlarmManager.AlarmClockInfo(triggerMillis, showPendingIntent),
+                    receiverPendingIntent,
+                )
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerMillis,
+                    receiverPendingIntent,
+                )
+            } else {
+                alarmManager.set(AlarmManager.RTC_WAKEUP, triggerMillis, receiverPendingIntent)
+            }
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    fun cancelTestAlarm(context: Context): Boolean {
+        return try {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val intent = Intent(context, AdhanAlarmReceiver::class.java)
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                TEST_ALARM_REQUEST_CODE,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+            alarmManager.cancel(pendingIntent)
+            pendingIntent.cancel()
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     fun rescheduleFromStorage(context: Context): Int {
         val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        // إلغاء المعرفات السابقة 101..115
+        // إلغاء المعرفات السابقة 101..115 مع إبقاء أرقام الطلبات الثابتة.
         for (req in 101 until (101 + MAX_ALARMS)) {
             val cancelIntent = Intent(context, AdhanAlarmReceiver::class.java)
             val pi = PendingIntent.getBroadcast(
@@ -50,80 +140,79 @@ object AdhanAlarmScheduler {
 
         val rawJson = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .getString(KEY_ALARMS_JSON, null) ?: return 0
-
+        val alarms = normalizeAlarms(parseAlarms(rawJson))
         val now = System.currentTimeMillis()
         var scheduledCount = 0
 
-        try {
-            val arr = JSONArray(rawJson)
-            for (i in 0 until arr.length()) {
-                if (scheduledCount >= MAX_ALARMS) break
-                val obj = arr.getJSONObject(i)
-                val triggerMillis = obj.optLong("triggerAtMillis", 0L)
-                if (triggerMillis <= now) continue
-                val voiceId = obj.optString("voiceId", "madinah")
-                val prayerName = obj.optString("prayerName", "صلاة الفرض")
+        for (alarm in alarms) {
+            if (scheduledCount >= MAX_ALARMS) break
+            val triggerMillis = alarm.triggerAtMillis
+            if (triggerMillis <= now) continue
+            val voiceId = alarm.voiceId
+            val prayerName = alarm.prayerName
 
-                val receiverIntent = Intent(context, AdhanAlarmReceiver::class.java).apply {
-                    putExtra(AdhanPlaybackService.EXTRA_VOICE_ID, voiceId)
-                    putExtra(AdhanPlaybackService.EXTRA_PRAYER_NAME, prayerName)
-                }
-                val reqCode = 101 + scheduledCount
-                val pi = PendingIntent.getBroadcast(
-                    context,
-                    reqCode,
-                    receiverIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-
-                val showIntent = Intent(context, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    putExtra("open_adhan_alarm", true)
-                    putExtra("voice_id", voiceId)
-                    putExtra("prayer_name", prayerName)
-                }
-                val showPending = PendingIntent.getActivity(
-                    context,
-                    501 + scheduledCount,
-                    showIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-
-                var placed = false
-                // استخدام AlarmClock (الأقوى لاختراق وضع Doze وتقييد البطارية على أندرويد)
-                try {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        val canExact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || am.canScheduleExactAlarms()
-                        if (canExact) {
-                            val info = AlarmManager.AlarmClockInfo(triggerMillis, showPending)
-                            am.setAlarmClock(info, pi)
-                            placed = true
-                        }
-                    }
-                } catch (_: Exception) {}
-
-                if (!placed) {
-                    try {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && am.canScheduleExactAlarms()) {
-                            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMillis, pi)
-                            placed = true
-                        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                            am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMillis, pi)
-                            placed = true
-                        } else {
-                            am.setExact(AlarmManager.RTC_WAKEUP, triggerMillis, pi)
-                            placed = true
-                        }
-                    } catch (_: Exception) {
-                        try {
-                            am.set(AlarmManager.RTC_WAKEUP, triggerMillis, pi)
-                            placed = true
-                        } catch (_: Exception) {}
-                    }
-                }
-                if (placed) scheduledCount++
+            val receiverIntent = Intent(context, AdhanAlarmReceiver::class.java).apply {
+                putExtra(AdhanPlaybackService.EXTRA_VOICE_ID, voiceId)
+                putExtra(AdhanPlaybackService.EXTRA_PRAYER_NAME, prayerName)
+                putExtra(AdhanPlaybackService.EXTRA_MODE, alarm.mode)
+                putExtra(AdhanPlaybackService.EXTRA_VOLUME_PERCENT, alarm.volumePercent)
             }
-        } catch (_: Exception) {}
+            val reqCode = 101 + scheduledCount
+            val pi = PendingIntent.getBroadcast(
+                context,
+                reqCode,
+                receiverIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val showIntent = Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra("open_adhan_alarm", alarm.mode != "vibrationOnly")
+                putExtra("voice_id", voiceId)
+                putExtra("prayer_name", prayerName)
+                putExtra("volume_percent", alarm.volumePercent)
+            }
+            val showPending = PendingIntent.getActivity(
+                context,
+                501 + scheduledCount,
+                showIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            var placed = false
+            // AlarmClock هو الخيار الأقوى لتجاوز Doze وقيود البطارية.
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    val canExact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || am.canScheduleExactAlarms()
+                    if (canExact) {
+                        val info = AlarmManager.AlarmClockInfo(triggerMillis, showPending)
+                        am.setAlarmClock(info, pi)
+                        placed = true
+                    }
+                }
+            } catch (_: Exception) {}
+
+            if (!placed) {
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && am.canScheduleExactAlarms()) {
+                        am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMillis, pi)
+                        placed = true
+                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMillis, pi)
+                        placed = true
+                    } else {
+                        am.setExact(AlarmManager.RTC_WAKEUP, triggerMillis, pi)
+                        placed = true
+                    }
+                } catch (_: Exception) {
+                    try {
+                        am.set(AlarmManager.RTC_WAKEUP, triggerMillis, pi)
+                        placed = true
+                    } catch (_: Exception) {}
+                }
+            }
+            if (placed) scheduledCount++
+        }
 
         return scheduledCount
     }
@@ -132,14 +221,53 @@ object AdhanAlarmScheduler {
         val rawJson = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .getString(KEY_ALARMS_JSON, null) ?: return 0
         val now = System.currentTimeMillis()
-        var cnt = 0
-        try {
+        return normalizeAlarms(parseAlarms(rawJson)).count { it.triggerAtMillis > now }
+    }
+
+    private fun normalizeAlarms(alarms: List<ScheduledAlarm>): List<ScheduledAlarm> {
+        val ordered = alarms.sortedWith(
+            compareBy<ScheduledAlarm> { it.triggerAtMillis }.thenBy { it.inputOrder }
+        )
+        val seenMinutes = HashSet<Long>()
+        return ordered.filter { alarm ->
+            // اختيار أقرب موعد في الدقيقة عند وجود مدخلات متقاربة، مع ثبات ترتيب التعادل.
+            seenMinutes.add(alarm.triggerAtMillis / 60_000L)
+        }.take(MAX_ALARMS)
+    }
+
+    private fun parseAlarms(rawJson: String): List<ScheduledAlarm> {
+        return try {
             val arr = JSONArray(rawJson)
-            for (i in 0 until arr.length()) {
-                val t = arr.getJSONObject(i).optLong("triggerAtMillis", 0L)
-                if (t > now) cnt++
+            (0 until arr.length()).mapNotNull { index ->
+                val obj = arr.getJSONObject(index)
+                val triggerMillis = obj.optLong("triggerAtMillis", 0L)
+                if (triggerMillis <= 0L) {
+                    null
+                } else {
+                    ScheduledAlarm(
+                        triggerAtMillis = triggerMillis,
+                        voiceId = obj.optString("voiceId", "madinah"),
+                        prayerName = obj.optString("prayerName", "صلاة الفرض"),
+                        mode = obj.optString("mode", "adhan"),
+                        volumePercent = obj.optInt("volumePercent", 100).coerceIn(0, 100),
+                        inputOrder = index
+                    )
+                }
             }
-        } catch (_: Exception) {}
-        return cnt
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun encodeAlarms(alarms: List<ScheduledAlarm>): JSONArray = JSONArray().apply {
+        alarms.forEach { alarm ->
+            put(JSONObject().apply {
+                put("triggerAtMillis", alarm.triggerAtMillis)
+                put("voiceId", alarm.voiceId)
+                put("prayerName", alarm.prayerName)
+                put("mode", alarm.mode)
+                put("volumePercent", alarm.volumePercent)
+            })
+        }
     }
 }

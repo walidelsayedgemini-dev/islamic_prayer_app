@@ -353,8 +353,12 @@ void main() {
 
     await tester.pumpWidget(_wrapWithProviders(const ArenaHubScreen()));
     await tester.pump(const Duration(milliseconds: 250));
-    expect(find.text('${ArenaGamesCatalog.totalCount}'), findsWidgets);
-    expect(find.text('لعبة في الصالة'), findsOneWidget);
+    expect(
+      find.text('${ArenaGamesCatalog.featuredGames.length} ألعاب مختارة'),
+      findsOneWidget,
+    );
+    expect(find.text('تجارب مختارة في الصالة'), findsOneWidget);
+    expect(find.text('اللعبة 30'), findsNothing);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(
@@ -440,9 +444,13 @@ void main() {
     await tester.tap(startBtn);
     await tester.pump(const Duration(milliseconds: 250));
     expect(find.text('المحطة 1 من ١٥'), findsOneWidget);
-    expect(tester.widget<LinearProgressIndicator>(
-      find.byType(LinearProgressIndicator).first,
-    ).value, closeTo(1 / 15, 0.001));
+    expect(
+        tester
+            .widget<LinearProgressIndicator>(
+              find.byType(LinearProgressIndicator).first,
+            )
+            .value,
+        closeTo(1 / 15, 0.001));
     final stageErr = tester.takeException();
     expect(stageErr, isNull, reason: 'Stage error: $stageErr');
 
@@ -785,17 +793,15 @@ void main() {
     expect(FontCatalog.allFonts.first.family, 'Cairo');
     expect(SettingsProvider().selectedFont, 'Cairo');
 
-    // The 56-entry backdrop registry intentionally mixes local and managed-storage assets.
+    // Every one of the 56 backdrops must be bundled so it renders offline.
     final backdrops = Arena4KStageAssets.allBackdrops;
     expect(backdrops.length, 56);
     expect(backdrops.toSet().length, 56);
-    expect(
-      backdrops.every((path) =>
-          path.startsWith('assets/') || path.startsWith('/manus-storage/')),
-      isTrue,
-    );
-    expect(backdrops.any((path) => path.startsWith('assets/')), isTrue);
-    expect(backdrops.any((path) => path.startsWith('/manus-storage/')), isTrue);
+    expect(backdrops.every((path) => path.startsWith('assets/')), isTrue);
+    for (final path in backdrops) {
+      final bytes = await rootBundle.load(path);
+      expect(bytes.lengthInBytes, greaterThan(1000), reason: path);
+    }
     for (final g in ArenaGamesCatalog.allGames) {
       final resolved = Arena4KStageAssets.backdropForGame(g, worldIndex: 0);
       expect(resolved, isNotEmpty);
@@ -810,7 +816,9 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(360, 740));
 
     final tabRequest = ValueNotifier<int?>(2);
-    await tester.pumpWidget(_wrapWithProviders(JannatiScreen(tabRequestNotifier: tabRequest), fontFamily: 'Cairo'));
+    await tester.pumpWidget(_wrapWithProviders(
+        JannatiScreen(tabRequestNotifier: tabRequest),
+        fontFamily: 'Cairo'));
     await tester.pump(const Duration(milliseconds: 300));
     expect(tester.takeException(), isNull);
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:adhan/adhan.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:islamic_prayer_app/providers/settings_provider.dart';
@@ -12,6 +13,7 @@ import 'package:islamic_prayer_app/services/prayer_reliability_labels.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() => initializeDateFormatting('ar'));
 
   group('Location reliability', () {
     test('manual selection supersedes an in-flight lookup and persists',

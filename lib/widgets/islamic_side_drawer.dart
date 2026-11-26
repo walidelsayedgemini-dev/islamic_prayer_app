@@ -145,7 +145,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                             shape: BoxShape.circle,
                             border: Border.all(color: palette.dividerColor),
                           ),
-                          child: Icon(Icons.close_rounded, color: palette.textSecondary, size: 18),
+                          child: Icon(Icons.close_rounded,
+                              color: palette.textSecondary, size: 18),
                         ),
                         onPressed: () => Navigator.of(context).pop(),
                       ),
@@ -157,7 +158,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                     child: Row(
                       children: [
                         _drawerShortcutChip(
-                          label: '🎨 الثيمات (${IslamicTheme.allThemes.length})',
+                          label:
+                              '🎨 الثيمات (${IslamicTheme.allThemes.length})',
                           icon: Icons.palette_rounded,
                           accent: accent,
                           palette: palette,
@@ -175,12 +177,14 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                             final nav = Navigator.of(context);
                             nav.pop();
                             nav.push(
-                              MaterialPageRoute(builder: (_) => const MillionaireQuizScreen()),
+                              MaterialPageRoute(
+                                  builder: (_) =>
+                                      const MillionaireQuizScreen()),
                             );
                           },
                         ),
                         _drawerShortcutChip(
-                          label: '🎮 ٣٠ لعبة',
+                          label: '🎮 صالة الألعاب',
                           icon: Icons.sports_esports_rounded,
                           accent: const Color(0xFF8B5CF6),
                           palette: palette,
@@ -188,7 +192,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                             final nav = Navigator.of(context);
                             nav.pop();
                             nav.push(
-                              MaterialPageRoute(builder: (_) => const ArenaHubScreen()),
+                              MaterialPageRoute(
+                                  builder: (_) => const ArenaHubScreen()),
                             );
                           },
                         ),
@@ -231,7 +236,9 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                             final nav = Navigator.of(context);
                             nav.pop();
                             nav.push(
-                              MaterialPageRoute(builder: (_) => const FamilyChallengeScreen()),
+                              MaterialPageRoute(
+                                  builder: (_) =>
+                                      const FamilyChallengeScreen()),
                             );
                           },
                         ),
@@ -304,7 +311,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                             final nav = Navigator.of(context);
                             nav.pop();
                             nav.push(
-                              MaterialPageRoute(builder: (_) => const IslamicStoriesScreen()),
+                              MaterialPageRoute(
+                                  builder: (_) => const IslamicStoriesScreen()),
                             );
                           },
                         ),
@@ -317,7 +325,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                             final nav = Navigator.of(context);
                             nav.pop();
                             nav.push(
-                              MaterialPageRoute(builder: (_) => const SahihHadithScreen()),
+                              MaterialPageRoute(
+                                  builder: (_) => const SahihHadithScreen()),
                             );
                           },
                         ),
@@ -340,7 +349,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                             final nav = Navigator.of(context);
                             nav.pop();
                             nav.push(
-                              MaterialPageRoute(builder: (_) => const AboutMeScreen()),
+                              MaterialPageRoute(
+                                  builder: (_) => const AboutMeScreen()),
                             );
                           },
                         ),
@@ -389,20 +399,23 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                       child: GestureDetector(
                         onTap: () {
                           setState(() => _selectedCategoryIndex = idx);
-                          if (idx == 3 && widget.onOpenQuranAzkarSheet != null) {
+                          if (idx == 3 &&
+                              widget.onOpenQuranAzkarSheet != null) {
                             Navigator.of(context).pop();
                             widget.onOpenQuranAzkarSheet!();
                           } else if (idx == 4 && widget.onOpenBooks != null) {
                             Navigator.of(context).pop();
                             widget.onOpenBooks!();
-                          } else if (idx == 5 && widget.onOpenGreetingCards != null) {
+                          } else if (idx == 5 &&
+                              widget.onOpenGreetingCards != null) {
                             Navigator.of(context).pop();
                             widget.onOpenGreetingCards!();
                           }
                         },
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 250),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(
                             color: isSel ? accent : palette.cardColor,
                             borderRadius: BorderRadius.circular(20),
@@ -423,8 +436,11 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                           child: Text(
                             _categories[idx],
                             style: TextStyle(
-                              color: isSel ? palette.onAccentColor : palette.textPrimary,
-                              fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                              color: isSel
+                                  ? palette.onAccentColor
+                                  : palette.textPrimary,
+                              fontWeight:
+                                  isSel ? FontWeight.bold : FontWeight.normal,
                               fontSize: FirdawsType.label,
                             ),
                           ),
@@ -439,10 +455,12 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
             // 3. شريط اختيار القارئ
             if (_selectedCategoryIndex == 0) ...[
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                 child: Row(
                   children: [
-                    Icon(Icons.record_voice_over_rounded, color: accent, size: 16),
+                    Icon(Icons.record_voice_over_rounded,
+                        color: accent, size: 16),
                     const SizedBox(width: 6),
                     Text(
                       "القارئ:",
@@ -481,7 +499,9 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                               );
                             }).toList(),
                             onChanged: (newReciter) {
-                              if (newReciter != null) player.selectReciter(newReciter);
+                              if (newReciter != null) {
+                                player.selectReciter(newReciter);
+                              }
                             },
                           ),
                         ),
@@ -493,18 +513,24 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
 
               // حقل البحث في السور
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 child: TextField(
                   controller: _searchController,
-                  style: TextStyle(color: palette.textPrimary, fontSize: FirdawsType.label),
+                  style: TextStyle(
+                      color: palette.textPrimary, fontSize: FirdawsType.label),
                   onChanged: (val) => setState(() => _searchQuery = val.trim()),
                   decoration: InputDecoration(
                     hintText: "ابحث عن اسم السورة أو رقمها...",
-                    hintStyle: TextStyle(color: palette.textMuted, fontSize: FirdawsType.caption),
-                    prefixIcon: Icon(Icons.search_rounded, color: accent, size: 18),
+                    hintStyle: TextStyle(
+                        color: palette.textMuted,
+                        fontSize: FirdawsType.caption),
+                    prefixIcon:
+                        Icon(Icons.search_rounded, color: accent, size: 18),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: Icon(Icons.clear, color: palette.textMuted, size: 16),
+                            icon: Icon(Icons.clear,
+                                color: palette.textMuted, size: 16),
                             onPressed: () {
                               _searchController.clear();
                               setState(() => _searchQuery = "");
@@ -514,7 +540,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                     isDense: true,
                     filled: true,
                     fillColor: palette.cardColor.withOpacity(0.75),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: BorderSide(color: palette.dividerColor),
@@ -535,7 +562,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
             if (player.errorMessage != null)
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.redAccent.withOpacity(0.14),
                   borderRadius: BorderRadius.circular(12),
@@ -543,17 +571,21 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 16),
+                    const Icon(Icons.error_outline_rounded,
+                        color: Colors.redAccent, size: 16),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         player.errorMessage!,
-                        style: TextStyle(color: palette.textPrimary, fontSize: FirdawsType.caption),
+                        style: TextStyle(
+                            color: palette.textPrimary,
+                            fontSize: FirdawsType.caption),
                       ),
                     ),
                     GestureDetector(
                       onTap: player.clearError,
-                      child: Icon(Icons.close_rounded, color: palette.textSecondary, size: 16),
+                      child: Icon(Icons.close_rounded,
+                          color: palette.textSecondary, size: 16),
                     ),
                   ],
                 ),
@@ -569,7 +601,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
     );
   }
 
-  Widget _buildCategoryContent(AudioPlayerProvider player, ThemePalette palette) {
+  Widget _buildCategoryContent(
+      AudioPlayerProvider player, ThemePalette palette) {
     if (_selectedCategoryIndex == 0) {
       return _buildQuranSurahsList(player, palette);
     } else if (_selectedCategoryIndex == 1) {
@@ -581,9 +614,11 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
     }
   }
 
-  Widget _buildQuranSurahsList(AudioPlayerProvider player, ThemePalette palette) {
+  Widget _buildQuranSurahsList(
+      AudioPlayerProvider player, ThemePalette palette) {
     final accent = palette.accentColor;
-    final offlineBadgeColor = palette.isDark ? const Color(0xFF34D399) : const Color(0xFF047857);
+    final offlineBadgeColor =
+        palette.isDark ? const Color(0xFF34D399) : const Color(0xFF047857);
     final surahs = IslamicAudioLibrary.allSurahs.where((s) {
       if (_searchQuery.isEmpty) return true;
       return s.nameArabic.contains(_searchQuery) ||
@@ -603,7 +638,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                 onTap: () {
                   final nav = Navigator.of(context);
                   nav.pop();
-                  nav.push(MaterialPageRoute(builder: (_) => const QuranReaderScreen()));
+                  nav.push(MaterialPageRoute(
+                      builder: (_) => const QuranReaderScreen()));
                 },
                 child: Firdaws4KCardShell(
                   backdrop: Background500Catalog.forExtraSection(1),
@@ -612,7 +648,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                   borderRadius: FirdawsRadius.control,
                   borderWidth: 1.4,
                   margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                   imageOpacity: 0.42,
                   child: Row(
                     children: [
@@ -622,7 +659,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                           color: accent,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(Icons.auto_stories_rounded, color: palette.onAccentColor, size: 18),
+                        child: Icon(Icons.auto_stories_rounded,
+                            color: palette.onAccentColor, size: 18),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -639,12 +677,15 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                             ),
                             Text(
                               "مراجعة Quran.com • تفسير • علامة القراءة",
-                              style: TextStyle(color: palette.textSecondary, fontSize: FirdawsType.caption),
+                              style: TextStyle(
+                                  color: palette.textSecondary,
+                                  fontSize: FirdawsType.caption),
                             ),
                           ],
                         ),
                       ),
-                      Icon(Icons.arrow_forward_ios_rounded, color: accent, size: 15),
+                      Icon(Icons.arrow_forward_ios_rounded,
+                          color: accent, size: 15),
                     ],
                   ),
                 ),
@@ -662,11 +703,13 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                     borderRadius: FirdawsRadius.control,
                     borderWidth: 1.1,
                     margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                     imageOpacity: 0.34,
                     child: Row(
                       children: [
-                        Icon(Icons.download_for_offline_rounded, color: offlineBadgeColor, size: 20),
+                        Icon(Icons.download_for_offline_rounded,
+                            color: offlineBadgeColor, size: 20),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -678,7 +721,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                             ),
                           ),
                         ),
-                        Icon(Icons.chevron_left_rounded, color: offlineBadgeColor, size: 18),
+                        Icon(Icons.chevron_left_rounded,
+                            color: offlineBadgeColor, size: 18),
                       ],
                     ),
                   ),
@@ -713,14 +757,18 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
           imageOpacity: isCurrent ? 0.38 : 0.25,
           child: ListTile(
             dense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
             leading: Container(
               width: 34,
               height: 34,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: isCurrent ? accent : palette.dividerColor),
-                color: isCurrent ? accent.withOpacity(0.2) : palette.elevatedCardColor,
+                border: Border.all(
+                    color: isCurrent ? accent : palette.dividerColor),
+                color: isCurrent
+                    ? accent.withOpacity(0.2)
+                    : palette.elevatedCardColor,
               ),
               child: Center(
                 child: Text(
@@ -755,11 +803,14 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                 ),
                 if (isOfflineReady)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                     decoration: BoxDecoration(
                       color: offlineBadgeColor.withOpacity(0.16),
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: offlineBadgeColor.withOpacity(0.5), width: 0.7),
+                      border: Border.all(
+                          color: offlineBadgeColor.withOpacity(0.5),
+                          width: 0.7),
                     ),
                     child: Text(
                       "بدون نت ✓",
@@ -778,14 +829,16 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                 IconButton(
                   constraints: const BoxConstraints(),
                   padding: const EdgeInsets.all(5),
-                  icon: Icon(Icons.auto_stories_rounded, color: accent.withOpacity(0.9), size: 19),
+                  icon: Icon(Icons.auto_stories_rounded,
+                      color: accent.withOpacity(0.9), size: 19),
                   tooltip: "قراءة السورة",
                   onPressed: () {
                     final nav = Navigator.of(context);
                     nav.pop();
                     nav.push(
                       MaterialPageRoute(
-                        builder: (_) => QuranReaderScreen(initialSurahNumber: surah.number),
+                        builder: (_) =>
+                            QuranReaderScreen(initialSurahNumber: surah.number),
                       ),
                     );
                   },
@@ -813,7 +866,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                             size: 19,
                           ),
                           tooltip: "حفظ للاستماع بدون نت",
-                          onPressed: () => player.downloadTrackForOffline(cacheKey, streamUrl),
+                          onPressed: () => player.downloadTrackForOffline(
+                              cacheKey, streamUrl),
                         ),
                 const SizedBox(width: 2),
                 GestureDetector(
@@ -843,8 +897,12 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                               ),
                             )
                           : Icon(
-                              isPlayingThis ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                              color: isPlayingThis ? palette.onAccentColor : accent,
+                              isPlayingThis
+                                  ? Icons.pause_rounded
+                                  : Icons.play_arrow_rounded,
+                              color: isPlayingThis
+                                  ? palette.onAccentColor
+                                  : accent,
                               size: 21,
                             ),
                     ),
@@ -860,7 +918,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
 
   Widget _buildRuqyahList(AudioPlayerProvider player, ThemePalette palette) {
     final accent = palette.accentColor;
-    final offlineBadgeColor = palette.isDark ? const Color(0xFF34D399) : const Color(0xFF047857);
+    final offlineBadgeColor =
+        palette.isDark ? const Color(0xFF34D399) : const Color(0xFF047857);
     const ruqyahItems = IslamicAudioLibrary.allRuqyah;
 
     return ListView.builder(
@@ -872,7 +931,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
         final isCurrent = player.currentAudioId == item.id;
         final isPlayingThis = isCurrent && player.isPlaying;
         final isLoadingThis = isCurrent && player.isLoading;
-        final isOfflineReady = player.isItemOfflineReady(item.id, item.localAsset);
+        final isOfflineReady =
+            player.isItemOfflineReady(item.id, item.localAsset);
         final downloadProg = player.downloadProgressFor(item.id);
 
         return Firdaws4KCardShell(
@@ -917,11 +977,14 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                           children: [
                             Text(
                               "${item.reciter} • ${item.duration}",
-                              style: TextStyle(color: palette.textSecondary, fontSize: FirdawsType.caption),
+                              style: TextStyle(
+                                  color: palette.textSecondary,
+                                  fontSize: FirdawsType.caption),
                             ),
                             if (isOfflineReady)
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 1),
                                 decoration: BoxDecoration(
                                   color: offlineBadgeColor.withOpacity(0.16),
                                   borderRadius: BorderRadius.circular(6),
@@ -967,8 +1030,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                               size: 20,
                             ),
                             tooltip: "تحميل للاستماع بدون نت",
-                            onPressed: () =>
-                                player.downloadTrackForOffline(item.id, item.streamUrl),
+                            onPressed: () => player.downloadTrackForOffline(
+                                item.id, item.streamUrl),
                           ),
                   GestureDetector(
                     onTap: () {
@@ -982,7 +1045,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
-                        color: isPlayingThis ? accent : accent.withOpacity(0.18),
+                        color:
+                            isPlayingThis ? accent : accent.withOpacity(0.18),
                         shape: BoxShape.circle,
                         border: Border.all(color: accent),
                       ),
@@ -997,8 +1061,12 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                                 ),
                               )
                             : Icon(
-                                isPlayingThis ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                                color: isPlayingThis ? palette.onAccentColor : accent,
+                                isPlayingThis
+                                    ? Icons.pause_rounded
+                                    : Icons.play_arrow_rounded,
+                                color: isPlayingThis
+                                    ? palette.onAccentColor
+                                    : accent,
                                 size: 22,
                               ),
                       ),
@@ -1008,7 +1076,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
               ),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: palette.elevatedCardColor,
                   borderRadius: BorderRadius.circular(10),
@@ -1016,7 +1085,9 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                 child: Text(
                   item.purpose,
                   style: TextStyle(
-                    color: palette.isDark ? const Color(0xFFE2E8F0) : palette.primaryColor,
+                    color: palette.isDark
+                        ? const Color(0xFFE2E8F0)
+                        : palette.primaryColor,
                     fontSize: FirdawsType.caption,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1031,7 +1102,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
 
   Widget _buildIbtihalatList(AudioPlayerProvider player, ThemePalette palette) {
     final accent = palette.accentColor;
-    final offlineBadgeColor = palette.isDark ? const Color(0xFF34D399) : const Color(0xFF047857);
+    final offlineBadgeColor =
+        palette.isDark ? const Color(0xFF34D399) : const Color(0xFF047857);
     const ibtihalat = IslamicAudioLibrary.allIbtihalat;
 
     return ListView.builder(
@@ -1043,7 +1115,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
         final isCurrent = player.currentAudioId == item.id;
         final isPlayingThis = isCurrent && player.isPlaying;
         final isLoadingThis = isCurrent && player.isLoading;
-        final isOfflineReady = player.isItemOfflineReady(item.id, item.localAsset);
+        final isOfflineReady =
+            player.isItemOfflineReady(item.id, item.localAsset);
         final downloadProg = player.downloadProgressFor(item.id);
 
         return Firdaws4KCardShell(
@@ -1057,7 +1130,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
           imageOpacity: isCurrent ? 0.38 : 0.26,
           child: ListTile(
             dense: true,
-            leading: Icon(Icons.music_note_rounded, color: isCurrent ? accent : palette.textSecondary),
+            leading: Icon(Icons.music_note_rounded,
+                color: isCurrent ? accent : palette.textSecondary),
             title: Text(
               item.title,
               style: TextStyle(
@@ -1072,15 +1146,20 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
               children: [
                 Text(
                   "${item.reciter} • ${item.maqam} • ${item.duration}",
-                  style: TextStyle(color: palette.textSecondary, fontSize: FirdawsType.caption),
+                  style: TextStyle(
+                      color: palette.textSecondary,
+                      fontSize: FirdawsType.caption),
                 ),
                 if (isOfflineReady)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                     decoration: BoxDecoration(
                       color: offlineBadgeColor.withOpacity(0.16),
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: offlineBadgeColor.withOpacity(0.5), width: 0.7),
+                      border: Border.all(
+                          color: offlineBadgeColor.withOpacity(0.5),
+                          width: 0.7),
                     ),
                     child: Text(
                       "بدون نت ✓",
@@ -1119,8 +1198,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                             size: 19,
                           ),
                           tooltip: "تحميل للاستماع بدون نت",
-                          onPressed: () =>
-                              player.downloadTrackForOffline(item.id, item.streamUrl),
+                          onPressed: () => player.downloadTrackForOffline(
+                              item.id, item.streamUrl),
                         ),
                 GestureDetector(
                   onTap: () {
@@ -1149,8 +1228,12 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
                               ),
                             )
                           : Icon(
-                              isPlayingThis ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                              color: isPlayingThis ? palette.onAccentColor : accent,
+                              isPlayingThis
+                                  ? Icons.pause_rounded
+                                  : Icons.play_arrow_rounded,
+                              color: isPlayingThis
+                                  ? palette.onAccentColor
+                                  : accent,
                               size: 20,
                             ),
                     ),
@@ -1171,7 +1254,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
         _buildShortcutTile(
           icon: Icons.palette_rounded,
           title: "🎨 بوابة الثيمات الموحدة (٥٢ ثيماً + ٢٠ خطاً)",
-          subtitle: "تحكم كامل في كل الألوان والوضع الليلي العصري والخطوط من مكان واحد",
+          subtitle:
+              "تحكم كامل في كل الألوان والوضع الليلي العصري والخطوط من مكان واحد",
           palette: palette,
           onTap: () {
             Navigator.of(context).pop();
@@ -1181,18 +1265,21 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
         _buildShortcutTile(
           icon: Icons.quiz_rounded,
           title: "💎 مسابقة من سيربح المليون (١٠٠٠ سؤال)",
-          subtitle: "١٥ مرحلة وسلّم المليون و٤ وسائل مساعدة ومنافسون افتراضيون ومشاركة ٢ لاعبين",
+          subtitle:
+              "١٥ مرحلة وسلّم المليون و٤ وسائل مساعدة ومنافسون افتراضيون ومشاركة ٢ لاعبين",
           palette: palette,
           onTap: () {
             final nav = Navigator.of(context);
             nav.pop();
-            nav.push(MaterialPageRoute(builder: (_) => const MillionaireQuizScreen()));
+            nav.push(MaterialPageRoute(
+                builder: (_) => const MillionaireQuizScreen()));
           },
         ),
         _buildShortcutTile(
           icon: Icons.sports_esports_rounded,
-          title: "🎮 صالة الـ ٣٠ لعبة التنافسية",
-          subtitle: "٩٠ عالماً • ٩٠ بطلاً • ٣٠ زعيماً شريراً • ٤ مستويات صعوبة • مشاركة ٢ لاعبين",
+          title: "🎮 صالة التحدّي",
+          subtitle:
+              "تجارب مختارة بعناية • مستويات صعوبة متدرجة • لعب فردي أو ثنائي",
           palette: palette,
           onTap: () {
             final nav = Navigator.of(context);
@@ -1203,12 +1290,14 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
         _buildShortcutTile(
           icon: Icons.emoji_events_rounded,
           title: "🏆 تحدي العائلة والصحبة (مين سبّح / مين بطل أكتر)",
-          subtitle: "سباق التسبيح الجماعي + لوحة الأبطال + ٨٠٠ عبارة تحفيز عند الفوز والخسارة",
+          subtitle:
+              "سباق التسبيح الجماعي + لوحة الأبطال + ٨٠٠ عبارة تحفيز عند الفوز والخسارة",
           palette: palette,
           onTap: () {
             final nav = Navigator.of(context);
             nav.pop();
-            nav.push(MaterialPageRoute(builder: (_) => const FamilyChallengeScreen()));
+            nav.push(MaterialPageRoute(
+                builder: (_) => const FamilyChallengeScreen()));
           },
         ),
         _buildShortcutTile(
@@ -1219,18 +1308,21 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
           onTap: () {
             final nav = Navigator.of(context);
             nav.pop();
-            nav.push(MaterialPageRoute(builder: (_) => const QuranReaderScreen()));
+            nav.push(
+                MaterialPageRoute(builder: (_) => const QuranReaderScreen()));
           },
         ),
         _buildShortcutTile(
           icon: Icons.history_edu_rounded,
           title: "🌙 القصص النبوية وسير الصحابة والصالحين",
-          subtitle: "٥٢ قصة موثقة بالصور والمشاهد الحية المتدرجة وربط الآيات والأحاديث",
+          subtitle:
+              "٥٢ قصة موثقة بالصور والمشاهد الحية المتدرجة وربط الآيات والأحاديث",
           palette: palette,
           onTap: () {
             final nav = Navigator.of(context);
             nav.pop();
-            nav.push(MaterialPageRoute(builder: (_) => const IslamicStoriesScreen()));
+            nav.push(MaterialPageRoute(
+                builder: (_) => const IslamicStoriesScreen()));
           },
         ),
         _buildShortcutTile(
@@ -1241,7 +1333,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
           onTap: () {
             final nav = Navigator.of(context);
             nav.pop();
-            nav.push(MaterialPageRoute(builder: (_) => const SahihHadithScreen()));
+            nav.push(
+                MaterialPageRoute(builder: (_) => const SahihHadithScreen()));
           },
         ),
         _buildShortcutTile(
@@ -1341,7 +1434,8 @@ class _IslamicSideDrawerState extends State<IslamicSideDrawer> {
               fontSize: FirdawsType.caption,
             ),
           ),
-          trailing: Icon(Icons.arrow_forward_ios_rounded, color: accent, size: 14),
+          trailing:
+              Icon(Icons.arrow_forward_ios_rounded, color: accent, size: 14),
         ),
       ),
     );

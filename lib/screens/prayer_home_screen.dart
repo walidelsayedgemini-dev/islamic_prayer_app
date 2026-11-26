@@ -62,8 +62,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
         '${twoDigits(duration.inSeconds.remainder(60))}';
   }
 
-  String _formatTime(DateTime time) =>
-      LocationClock.formatTime(time);
+  String _formatTime(DateTime time) => LocationClock.formatTime(time);
 
   Prayer? _resolvePrayerEnum(String rawKey) {
     switch (rawKey.trim().toLowerCase()) {
@@ -386,49 +385,60 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
       remaining.isNegative ? Duration.zero : remaining,
     );
     return ParadiseHero(
-      title: 'موعدك القادم مع الصلاة',
+      title: 'الصلاة القادمة',
       subtitle: '${_prayerName(prayer)} · ${_formatTime(time)}',
-      minHeight: 324,
+      minHeight: 276,
       footer: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
             width: double.infinity,
-            padding: const EdgeInsetsDirectional.fromSTEB(16, 13, 16, 13),
+            padding: const EdgeInsetsDirectional.fromSTEB(14, 11, 14, 11),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(.13),
               borderRadius: BorderRadius.circular(19),
               border: Border.all(color: Colors.white.withOpacity(.28)),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(
-                  Icons.hourglass_bottom_rounded,
-                  color: Color(0xFFE8D6A7),
-                  size: 23,
-                ),
-                const SizedBox(width: 11),
-                Expanded(
-                  child: Text(
-                    'الوقت المتبقي',
-                    softWrap: true,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.hourglass_bottom_rounded,
+                      color: Color(0xFFE8D6A7),
+                      size: 23,
                     ),
-                  ),
+                    const SizedBox(width: 11),
+                    Expanded(
+                      child: Text(
+                        'الوقت المتبقي',
+                        softWrap: true,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    countdown,
-                    textDirection: TextDirection.ltr,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
-                      fontSize: 27,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.1,
+                const SizedBox(height: 3),
+                Semantics(
+                  label: 'الوقت المتبقي لصلاة ${_prayerName(prayer)}',
+                  value: countdown,
+                  child: ExcludeSemantics(
+                    child: Text(
+                      countdown,
+                      softWrap: true,
+                      textAlign: TextAlign.center,
+                      textDirection: TextDirection.ltr,
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        color: Colors.white,
+                        fontSize: 34,
+                        height: 1.12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.1,
+                      ),
                     ),
                   ),
                 ),
@@ -437,18 +447,38 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
           ),
           if (onDetails != null) ...[
             const SizedBox(height: 8),
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: TextButton.icon(
-                onPressed: onDetails,
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(44, 44),
-                  padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 14, 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 2,
+              children: [
+                TextButton.icon(
+                  onPressed: onDetails,
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(44, 44),
+                    padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 14, 8),
+                  ),
+                  icon: const Icon(Icons.info_outline_rounded),
+                  label: const Text('تفاصيل الصلاة'),
                 ),
-                icon: const Icon(Icons.info_outline_rounded),
-                label: const Text('تفاصيل الصلاة'),
-              ),
+                TextButton.icon(
+                  onPressed: () {
+                    final today = LocationClock.now();
+                    FirdawsNavBridge.jumpTo(
+                      1,
+                      journeyTab: 0,
+                      journeyDate: DateTime(today.year, today.month, today.day),
+                    );
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(44, 44),
+                    padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 14, 8),
+                  ),
+                  icon: const Icon(Icons.fact_check_outlined),
+                  label: const Text('سجل الصلاة'),
+                ),
+              ],
             ),
           ],
         ],
@@ -477,7 +507,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     ];
 
     return ParadiseSection(
-      title: 'تتابع مواقيت اليوم',
+      title: 'مواقيت الصلاة اليوم',
       child: CalmCard(
         padding: const EdgeInsetsDirectional.fromSTEB(12, 16, 12, 15),
         child: Column(
@@ -580,132 +610,104 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     final status = isCurrent
         ? 'الآن'
         : isUpcoming
-            ? 'الصلاة القادمة'
+            ? 'التالية'
             : isPast
                 ? 'سبق موعدها'
                 : null;
+    final radius = BorderRadius.circular(FirdawsRadius.control);
 
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SizedBox(
-            width: 34,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                if (!isLast)
-                  PositionedDirectional(
-                    start: 16,
-                    top: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 2,
-                      color: scheme.outlineVariant.withOpacity(.85),
-                    ),
-                  ),
-                Container(
-                  width: 15,
-                  height: 15,
-                  decoration: BoxDecoration(
-                    color: highlighted ? scheme.primary : scheme.surface,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color:
-                          highlighted ? scheme.primary : scheme.outlineVariant,
-                      width: 2.5,
-                    ),
-                    boxShadow: highlighted
-                        ? [
-                            BoxShadow(
-                              color: scheme.primary.withOpacity(.18),
-                              blurRadius: 9,
-                              spreadRadius: 2,
-                            ),
-                          ]
-                        : const [],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: onTap,
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  margin: const EdgeInsets.symmetric(vertical: 3),
-                  padding: const EdgeInsetsDirectional.fromSTEB(13, 12, 11, 12),
-                  decoration: BoxDecoration(
-                    color: highlighted
-                        ? Color.lerp(
-                            scheme.primaryContainer, scheme.surface, .4)
-                        : scheme.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: highlighted
-                          ? scheme.primary.withOpacity(.25)
-                          : scheme.outlineVariant.withOpacity(.52),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              name,
-                              softWrap: true,
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: highlighted
-                                    ? FontWeight.w700
-                                    : FontWeight.w600,
-                              ),
-                            ),
-                            if (status != null) ...[
-                              const SizedBox(height: 3),
-                              Text(
-                                status,
-                                softWrap: true,
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: scheme.primary,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ],
+    return Column(
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: radius,
+            child: AnimatedContainer(
+              duration: MediaQuery.of(context).disableAnimations
+                  ? Duration.zero
+                  : const Duration(milliseconds: 180),
+              constraints: const BoxConstraints(minHeight: 56),
+              padding: const EdgeInsetsDirectional.fromSTEB(12, 8, 12, 8),
+              decoration: BoxDecoration(
+                color: isUpcoming
+                    ? scheme.primary.withOpacity(.105)
+                    : isCurrent
+                        ? scheme.primary.withOpacity(.065)
+                        : Colors.transparent,
+                borderRadius: radius,
+                border: highlighted
+                    ? Border.all(
+                        color: scheme.primary.withOpacity(
+                          isUpcoming ? .34 : .16,
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        width: 91,
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: AlignmentDirectional.centerEnd,
-                          child: Text(
-                            _formatTime(time),
-                            textDirection: TextDirection.ltr,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              color: highlighted ? scheme.primary : null,
-                              fontWeight: highlighted
-                                  ? FontWeight.w700
-                                  : FontWeight.w600,
-                            ),
+                        width: isUpcoming ? 1.4 : 1,
+                      )
+                    : null,
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 3,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: highlighted
+                          ? scheme.primary
+                          : scheme.outlineVariant.withOpacity(.75),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          name,
+                          softWrap: true,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight:
+                                highlighted ? FontWeight.w700 : FontWeight.w600,
                           ),
                         ),
-                      ),
-                    ],
+                        if (status != null) ...[
+                          const SizedBox(height: 1),
+                          Text(
+                            status,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: scheme.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Text(
+                    _formatTime(time),
+                    textDirection: TextDirection.ltr,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: highlighted ? scheme.primary : null,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-        ],
-      ),
+        ),
+        if (!isLast)
+          Padding(
+            padding: const EdgeInsetsDirectional.only(start: 28),
+            child: Divider(
+              height: 1,
+              thickness: 1,
+              color: scheme.outlineVariant.withOpacity(.58),
+            ),
+          ),
+      ],
     );
   }
 
@@ -802,8 +804,8 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
       ),
       _HomeShortcut(
         icon: Icons.sports_esports_outlined,
-        title: 'الألعاب والرحلات',
-        subtitle: 'استكشف ٣٠ لعبة',
+        title: 'صالة الألعاب',
+        subtitle: 'تجارب مختارة بعناية',
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const ArenaHubScreen()),
         ),
@@ -822,6 +824,7 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
           const spacing = 12.0;
           final itemWidth =
               (constraints.maxWidth - spacing * (columns - 1)) / columns;
+          final compact = columns > 1 && itemWidth < 230;
           return Wrap(
             spacing: spacing,
             runSpacing: spacing,
@@ -829,7 +832,11 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
               for (final shortcut in shortcuts)
                 SizedBox(
                   width: itemWidth,
-                  child: _buildShortcutPortal(theme, shortcut),
+                  child: _buildShortcutPortal(
+                    theme,
+                    shortcut,
+                    compact: compact,
+                  ),
                 ),
             ],
           );
@@ -838,59 +845,94 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
     );
   }
 
-  Widget _buildShortcutPortal(ThemeData theme, _HomeShortcut shortcut) {
+  Widget _buildShortcutPortal(
+    ThemeData theme,
+    _HomeShortcut shortcut, {
+    bool compact = false,
+  }) {
     final scheme = theme.colorScheme;
+    final titleText = Text(
+      shortcut.title,
+      softWrap: true,
+      maxLines: compact ? 1 : null,
+      overflow: compact ? TextOverflow.ellipsis : null,
+      style: theme.textTheme.titleSmall?.copyWith(
+        fontWeight: FontWeight.w700,
+        height: 1.3,
+      ),
+    );
+    final subtitleText = Text(
+      shortcut.subtitle,
+      softWrap: true,
+      maxLines: compact ? 1 : 2,
+      overflow: TextOverflow.ellipsis,
+      style: theme.textTheme.bodySmall?.copyWith(
+        color: scheme.onSurfaceVariant,
+        height: 1.35,
+      ),
+    );
     return Semantics(
       button: true,
       label: '${shortcut.title}، ${shortcut.subtitle}',
       child: Material(
         color: scheme.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(25),
-          side: BorderSide(color: const Color(0xFFB99C64).withOpacity(.42)),
+          borderRadius: BorderRadius.circular(FirdawsRadius.card),
+          side: BorderSide(color: scheme.outlineVariant.withOpacity(.72)),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: shortcut.onTap,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 147),
+            constraints: BoxConstraints(minHeight: compact ? 116 : 104),
             child: Padding(
-              padding: const EdgeInsets.all(15),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      CalmIconBadge(shortcut.icon, size: 43),
-                      const Spacer(),
-                      Icon(
-                        Icons.north_west_rounded,
-                        color: scheme.primary.withOpacity(.75),
-                        size: 19,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 13),
-                  Text(
-                    shortcut.title,
-                    softWrap: true,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      height: 1.3,
+              padding: const EdgeInsetsDirectional.fromSTEB(14, 14, 14, 13),
+              child: compact
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            CalmIconBadge(shortcut.icon, size: 40),
+                            const Spacer(),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              color: scheme.primary.withOpacity(.72),
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        titleText,
+                        const SizedBox(height: 2),
+                        subtitleText,
+                      ],
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        CalmIconBadge(shortcut.icon, size: 42),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              titleText,
+                              const SizedBox(height: 3),
+                              subtitleText,
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Icon(
+                          Icons.chevron_left_rounded,
+                          color: scheme.onSurfaceVariant,
+                          size: 19,
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    shortcut.subtitle,
-                    softWrap: true,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
         ),
@@ -1110,11 +1152,49 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '$dateLabel  ·  $hijriLabel',
+                  dateLabel,
                   softWrap: true,
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                     height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Semantics(
+                  label: 'التاريخ الهجري: $hijriLabel',
+                  excludeSemantics: true,
+                  child: Container(
+                    padding: const EdgeInsetsDirectional.fromSTEB(9, 4, 11, 4),
+                    decoration: BoxDecoration(
+                      color:
+                          theme.colorScheme.primaryContainer.withOpacity(.62),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: theme.colorScheme.primary.withOpacity(.18),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.nightlight_round,
+                          size: 14,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            _toArabicIndicDigits(hijriLabel),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.onPrimaryContainer,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -1124,6 +1204,14 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
           ...actions,
         ],
       ),
+    );
+  }
+
+  static String _toArabicIndicDigits(String value) {
+    const digits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    return value.replaceAllMapped(
+      RegExp(r'[0-9]'),
+      (match) => digits[int.parse(match.group(0)!)],
     );
   }
 
@@ -1213,7 +1301,8 @@ class _PrayerHomeScreenState extends State<PrayerHomeScreen> {
         },
         itemBuilder: (context) => [
           _menuItem('location', Icons.my_location_rounded, 'تحديث الموقع'),
-          _menuItem('settings', Icons.settings_outlined, 'إعدادات الموقع'),
+          _menuItem(
+              'settings', Icons.settings_outlined, 'إعدادات الأذان والموقع'),
           _menuItem(
             'brightness',
             isNight ? Icons.light_mode_outlined : Icons.dark_mode_outlined,

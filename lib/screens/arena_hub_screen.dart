@@ -31,11 +31,19 @@ class ArenaHubScreen extends StatefulWidget {
 }
 
 class _ArenaHubScreenState extends State<ArenaHubScreen> {
+  static const _initialVisibleGameCount = 4;
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = '';
   String _selectedCategory = 'الكل';
   ArenaEngineType? _selectedEngine;
+  bool _showAllGames = false;
   late ArenaPlayMode _preferredMode;
+  late final List<ArenaEngineType> _featuredEngineTypes = ArenaGamesCatalog
+      .featuredGames
+      .map((destination) => destination.definition?.engineType)
+      .whereType<ArenaEngineType>()
+      .toSet()
+      .toList(growable: false);
 
   @override
   void initState() {
@@ -61,22 +69,30 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
       .replaceAll('٨', '8')
       .replaceAll('٩', '9');
 
-  List<ArenaGameDefinition> get _filteredGames {
+  List<ArenaFeaturedGame> get _filteredGames {
     final q = _normalizeDigits(_searchQuery.trim());
-    return ArenaGamesCatalog.allGames.where((game) {
-      if (_selectedCategory != 'الكل' && game.category != _selectedCategory) {
+    return ArenaGamesCatalog.featuredGames.where((destination) {
+      final game = destination.definition;
+      if (_selectedCategory != 'الكل' &&
+          destination.category != _selectedCategory) {
         return false;
       }
-      if (_selectedEngine != null && game.engineType != _selectedEngine) {
+      if (_selectedEngine != null && game?.engineType != _selectedEngine) {
         return false;
       }
       if (q.isEmpty) return true;
-      return game.title.contains(q) ||
-          game.story.contains(q) ||
-          game.category.contains(q) ||
-          game.villain.name.contains(q) ||
-          '${game.number}' == q;
+      return destination.title.contains(q) ||
+          destination.story.contains(q) ||
+          destination.category.contains(q) ||
+          (game != null &&
+              (game.villain.name.contains(q) || '${game.number}' == q));
     }).toList();
+  }
+
+  List<ArenaFeaturedGame> get _visibleGames {
+    final games = _filteredGames;
+    if (_hasActiveFilters || _showAllGames) return games;
+    return games.take(_initialVisibleGameCount).toList(growable: false);
   }
 
   void _openGame(ArenaGameDefinition game) {
@@ -92,9 +108,19 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
   }
 
   void _openRandomGame() {
-    final games =
-        _filteredGames.isEmpty ? ArenaGamesCatalog.allGames : _filteredGames;
-    _openGame(games[math.Random().nextInt(games.length)]);
+    final games = _filteredGames.isEmpty
+        ? ArenaGamesCatalog.featuredGames
+        : _filteredGames;
+    _openFeaturedGame(games[math.Random().nextInt(games.length)]);
+  }
+
+  void _openFeaturedGame(ArenaFeaturedGame destination) {
+    final game = destination.definition;
+    if (game != null) {
+      _openGame(game);
+    } else {
+      _openScreen(const MillionaireQuizScreen());
+    }
   }
 
   void _openScreen(Widget screen) {
@@ -109,14 +135,19 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
       _searchCtrl.clear();
       _selectedCategory = 'الكل';
       _selectedEngine = null;
+      _showAllGames = true;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final games = _filteredGames;
-    final categories = ['الكل', ...ArenaGamesCatalog.categories];
+    final filteredGames = _filteredGames;
+    final games = _visibleGames;
+    final categories = [
+      'الكل',
+      ...ArenaGamesCatalog.featuredGames.map((game) => game.category).toSet(),
+    ];
     HasanatProvider? hasanat;
     try {
       hasanat = Provider.of<HasanatProvider>(context);
@@ -126,7 +157,6 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
 
     return CalmPage(
       title: 'صالة التحدّي',
-      subtitle: 'ثلاثون لعبة، ومساحة تختار فيها كيف تبدأ.',
       scroll: false,
       actions: [
         IconButton(
@@ -136,14 +166,15 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
         ),
       ],
       child: CustomScrollView(
+        key: const ValueKey('arena-hub-scroll-view'),
         slivers: [
           SliverToBoxAdapter(
             child: ParadiseHero(
               title: 'اختر بوابتك إلى التحدّي',
               subtitle:
-                  'تصفّح عوالم الألعاب، حدّد طريقتك، ثم ادخل الجولة من اختيارك.',
+                  'تصفّح الألعاب المختارة، حدّد طريقتك، ثم ابدأ التجربة التي تناسبك.',
               imageAsset: Arena4KStageAssets.backdropForGame(
-                ArenaGamesCatalog.allGames.first,
+                ArenaGamesCatalog.byId('game_06'),
               ),
               minHeight: 260,
               footer: Wrap(
@@ -167,11 +198,12 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
                   ),
                   _HeroFact(
                     icon: Icons.sports_esports_outlined,
-                    label: '${ArenaGamesCatalog.totalCount} لعبة',
+                    label:
+                        '${ArenaGamesCatalog.featuredGames.length} ألعاب مختارة',
                   ),
                   _HeroFact(
                     icon: Icons.view_module_outlined,
-                    label: '${ArenaEngineType.values.length} محركات',
+                    label: '${_featuredEngineTypes.length} محركات مختارة',
                   ),
                 ],
               ),
@@ -195,7 +227,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
           SliverToBoxAdapter(
             child: ParadiseSection(
-              title: 'كل الألعاب',
+              title: 'الألعاب المختارة',
               action: TextButton.icon(
                 onPressed: _openRandomGame,
                 icon: const Icon(Icons.shuffle_rounded, size: 19),
@@ -208,11 +240,33 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   _ResultCount(count: games.length),
+                  if (!_hasActiveFilters &&
+                      ArenaGamesCatalog.featuredGames.length >
+                          _initialVisibleGameCount)
+                    TextButton.icon(
+                      key: const ValueKey('arena-games-expansion-toggle'),
+                      onPressed: () =>
+                          setState(() => _showAllGames = !_showAllGames),
+                      icon: Icon(
+                        _showAllGames
+                            ? Icons.expand_less_rounded
+                            : Icons.expand_more_rounded,
+                        size: 19,
+                      ),
+                      label: Text(
+                        _showAllGames
+                            ? 'إخفاء بقية المختارات'
+                            : 'عرض بقية المختارات (${filteredGames.length - games.length})',
+                      ),
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(44, 44),
+                      ),
+                    ),
                   if (_hasActiveFilters)
                     TextButton.icon(
                       onPressed: _clearFilters,
                       icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
-                      label: const Text('إظهار الألعاب الثلاثين'),
+                      label: const Text('إظهار التجارب الست المختارة'),
                       style: TextButton.styleFrom(
                         minimumSize: const Size(44, 44),
                       ),
@@ -244,7 +298,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
     );
   }
 
-  Widget _buildGameRowsSliver(List<ArenaGameDefinition> games) {
+  Widget _buildGameRowsSliver(List<ArenaFeaturedGame> games) {
     return SliverLayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.crossAxisExtent;
@@ -272,7 +326,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
                       if (column > 0) const SizedBox(width: gap),
                       Expanded(
                         child: column < rowGames.length
-                            ? _buildGameCard(context, rowGames[column])
+                            ? _buildFeaturedGameCard(context, rowGames[column])
                             : const SizedBox.shrink(),
                       ),
                     ],
@@ -306,16 +360,16 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
             SizedBox(
               width: tileWidth,
               child: ParadiseMetric(
-                value: '${ArenaGamesCatalog.totalCount}',
-                label: 'لعبة في الصالة',
+                value: '${ArenaGamesCatalog.featuredGames.length}',
+                label: 'تجارب مختارة في الصالة',
                 icon: Icons.sports_esports_outlined,
               ),
             ),
             SizedBox(
               width: tileWidth,
               child: ParadiseMetric(
-                value: '${ArenaEngineType.values.length}',
-                label: 'أنماط لعب مختلفة',
+                value: '${_featuredEngineTypes.length}',
+                label: 'محركات في الألعاب المختارة',
                 icon: Icons.hub_outlined,
               ),
             ),
@@ -557,13 +611,13 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: scheme.surface,
-          borderRadius: BorderRadius.circular(25),
-          border: Border.all(color: const Color(0xFFB99C64).withOpacity(.42)),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: scheme.outlineVariant.withOpacity(.78)),
           boxShadow: [
             BoxShadow(
-              color: scheme.primary.withOpacity(.045),
-              blurRadius: 18,
-              offset: const Offset(0, 6),
+              color: scheme.primary.withOpacity(.025),
+              blurRadius: 13,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -575,7 +629,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
               onChanged: (value) => setState(() => _searchQuery = value),
               textInputAction: TextInputAction.search,
               decoration: InputDecoration(
-                hintText: 'اسم اللعبة أو قصتها أو الزعيم أو رقمها',
+                hintText: 'اسم التجربة أو قصتها أو الفئة أو رقم اللعبة',
                 prefixIcon: const Icon(Icons.search_rounded),
                 suffixIcon: _searchQuery.isEmpty
                     ? null
@@ -605,7 +659,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
             const SizedBox(height: 18),
             _FilterShelf(
               title: 'الفئة',
-              description: 'استكشف حسب نوع التجربة.',
+              description: 'استكشف الألعاب المختارة حسب نوع التجربة.',
               children: [
                 for (final category in categories)
                   ParadiseChip(
@@ -619,7 +673,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
             const SizedBox(height: 16),
             _FilterShelf(
               title: 'محرك اللعب',
-              description: 'كل الألعاب تبقى متاحة عبر المرشحات.',
+              description: 'تصفّح محركات الألعاب المختارة.',
               children: [
                 ParadiseChip(
                   label: 'كل المحركات',
@@ -627,7 +681,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
                   selected: _selectedEngine == null,
                   onTap: () => setState(() => _selectedEngine = null),
                 ),
-                for (final engine in ArenaEngineType.values)
+                for (final engine in _featuredEngineTypes)
                   ParadiseChip(
                     label: engine.arabicLabel,
                     icon: engine.icon,
@@ -665,9 +719,126 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
           FilledButton.icon(
             onPressed: _clearFilters,
             icon: const Icon(Icons.restart_alt_rounded),
-            label: const Text('عرض الألعاب الثلاثين'),
+            label: const Text('عرض التجارب الست المختارة'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFeaturedGameCard(
+    BuildContext context,
+    ArenaFeaturedGame destination,
+  ) {
+    final game = destination.definition;
+    if (game != null) return _buildGameCard(context, game);
+
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final radius = BorderRadius.circular(20);
+    return Material(
+      color: scheme.surface,
+      borderRadius: radius,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _openFeaturedGame(destination),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: radius,
+            border: Border.all(color: scheme.outlineVariant.withOpacity(.76)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AspectRatio(
+                aspectRatio: 1.82,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: AlignmentDirectional.topStart,
+                          end: AlignmentDirectional.bottomEnd,
+                          colors: [
+                            Color(0xFF713F12),
+                            Color(0xFFB7791F),
+                            Color(0xFF18382D),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Center(
+                      child: Icon(
+                        Icons.quiz_outlined,
+                        size: 62,
+                        color: Colors.white.withOpacity(.9),
+                      ),
+                    ),
+                    const PositionedDirectional(
+                      top: 11,
+                      start: 11,
+                      child: _GameTag(
+                        label: 'المليونير الإسلامي',
+                        foreground: Color(0xFF17382D),
+                        background: Color(0xFFF6EACD),
+                        icon: Icons.workspace_premium_outlined,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 15, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _GameTag(
+                      label: destination.category,
+                      foreground: scheme.onPrimaryContainer,
+                      background: scheme.primaryContainer,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      destination.title,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        height: 1.25,
+                        color: scheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Text(
+                      destination.story,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: () => _openFeaturedGame(destination),
+                        icon: const Icon(Icons.play_arrow_rounded),
+                        label: const Text('ابدأ مسابقة المليونير'),
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(44, 48),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -676,7 +847,7 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final coverAsset = Arena4KStageAssets.backdropForGame(game);
-    final radius = BorderRadius.circular(25);
+    final radius = BorderRadius.circular(20);
     return Material(
       color: scheme.surface,
       borderRadius: radius,
@@ -686,12 +857,12 @@ class _ArenaHubScreenState extends State<ArenaHubScreen> {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: radius,
-            border: Border.all(color: const Color(0xFFB99C64).withOpacity(.4)),
+            border: Border.all(color: scheme.outlineVariant.withOpacity(.76)),
             boxShadow: [
               BoxShadow(
-                color: scheme.primary.withOpacity(.05),
-                blurRadius: 18,
-                offset: const Offset(0, 7),
+                color: scheme.primary.withOpacity(.03),
+                blurRadius: 13,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -914,7 +1085,7 @@ class _QuickPortalCard extends StatelessWidget {
     final scheme = theme.colorScheme;
     return Material(
       color: scheme.surface,
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: link.onTap,
@@ -922,42 +1093,67 @@ class _QuickPortalCard extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 104),
           padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: const Color(0xFFB99C64).withOpacity(.4)),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: scheme.outlineVariant.withOpacity(.76)),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 200;
+              final badge = Container(
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
                   color: scheme.primaryContainer,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: const Color(0xFFB99C64).withOpacity(.28),
+                    color: scheme.outlineVariant.withOpacity(.7),
                   ),
                 ),
                 child: Icon(link.icon, color: scheme.onPrimaryContainer),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  link.label,
-                  softWrap: true,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    height: 1.35,
-                  ),
+              );
+              final label = Text(
+                link.label,
+                softWrap: true,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  height: 1.35,
                 ),
-              ),
-              const SizedBox(width: 5),
-              Icon(
-                Icons.arrow_back_ios_new_rounded,
-                size: 16,
+              );
+              final arrow = Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 15,
                 color: scheme.primary,
-              ),
-            ],
+              );
+              if (compact) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        badge,
+                        const Spacer(),
+                        arrow,
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    label,
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  badge,
+                  const SizedBox(width: 12),
+                  Expanded(child: label),
+                  const SizedBox(width: 5),
+                  arrow,
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -1024,7 +1220,7 @@ class _ModeCard extends StatelessWidget {
       selected: selected,
       child: Material(
         color: selected ? scheme.primaryContainer : scheme.surface,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(20),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
@@ -1032,10 +1228,10 @@ class _ModeCard extends StatelessWidget {
             constraints: const BoxConstraints(minHeight: 112),
             padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: selected
-                    ? const Color(0xFFB99C64)
+                    ? scheme.primary.withOpacity(.46)
                     : outline.withOpacity(.8),
                 width: selected ? 1.5 : 1,
               ),
@@ -1159,10 +1355,10 @@ class _ResultCount extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.primaryContainer,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: const Color(0xFFB99C64).withOpacity(.36)),
+        border: Border.all(color: scheme.outlineVariant.withOpacity(.72)),
       ),
       child: Text(
-        '$count من ${ArenaGamesCatalog.totalCount} لعبة',
+        '$count من ${ArenaGamesCatalog.featuredGames.length} تجارب مختارة',
         softWrap: true,
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
               color: scheme.onPrimaryContainer,

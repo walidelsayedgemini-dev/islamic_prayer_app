@@ -4,7 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FirdawsNativeService {
-  static final FirdawsNativeService _instance = FirdawsNativeService._internal();
+  static final FirdawsNativeService _instance =
+      FirdawsNativeService._internal();
   factory FirdawsNativeService() => _instance;
   FirdawsNativeService._internal();
 
@@ -13,10 +14,12 @@ class FirdawsNativeService {
 
   bool _initialized = false;
 
-  void Function(String voiceId, String prayerName)? onOpenAdhanScreen;
+  void Function(String voiceId, String prayerName, int volumePercent)?
+      onOpenAdhanScreen;
   void Function(bool isRinging, String voiceId, String prayerName)?
       onAdhanStateChanged;
   VoidCallback? onVolumeUpPressed;
+  VoidCallback? onAdhanPlaybackCompleted;
   VoidCallback? onShowInAppSalawatPreview;
 
   bool get isAndroid =>
@@ -31,7 +34,8 @@ class FirdawsNativeService {
           final args = (call.arguments as Map?) ?? const {};
           final voiceId = args['voiceId']?.toString() ?? 'madinah';
           final prayerName = args['prayerName']?.toString() ?? 'موعد الصلاة';
-          onOpenAdhanScreen?.call(voiceId, prayerName);
+          final volumePercent = (args['volumePercent'] as num?)?.toInt() ?? 100;
+          onOpenAdhanScreen?.call(voiceId, prayerName, volumePercent);
           break;
         case 'onAdhanStateChanged':
           final args = (call.arguments as Map?) ?? const {};
@@ -39,6 +43,9 @@ class FirdawsNativeService {
           final voiceId = args['voiceId']?.toString() ?? 'madinah';
           final prayerName = args['prayerName']?.toString() ?? 'موعد الصلاة';
           onAdhanStateChanged?.call(isRinging, voiceId, prayerName);
+          break;
+        case 'onAdhanPlaybackCompleted':
+          onAdhanPlaybackCompleted?.call();
           break;
         case 'onVolumeUpPressed':
           onVolumeUpPressed?.call();
@@ -50,12 +57,16 @@ class FirdawsNativeService {
   Future<bool> startAdhanAlarm({
     required String voiceId,
     required String prayerName,
+    int volumePercent = 100,
+    bool forceRestart = false,
   }) async {
     if (!isAndroid) return false;
     try {
       await _channel.invokeMethod('startAdhanAlarm', {
         'voiceId': voiceId,
         'prayerName': prayerName,
+        'volumePercent': volumePercent.clamp(0, 100),
+        'forceRestart': forceRestart,
       });
       return true;
     } catch (e) {
@@ -80,7 +91,8 @@ class FirdawsNativeService {
       return const {'isRinging': false, 'voiceId': 'madinah', 'prayerName': ''};
     }
     try {
-      final res = await _channel.invokeMapMethod<String, dynamic>('isAdhanRinging');
+      final res =
+          await _channel.invokeMapMethod<String, dynamic>('isAdhanRinging');
       return res ?? const {'isRinging': false};
     } catch (_) {
       return const {'isRinging': false};
@@ -98,6 +110,58 @@ class FirdawsNativeService {
     }
   }
 
+  Future<void> updatePrayerWidget({
+    required String cityName,
+    required String prayerName,
+    required int prayerTimeMillis,
+    required String prayerTimeLabel,
+    required List<Map<String, dynamic>> prayers,
+  }) async {
+    if (!isAndroid) return;
+    try {
+      await _channel.invokeMethod('updatePrayerWidget', {
+        'cityName': cityName,
+        'prayerName': prayerName,
+        'prayerTimeMillis': prayerTimeMillis,
+        'prayerTimeLabel': prayerTimeLabel,
+        'prayers': prayers,
+      });
+    } catch (error) {
+      debugPrint('Native updatePrayerWidget error: $error');
+    }
+  }
+
+  Future<bool> scheduleTestAdhan({
+    required String voiceId,
+    required String prayerName,
+    required String mode,
+    required int volumePercent,
+  }) async {
+    if (!isAndroid) return false;
+    try {
+      return await _channel.invokeMethod<bool>('scheduleTestAdhan', {
+            'voiceId': voiceId,
+            'prayerName': prayerName,
+            'mode': mode,
+            'volumePercent': volumePercent,
+          }) ??
+          false;
+    } catch (error) {
+      debugPrint('Native scheduleTestAdhan error: $error');
+      return false;
+    }
+  }
+
+  Future<bool> cancelTestAdhan() async {
+    if (!isAndroid) return false;
+    try {
+      return await _channel.invokeMethod<bool>('cancelTestAdhan') ?? false;
+    } catch (error) {
+      debugPrint('Native cancelTestAdhan error: $error');
+      return false;
+    }
+  }
+
   Future<Map<String, dynamic>> getAdhanDiagnostics() async {
     if (!isAndroid) {
       return const {
@@ -109,8 +173,8 @@ class FirdawsNativeService {
       };
     }
     try {
-      final res =
-          await _channel.invokeMapMethod<String, dynamic>('getAdhanDiagnostics');
+      final res = await _channel
+          .invokeMapMethod<String, dynamic>('getAdhanDiagnostics');
       return res ?? const {};
     } catch (_) {
       return const {};

@@ -34,8 +34,8 @@ class CalmPage extends StatelessWidget {
               builder: (context, constraints) {
                 final compact = constraints.maxWidth < 420;
                 final horizontal = compact ? 16.0 : 24.0;
-                final contentPadding =
-                    padding ?? EdgeInsets.fromLTRB(horizontal, 8, horizontal, 32);
+                final contentPadding = padding ??
+                    EdgeInsets.fromLTRB(horizontal, 8, horizontal, 32);
                 return Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 1160),
@@ -269,21 +269,14 @@ class CalmCard extends StatelessWidget {
         color: color ?? scheme.surface,
         borderRadius: radius,
         border: border
-            ? Border.all(
-                color: const Color(0xFFB99C64).withOpacity(
-                    theme.brightness == Brightness.dark ? .34 : .39))
+            ? Border.all(color: scheme.outlineVariant.withOpacity(.82))
             : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(
-                theme.brightness == Brightness.dark ? .14 : .045),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-          BoxShadow(
-            color: scheme.primary.withOpacity(.035),
-            blurRadius: 22,
-            offset: const Offset(0, 2),
+            color: Colors.black
+                .withOpacity(theme.brightness == Brightness.dark ? .10 : .028),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -381,17 +374,16 @@ class CalmIconBadge extends StatelessWidget {
           ],
         ),
         borderRadius: BorderRadius.circular(size * .34),
-        border: Border.all(color: const Color(0xFFB99C64).withOpacity(.32)),
+        border: Border.all(color: scheme.outlineVariant.withOpacity(.72)),
         boxShadow: [
           BoxShadow(
-            color: scheme.primary.withOpacity(.10),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: scheme.primary.withOpacity(.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: Icon(icon,
-          size: size * .49, color: scheme.onPrimaryContainer),
+      child: Icon(icon, size: size * .49, color: scheme.onPrimaryContainer),
     );
   }
 }

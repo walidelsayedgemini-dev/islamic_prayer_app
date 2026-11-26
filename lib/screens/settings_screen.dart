@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:provider/provider.dart';
 
+import '../models/adhan_skin_catalog.dart';
 import '../models/font_catalog.dart';
+import '../models/prayer_alarm_preference.dart';
+import '../models/prayer_model.dart';
 import '../providers/firdaws_user_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/reminder_preferences_provider.dart';
@@ -12,6 +15,7 @@ import '../widgets/reminder_settings_section.dart';
 import '../services/firdaws_native_service.dart';
 import '../services/notification_capabilities.dart';
 import '../services/notification_service.dart';
+import '../services/prayer_reliability_labels.dart';
 import '../theme/islamic_theme.dart';
 import '../widgets/audio_download_manager_sheet.dart';
 import '../widgets/calm_ui.dart';
@@ -21,6 +25,7 @@ import '../widgets/paradise_ui.dart';
 import '../widgets/unified_theme_hub.dart';
 import '../widgets/user_profile_editor_sheet.dart';
 import 'adhan_alarm_screen.dart';
+import 'adhan_skin_gallery_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen(
@@ -37,6 +42,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   Map<String, dynamic> _adhanDiag = const {};
   bool _isLoadingDiagnostics = true;
+  bool _testAlarmScheduled = false;
   String? _diagnosticsError;
 
   NotificationPlatformCapabilities get _notificationCapabilities =>
@@ -44,6 +50,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       NotificationPlatformCapabilities.forTarget(
         isWeb: kIsWeb,
         targetPlatform: defaultTargetPlatform,
+      );
+
+  String _arabicDigits(int value) => value.toString().replaceAllMapped(
+        RegExp(r'\d'),
+        (match) => '٠١٢٣٤٥٦٧٨٩'[int.parse(match.group(0)!)],
       );
 
   @override
@@ -102,6 +113,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Future<void> _scheduleTestAdhan(SettingsProvider settings) async {
+    final now = DateTime.now();
+    final times = AdvancedPrayerTimes.calculate(
+      latitude: settings.latitude,
+      longitude: settings.longitude,
+      method: settings.calculationMethod,
+      madhab: settings.madhab,
+      offsets: settings.offsets,
+    ).prayerTimes;
+    final upcoming = <DateTime>[
+      times.fajr,
+      times.dhuhr,
+      times.asr,
+      times.maghrib,
+      times.isha,
+    ].where((time) => time.isAfter(now));
+    if (upcoming
+        .any((time) => time.difference(now) < const Duration(minutes: 5))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'قرب موعد الصلاة؛ أرجّل الاختبار حتى لا يتداخل مع الأذان الحقيقي.'),
+        ),
+      );
+      return;
+    }
+    final scheduled = await FirdawsNativeService().scheduleTestAdhan(
+      voiceId: settings.adhanVoice,
+      prayerName: 'اختبار الأذان',
+      mode: PrayerAlarmMode.adhan.name,
+      volumePercent: 100,
+    );
+    if (!mounted) return;
+    setState(() => _testAlarmScheduled = scheduled);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          scheduled
+              ? 'تمت جدولة اختبار أذان بعد دقيقة. قد يتأخر إذا منع الجهاز المنبه الدقيق.'
+              : 'تعذر جدولة الاختبار؛ راجع صلاحية المنبه الدقيق وحالة التنبيهات.',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _cancelTestAdhan() async {
+    final cancelled = await FirdawsNativeService().cancelTestAdhan();
+    if (!mounted) return;
+    setState(() => _testAlarmScheduled = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+            cancelled ? 'تم إلغاء اختبار الأذان.' : 'تعذر إلغاء الاختبار.'),
+      ),
+    );
+  }
+
   Future<void> _refreshLocation(SettingsProvider settings) async {
     final result = await settings.refreshCurrentLocation();
     if (!mounted) return;
@@ -132,6 +200,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     if (!mounted || city == null) return;
     settings.setManualLocation(city.latitude, city.longitude, city.name);
+  }
+
+  Future<void> _showAdhanSkinGallery(SettingsProvider settings) async {
+    final skinId = await Navigator.of(context).push<String>(
+      MaterialPageRoute<String>(
+        builder: (_) => AdhanSkinGalleryScreen(
+          selectedSkinId: settings.adhanSkinId,
+        ),
+      ),
+    );
+    if (!mounted || skinId == null) return;
+    settings.setAdhanSkin(skinId);
   }
 
   void _showFontPicker(SettingsProvider settings) {
@@ -194,12 +274,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       subtitle: 'اختر مظهرك، واضبط الموقع والتنبيهات بما يلائم يومك.',
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final wide = constraints.maxWidth >= 850;
+          final textScale = MediaQuery.textScalerOf(context).scale(1);
+          final wide = constraints.maxWidth >= 850 && textScale <= 1.2;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildThemeStudio(context, settings, currentFont),
-              const SizedBox(height: 28),
+              _buildSectionDivider(context),
               if (wide)
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,12 +295,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 26),
                 _buildPrayerSection(context, settings),
               ],
-              const SizedBox(height: 26),
+              _buildSectionDivider(context),
               _buildNotificationSection(context, settings),
-              const SizedBox(height: 26),
+              _buildSectionDivider(context),
               if (context.watch<ReminderPreferencesProvider?>() != null) ...[
                 ReminderSettingsSection(onNavigate: widget.onNavigate),
-                const SizedBox(height: 26),
+                _buildSectionDivider(context),
               ],
               if (wide)
                 Row(
@@ -235,11 +316,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 26),
                 _buildAdvancedSection(context, settings),
               ],
-              const SizedBox(height: 26),
+              _buildSectionDivider(context),
               const ComfortSettingsSection(),
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildSectionDivider(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return ExcludeSemantics(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: Divider(
+                height: 1,
+                color: scheme.outlineVariant.withOpacity(.72),
+              ),
+            ),
+            Container(
+              width: 7,
+              height: 7,
+              margin: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: const BoxDecoration(
+                color: Color(0xFFB99C64),
+                shape: BoxShape.circle,
+              ),
+            ),
+            Expanded(
+              child: Divider(
+                height: 1,
+                color: scheme.outlineVariant.withOpacity(.72),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -258,6 +373,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       (value: 'day', label: 'نهاري', icon: Icons.wb_sunny_outlined),
       (value: 'night', label: 'ليلي', icon: Icons.nights_stay_outlined),
       (value: 'auto', label: 'تلقائي', icon: Icons.brightness_auto_rounded),
+      (value: 'system', label: 'حسب الجهاز', icon: Icons.settings_brightness),
     ];
 
     return Column(
@@ -335,6 +451,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onTap: () => settings.setBrightnessMode(option.value),
                     );
                   }).toList(),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    '«تلقائي» يتبدل وفق مواقيت الصلاة، و«حسب الجهاز» يتبع الوضع الداكن في إعدادات هاتفك.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 14),
                 const CalmDivider(),
@@ -464,35 +589,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: settings.lastLocationStatus,
               onTap: () => _showCityPicker(settings),
             ),
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 8),
-              child: Text(
-                'المصدر: ${settings.locationSourceLabel} · '
-                '${settings.hasConfirmedLocation ? 'موقع محفوظ أو محدد' : 'الموقع الحالي غير مؤكد'}',
-                softWrap: true,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  height: 1.45,
-                ),
-              ),
-            ),
+            _buildLocationStatus(context, settings),
             if (settings.lastLocationError != null) ...[
               const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: scheme.errorContainer.withOpacity(.45),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Text(
-                  settings.lastLocationError!,
-                  softWrap: true,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: scheme.error,
-                    height: 1.4,
-                  ),
-                ),
-              ),
+              _buildLocationError(context, settings),
             ],
             const SizedBox(height: 8),
             SwitchListTile.adaptive(
@@ -537,6 +637,137 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildLocationStatus(
+    BuildContext context,
+    SettingsProvider settings,
+  ) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final confirmed = settings.hasConfirmedLocation;
+    final accent = confirmed ? scheme.primary : scheme.tertiary;
+    final background =
+        confirmed ? scheme.primaryContainer : scheme.tertiaryContainer;
+
+    return Container(
+      margin: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: background.withOpacity(.42),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: accent.withOpacity(.28)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            confirmed
+                ? Icons.verified_outlined
+                : Icons.location_searching_rounded,
+            color: accent,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  confirmed ? 'الموقع مؤكّد' : 'الموقع غير مؤكّد',
+                  softWrap: true,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: accent,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'المصدر: ${settings.locationSourceLabel}',
+                  softWrap: true,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    height: 1.45,
+                  ),
+                ),
+                if (!confirmed) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'حدّث الموقع أو اختر مدينة يدوياً لضبط المواقيت على موقعك.',
+                    softWrap: true,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      height: 1.45,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLocationError(
+    BuildContext context,
+    SettingsProvider settings,
+  ) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.errorContainer,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.error.withOpacity(.32)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.error_outline_rounded, color: scheme.error, size: 20),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'تعذر تحديث الموقع',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onErrorContainer,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      settings.lastLocationError!,
+                      softWrap: true,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onErrorContainer,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              onPressed: settings.isDetectingLocation
+                  ? null
+                  : () => _refreshLocation(settings),
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('إعادة المحاولة'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPrayerSection(
     BuildContext context,
     SettingsProvider settings,
@@ -552,40 +783,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               context: context,
               title: 'طريقة الحساب',
               value: settings.calculationMethod,
-              items: const [
-                DropdownMenuItem(
-                  value: CalculationMethod.umm_al_qura,
-                  child: Text('أم القرى'),
-                ),
-                DropdownMenuItem(
-                  value: CalculationMethod.egyptian,
-                  child: Text('الهيئة المصرية العامة للمساحة'),
-                ),
-                DropdownMenuItem(
-                  value: CalculationMethod.muslim_world_league,
-                  child: Text('رابطة العالم الإسلامي'),
-                ),
-                DropdownMenuItem(
-                  value: CalculationMethod.karachi,
-                  child: Text('جامعة العلوم بكراتشي'),
-                ),
-                DropdownMenuItem(
-                  value: CalculationMethod.dubai,
-                  child: Text('دائرة الشؤون الإسلامية بدبي'),
-                ),
-                DropdownMenuItem(
-                  value: CalculationMethod.qatar,
-                  child: Text('وزارة الأوقاف بقطر'),
-                ),
-                DropdownMenuItem(
-                  value: CalculationMethod.kuwait,
-                  child: Text('وزارة الأوقاف بالكويت'),
-                ),
-                DropdownMenuItem(
-                  value: CalculationMethod.north_america,
-                  child: Text('أمريكا الشمالية (ISNA)'),
-                ),
-              ],
+              items: CalculationMethod.values
+                  .map(
+                    (method) => DropdownMenuItem<CalculationMethod>(
+                      value: method,
+                      child: Text(PrayerReliabilityLabels.method(method)),
+                    ),
+                  )
+                  .toList(growable: false),
               onChanged: (value) {
                 if (value != null) settings.setCalculationMethod(value);
               },
@@ -609,18 +814,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (value != null) settings.setMadhab(value);
               },
             ),
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(4, 8, 4, 2),
+              child: Text(
+                'طريقة الحساب تحدد زوايا الفجر والعشاء حسب الجهة المختارة؛ أما ${PrayerReliabilityLabels.madhab(settings.madhab)} فيؤثر على وقت العصر فقط. راجع جدول مسجدك المحلي عند الحاجة.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  height: 1.5,
+                ),
+              ),
+            ),
             const SizedBox(height: 10),
             ExpansionTile(
               tilePadding: EdgeInsets.zero,
               childrenPadding: EdgeInsets.zero,
               leading: const CalmIconBadge(Icons.tune_rounded, size: 40),
               title: const Text('ضبط يدوي للمواقيت'),
-              subtitle: const Text('تعديل كل صلاة بالدقائق'),
+              subtitle: const Text('تصحيح لكل موقع محفوظ على هذا الجهاز'),
               children: [
                 Padding(
                   padding: const EdgeInsets.only(top: 4, bottom: 8),
                   child: Text(
-                    'يمكن تقديم الوقت أو تأخيره حتى ١٥ دقيقة.',
+                    'يمكن تقديم الوقت أو تأخيره حتى ١٥ دقيقة. يُحفظ التصحيح لهذا الموقع ولا ينتقل تلقائيًا إلى مدينة أخرى؛ هذه معايرة شخصية وليست فتوى أو جدولًا رسميًا.',
                     style: theme.textTheme.bodySmall,
                   ),
                 ),
@@ -637,6 +852,157 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildPrayerAlarmControls(
+    BuildContext context,
+    SettingsProvider settings,
+  ) {
+    const prayers = <({String key, String name})>[
+      (key: 'fajr', name: 'الفجر'),
+      (key: 'dhuhr', name: 'الظهر'),
+      (key: 'asr', name: 'العصر'),
+      (key: 'maghrib', name: 'المغرب'),
+      (key: 'isha', name: 'العشاء'),
+    ];
+    const voiceItems = <DropdownMenuItem<String>>[
+      DropdownMenuItem(value: 'madinah', child: Text('أذان المدينة المنورة')),
+      DropdownMenuItem(value: 'makkah', child: Text('أذان مكة المكرمة')),
+      DropdownMenuItem(value: 'aqsa', child: Text('أذان المسجد الأقصى')),
+      DropdownMenuItem(value: 'cairo', child: Text('أذان مساجد القاهرة')),
+      DropdownMenuItem(value: 'afasy', child: Text('مشاري العفاسي')),
+    ];
+    const modeItems = <DropdownMenuItem<PrayerAlarmMode>>[
+      DropdownMenuItem(
+        value: PrayerAlarmMode.adhan,
+        child: Text('أذان صوتي'),
+      ),
+      DropdownMenuItem(
+        value: PrayerAlarmMode.vibrationOnly,
+        child: Text('اهتزاز فقط'),
+      ),
+      DropdownMenuItem(
+        value: PrayerAlarmMode.off,
+        child: Text('إيقاف أذان هذه الصلاة'),
+      ),
+    ];
+
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      childrenPadding: const EdgeInsets.only(bottom: 8),
+      leading: const CalmIconBadge(Icons.tune_rounded, size: 40),
+      title: const Text('تخصيص كل صلاة'),
+      subtitle: const Text('صوت مستقل أو اهتزاز فقط أو إيقاف'),
+      children: [
+        for (final prayer in prayers) ...[
+          Builder(
+            builder: (context) {
+              final preference = settings.prayerAlarmPreference(prayer.key);
+              final usesGlobalVoice = preference.voiceId == null;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding:
+                        const EdgeInsetsDirectional.only(top: 8, bottom: 6),
+                    child: Text(
+                      'صلاة ${prayer.name}',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                  ),
+                  _buildDropdownField<PrayerAlarmMode>(
+                    context: context,
+                    title: 'طريقة التنبيه',
+                    value: preference.mode,
+                    items: modeItems,
+                    onChanged: (mode) {
+                      if (mode != null) {
+                        settings.setPrayerAlarmPreference(
+                          prayer.key,
+                          preference.copyWith(mode: mode),
+                        );
+                      }
+                    },
+                  ),
+                  if (preference.mode == PrayerAlarmMode.adhan) ...[
+                    SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('استخدام صوت الأذان العام'),
+                      subtitle: Text(
+                        usesGlobalVoice
+                            ? 'الحالي: ${settings.adhanVoice}'
+                            : 'أوقفه لاختيار مؤذن لهذه الصلاة',
+                      ),
+                      value: usesGlobalVoice,
+                      onChanged: (useGlobal) {
+                        settings.setPrayerAlarmPreference(
+                          prayer.key,
+                          preference.copyWith(
+                            voiceId: settings.adhanVoice,
+                            clearVoiceId: useGlobal,
+                          ),
+                        );
+                      },
+                    ),
+                    if (!usesGlobalVoice)
+                      _buildDropdownField<String>(
+                        context: context,
+                        title: 'صوت صلاة ${prayer.name}',
+                        value: preference.voiceId!,
+                        items: voiceItems,
+                        onChanged: (voice) {
+                          if (voice != null) {
+                            settings.setPrayerAlarmPreference(
+                              prayer.key,
+                              preference.copyWith(voiceId: voice),
+                            );
+                          }
+                        },
+                      ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        const Expanded(child: Text('مستوى صوت الأذان')),
+                        Text('${preference.volumePercent}%'),
+                      ],
+                    ),
+                    Slider(
+                      value: preference.volumePercent.toDouble(),
+                      min: 0,
+                      max: 100,
+                      divisions: 20,
+                      label: '${preference.volumePercent}%',
+                      onChanged: (value) => settings.setPrayerAlarmPreference(
+                        prayer.key,
+                        preference.copyWith(volumePercent: value.round()),
+                      ),
+                    ),
+                  ] else if (preference.mode ==
+                      PrayerAlarmMode.vibrationOnly) ...[
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        'يهتز الهاتف بنبضات قصيرة، دون تشغيل ملف صوتي. يعمل هذا الخيار على Android؛ قد تختلف استجابة الأجهزة الأخرى.',
+                      ),
+                    ),
+                  ] else ...[
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        'لن يصدر الأذان لهذه الصلاة. تذكير ما قبل الصلاة يظل خاضعًا لمفتاحه العام أعلاه.',
+                      ),
+                    ),
+                  ],
+                  const CalmDivider(),
+                ],
+              );
+            },
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget _buildNotificationSection(
     BuildContext context,
     SettingsProvider settings,
@@ -644,6 +1010,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final capabilities = _notificationCapabilities;
+    final adhanSkin = AdhanSkinCatalog.byId(settings.adhanSkinId);
     return ParadiseSection(
       title: 'الأذان والتنبيهات',
       child: CalmCard(
@@ -651,6 +1018,82 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Container(
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: scheme.outlineVariant),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(18),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(18),
+                  onTap: () => _showAdhanSkinGallery(settings),
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: SizedBox(
+                            width: 72,
+                            height: 96,
+                            child: Image.asset(
+                              adhanSkin.imageAsset.startsWith('/')
+                                  ? adhanSkin.imageAsset.substring(1)
+                                  : adhanSkin.imageAsset,
+                              fit: BoxFit.cover,
+                              cacheWidth: 320,
+                              errorBuilder: (_, __, ___) => ColoredBox(
+                                color: scheme.surfaceContainerHighest,
+                                child: Icon(
+                                  Icons.landscape_rounded,
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'خلفية منبه الأذان',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                adhanSkin.name,
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '15 خلفية مضمّنة وتعمل دون إنترنت · اضغط للاستكشاف',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_left_rounded,
+                          color: adhanSkin.accentColor,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
             _buildDropdownField<String>(
               context: context,
               title: 'صوت الأذان',
@@ -682,13 +1125,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       prayerName: 'الفجر (معاينة)',
                       voiceId: settings.adhanVoice,
                       useNativeService: FirdawsNativeService().isAndroid,
+                      skinId: settings.adhanSkinId,
+                      onSkinSelected: settings.setAdhanSkin,
                     ),
                   ),
                 );
               },
               icon: const Icon(Icons.volume_up_outlined),
-              label: const Text('معاينة منبه الأذان'),
+              label: const Text('تشغيل معاينة صوت الأذان'),
             ),
+            if (FirdawsNativeService().isAndroid) ...[
+              OutlinedButton.icon(
+                onPressed: _testAlarmScheduled
+                    ? null
+                    : () => _scheduleTestAdhan(settings),
+                icon: const Icon(Icons.alarm_add_rounded),
+                label: const Text('اختبار منبه بعد دقيقة'),
+              ),
+              if (_testAlarmScheduled)
+                TextButton.icon(
+                  onPressed: _cancelTestAdhan,
+                  icon: const Icon(Icons.alarm_off_rounded),
+                  label: const Text('إلغاء اختبار المنبه'),
+                ),
+              Text(
+                'يستخدم صوت الأذان العام مرة واحدة؛ لا تختبره قرب وقت الصلاة.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+            const CalmDivider(),
+            _buildPrayerAlarmControls(context, settings),
             const SizedBox(height: 8),
             Text(
               capabilities.userNotice,
@@ -704,7 +1172,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: const Text('تذكير قبل الأذان'),
               subtitle: Text(
                 capabilities.supportsLocalNotifications
-                    ? 'قبل دخول الوقت بـ ١٥ دقيقة'
+                    ? 'قبل دخول الوقت بـ ${_arabicDigits(settings.preAdhanReminderMinutes)} دقيقة'
                     : 'غير متاح في نسخة الويب؛ لا يعمل حتى مع بقاء الصفحة مفتوحة',
               ),
               value: settings.playPreAdhanReminder,
@@ -712,6 +1180,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ? settings.setPreAdhanReminder
                   : null,
             ),
+            if (settings.playPreAdhanReminder &&
+                capabilities.supportsLocalNotifications) ...[
+              Row(
+                children: [
+                  const Expanded(child: Text('مدة التذكير قبل الصلاة')),
+                  Text(
+                      '${_arabicDigits(settings.preAdhanReminderMinutes)} دقيقة'),
+                ],
+              ),
+              Slider(
+                value: settings.preAdhanReminderMinutes.toDouble(),
+                min: 5,
+                max: 60,
+                divisions: 11,
+                label:
+                    '${_arabicDigits(settings.preAdhanReminderMinutes)} دقيقة',
+                onChanged: (value) =>
+                    settings.setPreAdhanReminderMinutes(value.round()),
+              ),
+            ],
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
               title: const Text('الصامت التلقائي أثناء الصلاة'),
@@ -733,7 +1221,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     : _adhanDiag['supported'] == false
                         ? 'الفحص غير مدعوم على ${capabilities.platformLabel}'
                         : _adhanDiag.isEmpty
-                            ? 'يمكنك إعادة فحص إعدادات الجهاز'
+                            ? _diagnosticsError != null
+                                ? 'تعذّر الفحص · اضغط لإعادة المحاولة'
+                                : 'لم تُفحص الحالة بعد'
                             : '${_adhanDiag['scheduledCount'] ?? 0} إشعارات مجدولة',
               ),
               children: [
@@ -765,31 +1255,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   )
                 else if (_adhanDiag.isEmpty)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (_diagnosticsError != null) ...[
-                        Text(
-                          _diagnosticsError!,
-                          softWrap: true,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: scheme.error,
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                      ],
-                      Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: TextButton.icon(
-                          onPressed: _loadDiagnostics,
-                          icon: const Icon(Icons.refresh_rounded),
-                          label: const Text('فحص حالة التنبيهات'),
-                        ),
-                      ),
-                    ],
-                  )
+                  _buildDiagnosticUnavailable(context)
                 else ...[
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(bottom: 12),
+                    child: Text(
+                      'توضح العلامات حالة صلاحيات الجهاز. إذا ظهرت حالة تحتاج إجراءً، استخدم الزر المناسب أدناه ثم أعد فحصها.',
+                      softWrap: true,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -797,16 +1275,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _diagPill(
                         'إشعارات النظام',
                         _adhanDiag['notificationsEnabled'] == true,
+                        enabledLabel: 'مسموح بها',
+                        disabledLabel: 'تحتاج إذناً',
                       ),
+                      if (_adhanDiag['canDrawOverlays'] is bool)
+                        _diagPill(
+                          'الظهور فوق التطبيقات',
+                          _adhanDiag['canDrawOverlays'] == true,
+                          enabledLabel: 'مسموح',
+                          disabledLabel: 'يحتاج إذناً',
+                        ),
                       if (_adhanDiag['canScheduleExactAlarms'] is bool)
                         _diagPill(
                           'المنبه الدقيق',
                           _adhanDiag['canScheduleExactAlarms'] == true,
+                          enabledLabel: 'مسموح',
+                          disabledLabel: 'يحتاج إذناً',
                         ),
                       if (_adhanDiag['ignoringBatteryOptimizations'] is bool)
                         _diagPill(
                           'استثناء البطارية',
                           _adhanDiag['ignoringBatteryOptimizations'] == true,
+                          enabledLabel: 'مفعّل',
+                          disabledLabel: 'غير مفعّل',
                         ),
                     ],
                   ),
@@ -815,6 +1306,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     spacing: 8,
                     runSpacing: 4,
                     children: [
+                      if (_adhanDiag['notificationsEnabled'] == false)
+                        OutlinedButton(
+                          onPressed: () async {
+                            await NotificationService()
+                                .requestReminderPermissions();
+                            settings.syncAllNotifications();
+                            await Future<void>.delayed(
+                              const Duration(milliseconds: 600),
+                            );
+                            await _loadDiagnostics();
+                          },
+                          child: const Text('طلب صلاحية الإشعارات والمنبه'),
+                        ),
                       if (capabilities.supportsExactAlarms &&
                           _adhanDiag['canScheduleExactAlarms'] == false)
                         OutlinedButton(
@@ -860,6 +1364,72 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDiagnosticUnavailable(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final hasError = _diagnosticsError != null;
+    final accent = hasError ? scheme.error : scheme.primary;
+    final foreground = hasError ? scheme.onErrorContainer : scheme.onSurface;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: hasError ? scheme.errorContainer : scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: hasError ? accent.withOpacity(.3) : scheme.outlineVariant,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                hasError ? Icons.error_outline_rounded : Icons.info_outline,
+                color: accent,
+                size: 20,
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      hasError ? 'تعذّر فحص الحالة' : 'لم يكتمل الفحص',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: foreground,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      _diagnosticsError ??
+                          'أعد الفحص للتأكد من صلاحيات الجهاز وجدولة التنبيهات.',
+                      softWrap: true,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: foreground,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: OutlinedButton.icon(
+              onPressed: _loadDiagnostics,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('إعادة الفحص'),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -939,6 +1509,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ),
+            if (FirdawsNativeService().isAndroid) ...[
+              const CalmDivider(),
+              CalmActionTile(
+                icon: Icons.widgets_outlined,
+                title: 'ويدجت مواقيت الصلاة',
+                subtitle: 'إظهار الصلاة القادمة على الشاشة الرئيسية',
+                onTap: () => showDialog<void>(
+                  context: context,
+                  builder: (dialogContext) => AlertDialog(
+                    title: const Text('إضافة ويدجت الفردوس'),
+                    content: const Text(
+                      'اضغط مطولًا على مساحة فارغة في الشاشة الرئيسية، ثم اختر «الأدوات» واسحب «الفردوس — مواقيت الصلاة». تتحدث بياناتها عند تغيير المدينة أو طريقة الحساب، ويمكن الضغط عليها لفتح التطبيق.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        child: const Text('حسنًا'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -980,60 +1573,95 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ) {
     final scheme = Theme.of(context).colorScheme;
     final offset = settings.offsets[key] ?? 0;
+    final offsetLabel =
+        '${offset > 0 ? '+' : ''}${_arabicDigits(offset)} دقيقة';
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SizedBox(
-            width: 52,
-            child:
-                Text(prayerName, style: Theme.of(context).textTheme.bodyMedium),
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              Text(
+                prayerName,
+                softWrap: true,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              Text(
+                offsetLabel,
+                textAlign: TextAlign.end,
+                softWrap: true,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: scheme.primary,
+                    ),
+              ),
+            ],
           ),
-          Expanded(
-            child: Slider(
-              value: offset.toDouble().clamp(-15, 15),
-              min: -15,
-              max: 15,
-              divisions: 30,
-              onChanged: (value) => settings.updateOffset(key, value.round()),
-            ),
-          ),
-          SizedBox(
-            width: 52,
-            child: Text(
-              '${offset > 0 ? '+' : ''}$offset د',
-              textAlign: TextAlign.end,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: scheme.primary,
-                  ),
-            ),
+          Slider(
+            value: offset.toDouble().clamp(-15, 15),
+            min: -15,
+            max: 15,
+            divisions: 30,
+            label: offsetLabel,
+            semanticFormatterCallback: (value) {
+              final minutes = value.round();
+              final adjustment = minutes > 0
+                  ? 'تقديم ${_arabicDigits(minutes)} دقائق'
+                  : minutes < 0
+                      ? 'تأخير ${_arabicDigits(minutes.abs())} دقائق'
+                      : 'دون تعديل';
+              return 'موعد صلاة $prayerName: $adjustment';
+            },
+            onChanged: (value) => settings.updateOffset(key, value.round()),
           ),
         ],
       ),
     );
   }
 
-  Widget _diagPill(String label, bool enabled) {
+  Widget _diagPill(
+    String label,
+    bool enabled, {
+    String enabledLabel = 'مفعّل',
+    String disabledLabel = 'يحتاج تفعيل',
+  }) {
     final scheme = Theme.of(context).colorScheme;
     final color = enabled ? scheme.primary : scheme.error;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.28)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            enabled ? Icons.check_circle_outline_rounded : Icons.info_outline,
-            size: 16,
-            color: color,
+    final status = enabled ? enabledLabel : disabledLabel;
+    return Semantics(
+      label: '$label: $status',
+      child: ExcludeSemantics(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.10),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withOpacity(0.28)),
           ),
-          const SizedBox(width: 6),
-          Text(label, style: Theme.of(context).textTheme.labelMedium),
-        ],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                enabled
+                    ? Icons.check_circle_outline_rounded
+                    : Icons.error_outline_rounded,
+                size: 16,
+                color: color,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  '$label · $status',
+                  softWrap: true,
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -61,10 +60,6 @@ class Arena4KStageAssets {
 class Arena4KStageCompositor {
   Arena4KStageCompositor._();
 
-  static final Map<String, ui.Image> _networkImages = <String, ui.Image>{};
-  static final Map<String, Future<ui.Image?>> _networkLoads =
-      <String, Future<ui.Image?>>{};
-
   static final Map<String, String> _fallbackPaths = <String, String>{};
 
   static Future<void> prepareFallback(String source, String fallback) async {
@@ -73,9 +68,7 @@ class Arena4KStageCompositor {
   }
 
   static ui.Image? _cachedImage(String path) {
-    final requested = path.startsWith('/manus-storage/')
-        ? _networkImages[path]
-        : ArenaUiImageCache.getCached(path);
+    final requested = ArenaUiImageCache.getCached(path);
     return requested ?? ArenaUiImageCache.getCached(_fallbackPaths[path] ?? '');
   }
 
@@ -83,48 +76,7 @@ class Arena4KStageCompositor {
     String path, {
     int targetWidth = 1080,
   }) {
-    if (path.startsWith('/manus-storage/')) {
-      final cached = _networkImages[path];
-      if (cached != null) return Future<ui.Image?>.value(cached);
-      final pending = _networkLoads[path];
-      if (pending != null) return pending;
-
-      final future = _loadNetworkImage(path, targetWidth: targetWidth);
-      _networkLoads[path] = future;
-      return future.whenComplete(() {
-        if (identical(_networkLoads[path], future)) {
-          _networkLoads.remove(path);
-        }
-      });
-    }
     return ArenaUiImageCache.loadImage(path, targetWidth: targetWidth);
-  }
-
-  static Future<ui.Image?> _loadNetworkImage(
-    String path, {
-    required int targetWidth,
-  }) {
-    final completer = Completer<ui.Image?>();
-    final provider = ResizeImage.resizeIfNeeded(
-      targetWidth,
-      null,
-      NetworkImage(path),
-    );
-    final stream = provider.resolve(const ImageConfiguration());
-    late final ImageStreamListener listener;
-    listener = ImageStreamListener(
-      (ImageInfo info, bool synchronousCall) {
-        _networkImages[path] = info.image;
-        stream.removeListener(listener);
-        if (!completer.isCompleted) completer.complete(info.image);
-      },
-      onError: (Object error, StackTrace? stackTrace) {
-        stream.removeListener(listener);
-        if (!completer.isCompleted) completer.complete(null);
-      },
-    );
-    stream.addListener(listener);
-    return completer.future;
   }
 
   static void paintBackdropLayer({

@@ -41,8 +41,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "kaaba_black_gold",
       title: "حديقة الليل الأسود والذهب",
       caption: "أحواض ياسمين مضاءة حول جناح هندسي أسود بخيوط ذهبية رفيعة.",
-      imageAsset:
-          "/manus-storage/async-images/FXMy2cz87aIxvQKO408mey/image-1.webp",
+      imageAsset: "assets/images/themes/kaaba_black_gold.jpg",
       accent: _tone(_hueForIndex(1), 0.75, 0.24),
       hue: _hueForIndex(1),
     ),
@@ -50,8 +49,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "andalusian",
       title: "أروقة الرخام الملكي",
       caption: "أعمدة حجرية فاتحة تفتح على بستان ماء وأشجار حمضية.",
-      imageAsset:
-          "/manus-storage/async-images/FXMy2cz87aIxvQKO408mey/image-2.webp",
+      imageAsset: "assets/images/themes/andalusian.jpg",
       accent: _tone(_hueForIndex(2), 0.75, 0.24),
       hue: _hueForIndex(2),
     ),
@@ -59,8 +57,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "makkah_rose",
       title: "حديقة الورد عند الشروق",
       caption: "مدرجات وردية على سفح جبلي تلمع فوقها قطرات الندى.",
-      imageAsset:
-          "/manus-storage/async-images/FXMy2cz87aIxvQKO408mey/image-3.webp",
+      imageAsset: "assets/images/themes/makkah_rose.jpg",
       accent: _tone(_hueForIndex(3), 0.75, 0.24),
       hue: _hueForIndex(3),
     ),
@@ -76,8 +73,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "desert_night",
       title: "مرصد البادية الساكن",
       caption: "كثبان حريرية تتخللها واحة صغيرة تحت سماء مرصعة بالنجوم.",
-      imageAsset:
-          "/manus-storage/async-images/FXMy2cz87aIxvQKO408mey/image-5.webp",
+      imageAsset: "assets/images/themes/desert_night.jpg",
       accent: _tone(_hueForIndex(5), 0.75, 0.24),
       hue: _hueForIndex(5),
     ),
@@ -85,8 +81,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "dome_of_rock",
       title: "حديقة القبة البنفسجية",
       caption: "أقواس بنفسجية وزيتون فضي تلتف حول بركة عاكسة.",
-      imageAsset:
-          "/manus-storage/async-images/w5TISu6WgRaEA8pC01fIvJ/image-1.webp",
+      imageAsset: "assets/images/themes/dome_of_rock.jpg",
       accent: _tone(_hueForIndex(6), 0.75, 0.24),
       hue: _hueForIndex(6),
     ),
@@ -94,8 +89,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "damascus_bronze",
       title: "بستان النحاس الدمشقي",
       caption: "عريشة نحاسية معتّقة تتساقط حولها أوراق الدلب والخريف.",
-      imageAsset:
-          "/manus-storage/async-images/w5TISu6WgRaEA8pC01fIvJ/image-2.webp",
+      imageAsset: "assets/images/themes/damascus_bronze.jpg",
       accent: _tone(_hueForIndex(7), 0.75, 0.24),
       hue: _hueForIndex(7),
     ),
@@ -103,8 +97,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "baghdad_amber",
       title: "حديقة المخطوطات الكهرمانية",
       caption: "أروقة طينية ذهبية تطل على بستان نخيل ومجرى ماء.",
-      imageAsset:
-          "/manus-storage/async-images/w5TISu6WgRaEA8pC01fIvJ/image-3.webp",
+      imageAsset: "assets/images/themes/baghdad_amber.jpg",
       accent: _tone(_hueForIndex(8), 0.75, 0.24),
       hue: _hueForIndex(8),
     ),
@@ -112,8 +105,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "madinah_sands",
       title: "واحة الرمال الهادئة",
       caption: "نخيل طيبة الخيالي يرسم ظلالًا طويلة فوق رمال عاجية.",
-      imageAsset:
-          "/manus-storage/async-images/w5TISu6WgRaEA8pC01fIvJ/image-4.webp",
+      imageAsset: "assets/images/themes/madinah_sands.jpg",
       accent: _tone(_hueForIndex(9), 0.75, 0.24),
       hue: _hueForIndex(9),
     ),
@@ -121,8 +113,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "arabian_pearl",
       title: "حديقة اللؤلؤ البحري",
       caption: "ممرات صدفية على شاطئ هادئ بين اللآلئ والأعشاب الساحلية.",
-      imageAsset:
-          "/manus-storage/async-images/w5TISu6WgRaEA8pC01fIvJ/image-5.webp",
+      imageAsset: "assets/images/themes/arabian_pearl.jpg",
       accent: _tone(_hueForIndex(10), 0.75, 0.24),
       hue: _hueForIndex(10),
     ),
@@ -130,8 +121,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "celestial_rayyan",
       title: "بوابة الريان الخضراء",
       caption: "بوابة زمردية خيالية تفتح على بستان ينابيع وسدر.",
-      imageAsset:
-          "/manus-storage/async-images/VDfSVUn8iWZkz29XPU8zvj/image-1.webp",
+      imageAsset: "assets/images/themes/celestial_rayyan.jpg",
       accent: _tone(_hueForIndex(11), 0.75, 0.24),
       hue: _hueForIndex(11),
     ),
@@ -139,8 +129,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "arafat_mercy",
       title: "حديقة جبل الرحمة",
       caption: "مصاطب حجرية هادئة ونبع صغير عند سفح جبل يكتنفه الضباب.",
-      imageAsset:
-          "/manus-storage/async-images/VDfSVUn8iWZkz29XPU8zvj/image-2.webp",
+      imageAsset: "assets/images/themes/arafat_mercy.jpg",
       accent: _tone(_hueForIndex(12), 0.75, 0.24),
       hue: _hueForIndex(12),
     ),
@@ -148,8 +137,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "mina_tents",
       title: "حدائق الخيام البيضاء",
       caption: "أجنحة قماشية بيضاء تتوزع بين أشجار السنط وممرات الماء.",
-      imageAsset:
-          "/manus-storage/async-images/VDfSVUn8iWZkz29XPU8zvj/image-3.webp",
+      imageAsset: "assets/images/themes/mina_tents.jpg",
       accent: _tone(_hueForIndex(13), 0.75, 0.24),
       hue: _hueForIndex(13),
     ),
@@ -157,8 +145,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "hira_light",
       title: "ممر النور الجبلي",
       caption: "حديقة صخرية صغيرة تنفتح على وادٍ يضيئه فجر شفيف.",
-      imageAsset:
-          "/manus-storage/async-images/VDfSVUn8iWZkz29XPU8zvj/image-4.webp",
+      imageAsset: "assets/images/themes/hira_light.jpg",
       accent: _tone(_hueForIndex(14), 0.75, 0.24),
       hue: _hueForIndex(14),
     ),
@@ -166,8 +153,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "uhud_dawn",
       title: "شفق الجبل الأحمر",
       caption: "قمم وردية يعلوها ضباب خفيف وحدائق صخرية خضراء.",
-      imageAsset:
-          "/manus-storage/async-images/VDfSVUn8iWZkz29XPU8zvj/image-5.webp",
+      imageAsset: "assets/images/themes/uhud_dawn.jpg",
       accent: _tone(_hueForIndex(15), 0.75, 0.24),
       hue: _hueForIndex(15),
     ),
@@ -175,8 +161,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "zamzam_spring",
       title: "نبع الماء الصافي",
       caption: "عين فيروزية تنبع بين السوسن وأحجار فاتحة مصقولة.",
-      imageAsset:
-          "/manus-storage/async-images/cipXjNChciOGk6XD9dtZ1E/image-1.webp",
+      imageAsset: "assets/images/themes/zamzam_spring.jpg",
       accent: _tone(_hueForIndex(16), 0.75, 0.24),
       hue: _hueForIndex(16),
     ),
@@ -184,8 +169,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "baqi_serenity",
       title: "حديقة السكينة والظل",
       caption: "ممرات هادئة تحت ظلال السرو والزيتون مع رذاذ خفيف.",
-      imageAsset:
-          "/manus-storage/async-images/cipXjNChciOGk6XD9dtZ1E/image-2.webp",
+      imageAsset: "assets/images/themes/baqi_serenity.jpg",
       accent: _tone(_hueForIndex(17), 0.75, 0.24),
       hue: _hueForIndex(17),
     ),
@@ -193,8 +177,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "al_azhar_cairo",
       title: "حديقة العلم في القاهرة",
       caption: "أروقة حجرية ومشربيات خشبية تطل على ساحة مزروعة بالريحان.",
-      imageAsset:
-          "/manus-storage/async-images/cipXjNChciOGk6XD9dtZ1E/image-3.webp",
+      imageAsset: "assets/images/themes/al_azhar_cairo.jpg",
       accent: _tone(_hueForIndex(18), 0.75, 0.24),
       hue: _hueForIndex(18),
     ),
@@ -202,8 +185,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "cordoba_arches",
       title: "أقواس قرطبة المائية",
       caption: "أقواس متتابعة باللون العاجي بين النارنج وبرك الماء.",
-      imageAsset:
-          "/manus-storage/async-images/cipXjNChciOGk6XD9dtZ1E/image-4.webp",
+      imageAsset: "assets/images/themes/cordoba_arches.jpg",
       accent: _tone(_hueForIndex(19), 0.75, 0.24),
       hue: _hueForIndex(19),
     ),
@@ -211,8 +193,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "alhambra_granada",
       title: "بهو الحمراء والحدائق",
       caption: "باحة جصية منحوتة تنساب فيها قنوات الماء بين الياسمين.",
-      imageAsset:
-          "/manus-storage/async-images/cipXjNChciOGk6XD9dtZ1E/image-5.webp",
+      imageAsset: "assets/images/themes/alhambra_granada.jpg",
       accent: _tone(_hueForIndex(20), 0.75, 0.24),
       hue: _hueForIndex(20),
     ),
@@ -228,8 +209,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "hassan_casablanca",
       title: "حديقة الأطلسي البيضاء",
       caption: "شرفات حجرية بيضاء تلامسها أمواج البحر وأزهار زرقاء.",
-      imageAsset:
-          "/manus-storage/async-images/amOrFddSRnPtugyaVw1z58/image-2.webp",
+      imageAsset: "assets/images/themes/hassan_casablanca.jpg",
       accent: _tone(_hueForIndex(22), 0.75, 0.24),
       hue: _hueForIndex(22),
     ),
@@ -237,8 +217,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "koutoubia_marrakech",
       title: "حديقة النخيل الحمراء",
       caption: "ممرات طينية حمراء بين النخيل والنافورات وأزهار الجهنمية.",
-      imageAsset:
-          "/manus-storage/async-images/XNSlb2HdFwyEJG9SQ8JZZQ/image-1.webp",
+      imageAsset: "assets/images/themes/koutoubia_marrakech.jpg",
       accent: _tone(_hueForIndex(23), 0.75, 0.24),
       hue: _hueForIndex(23),
     ),
@@ -246,8 +225,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "suleymaniye_istanbul",
       title: "حديقة البوسفور العثمانية",
       caption: "قباب على الأفق الأزرق وبينها أشجار سرو وزهور توليب.",
-      imageAsset:
-          "/manus-storage/async-images/amOrFddSRnPtugyaVw1z58/image-4.webp",
+      imageAsset: "assets/images/themes/suleymaniye_istanbul.jpg",
       accent: _tone(_hueForIndex(24), 0.75, 0.24),
       hue: _hueForIndex(24),
     ),
@@ -263,8 +241,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "sultan_qaboos_muscat",
       title: "حديقة الثريا العمانية",
       caption: "أقواس من الحجر العماني وحديقة بخور تنساب فيها نافورة رقيقة.",
-      imageAsset:
-          "/manus-storage/async-images/SQfv6OsQOhiOBj0JTkphxw/image-1.webp",
+      imageAsset: "assets/images/themes/sultan_qaboos_muscat.jpg",
       accent: _tone(_hueForIndex(26), 0.75, 0.24),
       hue: _hueForIndex(26),
     ),
@@ -272,8 +249,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "samarkand_registan",
       title: "حديقة لازورد سمرقند",
       caption: "بوابة خزفية عميقة الزرقة تفتح على حديقة رمان ونوافير.",
-      imageAsset:
-          "/manus-storage/async-images/SQfv6OsQOhiOBj0JTkphxw/image-2.webp",
+      imageAsset: "assets/images/themes/samarkand_registan.jpg",
       accent: _tone(_hueForIndex(27), 0.75, 0.24),
       hue: _hueForIndex(27),
     ),
@@ -281,8 +257,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "bukhara_turquoise",
       title: "حديقة المئذنة الفيروزية",
       caption: "برج خزفي رفيع بين أشجار التوت وقنوات الماء.",
-      imageAsset:
-          "/manus-storage/async-images/SQfv6OsQOhiOBj0JTkphxw/image-3.webp",
+      imageAsset: "assets/images/themes/bukhara_turquoise.jpg",
       accent: _tone(_hueForIndex(28), 0.75, 0.24),
       hue: _hueForIndex(28),
     ),
@@ -290,8 +265,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "lahore_badshahi",
       title: "حديقة الرخام والورد",
       caption: "شرفات رخامية وردية حول بستان كثيف وزهور موسمية.",
-      imageAsset:
-          "/manus-storage/async-images/SQfv6OsQOhiOBj0JTkphxw/image-4.webp",
+      imageAsset: "assets/images/themes/lahore_badshahi.jpg",
       accent: _tone(_hueForIndex(29), 0.75, 0.24),
       hue: _hueForIndex(29),
     ),
@@ -299,8 +273,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "ibn_tulun_cairo",
       title: "حديقة اللولب الحجري",
       caption: "درج حجري حلزوني يطل على حديقة صحراوية فيها بركة ضيقة.",
-      imageAsset:
-          "/manus-storage/async-images/SQfv6OsQOhiOBj0JTkphxw/image-5.webp",
+      imageAsset: "assets/images/themes/ibn_tulun_cairo.jpg",
       accent: _tone(_hueForIndex(30), 0.75, 0.24),
       hue: _hueForIndex(30),
     ),
@@ -308,8 +281,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "aleppo_umayyad",
       title: "حديقة الحجر العتيق",
       caption: "جدران حجرية كريمية تتخللها كروم العنب وأشجار الزيتون.",
-      imageAsset:
-          "/manus-storage/async-images/O9wfK1CEsSihtv9jJ7Acfe/image-1.webp",
+      imageAsset: "assets/images/themes/aleppo_umayyad.jpg",
       accent: _tone(_hueForIndex(31), 0.75, 0.24),
       hue: _hueForIndex(31),
     ),
@@ -317,8 +289,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "amr_ibn_as",
       title: "حديقة الفسطاط الأولى",
       caption: "فناء بسيط واسع تحيط به أشجار النخيل والريحان ومجرى ماء.",
-      imageAsset:
-          "/manus-storage/async-images/O9wfK1CEsSihtv9jJ7Acfe/image-2.webp",
+      imageAsset: "assets/images/themes/amr_ibn_as.jpg",
       accent: _tone(_hueForIndex(32), 0.75, 0.24),
       hue: _hueForIndex(32),
     ),
@@ -326,8 +297,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "salahuddin_citadel",
       title: "حديقة القلعة المرتفعة",
       caption: "شرفات صخرية تعلو المدينة وتطل على مدرجات السرو والينابيع.",
-      imageAsset:
-          "/manus-storage/async-images/O9wfK1CEsSihtv9jJ7Acfe/image-3.webp",
+      imageAsset: "assets/images/themes/salahuddin_citadel.jpg",
       accent: _tone(_hueForIndex(33), 0.75, 0.24),
       hue: _hueForIndex(33),
     ),
@@ -335,8 +305,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "fajr_sapphire",
       title: "حديقة الفجر الياقوتي",
       caption: "بحيرة زرقاء تحت سماء ما قبل الشروق تتخللها زهور بيضاء.",
-      imageAsset:
-          "/manus-storage/async-images/O9wfK1CEsSihtv9jJ7Acfe/image-4.webp",
+      imageAsset: "assets/images/themes/fajr_sapphire.jpg",
       accent: _tone(_hueForIndex(34), 0.75, 0.24),
       hue: _hueForIndex(34),
     ),
@@ -344,8 +313,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "duha_sunlight",
       title: "حديقة ضياء الضحى",
       caption: "أزهار صفراء تتفتح حول نوافير صغيرة في شمس الصباح.",
-      imageAsset:
-          "/manus-storage/async-images/O9wfK1CEsSihtv9jJ7Acfe/image-5.webp",
+      imageAsset: "assets/images/themes/duha_sunlight.jpg",
       accent: _tone(_hueForIndex(35), 0.75, 0.24),
       hue: _hueForIndex(35),
     ),
@@ -393,8 +361,7 @@ abstract final class FirdawsParadiseRegistry {
       key: "laylat_qadr",
       title: "حديقة السحر البنفسجي",
       caption: "ممر من زهور بيضاء يقود إلى بركة تحت سماء بنفسجية.",
-      imageAsset:
-          "/manus-storage/async-images/me8xSBIj8EBa8e1CHPRTYu/image-1.webp",
+      imageAsset: "assets/images/themes/laylat_qadr.jpg",
       accent: _tone(_hueForIndex(41), 0.75, 0.24),
       hue: _hueForIndex(41),
     ),

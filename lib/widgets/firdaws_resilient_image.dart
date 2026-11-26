@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -158,6 +159,38 @@ class _FirdawsResilientImageState extends State<FirdawsResilientImage> {
   File? _diskFile;
   bool _netLoaded = false;
 
+  ({int? width, int? height}) _decodeSize(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final dpr = media.devicePixelRatio;
+    final width = widget.width;
+    final height = widget.height;
+
+    int pixels(double logical) =>
+        math.min(2048, math.max(1, (logical * dpr).round()));
+
+    if (width != null &&
+        width.isFinite &&
+        width > 0 &&
+        height != null &&
+        height.isFinite &&
+        height > 0) {
+      return width >= height
+          ? (width: pixels(width), height: null)
+          : (width: null, height: pixels(height));
+    }
+    if (width != null && width.isFinite && width > 0) {
+      return (width: pixels(width), height: null);
+    }
+    if (height != null && height.isFinite && height > 0) {
+      return (width: null, height: pixels(height));
+    }
+
+    // Full-bleed backgrounds use the viewport's longest edge, capped below 4K.
+    return media.size.width >= media.size.height
+        ? (width: pixels(media.size.width), height: null)
+        : (width: null, height: pixels(media.size.height));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -189,13 +222,16 @@ class _FirdawsResilientImageState extends State<FirdawsResilientImage> {
     });
   }
 
-  Widget _buildAssetFallback() {
+  Widget _buildAssetFallback(BuildContext context) {
+    final decodeSize = _decodeSize(context);
     return Image.asset(
       widget.fallbackAsset,
       fit: widget.fit,
       alignment: widget.alignment,
       width: widget.width,
       height: widget.height,
+      cacheWidth: decodeSize.width,
+      cacheHeight: decodeSize.height,
       gaplessPlayback: true,
       filterQuality: widget.filterQuality,
       errorBuilder: (_, __, ___) => const SizedBox.shrink(),
@@ -205,6 +241,7 @@ class _FirdawsResilientImageState extends State<FirdawsResilientImage> {
   @override
   Widget build(BuildContext context) {
     final url = widget.networkUrl?.trim();
+    final decodeSize = _decodeSize(context);
     final skipNet = url != null &&
         url.isNotEmpty &&
         Firdaws4KCacheService.instance.shouldSkipNetworkFetch(url);
@@ -214,16 +251,18 @@ class _FirdawsResilientImageState extends State<FirdawsResilientImage> {
       media = Stack(
         fit: StackFit.expand,
         children: [
-          _buildAssetFallback(),
+          _buildAssetFallback(context),
           Image.file(
             _diskFile!,
             fit: widget.fit,
             alignment: widget.alignment,
             width: widget.width,
             height: widget.height,
+            cacheWidth: decodeSize.width,
+            cacheHeight: decodeSize.height,
             gaplessPlayback: true,
             filterQuality: widget.filterQuality,
-            errorBuilder: (_, __, ___) => _buildAssetFallback(),
+            errorBuilder: (_, __, ___) => _buildAssetFallback(context),
           ),
         ],
       );
@@ -231,13 +270,15 @@ class _FirdawsResilientImageState extends State<FirdawsResilientImage> {
       media = Stack(
         fit: StackFit.expand,
         children: [
-          _buildAssetFallback(),
+          _buildAssetFallback(context),
           Image.network(
             url,
             fit: widget.fit,
             alignment: widget.alignment,
             width: widget.width,
             height: widget.height,
+            cacheWidth: decodeSize.width,
+            cacheHeight: decodeSize.height,
             gaplessPlayback: true,
             filterQuality: widget.filterQuality,
             headers: kIsWeb ? null : const {'User-Agent': 'AlFirdawsApp/1.0'},
@@ -261,7 +302,7 @@ class _FirdawsResilientImageState extends State<FirdawsResilientImage> {
         ],
       );
     } else {
-      media = _buildAssetFallback();
+      media = _buildAssetFallback(context);
     }
 
     if (widget.frameBuilder != null) {

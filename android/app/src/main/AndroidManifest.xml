@@ -71,6 +71,21 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+            android:name=".FirdawsPrayerWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.DATE_CHANGED" />
+                <action android:name="com.islamic.app.ACTION_UPDATE_NEXT_PRAYER_WIDGET" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/firdaws_prayer_widget_info" />
+        </receiver>
+
         <!-- خدمة الإشعار العائم الجميل للصلاة على النبي ﷺ فوق كل التطبيقات (يختفي فور لمسه) -->
         <service
             android:name=".SalawatOverlayService"

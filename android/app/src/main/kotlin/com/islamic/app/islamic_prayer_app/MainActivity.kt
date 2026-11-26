@@ -1,8 +1,10 @@
 package com.islamic.app.islamic_prayer_app
 
 import android.app.AlarmManager
+import android.appwidget.AppWidgetManager
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -41,6 +43,11 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        try {
+            val notifications =
+                getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            notifications?.let(AdhanPlaybackService::cleanupLegacyAdhanChannels)
+        } catch (_: Exception) {}
         methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
 
         val btChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, btChannelName)
@@ -55,9 +62,21 @@ class MainActivity : FlutterActivity() {
                     mapOf(
                         "isRinging" to isRinging,
                         "voiceId" to voiceId,
-                        "prayerName" to prayerName
+                        "prayerName" to prayerName,
+                        "volumePercent" to AdhanPlaybackService.activeVolumePercent
                     )
                 )
+            }
+        }
+
+        AdhanPlaybackService.onPlaybackCompletedListener = { voiceId, prayerName ->
+            runOnUiThread {
+                try {
+                    methodChannel?.invokeMethod(
+                        "onAdhanPlaybackCompleted",
+                        mapOf("voiceId" to voiceId, "prayerName" to prayerName)
+                    )
+                } catch (_: Exception) {}
             }
         }
 
@@ -66,10 +85,14 @@ class MainActivity : FlutterActivity() {
                 "startAdhanAlarm" -> {
                     val voiceId = call.argument<String>("voiceId") ?: "madinah"
                     val prayerName = call.argument<String>("prayerName") ?: "صلاة الفرض"
+                    val forceRestart = call.argument<Boolean>("forceRestart") ?: false
+                    val volumePercent = call.argument<Int>("volumePercent") ?: 100
                     val intent = Intent(this, AdhanPlaybackService::class.java).apply {
                         action = AdhanPlaybackService.ACTION_START_ADHAN
                         putExtra(AdhanPlaybackService.EXTRA_VOICE_ID, voiceId)
                         putExtra(AdhanPlaybackService.EXTRA_PRAYER_NAME, prayerName)
+                        putExtra(AdhanPlaybackService.EXTRA_FORCE_RESTART, forceRestart)
+                        putExtra(AdhanPlaybackService.EXTRA_VOLUME_PERCENT, volumePercent.coerceIn(0, 100))
                     }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         startForegroundService(intent)
@@ -92,7 +115,8 @@ class MainActivity : FlutterActivity() {
                         mapOf(
                             "isRinging" to AdhanPlaybackService.isRinging,
                             "voiceId" to AdhanPlaybackService.activeVoiceId,
-                            "prayerName" to AdhanPlaybackService.activePrayerName
+                            "prayerName" to AdhanPlaybackService.activePrayerName,
+                            "volumePercent" to AdhanPlaybackService.activeVolumePercent
                         )
                     )
                 }
@@ -100,6 +124,49 @@ class MainActivity : FlutterActivity() {
                 "schedulePrayerAlarms" -> {
                     val alarms = call.argument<List<Map<String, Any>>>("alarms") ?: emptyList()
                     AdhanAlarmScheduler.saveAndSchedule(this, alarms)
+                    result.success(true)
+                }
+
+                "scheduleTestAdhan" -> {
+                    val voiceId = call.argument<String>("voiceId") ?: "madinah"
+                    val prayerName = call.argument<String>("prayerName") ?: "اختبار الأذان"
+                    val rawMode = call.argument<String>("mode") ?: "adhan"
+                    val mode = if (rawMode == "vibrationOnly") rawMode else "adhan"
+                    val volumePercent = call.argument<Int>("volumePercent") ?: 100
+                    result.success(
+                        AdhanAlarmScheduler.scheduleTestAlarm(
+                            this,
+                            voiceId,
+                            prayerName,
+                            mode,
+                            volumePercent,
+                        ),
+                    )
+                }
+
+                "cancelTestAdhan" -> {
+                    result.success(AdhanAlarmScheduler.cancelTestAlarm(this))
+                }
+
+                "updatePrayerWidget" -> {
+                    val cityName = call.argument<String>("cityName") ?: ""
+                    val prayerName = call.argument<String>("prayerName") ?: "الفجر"
+                    val prayerTimeMillis = call.argument<Number>("prayerTimeMillis")?.toLong() ?: 0L
+                    val prayerTimeLabel = call.argument<String>("prayerTimeLabel") ?: ""
+                    val futurePrayers = call.argument<List<Map<String, Any>>>("prayers") ?: emptyList()
+                    val manager = AppWidgetManager.getInstance(this)
+                    val component = ComponentName(this, FirdawsPrayerWidgetProvider::class.java)
+                    val widgetIds = manager.getAppWidgetIds(component)
+                    FirdawsPrayerWidgetProvider.saveAndUpdate(
+                        this,
+                        manager,
+                        widgetIds,
+                        cityName,
+                        prayerName,
+                        prayerTimeMillis,
+                        prayerTimeLabel,
+                        futurePrayers,
+                    )
                     result.success(true)
                 }
 
@@ -195,7 +262,8 @@ class MainActivity : FlutterActivity() {
                     val map = mapOf(
                         "openAdhanAlarm" to (intent?.getBooleanExtra("open_adhan_alarm", false) == true),
                         "voiceId" to (intent?.getStringExtra("voice_id") ?: "madinah"),
-                        "prayerName" to (intent?.getStringExtra("prayer_name") ?: "صلاة الفرض")
+                        "prayerName" to (intent?.getStringExtra("prayer_name") ?: "صلاة الفرض"),
+                        "volumePercent" to (intent?.getIntExtra("volume_percent", 100) ?: 100)
                     )
                     intent?.removeExtra("open_adhan_alarm")
                     result.success(map)
@@ -214,7 +282,8 @@ class MainActivity : FlutterActivity() {
                 "onOpenAdhanScreen",
                 mapOf(
                     "voiceId" to (intent.getStringExtra("voice_id") ?: "madinah"),
-                    "prayerName" to (intent.getStringExtra("prayer_name") ?: "صلاة الفرض")
+                    "prayerName" to (intent.getStringExtra("prayer_name") ?: "صلاة الفرض"),
+                    "volumePercent" to intent.getIntExtra("volume_percent", 100)
                 )
             )
             intent.removeExtra("open_adhan_alarm")
@@ -317,6 +386,9 @@ class MainActivity : FlutterActivity() {
     override fun onDestroy() {
         btBridge?.dispose()
         btBridge = null
+        AdhanPlaybackService.onStateChangedListener = null
+        AdhanPlaybackService.onPlaybackCompletedListener = null
+        methodChannel = null
         super.onDestroy()
     }
 }

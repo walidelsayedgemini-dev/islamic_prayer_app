@@ -221,13 +221,13 @@ class FirdawsBottomNavigation extends StatelessWidget {
           padding: const EdgeInsetsDirectional.fromSTEB(8, 5, 8, 6),
           decoration: BoxDecoration(
             border: Border(
-              top: BorderSide(color: const Color(0xFFB99C64).withOpacity(.42)),
+              top: BorderSide(color: scheme.outlineVariant.withOpacity(.72)),
             ),
             boxShadow: [
               BoxShadow(
-                color: scheme.primary.withOpacity(.055),
-                blurRadius: 16,
-                offset: const Offset(0, -5),
+                color: scheme.primary.withOpacity(.035),
+                blurRadius: 12,
+                offset: const Offset(0, -3),
               ),
             ],
           ),
@@ -294,8 +294,7 @@ class _BottomDestinationButton extends StatelessWidget {
                         selected ? scheme.primaryContainer : Colors.transparent,
                     borderRadius: BorderRadius.circular(15),
                     border: selected
-                        ? Border.all(
-                            color: const Color(0xFFB99C64).withOpacity(.38))
+                        ? Border.all(color: scheme.primary.withOpacity(.22))
                         : null,
                   ),
                   child: Icon(destination.icon, size: 21, color: foreground),
@@ -469,9 +468,8 @@ class _SidebarDestinationTile extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),
           side: BorderSide(
-            color: selected
-                ? const Color(0xFFB99C64).withOpacity(.55)
-                : Colors.transparent,
+            color:
+                selected ? scheme.primary.withOpacity(.24) : Colors.transparent,
           ),
         ),
         child: InkWell(
@@ -762,14 +760,125 @@ class _LibraryDoor extends StatelessWidget {
       );
 }
 
-class FirdawsMorePage extends StatelessWidget {
+class FirdawsMorePage extends StatefulWidget {
   final ValueChanged<int> onNavigate;
   const FirdawsMorePage({super.key, required this.onNavigate});
+
+  @override
+  State<FirdawsMorePage> createState() => _FirdawsMorePageState();
+}
+
+class _FirdawsMorePageState extends State<FirdawsMorePage> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text;
+    if (query == _searchQuery) return;
+    setState(() => _searchQuery = query);
+  }
+
+  @override
+  void dispose() {
+    _searchController
+      ..removeListener(_onSearchChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  bool _matchesSearch(Iterable<String> values) {
+    final query = _normalizeArabic(_searchQuery);
+    if (query.isEmpty) return true;
+    return values.any((value) => _normalizeArabic(value).contains(query));
+  }
 
   @override
   Widget build(BuildContext context) {
     void open(Widget page) => Navigator.of(context)
         .push(MaterialPageRoute<void>(builder: (_) => page));
+    const destinationGroups = [
+      [0, 2, 4],
+      [1, 3, 5],
+      [6, 7, 9],
+    ];
+    final filteredDestinationGroups = destinationGroups
+        .map((indices) => indices.where((index) {
+              final destination =
+                  firdawsDestinations.firstWhere((item) => item.index == index);
+              return _matchesSearch([
+                destination.label,
+                _DestinationGroup.descriptions[index] ?? '',
+              ]);
+            }).toList())
+        .toList();
+    final activities = [
+      _ActivityDoorData(
+        icon: Icons.groups_outlined,
+        title: 'تحدي العائلة',
+        subtitle: 'أنشطة للمشاركة مع العائلة.',
+        searchTerms: const ['العائلة', 'تحدي', 'التحديات'],
+        onTap: () => open(const FamilyChallengeScreen()),
+      ),
+      _ActivityDoorData(
+        icon: Icons.checklist_rounded,
+        title: 'أعمال المناسبات',
+        subtitle: 'تصفّح المهمات والأنشطة المتاحة.',
+        searchTerms: const ['المهام', 'المهمات', 'الأحداث', 'المناسبات'],
+        onTap: () => open(const EventsMissionsScreen()),
+      ),
+      _ActivityDoorData(
+        icon: Icons.sports_esports_outlined,
+        title: 'صالة الألعاب والرحلات',
+        subtitle: 'استكشف الألعاب وخيارات اللعب مع العائلة.',
+        searchTerms: const ['الألعاب', 'اللعب', 'الرحلات'],
+        onTap: () => open(const ArenaHubScreen()),
+      ),
+      _ActivityDoorData(
+        icon: Icons.storefront_outlined,
+        title: 'مقتنيات الإنجاز',
+        subtitle: 'المقتنيات والسجل السابق.',
+        searchTerms: const ['متجر الحسنات', 'الحسنات', 'المتجر', 'المقتنيات'],
+        onTap: () => open(const HasanatStoreScreen()),
+      ),
+      _ActivityDoorData(
+        icon: Icons.bar_chart_rounded,
+        title: 'إحصائيات الصلاة',
+        subtitle: 'التزامك خلال الأسبوع والشهر.',
+        searchTerms: const ['إحصائيات', 'الصلاة', 'أسبوع', 'شهر', 'التزام'],
+        onTap: () => open(const PrayerStatsScreen()),
+      ),
+      _ActivityDoorData(
+        icon: Icons.backup_outlined,
+        title: 'النسخ الاحتياطي',
+        subtitle: 'صدّر بياناتك أو استعدها.',
+        searchTerms: const ['النسخ', 'الاحتياطي', 'تصدير', 'استعادة', 'بيانات'],
+        onTap: () => open(const BackupScreen()),
+      ),
+      _ActivityDoorData(
+        icon: Icons.person_outline_rounded,
+        title: 'الملف الشخصي',
+        subtitle: 'معلوماتك وأهدافك الشخصية.',
+        searchTerms: const ['الحساب', 'الملف', 'الشخصي'],
+        onTap: () => open(const AboutMeScreen()),
+      ),
+    ];
+    final filteredActivities = activities
+        .where((activity) => _matchesSearch([
+              activity.title,
+              activity.subtitle,
+              ...activity.searchTerms,
+            ]))
+        .toList();
+    final hasResults =
+        filteredDestinationGroups.any((group) => group.isNotEmpty) ||
+            filteredActivities.isNotEmpty;
+    final hasSearch = _searchQuery.trim().isNotEmpty;
 
     return _DiscoveryScaffold(
       maxWidth: 1180,
@@ -785,7 +894,7 @@ class FirdawsMorePage extends StatelessWidget {
               runSpacing: 8,
               children: [
                 FilledButton.icon(
-                  onPressed: () => onNavigate(0),
+                  onPressed: () => widget.onNavigate(0),
                   style: FilledButton.styleFrom(
                     foregroundColor: const Color(0xFF173429),
                     backgroundColor: const Color(0xFFF1E5C8),
@@ -797,7 +906,7 @@ class FirdawsMorePage extends StatelessWidget {
                   label: const Text('العودة إلى اليوم'),
                 ),
                 TextButton.icon(
-                  onPressed: () => onNavigate(9),
+                  onPressed: () => widget.onNavigate(9),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.white,
                     minimumSize: const Size(0, 46),
@@ -811,101 +920,52 @@ class FirdawsMorePage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 27),
-          ParadiseSection(
-            title: 'العبادة والاتجاه',
-            child: _DestinationGroup(
-              destinationIndices: const [0, 2, 4],
-              onNavigate: onNavigate,
-            ),
+_MoreSearchField(
+            controller: _searchController,
+            onClear: () => _searchController.clear(),
           ),
-          const SizedBox(height: 26),
-          ParadiseSection(
-            title: 'متابعة يومك ورحلتك',
-            child: _DestinationGroup(
-              destinationIndices: const [1, 3, 5],
-              onNavigate: onNavigate,
-            ),
-          ),
-          const SizedBox(height: 26),
-          ParadiseSection(
-            title: 'المساندة والخيارات',
-            child: _DestinationGroup(
-              destinationIndices: const [6, 7, 9],
-              onNavigate: onNavigate,
-            ),
-          ),
-          const SizedBox(height: 28),
-          ParadiseSection(
-            title: 'أنشطة اختيارية',
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final columns = constraints.maxWidth >= 760
-                    ? 3
-                    : constraints.maxWidth >= 500
-                        ? 2
-                        : 1;
-                const spacing = 13.0;
-                final cardWidth = columns == 1
-                    ? constraints.maxWidth
-                    : (constraints.maxWidth - spacing * (columns - 1)) /
-                        columns;
-                final activities = [
-                  _ActivityDoorData(
-                    icon: Icons.groups_outlined,
-                    title: 'تحدي العائلة',
-                    subtitle: 'أنشطة للمشاركة مع العائلة.',
-                    onTap: () => open(const FamilyChallengeScreen()),
-                  ),
-                  _ActivityDoorData(
-                    icon: Icons.checklist_rounded,
-                    title: 'أعمال المناسبات',
-                    subtitle: 'تصفّح المهمات والأنشطة المتاحة.',
-                    onTap: () => open(const EventsMissionsScreen()),
-                  ),
-                  _ActivityDoorData(
-                    icon: Icons.sports_esports_outlined,
-                    title: 'صالة الألعاب والرحلات',
-                    subtitle: 'استكشف الألعاب وخيارات اللعب مع العائلة.',
-                    onTap: () => open(const ArenaHubScreen()),
-                  ),
-                  _ActivityDoorData(
-                    icon: Icons.storefront_outlined,
-                    title: 'مقتنيات الإنجاز',
-                    subtitle: 'المقتنيات والسجل السابق.',
-                    onTap: () => open(const HasanatStoreScreen()),
-                  ),
-                  _ActivityDoorData(
-                    icon: Icons.bar_chart_rounded,
-                    title: 'إحصائيات الصلاة',
-                    subtitle: 'التزامك خلال الأسبوع والشهر.',
-                    onTap: () => open(const PrayerStatsScreen()),
-                  ),
-                  _ActivityDoorData(
-                    icon: Icons.backup_outlined,
-                    title: 'النسخ الاحتياطي',
-                    subtitle: 'صدّر بياناتك أو استعدها.',
-                    onTap: () => open(const BackupScreen()),
-                  ),
-                  _ActivityDoorData(
-                    icon: Icons.person_outline_rounded,
-                    title: 'الملف الشخصي',
-                    subtitle: 'معلوماتك وأهدافك الشخصية.',
-                    onTap: () => open(const AboutMeScreen()),
-                  ),
-                ];
-                return Wrap(
-                  spacing: spacing,
-                  runSpacing: 13,
-                  children: activities
-                      .map((activity) => SizedBox(
-                            width: cardWidth,
-                            child: _ActivityDoor(data: activity),
-                          ))
-                      .toList(),
-                );
-              },
-            ),
-          ),
+          if (!hasResults && hasSearch) ...[
+            const SizedBox(height: 24),
+            _MoreEmptySearchState(onClear: () => _searchController.clear()),
+          ] else ...[
+            if (filteredDestinationGroups[0].isNotEmpty) ...[
+              const SizedBox(height: 26),
+              ParadiseSection(
+                title: 'العبادة والاتجاه',
+                child: _DestinationGroup(
+                  destinationIndices: filteredDestinationGroups[0],
+                  onNavigate: widget.onNavigate,
+                ),
+              ),
+            ],
+            if (filteredDestinationGroups[1].isNotEmpty) ...[
+              const SizedBox(height: 26),
+              ParadiseSection(
+                title: 'متابعة يومك ورحلتك',
+                child: _DestinationGroup(
+                  destinationIndices: filteredDestinationGroups[1],
+                  onNavigate: widget.onNavigate,
+                ),
+              ),
+            ],
+            if (filteredDestinationGroups[2].isNotEmpty) ...[
+              const SizedBox(height: 26),
+              ParadiseSection(
+                title: 'المساندة والخيارات',
+                child: _DestinationGroup(
+                  destinationIndices: filteredDestinationGroups[2],
+                  onNavigate: widget.onNavigate,
+                ),
+              ),
+            ],
+            if (filteredActivities.isNotEmpty) ...[
+              const SizedBox(height: 28),
+              ParadiseSection(
+                title: 'أنشطة اختيارية',
+                child: _ActivityGroup(activities: filteredActivities),
+              ),
+            ],
+          ],
           const SizedBox(height: 18),
           const _ReadingSurfaceNote(
             icon: Icons.tune_rounded,
@@ -917,6 +977,142 @@ class FirdawsMorePage extends StatelessWidget {
   }
 }
 
+String _normalizeArabic(String value) => value
+    .trim()
+    .toLowerCase()
+    .replaceAll(RegExp(r'[ًٌٍَُِّْـ]'), '')
+    .replaceAll('أ', 'ا')
+    .replaceAll('إ', 'ا')
+    .replaceAll('آ', 'ا')
+    .replaceAll('ى', 'ي');
+
+class _MoreSearchField extends StatelessWidget {
+  final TextEditingController controller;
+  final VoidCallback onClear;
+  const _MoreSearchField({required this.controller, required this.onClear});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      textField: true,
+      label: 'بحث سريع في وجهات الفردوس والأنشطة',
+      child: TextField(
+        controller: controller,
+        textDirection: TextDirection.rtl,
+        textAlign: TextAlign.right,
+        textInputAction: TextInputAction.search,
+        decoration: InputDecoration(
+          labelText: 'بحث سريع',
+          hintText: 'ابحث عن وجهة أو نشاط…',
+          prefixIcon: const Icon(Icons.search_rounded),
+          suffixIcon: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, child) => value.text.isEmpty
+                ? const SizedBox.shrink()
+                : Semantics(
+                    button: true,
+                    label: 'مسح البحث',
+                    child: IconButton(
+                      onPressed: onClear,
+                      tooltip: 'مسح البحث',
+                      icon: const Icon(Icons.clear_rounded),
+                    ),
+                  ),
+          ),
+          filled: true,
+          fillColor: scheme.surface,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: BorderSide(color: scheme.outlineVariant),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: BorderSide(color: scheme.outlineVariant),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: BorderSide(color: scheme.primary, width: 1.5),
+          ),
+          contentPadding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 14),
+        ),
+      ),
+    );
+  }
+}
+
+class _MoreEmptySearchState extends StatelessWidget {
+  final VoidCallback onClear;
+  const _MoreEmptySearchState({required this.onClear});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return CalmCard(
+      padding: const EdgeInsetsDirectional.fromSTEB(20, 24, 20, 24),
+      child: Column(
+        children: [
+          Icon(Icons.search_off_rounded, size: 38, color: scheme.primary),
+          const SizedBox(height: 10),
+          Text(
+            'لا توجد وجهات أو أنشطة مطابقة',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'جرّب كلمة أخرى أو امسح البحث للعودة إلى كل الخيارات.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  height: 1.45,
+                ),
+          ),
+          const SizedBox(height: 15),
+          OutlinedButton.icon(
+            onPressed: onClear,
+            icon: const Icon(Icons.clear_rounded),
+            label: const Text('مسح البحث'),
+            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 46)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActivityGroup extends StatelessWidget {
+  final List<_ActivityDoorData> activities;
+  const _ActivityGroup({required this.activities});
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+        builder: (context, constraints) {
+          final columns = constraints.maxWidth >= 760
+              ? 3
+              : constraints.maxWidth >= 500
+                  ? 2
+                  : 1;
+          const spacing = 13.0;
+          final cardWidth = columns == 1
+              ? constraints.maxWidth
+              : (constraints.maxWidth - spacing * (columns - 1)) / columns;
+          return Wrap(
+            spacing: spacing,
+            runSpacing: spacing,
+            children: activities
+                .map((activity) => SizedBox(
+                      width: cardWidth,
+                      child: _ActivityDoor(data: activity),
+                    ))
+                .toList(),
+          );
+        },
+      );
+}
+
 class _DestinationGroup extends StatelessWidget {
   final List<int> destinationIndices;
   final ValueChanged<int> onNavigate;
@@ -925,7 +1121,7 @@ class _DestinationGroup extends StatelessWidget {
     required this.onNavigate,
   });
 
-  static const Map<int, String> _descriptions = {
+  static const Map<int, String> descriptions = {
     0: 'الصفحة الرئيسية ومواقيت الصلاة.',
     1: 'متابعة سجل الصلاة والأعمال.',
     2: 'الانتقال إلى شاشة اتجاه القبلة.',
@@ -959,7 +1155,7 @@ class _DestinationGroup extends StatelessWidget {
                 width: cardWidth,
                 child: _NavigationDoor(
                   destination: destination,
-                  subtitle: _descriptions[index] ?? '',
+                  subtitle: descriptions[index] ?? '',
                   onTap: () => onNavigate(index),
                 ),
               );
@@ -1028,11 +1224,13 @@ class _ActivityDoorData {
   final IconData icon;
   final String title;
   final String subtitle;
+  final List<String> searchTerms;
   final VoidCallback onTap;
   const _ActivityDoorData({
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.searchTerms = const [],
     required this.onTap,
   });
 }
