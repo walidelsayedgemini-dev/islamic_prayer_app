@@ -28,7 +28,12 @@ import 'package:islamic_prayer_app/theme/islamic_theme.dart';
 import 'package:islamic_prayer_app/widgets/nature_ui.dart';
 import 'package:islamic_prayer_app/widgets/paradise_ui.dart';
 
-Widget wrapQuietApp(Widget page, {bool night = false, double scale = 1}) =>
+Widget wrapQuietApp(
+  Widget page, {
+  bool night = false,
+  double scale = 1,
+  JannatiProvider? jannatiProvider,
+}) =>
     MultiProvider(
       providers: [
         ChangeNotifierProvider(
@@ -36,7 +41,9 @@ Widget wrapQuietApp(Widget page, {bool night = false, double scale = 1}) =>
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => AudioPlayerProvider()),
         ChangeNotifierProvider(create: (_) => FirdawsUserProvider()),
-        ChangeNotifierProvider(create: (_) => JannatiProvider()),
+        ChangeNotifierProvider(
+          create: (_) => jannatiProvider ?? JannatiProvider(),
+        ),
         ChangeNotifierProvider(create: (_) => HoorCompanionProvider()),
         ChangeNotifierProvider(create: (_) => FamilyChallengeProvider()),
         ChangeNotifierProvider(create: (_) => HasanatProvider()),
