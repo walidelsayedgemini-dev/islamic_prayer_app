@@ -100,6 +100,8 @@ class _ArenaGamePlayScreenState extends State<ArenaGamePlayScreen> {
   }
 
   Future<void> _handleMatchFinished(int p1Score, int p2OrRivalScore) async {
+    if (!mounted) return;
+    final completedMatchSeed = _matchSeed;
     final userProv = context.read<FirdawsUserProvider>();
     final famProv = context.read<FamilyChallengeProvider>();
     final jannatiProv = context.read<JannatiProvider>();
@@ -120,11 +122,25 @@ class _ArenaGamePlayScreenState extends State<ArenaGamePlayScreen> {
     } else {
       ArenaSfxService.instance.playLose();
     }
+
+    // Show the final scores before waiting for any persistent reward writes.
+    setState(() {
+      _lastP1Score = p1Score;
+      _lastP2OrRivalScore = p2OrRivalScore;
+      _lastHasanatEarned = 0;
+      _resultPhrase = '';
+      _resultSecondPhrase = '';
+      _userWon = won;
+      _phase = _ArenaStagePhase.results;
+    });
+
     final jannatiBonus = won ? (25 + (p1Score ~/ 12).clamp(5, 85)) : 12;
-    await jannatiProv.recordArenaKnowledgeReward(
-      '${widget.game.title} (${_selectedWorld.name})',
-      jannatiBonus,
-    );
+    try {
+      await jannatiProv.recordArenaKnowledgeReward(
+        '${widget.game.title} (${_selectedWorld.name})',
+        jannatiBonus,
+      );
+    } catch (_) {}
 
     int earnedHasanat = won ? (55 + (p1Score ~/ 10).clamp(10, 95)) : 20;
     if (hasanat != null) {
@@ -164,24 +180,26 @@ class _ArenaGamePlayScreenState extends State<ArenaGamePlayScreen> {
       final targetRivalId = _playMode == ArenaPlayMode.familyChallenge
           ? _selectedFamilyId
           : famProv.selectedRivalId;
-      mainPhrase = await famProv.recordChallengeMatchResult(
-        userName: p1,
-        rivalId: targetRivalId,
-        modeTitle: '${widget.game.title} • ${_difficulty.arabicLabel}',
-        userScore: p1Score,
-        rivalScore: p2OrRivalScore,
-      );
+      try {
+        mainPhrase = await famProv.recordChallengeMatchResult(
+          userName: p1,
+          rivalId: targetRivalId,
+          modeTitle: '${widget.game.title} • ${_difficulty.arabicLabel}',
+          userScore: p1Score,
+          rivalScore: p2OrRivalScore,
+        );
+      } catch (_) {}
     }
 
-    if (!mounted) return;
+    if (!mounted ||
+        completedMatchSeed != _matchSeed ||
+        _phase != _ArenaStagePhase.results) {
+      return;
+    }
     setState(() {
-      _lastP1Score = p1Score;
-      _lastP2OrRivalScore = p2OrRivalScore;
       _lastHasanatEarned = earnedHasanat;
-      _userWon = won;
       _resultPhrase = mainPhrase;
       _resultSecondPhrase = extraPhrase;
-      _phase = _ArenaStagePhase.results;
     });
   }
 
@@ -1473,7 +1491,9 @@ class _ArenaGamePlayScreenState extends State<ArenaGamePlayScreen> {
     return SafeArea(
       top: false,
       minimum: const EdgeInsets.fromLTRB(14, 8, 14, 10),
-      child: Center(
+      child: Align(
+        alignment: Alignment.center,
+        heightFactor: 1,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 860),
           child: Container(
@@ -1568,6 +1588,7 @@ class _ArenaGamePlayScreenState extends State<ArenaGamePlayScreen> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 900),
             child: ListView(
+              primary: false,
               physics: const BouncingScrollPhysics(),
               padding: EdgeInsets.fromLTRB(
                   compact ? 14 : 24, 14, compact ? 14 : 24, 28),
